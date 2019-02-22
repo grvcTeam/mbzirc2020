@@ -1,0 +1,9 @@
+odom_calib_matrix: [    0.963329713581051,  -0.006232772488427, 0.013977423147320,
+                        0.609216794801099,  0.092539517405894,  -1.837355744408050,
+                        -0.006076460068179, 0.032439476158978,  0.949234087018579]
+
+# Linear velocity x, linear regression parameters [m b]
+twist_linear_x_regression: [0.028675791263105425, -0.007410879540513423]
+
+# Angular velocity yaw, linear regression parameters [m b]
+twist_angular_yaw_regression: [0.004977452731994694, 0.00018473302163572953]

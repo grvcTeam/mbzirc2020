@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>atrvjr_description</name>
+  <version>0.0.0</version>
+  <description>The atrvjr_description package</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
+  <!-- Example:  -->
+  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <maintainer email="david@todo.todo">david</maintainer>
+  
+  <author>William Woodall</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/gavlab_atrv_description</url>
+  
+  
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

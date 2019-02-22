@@ -1,0 +1,21 @@
+<launch>
+    <arg name="ns" default=""/>
+
+    <include file="$(find atrvjr)/launch/atrvjr_hw_no_gps.launch" >
+        <arg name="ns" value="$(arg ns)"/>
+    </include>
+
+    <!--<include file="$(find atrvjr)/launch/garmin35lp_nmea.launch" >
+        <arg name="ns" value="$(arg ns)/garmin35lp"/>
+        <arg name="serialPort" value="/dev/ttyUSB2"/>
+        <arg name="frame_id" value="garmin"/>
+    </include>-->
+
+    <include file="$(find atrvjr)/launch/novatel.launch" >
+        <arg name="ns" value="$(arg ns)/novatel"/>
+        <arg name="serialPort" value="/dev/ttyUSB2"/>
+        <arg name="gps_default_logs_period" value="0.05"/>
+        <arg name="psrpos_default_logs_period" value="0.05"/>
+    </include>
+
+</launch>
