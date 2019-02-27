@@ -13,7 +13,7 @@
     <!-- This is not including the wheels -->
     <xacro:property name="chassis_width" value="0.385" />
     <!-- This is not including equipment and racks on the top -->
-    <xacro:property name="chassis_height" value="0.52" />
+    <xacro:property name="chassis_height" value="0.45" />
 
 
         <!-- wheel properties -->
@@ -47,11 +47,23 @@
     <!-- The frame of the floor directly below the center_link and -->
     <!-- is needed for the navigation stack to work properly -->
     <link name="base_link">
-       <!--  <inertial>
-            <origin xyz="0 0.3 0.2" rpy="1.57 0 0"/>
-            <mass value="100"/>
-            <inertia ixx="1.00" ixy="0.0" ixz="0.0" iyy="1.01" iyz="0.0" izz="1.01"/>
-        </inertial> -->
+        <!-- <visual>
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
+            </geometry>
+        </visual> -->
+        <collision>
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height-0.05}" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.0 0.0 0.2" rpy="0 0 0"/>
+            <mass value="60"/>
+            <inertia ixx="2.01" ixy="0.0" ixz="0.0" iyy="2.51" iyz="0.0" izz="2.01"/>
+        </inertial>
     </link>
 
     <!-- center_link -->
@@ -64,17 +76,6 @@
                 <mesh filename="package://atrvjr_description/meshes/atrv_body.dae" />
             </geometry>
         </visual>
-        <collision>
-            <origin xyz="0.1 0.25 0.19" rpy="0 0 0" /> 
-            <geometry>
-                <box size="${chassis_length} ${chassis_width+0.07} ${chassis_height-0.13}" />
-            </geometry>
-        </collision>
-        <inertial>
-            <origin xyz="0.1 0.25 0.2" rpy="1.57 0 0"/>
-            <mass value="1000"/>
-            <inertia ixx="2.01" ixy="0.0" ixz="0.0" iyy="2.01" iyz="0.0" izz="2.01"/>
-        </inertial>
     </link>
 
     <!-- base_link -> center_link -->
@@ -98,7 +99,7 @@
 
     <joint name="base_cbimu_joint" type="fixed">
         <origin xyz="0 0 0.267" rpy="0 ${M_PI} 0"/>
-        <parent link="center_link"/>
+        <parent link="base_link"/>
         <child link="cbimu_frame"/>
     </joint>
 
@@ -107,7 +108,7 @@
 
     <joint name="base_mpuimu_joint" type="fixed">
         <origin xyz="0 0 0.35" rpy="0 0 ${M_PI/2.0}"/>
-        <parent link="center_link"/>
+        <parent link="base_link"/>
         <child link="mpuimu_frame"/>
     </joint>
 
@@ -117,7 +118,7 @@
 
     <joint name="lrf_joint" type="fixed">
         <origin xyz="0.2 0 0.35" rpy="0 0 0"/>
-        <parent link="center_link"/>
+        <parent link="base_link"/>
         <child link="lrf_frame"/>
     </joint>
 
@@ -126,7 +127,7 @@
 
     <joint name="novatel_joint" type="fixed">
         <origin xyz="-0.15 0.1 0.4" rpy="0 0 0"/>
-        <parent link="center_link"/>
+        <parent link="base_link"/>
         <child link="novatel"/>
     </joint>
 
