@@ -146,3 +146,5 @@ manipulator:
     - LazyPRMstar
     - SPARS
     - SPARStwo
+  projection_evaluator: joints(ur5_shoulder_pan_joint,ur5_shoulder_lift_joint)
+  longest_valid_segment_fraction: 0.005

@@ -41,7 +41,7 @@
     <param name="~loop_rate"  type="double" value="10"/>
     <param name="~move_group"  type="string" value="move_group"/>
     <param name="~arm"  type="string" value="manipulator"/>
-    <!-- <remap from="~target_configuration" to="/mir_manipulation/pregrasp_planner_pipeline/configuration_out"/>-->
+    <remap from="~target_configuration" to="/mir_manipulation/pregrasp_planner_pipeline/configuration_out"/>
   </node>
 
   <group ns="mir_manipulation/pregrasp_planner_pipeline">
@@ -70,22 +70,22 @@
       <!-- Closest distance the gripper should be to the object (in meters) -->
       <param name="min_distance_to_object" type="double" value="0.01"/>
       <!-- Furthest distance the gripper should be to the object (in meters) -->
-      <param name="max_distance_to_object" type="double" value="0.02"/> <!-- 0.4 good value! -->
+      <param name="max_distance_to_object" type="double" value="0.03"/> <!-- 0.4 good value! -->
       <!-- Azimuth (in degrees) -->
       <param name="min_azimuth" type="double" value="-10.0"/> <!-- this values are overwritten by dynamic reconfigure, do not tune here -->
       <param name="max_azimuth" type="double" value="10.0"/>
       <!-- Zenith (in degrees) -->
-      <param name="min_zenith" type="double" value="-25.0"/>
-      <param name="max_zenith" type="double" value="25.0"/>
+      <param name="min_zenith" type="double" value="-20.0"/>
+      <param name="max_zenith" type="double" value="20.0"/>
       <!-- Wrist roll (in degrees) -->
-      <param name="min_roll" type="double" value="-2.0"/>
-      <param name="max_roll" type="double" value="2.0"/> <!-- this values are overwritten by dynamic reconfigure, do not tune here -->
+      <param name="min_roll" type="double" value="-20.0"/>
+      <param name="max_roll" type="double" value="20.0"/> <!-- this values are overwritten by dynamic reconfigure, do not tune here -->
       <!-- Angular tolerance to check if an object is standing up (in degrees) -->
       <param name="angular_tolerance" type="double" value="10.0"/> <!-- HACK ignored for now, objects are always standing -->
       <remap from="~pose_in" to="pose_transformer/transformed_pose"/>
       <remap from="~grasp_type" to="/mir_manipulation/pregrasp_planner_pipeline/grasp_type"/>
       <rosparam param="linear_offset">
-        - -0.15
+        - 0.00
         - 0.00
         - 0.00
       </rosparam>

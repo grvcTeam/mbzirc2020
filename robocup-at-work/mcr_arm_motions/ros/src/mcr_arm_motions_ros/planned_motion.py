@@ -60,7 +60,7 @@ class PlannedMotion(object):
         self.loop_rate = rospy.Rate(rospy.get_param('~loop_rate', 10))
 
         # Publishers
-        self.event_out = rospy.Publisher("~event_out", std_msgs.msg.String)
+        self.event_out = rospy.Publisher("~event_out", std_msgs.msg.String, queue_size=1)
 
         # Subscribers
         rospy.Subscriber("~event_in", std_msgs.msg.String, self.event_in_cb)

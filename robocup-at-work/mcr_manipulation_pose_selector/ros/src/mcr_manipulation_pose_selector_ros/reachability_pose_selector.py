@@ -66,13 +66,14 @@ class PoseSelector(object):
         self.units = rospy.get_param('~units', 'rad')
 
         # linear offset for the X, Y and Z axis.
-        self.linear_offset = rospy.get_param('~linear_offset', None)
+        #self.linear_offset = rospy.get_param('~linear_offset', None)
+        self.linear_offset = None
 
         # kinematics class to compute the inverse kinematics
         self.kinematics = kinematics.Kinematics(self.arm)
 
         # Time allowed for the IK solver to find a solution (in seconds).
-        self.ik_timeout = rospy.get_param('~ik_timeout', 0.5)
+        self.ik_timeout = 0.1
 
 
     def goal_pose_cb(self, msg):
@@ -191,17 +192,20 @@ class PoseSelector(object):
         """
         for ii, pose in enumerate(poses):
             rospy.logdebug("IK solver attempt number: {0}".format(ii))
-            if offset:
-                solution = self.kinematics.inverse_kinematics(
-                    pose_selector_utils.add_linear_offset_to_pose(pose, offset),
-                    timeout=self.ik_timeout
-                )
-            else:
-                solution = self.kinematics.inverse_kinematics(
-                    pose, timeout=self.ik_timeout
-                )
+            #if offset:
+            #    solution = self.kinematics.inverse_kinematics(
+            #        pose_selector_utils.add_linear_offset_to_pose(pose, offset),
+            #        timeout=self.ik_timeout
+            #    )
+            #else:
+            solution = self.kinematics.inverse_kinematics(
+                    pose, timeout=self.ik_timeout)
+            
             if solution:
+                print"ha solucaoooo"
+                print solution
                 return pose, solution
+                
         print("No solution found")
         return None
 

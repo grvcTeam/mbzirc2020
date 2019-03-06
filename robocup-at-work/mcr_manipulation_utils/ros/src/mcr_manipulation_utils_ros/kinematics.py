@@ -41,7 +41,7 @@ class Kinematics:
                                             moveit_msgs.srv.GetPositionFK)
         rospy.loginfo("Found service 'compute_fk'")
 
-    def inverse_kinematics(self, goal_pose, configuration=None, timeout=0.5, attempts=1):
+    def inverse_kinematics(self, goal_pose, configuration=None, timeout=0.1, attempts=3):
         """
         Calls the IK solver to calculate the joint configuration to reach the
         goal pose. The configuration parameter is the start position of the
@@ -68,6 +68,7 @@ class Kinematics:
             configuration = self.group.get_current_joint_values()
 
         if len(self.joint_names) != len(configuration):
+    
             return None
 
         req = moveit_msgs.srv.GetPositionIKRequest()
@@ -77,6 +78,7 @@ class Kinematics:
         req.ik_request.robot_state.joint_state.name = self.joint_names
         req.ik_request.robot_state.joint_state.position = configuration
         req.ik_request.pose_stamped = goal_pose
+        req.ik_request.avoid_collisions = True
         try:
             resp = self.ik_client(req)
         except rospy.ServiceException, e:
