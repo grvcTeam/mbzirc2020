@@ -2,11 +2,11 @@
 <launch>
   <arg name="limited" default="false"  doc="If true, limits joint range [-PI, PI] on all joints." />
   <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
-  <arg name="gui" default="false" doc="Starts gazebo gui" />
+  <arg name="gui" default="true" doc="Starts gazebo gui" />
   
   <!-- startup simulated world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" default="worlds/empty.world"/>
+    <arg name="world_name" default="worlds/elevator.world"/>
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
   </include>
@@ -18,7 +18,7 @@
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
 
-  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -param robot_description -model robot -z 0.1"/>
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -param robot_description -model robot -x -3 -z 0.1 "/>
 
   <include file="$(find ur_gazebo)/launch/controller_utils.launch"/>
 
