@@ -26,19 +26,19 @@
     <xacro:include filename="$(find atrvjr_description)/urdf/atrvjr_wheels.xacro" />
 
     <!-- mbot wheel generation based on imported macro -->
-    <xacro:wheel prefix="front" side="left" origin_x="-${wheel_long_offset}" origin_y="${wheel_lat_offset}" >
+    <xacro:wheel prefix="front" side="left" origin_x="${wheel_long_offset}" origin_y="${wheel_lat_offset}" >
         <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:wheel>
 
-    <xacro:wheel prefix="front" side="right" origin_x="${wheel_long_offset}" origin_y="${wheel_lat_offset}" >
+    <xacro:wheel prefix="front" side="right" origin_x="${wheel_long_offset}" origin_y="-${wheel_lat_offset}" >
         <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:wheel>
 
-    <xacro:wheel prefix="rear" side="left" origin_x="-${wheel_long_offset}" origin_y="-${wheel_lat_offset}" >
+    <xacro:wheel prefix="rear" side="left" origin_x="-${wheel_long_offset}" origin_y="${wheel_lat_offset}" >
         <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:wheel>
 
-    <xacro:wheel prefix="rear" side="right" origin_x="${wheel_long_offset}" origin_y="-${wheel_lat_offset}" >
+    <xacro:wheel prefix="rear" side="right" origin_x="-${wheel_long_offset}" origin_y="-${wheel_lat_offset}" >
         <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:wheel>
 
@@ -48,13 +48,13 @@
     <!-- is needed for the navigation stack to work properly -->
     <link name="base_link">
         <!-- <visual>
-            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" />
             <geometry>
                 <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
             </geometry>
         </visual> -->
         <collision>
-            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" />
             <geometry>
                 <box size="${chassis_length} ${chassis_width} ${chassis_height-0.05}" />
             </geometry>
@@ -121,15 +121,15 @@
     </joint>
 
     <link name="hokuyo"/>
-<!--         <visual> 
-            <geometry> 
-                <box size="0.02 0.035 0.002"/> 
-            </geometry> 
-        </visual> 
-        <inertial> 
-            <mass value="0.001"/> 
-            <origin xyz="0 0 0"/> 
-            <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/> 
+<!--         <visual>
+            <geometry>
+                <box size="0.02 0.035 0.002"/>
+            </geometry>
+        </visual>
+        <inertial>
+            <mass value="0.001"/>
+            <origin xyz="0 0 0"/>
+            <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
         </inertial>
     </link> -->
 
@@ -141,4 +141,3 @@
 
     </xacro:macro>
 </robot>
-
