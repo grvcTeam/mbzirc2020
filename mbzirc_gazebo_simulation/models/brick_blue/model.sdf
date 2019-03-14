@@ -1,0 +1,39 @@
+<?xml version='1.0'?>
+<sdf version="1.4">
+<model name="brick_blue">
+  <pose>0 0 0 0 0 0</pose>
+    <link name="grab_here">
+      <inertial>
+        <mass>1e-5</mass>
+        <inertia>
+          <ixx>1e-5</ixx>       
+          <ixy>0.0</ixy>      
+          <ixz>0.0</ixz>         
+          <iyy>1e-5</iyy>       
+          <iyz>0.0</iyz>     
+          <izz>1e-5</izz>      
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>1.2 0.2 0.2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>1.2 0.2 0.2</size>
+          </box>
+        </geometry>
+        <material>
+        	<script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Blue</name>
+            </script>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
