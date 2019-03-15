@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+
+    <!-- Ground Plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <model name="camera_body">
+        <link name="link">
+            <pose>0 0 0.5 0 0 0</pose>
+            <inertial>
+                <pose>0 0 0 0 0 0</pose>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>5.0</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>1 1 1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>1 1 1</size>
+                    </box>
+                </geometry>
+            </visual>
+        </link>
+
+        <joint name="camera_frame_joint" type="fixed">
+      		<parent>link</parent>
+      		<child>camera</child>
+        </joint>
+
+        <link name="camera">
+          <pose>0.51 0.0 0.5 0 0 0</pose>
+          <inertial>
+               <mass>0.01</mass>
+               <inertia>
+               <ixx>0.01</ixx>
+               <ixy>0</ixy>
+               <ixz>0</ixz>
+               <iyy>0.01</iyy>
+               <iyz>0</iyz>
+               <izz>0.01</izz>
+           </inertia>
+         </inertial>
+
+         <collision name="collision">
+           <geometry>
+               <box>
+                   <size>0.01 0.01 0.01</size>
+               </box>
+           </geometry>
+         </collision>
+         <visual name="visual">
+           <geometry>
+             <mesh> <uri>/home/eloy/Development/catkin_ws/src/catkin_mbzirc2020/mbzirc_gazebo_simulation/mbzirc_gazebo_plugins/mesh/obj_detect_fov.dae</uri></mesh>
+           </geometry>
+           <material>
+             <script>
+               <uri>gazebo.material</uri>
+               <name>Gazebo/BlueTransparent</name>
+             </script>
+           </material>
+         </visual>
+         <sensor name="laser" type="ray">
+          <pose>0.00 0 0.0 0 0 0</pose>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>100</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.3927</min_angle>
+                <max_angle>0.3927</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>100</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.2618</min_angle>
+                <max_angle>0.2618</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.08</min>
+              <max>10</max>
+              <resolution>0.01</resolution>
+            </range>
+          </ray>
+          <plugin name="ros_object_detection" filename="libfake_object_detection_plugin.so">
+             <topic_name>sensed_objects</topic_name>
+             <robot_name>my_robot</robot_name>
+          </plugin>
+          <always_on>1</always_on>
+          <update_rate>30</update_rate>
+          <visualize>false</visualize>
+        </sensor>
+        </link>
+    </model>
+
+    <model name='obj_box'>
+      <pose>5 0 0.05 0 0 0</pose>
+      <link name='1.box'>
+        <inertial>
+          <mass>0.5</mass>
+          <inertia>
+            <ixx>0.01</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.01</iyy>
+            <iyz>0</iyz>
+            <izz>0.01</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.1</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.1</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

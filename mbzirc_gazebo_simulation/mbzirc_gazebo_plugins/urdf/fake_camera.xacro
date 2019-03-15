@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<robot>
+  <macro name="fake_camera" params="parent *origin">
+  	<joint name="camera_frame_joint" type="fixed">
+      <insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="camera_link"/>
+    </joint>
+  	<link name="camera_link">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.01" />
+        </geometry>
+      </collision>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="$(find mbzirc_gazebo_plugins)/mesh/obj_detect_fov.dae"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <gazebo reference="camera_link">
+      <material>Gazebo/BlueTransparent</material>
+      <sensor name="laser" type="ray">
+          <pose>0.00 0 0.0 0 0 0</pose>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>100</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.3927</min_angle>
+                <max_angle>0.3927</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>100</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.2618</min_angle>
+                <max_angle>0.2618</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.08</min>
+              <max>10</max>
+              <resolution>0.01</resolution>
+            </range>
+          </ray>
+          <plugin name="ros_object_detection" filename="libfake_object_detection_plugin.so">
+              	    <topic_name>sensed_objects</topic_name>
+  	                <robot_name>cool_robot</robot_name>
+          </plugin>
+          <always_on>1</always_on>
+          <update_rate>30</update_rate>
+          <visualize>false</visualize>
+        </sensor>
+    </gazebo>
+  </macro>
+</robot>
