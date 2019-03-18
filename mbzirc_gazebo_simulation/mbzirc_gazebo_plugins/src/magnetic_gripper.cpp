@@ -125,6 +125,7 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
 
   this->rosNode.reset(new ros::NodeHandle(robot_name));
   this->magnet_service = this->rosNode->advertiseService("magnetize", &MagneticGripper::magnetize, this);
+  this->attached_pub = this->rosNode->advertise<mbzirc_comm_objs::GripperAttached>("attached",1);
 
   this->rosQueueThread =
   std::thread(std::bind(&MagneticGripper::QueueThread, this));
@@ -136,6 +137,10 @@ void MagneticGripper::OnUpdate() {
   if(!this->isMagnetized && this->fixedJoint->GetParent ()) {
     this->fixedJoint->Detach();
     gzmsg << "Detached" << std::endl;
+    //advertise dettached
+    mbzirc_comm_objs::GripperAttached msg;
+    msg.attached = false;
+    this->attached_pub.publish(msg);
   }
 }
 
@@ -156,6 +161,10 @@ void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
                                      collision2->GetLink()->WorldPose();
       this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
       this->fixedJoint->Init();
+      //advertise attached
+      mbzirc_comm_objs::GripperAttached msg;
+      msg.attached = true;
+      this->attached_pub.publish(msg);
     }
   }
 }

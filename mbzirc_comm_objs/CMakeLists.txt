@@ -48,6 +48,7 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
    StartTask.msg
    ObjectDetection.msg
    ObjectDetectionList.msg
+   GripperAttached.msg
  )
 
 ## Generate services in the 'srv' folder
