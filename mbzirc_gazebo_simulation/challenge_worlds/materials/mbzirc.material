@@ -1,0 +1,198 @@
+material mbzirc/Asfalt
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture tarmac.png
+	      scale 0.25 0.25
+      }
+    }
+  }
+}
+
+
+material Land
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture land.png
+      }
+    }
+  }
+}
+
+material Deploy
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture deploy.png
+      }
+    }
+  }
+}
+
+
+material Transparent
+{
+  technique
+  {
+    pass
+    {
+      scene_blend alpha_blend
+      depth_write off
+
+      ambient 0.5 0.5 0.5 1
+      diffuse 0.5 0.5 0.5 1
+
+      texture_unit
+      {
+        colour_op_ex source1 src_current src_current 0 1 0
+        alpha_op_ex source1 src_manual src_current 0
+      }
+    }
+  }
+}
+
+
+material Gazebo/GreyTransparent
+{
+  technique
+  {
+    pass
+    {
+      scene_blend alpha_blend
+      depth_write off
+
+      ambient 0.5 0.5 0.5 1
+      diffuse 0.5 0.5 0.5 1
+
+      texture_unit
+      {
+        colour_op_ex source1 src_current src_current 0 1 0
+        alpha_op_ex source1 src_manual src_current 0.5
+      }
+    }
+  }
+}
+
+material Gazebo/orange
+{
+  technique
+  {
+    pass ambient
+    {
+      lighting on
+
+      ambient 1 0.5088 0.0468 1
+      diffuse 1 0.5088 0.0468 1
+      specular 0.5 0.5 0.5 128
+    }
+  }
+}
+
+material Gazebo/blue
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 0 0 1
+      diffuse 0 0 1
+      specular 0.1 0.1 0.1 1 1
+    }
+  }
+}
+
+material Gazebo/green
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 0 1 0
+      diffuse 0 1 0
+      specular 0.1 0.1 0.1 1 1
+    }
+  }
+}
+
+
+material Gazebo/black
+{
+  technique
+  {
+    pass
+    {
+      ambient 0 0 0 1
+      diffuse 0 0 0 1
+      specular 0.1 0.1 0.1 1 5.0
+    }
+  }
+}
+
+
+material Gazebo/red
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 1 0 0
+      diffuse 1 0 0
+      specular 0.1 0.1 0.1 1 1
+    }
+  }
+}
+
+material Gazebo/white
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 1 1 1 1
+    }
+
+    pass light
+    {
+      diffuse 1 1 1 1
+      specular .1 .1 .1 128
+    }
+  }
+}
+
+material Gazebo/yellow
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 1 1 0 1
+      diffuse 1 1 0 1
+      specular 0 0 0 0 0
+    }
+  }
+}

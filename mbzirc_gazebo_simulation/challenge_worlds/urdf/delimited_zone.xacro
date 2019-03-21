@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="delimited_zone">
+   <xacro:arg name="x" default="0"/>
+   <xacro:arg name="y" default="0"/>
+   <xacro:arg name="z" default="0"/>
+   <xacro:arg name="width" default="1"/>
+   <xacro:arg name="large" default="1"/>
+   <xacro:arg name="height" default="1"/>
+   <xacro:arg name="colour" default="Gazebo/GreyTransparent"/>
+
+  
+  <link name="zone">
+    <inertial>
+      <origin xyz="$(arg x) $(arg y) $(arg z)" />
+      <mass value="1.0" />
+      <inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />
+    </inertial>
+    <visual>
+      <origin xyz="$(arg x) $(arg y) $(arg z)"/>
+      <geometry>
+        <box size="$(arg width) $(arg large) $(arg height)" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="$(arg x) $(arg y) $(arg z)"/>
+      <geometry>
+        <box size="$(arg width) $(arg large) $(arg height)" />
+      </geometry>
+    </collision>
+  </link>
+ 
+  <gazebo reference="zone">
+      <gravity>false</gravity>
+      <material>$(arg colour)</material>
+  </gazebo>
+
+</robot>

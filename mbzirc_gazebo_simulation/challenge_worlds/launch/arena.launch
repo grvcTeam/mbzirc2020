@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<launch>
+  <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)/materials" />
+
+  <!--=====================  GEOMETRIC ARGUMENTS   =====================-->
+  <arg name="balloon_zone_x_size"   default="80"/>
+  <arg name="balloon_zone_y_size"   default="40"/>
+  <arg name="max_balloons_height"   default="4"/>
+  <arg name="csv_path"              default="$(find challenge_worlds)/config/dist1.csv"/>
+  <arg name="deploy_zone_size"      default="2"/>
+  <arg name="landing_zone_size"     default="10"/>
+  <arg name="deploy_zone_x"         default="43"/>
+  <arg name="deploy_zone_y"         default="6"/>
+  <arg name="landing_zone_x"        default="50"/>
+  <arg name="landing_zone_y"        default="6"/>
+
+  <!--=====================  VISUALIZATION ARGUMENTS  =====================-->
+  <arg name="z_balloons_position"   default="$(eval 0.5 * max_balloons_height)"/>
+  <arg name="show_balloon_zone"     default="false"/>
+  <arg name="show_landing_zone"     default="true"/>
+  <arg name="show_deploy_zone"      default="true"/>
+
+  <!--#<- - - - - - - - - - - - - - - -100m - - - - - - - - - - - - - - - - - ->
+  ##########################################################################
+  #                                                                        # ^
+  #          ^                                                             # |
+  #          |       o (3)                                                 # |
+  #          |                                 o(n_balloons)               # |
+  #          |                                                             # |
+  #  balloon_|                                                             # |
+  #  zone_y_ |        o (2)                                                # |  60m
+  #   size   |                                         (5)o                # |
+  #          |                       o (4)                                 # |
+  #          |                                                             # |
+  #          |                                                             # |
+  #          | o (1)                          o (0)                        # |
+  #          v                                                             # |
+  #           <- - - - - -    balloon_zone_x_size - -  - - >               # |
+  #                                        Deploy  _    _ Takeoff/         # |
+  #                                         zone  |_|  |_|Landing zone     # v
+  ############################################################################
+  #
+  # ^y
+  # |   x
+  # L-->
+  <!--
+    #                         ________________________________________________
+  #                         0                                              ^
+  #                         |           0                                  |
+  #                   o     |           |             max_balloons_height  |
+  #                   |     |           |                                  v
+  # ##########################################################################
+  #
+  # ^z
+  # |  x
+  # L-->
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find challenge_worlds)/worlds/world_base.world"/>
+  </include>
+
+
+<param command="$(find xacro)/xacro.py
+   $(find challenge_worlds)/urdf/delimited_zone.xacro
+   x:=50 y:=30 z:=$(arg z_balloons_position)
+   width:=$(arg balloon_zone_x_size) large:=$(arg balloon_zone_y_size)
+   height:=$(arg max_balloons_height) colour:=Gazebo/GreyTransparent"
+   name="zone_balloons_param" />
+
+ <node if="$(arg show_balloon_zone)"
+   args="-urdf -param zone_balloons_param -model zone_balloons"
+   name="spawn_zone_balloons" output="screen" pkg="gazebo_ros"
+   type="spawn_model" />
+
+ <param command="$(find xacro)/xacro.py
+   $(find challenge_worlds)/urdf/delimited_zone.xacro
+   x:=$(arg landing_zone_x) y:=$(arg landing_zone_y) z:=0.05
+   width:=$(arg landing_zone_size) large:=$(arg landing_zone_size)
+   height:=0.05 colour:=Land" name="zone_landing_param" />
+
+ <node if="$(arg show_landing_zone)"
+   args="-urdf -param zone_landing_param -model zone_landing"
+   name="spawn_zone_landing" output="screen" pkg="gazebo_ros"
+   type="spawn_model" />
+
+ <param command="$(find xacro)/xacro.py
+   $(find challenge_worlds)/urdf/delimited_zone.xacro
+   x:=$(arg deploy_zone_x) y:=$(arg deploy_zone_y) z:=0.07
+   width:=$(arg deploy_zone_size) large:=$(arg deploy_zone_size)
+   height:=0.05 colour:=Deploy" name="zone_deploy_param" />
+
+ <node if="$(arg show_deploy_zone)"
+   args="-urdf -param zone_deploy_param -model zone_deploy"
+   name="spawn_zone_deploy" output="screen" pkg="gazebo_ros"
+   type="spawn_model" />
+
+ <node pkg="challenge_worlds" type="spawn_balloons.py"
+   name="spawn_balloons" args="-f $(arg csv_path)
+   -x $(arg balloon_zone_x_size) -y $(arg balloon_zone_y_size) -z $(arg max_balloons_height) "/>
+   
+</launch>
