@@ -87,7 +87,7 @@ class GoToWaypoint(smach.State):
     def cross_region(self, region_id, question):
         #TODO: this probably has to be an action, so the process wait/go can be handled
         res = self.interface['cli_req_enter_shared'](RequestSharedRegion(region_id=region_id,question=question,agent_id=self.agent_id))
-        if res.answer = RequestSharedRegion.WAIT:
+        if res.answer == RequestSharedRegion.WAIT:
             self.interface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(header=res.waiting_point.header,pose=res.waiting_point.point),blocking=True ))
 
         #TODO: this is not complete, must wait until OK, but with the server client it is not possible
@@ -105,7 +105,7 @@ class GoToWaypoint(smach.State):
             userdata.interface['cli_req_enter_shared'] = rospy.ServiceProxy('request_enter_shared_region', RequestSharedRegion)
         if not 'tf_buffer' in userdata.interface:
             userdata.interface['tf_buffer'] = tf2_ros.Buffer()
-            userdata.interface['tf_listener'] = tf2_ros.TransformListener(tfBuffer)
+            userdata.interface['tf_listener'] = tf2_ros.TransformListener(userdata.interface['tf_buffer'])
         if not 'cli_go_waypoint' in userdata.interface:
             userdata.interface['cli_go_waypoint'] = rospy.ServiceProxy('/uav_1/ual/go_to_waypoint', GoToWaypoint)
 
@@ -124,7 +124,7 @@ class GoToWaypoint(smach.State):
         goal_point = from_geom_msgs_Pose_to_Shapely_Point(userdata.goal_pose)
         def point_in_region(point,regions):
             for r_id in regions:
-                if regions[r_id].contains(point)
+                if from_geom_msgs_Polygon_to_Shapely_Polygon(regions[r_id]).contains(point):
                     return r_id
             return ''
 
@@ -140,6 +140,7 @@ class GoToWaypoint(smach.State):
             cross_region(r_id,RequestSharedRegion.FREE_SHARED_REGION)
             print "Access granted!"
 
+        print 'now, go to waypoint'
         userdata.interface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(header=userdata.header,pose=waypoint),blocking=True ))
 
         return 'sucess'

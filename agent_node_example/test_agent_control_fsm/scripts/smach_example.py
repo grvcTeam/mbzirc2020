@@ -48,14 +48,14 @@ class UAVAgent():
 
     def GoToWaypoint_cb(self, req):
         shared_region = PolygonStamped()
-        shared_region.polygons.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)]
+        shared_region.polygon.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)]
 
         #build state machine userdata from request
         userdata = smach.UserData()
         userdata.global_frame = 'map'
-        userdata.uav_frame = 'uav_1_base'
+        userdata.uav_frame = 'uav_1'
         userdata.goal_pose = Pose(position=Point(10,5,5))
-        userdata.shared_regions  = [shared_region]
+        userdata.shared_regions  = {'1': shared_region}
         userdata.interface = self.agentInterface
         self.tasks_dic['go_to_waypoint'].userdata = userdata
 
