@@ -61,6 +61,8 @@ class PoseSelector(object):
         group = moveit_commander.MoveGroupCommander(self.arm)
         # joints to compute the inverse kinematics
         self.joint_uris = group.get_joints()
+        del self.joint_uris[1:3]
+
 
         # units of the joint position values
         self.units = rospy.get_param('~units', 'rad')
@@ -217,9 +219,15 @@ class PoseSelector(object):
             or None.
         :type solution: (geometry_msgs.msg.PoseStamped, list) or None
         """
+
+
         if solution is not None:
             pose = solution[0]
             joint_values = solution[1]
+
+            print self.joint_uris
+            print joint_values
+
             if pose.header.stamp:
                 configuration = pose_selector_utils.list_to_brics_joints(
                     joint_values, self.joint_uris, time_stamp=pose.header.stamp,

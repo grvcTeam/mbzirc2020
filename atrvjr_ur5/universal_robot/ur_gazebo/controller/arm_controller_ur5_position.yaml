@@ -1,7 +1,7 @@
 ur5_shoulder_pan_joint_position_controller:
   type: position_controllers/JointPositionController
   joint: ur5_shoulder_pan_joint
-  pid: {p: &p_gain 100.0, i: &i_gain 0.01, d: &d_gain 5.0}
+  pid: {p: &p_gain 100.0, i: &i_gain 0.01, d: &d_gain 10.0}
 
 ur5_shoulder_lift_joint_position_controller:
   type: position_controllers/JointPositionController
@@ -27,23 +27,3 @@ ur5_wrist_3_joint_position_controller:
   type: position_controllers/JointPositionController
   joint: ur5_wrist_3_joint
   pid: {p: *p_gain, i: *i_gain, d: *d_gain}
-
-front_left_wheel_joint_position_controller:
-  type: position_controllers/JointPositionController
-  joint: front_left_wheel
-  pid: {p: *p_gain, i: *i_gain, d: *d_gain}
-
-front_right_wheel_joint_position_controller:
-  type: position_controllers/JointPositionController
-  joint: front_right_wheel
-  pid: {p: *p_gain, i: *i_gain, d: *d_gain}  
-
-rear_right_wheel_joint_position_controller:
-  type: position_controllers/JointPositionController
-  joint: rear_right_wheel
-  pid: {p: *p_gain, i: *i_gain, d: *d_gain}  
-
-rear_left_wheel_joint_position_controller:
-  type: position_controllers/JointPositionController
-  joint: rear_left_wheel
-  pid: {p: *p_gain, i: *i_gain, d: *d_gain}  

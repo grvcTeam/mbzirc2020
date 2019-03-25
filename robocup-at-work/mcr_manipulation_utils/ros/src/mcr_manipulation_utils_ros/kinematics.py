@@ -28,6 +28,9 @@ class Kinematics:
         self.joint_names = self.commander.get_joint_names(self.group_name)
         self.link_names = self.commander.get_link_names(self.group_name)
 
+        print self.joint_names
+        del self.joint_names[1:3]
+
         # service clients
         rospy.loginfo("Waiting for 'compute_ik' service")
         rospy.wait_for_service('/compute_ik')
@@ -66,9 +69,11 @@ class Kinematics:
         """
         if not configuration:
             configuration = self.group.get_current_joint_values()
+ 
+
 
         if len(self.joint_names) != len(configuration):
-    
+            print "erro do numero lenght"
             return None
 
         req = moveit_msgs.srv.GetPositionIKRequest()
@@ -89,6 +94,8 @@ class Kinematics:
             return extractors.extract_positions(
                 resp.solution.joint_state, self.joint_names
             )
+
+            #print resp.solution.joint_state
         else:
             return None
 

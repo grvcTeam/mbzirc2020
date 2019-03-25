@@ -84,6 +84,13 @@
     <mu2>0.5</mu2>
   </gazebo>
 
+<!--   <gazebo>
+    <plugin name="ros_gripper" filename="libmagnetic_gripper_plugin.so">
+      <agent_name>test_gripper</agent_name>
+      <gripper_link_name>gripper_link</gripper_link_name>
+    </plugin>
+  </gazebo>
+ -->
 
 
 </robot>

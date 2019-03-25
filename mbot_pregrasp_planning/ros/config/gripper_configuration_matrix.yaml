@@ -8,3 +8,4 @@ mbot_left_arm_gripper: [[ 1.0, 0.0,  0.0,   0.0  ],
                         [ 0.0, 0.0,  1.0,   0.0  ],
                         [ 0.0, 0.0,  0.0,   1.0  ]]
 
+# neste momento isto está a zeros

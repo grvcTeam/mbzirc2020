@@ -14,12 +14,12 @@ import geometry_msgs.msg
 import visualization_msgs.msg
 
 LINEAR_RESOLUTION = 0.005   # in meters
-MAX_POSITION_X = 0.9        # in meters
-MIN_POSITION_X = -0.9        # in meters
-MAX_POSITION_Y = 0.3        # in meters
-MIN_POSITION_Y = -0.3       # in meters
-MAX_POSITION_Z = -0.3        # in meters
-MIN_POSITION_Z = 0.6        # in meters
+MAX_POSITION_X = 2        # in meters
+MIN_POSITION_X = -2        # in meters
+MAX_POSITION_Y = 2        # in meters
+MIN_POSITION_Y = -2       # in meters
+MAX_POSITION_Z = 0        # in meters
+MIN_POSITION_Z = 2        # in meters
 ANGULAR_RESOLUTION = 1      # in degrees
 MIN_ORIENTATION = 0         # in degrees
 MAX_ORIENTATION = 359       # in degrees

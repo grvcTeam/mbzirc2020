@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find challenges_worlds)/urdf/orange_pile.xacro" />
+<xacro:include filename="$(find challenges_worlds)/urdf/blue_pile.xacro" />
+<xacro:include filename="$(find challenges_worlds)/urdf/red_pile.xacro" />
+<xacro:include filename="$(find challenges_worlds)/urdf/green_pile.xacro" />
+
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+ 
+   <orange_pile id="1" pose="10 0 0 0 0 0" />
+   <blue_pile id="2" pose="-10 0 0 0 0 0" />
+   <green_pile id="3" pose="0 -10 5 45 0 0" /> <!-- for getting a cluttered pile just change initial pose height and orientation -->
+   <red_pile id="4" pose="0 10 0 0 0 0" />
+     
+  </world>
+</sdf>
+ 

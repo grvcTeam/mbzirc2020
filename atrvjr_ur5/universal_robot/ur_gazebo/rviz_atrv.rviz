@@ -7,6 +7,9 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
+        - /TF1
+        - /TF1/Frames1
+        - /TF1/Tree1
         - /Pose1
         - /Pose2
         - /LaserScan1
@@ -71,7 +74,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         cbimu_frame:
           Alpha: 1
           Show Axes: false
@@ -125,6 +127,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         rear_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        teste_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -184,19 +191,111 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
-      Marker Scale: 1
+        All Enabled: false
+        arm_base_frame:
+          Value: false
+        base_link:
+          Value: false
+        cbimu_frame:
+          Value: false
+        center_link:
+          Value: false
+        front_left_static:
+          Value: false
+        front_left_wheel_link:
+          Value: false
+        front_right_static:
+          Value: false
+        front_right_wheel_link:
+          Value: false
+        hokuyo:
+          Value: false
+        mpuimu_frame:
+          Value: false
+        novatel:
+          Value: false
+        odom:
+          Value: true
+        rear_left_static:
+          Value: false
+        rear_left_wheel_link:
+          Value: false
+        rear_right_static:
+          Value: false
+        rear_right_wheel_link:
+          Value: false
+        teste_link:
+          Value: true
+        ur5_arm_base_link:
+          Value: false
+        ur5_base:
+          Value: false
+        ur5_ee_link:
+          Value: false
+        ur5_forearm_link:
+          Value: false
+        ur5_shoulder_link:
+          Value: false
+        ur5_tool0:
+          Value: false
+        ur5_upper_arm_link:
+          Value: false
+        ur5_wrist_1_link:
+          Value: false
+        ur5_wrist_2_link:
+          Value: false
+        ur5_wrist_3_link:
+          Value: true
+      Marker Scale: 0.699999988
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: true
+      Show Names: false
       Tree:
-        {}
+        odom:
+          base_link:
+            front_left_static:
+              front_left_wheel_link:
+                {}
+            front_right_static:
+              front_right_wheel_link:
+                {}
+            rear_left_static:
+              rear_left_wheel_link:
+                {}
+            rear_right_static:
+              rear_right_wheel_link:
+                {}
+            teste_link:
+              arm_base_frame:
+                ur5_arm_base_link:
+                  ur5_base:
+                    {}
+                  ur5_shoulder_link:
+                    ur5_upper_arm_link:
+                      ur5_forearm_link:
+                        ur5_wrist_1_link:
+                          ur5_wrist_2_link:
+                            ur5_wrist_3_link:
+                              ur5_ee_link:
+                                {}
+                              ur5_tool0:
+                                {}
+              cbimu_frame:
+                {}
+              center_link:
+                {}
+              hokuyo:
+                {}
+              mpuimu_frame:
+                {}
+              novatel:
+                {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 0.300000012
       Axes Radius: 0.00999999978
@@ -244,7 +343,7 @@ Visualization Manager:
       Max Color: 255; 255; 255
       Max Intensity: 999999
       Min Color: 0; 0; 0
-      Min Intensity: 999999
+      Min Intensity: 0
       Name: LaserScan
       Position Transformer: XYZ
       Queue Size: 10
@@ -305,25 +404,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.4727001
+      Distance: 10.4807243
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.94563657
+        Y: -1.77698672
+        Z: 0.782854319
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.635398865
+      Pitch: 0.684796929
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.240377605
+      Yaw: 1.71536553
     Saved: ~
 Window Geometry:
   Displays:

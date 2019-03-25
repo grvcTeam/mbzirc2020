@@ -4,6 +4,8 @@ controller_list:
     type: FollowJointTrajectory
     default: true
     joints:
+      - teste_joint
+      - teste2_joint
       - ur5_shoulder_pan_joint
       - ur5_shoulder_lift_joint
       - ur5_elbow_joint

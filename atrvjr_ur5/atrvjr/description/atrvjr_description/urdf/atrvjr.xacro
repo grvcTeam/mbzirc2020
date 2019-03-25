@@ -42,6 +42,66 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:wheel>
 
+    
+
+
+
+
+    <link name="teste_link">
+        <!-- <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" /> 
+            <geometry>
+                <box size="0.001 0.001 0.001" />
+            </geometry>
+        </visual> -->
+        <collision>
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height-0.05}" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+        </inertial>
+    </link>
+
+    <joint name="teste_joint" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="teste_link"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="80.0" lower="-1" upper="1" velocity="0.5"/>
+    </joint>
+
+    <link name="teste2_link">
+        <!-- <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" /> 
+            <geometry>
+                <box size="0.001 0.001 0.001" />
+            </geometry>
+        </visual> -->
+        <collision>
+            <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+        </inertial>
+    </link>
+
+    <joint name="teste2_joint" type="continuous">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="teste_link"/>
+        <child link="teste2_link"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
     <!-- links -->
     <!-- base_link -->
     <!-- The frame of the floor directly below the center_link and -->
@@ -53,15 +113,15 @@
                 <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
             </geometry>
         </visual> -->
-        <collision>
+        <!-- <collision>
             <origin xyz="0.0 0.0 0.3" rpy="0 0 0" /> 
             <geometry>
                 <box size="${chassis_length} ${chassis_width} ${chassis_height-0.05}" />
             </geometry>
-        </collision>
+        </collision> -->
         <inertial>
             <origin xyz="0.0 0.0 0.2" rpy="0 0 0"/>
-            <mass value="500"/>
+            <mass value="50"/>
             <inertia ixx="2.01" ixy="0.0" ixz="0.0" iyy="2.51" iyz="0.0" izz="2.01"/>
         </inertial>
     </link>
@@ -81,16 +141,19 @@
     <!-- base_link -> center_link -->
     <joint name="base_link_joint" type="fixed">
         <origin xyz="-0.1 0.19 ${center_height-0.1}" rpy="1.57 0 0"/>
-        <parent link="base_link"/>
+        <parent link="teste2_link"/>
         <child link="center_link"/>
     </joint>
+
+
+
 
      <!-- Arm Link -->
     <link name="${armConnectionFrame}"/>
 
     <joint name="$to_{armConnectionFrame}_joint" type="fixed">
         <origin xyz="0.12 0 0.56" rpy="0 0 0"/>
-        <parent link="base_link"/>
+        <parent link="teste2_link"/>
         <child link="${armConnectionFrame}"/>
     </joint>
 
@@ -99,7 +162,7 @@
 
     <joint name="base_cbimu_joint" type="fixed">
         <origin xyz="0 0 0.267" rpy="0 ${M_PI} 0"/>
-        <parent link="base_link"/>
+        <parent link="teste_link"/>
         <child link="cbimu_frame"/>
     </joint>
 
@@ -108,7 +171,7 @@
 
     <joint name="base_mpuimu_joint" type="fixed">
         <origin xyz="0 0 0.35" rpy="0 0 ${M_PI/2.0}"/>
-        <parent link="base_link"/>
+        <parent link="teste_link"/>
         <child link="mpuimu_frame"/>
     </joint>
 
@@ -116,9 +179,10 @@
 
     <joint name="novatel_joint" type="fixed">
         <origin xyz="-0.15 0.1 0.4" rpy="0 0 0"/>
-        <parent link="base_link"/>
+        <parent link="teste_link"/>
         <child link="novatel"/>
     </joint>
+
 
     <link name="hokuyo"/>
 <!--         <visual> 
@@ -134,10 +198,31 @@
     </link> -->
 
     <joint name="laser_joint" type="fixed">
-        <origin xyz="0.35 0 0.25" rpy="0 0 0"/>
-        <parent link="base_link" />
+        <origin xyz="0.35 0 0.1" rpy="0 0 0"/>
+        <parent link="teste_link" />
         <child link="hokuyo" />
     </joint>
+
+    <transmission name="teste_prismatic_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="teste_joint">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="teste_prismatic_actuator">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <transmission name="teste2_prismatic_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="teste2_joint">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="teste2_prismatic_actuator">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
 
     </xacro:macro>
 </robot>
