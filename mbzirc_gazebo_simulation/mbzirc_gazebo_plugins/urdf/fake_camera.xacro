@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot>
-  <macro name="fake_camera" params="parent *origin">
+  <macro name="fake_camera" params="parent *origin robot_name">
   	<joint name="camera_frame_joint" type="fixed">
       <insert_block name="origin" />
       <parent link="${parent}"/>
@@ -54,7 +54,7 @@
           </ray>
           <plugin name="ros_object_detection" filename="libfake_object_detection_plugin.so">
               	    <topic_name>sensed_objects</topic_name>
-  	                <robot_name>cool_robot</robot_name>
+  	                <robot_name>${robot_name}</robot_name>
           </plugin>
           <always_on>1</always_on>
           <update_rate>30</update_rate>

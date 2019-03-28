@@ -1,0 +1,2 @@
+<?xml version="1.0"?><robot xmlns:xacro="http://www.ros.org/wiki/xacro"><xacro:include filename="$(find challenge_worlds)/urdf/includes/brick_link.xacro" /><macro name="single_brick" params="id pose"><model name="${id}.pile"><pose>${pose}</pose><self_collide>true</self_collide>
+<brick_link id="0" type="brick" sx="0.5" sy="0.5" sz="0.5" mass="1.0" material="Gazebo/Orange" pose="0.0 0.0 0.25 0 0 0" /></model></macro></robot>

@@ -90,4 +90,4 @@ class AgentStateMachine(smach.StateMachine):
             smach.StateMachine.add('DEFAULT', default, transitions=default_trans)
             for task in tasks_dic.keys():
                 smach.StateMachine.add(task, tasks_dic[task],
-                        transitions={'success':'DEFAULT','error':'error'})
+                        transitions={'success':'error','error':'error'})

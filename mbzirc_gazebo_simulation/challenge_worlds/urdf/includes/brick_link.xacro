@@ -2,8 +2,8 @@
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<macro name="brick_link" params="id type pose sx sy sz mass material">
-
+<macro name="brick_link" params="id id2 type pose sx sy sz mass material">
+<model name="${id2}.${id}.pile">
 	<link name="${id}.${type}">
             <pose>${pose}</pose>
             <inertial> 
@@ -37,7 +37,7 @@
                 </geometry>
             </collision>
         </link>
-
+</model>
 </macro>
 
 </robot>

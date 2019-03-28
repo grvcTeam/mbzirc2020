@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find challenge_worlds)/urdf/single_brick.xacro" />
+
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+ 
+   <single_brick id="1" pose="10 0 0 0 0 0" />
+     
+  </world>
+</sdf>
+ 

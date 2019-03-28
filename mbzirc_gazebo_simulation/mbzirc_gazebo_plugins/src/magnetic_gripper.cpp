@@ -43,7 +43,7 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
   gazebo::physics::ModelPtr model = _parent;
   this->world = model->GetWorld();
   gazebo::physics::PhysicsEnginePtr physics = this->world->Physics();
-  this->fixedJoint = physics->CreateJoint("fixed");
+  this->fixedJoint = nullptr;
 
   std::string gripper_link_name = "gripper";
   std::string robot_name = "";
@@ -134,8 +134,10 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
 }
 
 void MagneticGripper::OnUpdate() {
-  if(!this->isMagnetized && this->fixedJoint->GetParent ()) {
+  if(!this->isMagnetized && this->fixedJoint) {
     this->fixedJoint->Detach();
+    this->fixedJoint->Fini();
+    this->fixedJoint = nullptr;
     gzmsg << "Detached" << std::endl;
     //advertise dettached
     mbzirc_comm_objs::GripperAttached msg;
@@ -145,27 +147,26 @@ void MagneticGripper::OnUpdate() {
 }
 
 void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
-  if(this->isMagnetized && !this->fixedJoint->GetParent ()) {
-    for (unsigned int i = 0; i < contacts->contact_size(); ++i) {
-      gazebo::physics::CollisionPtr collision1 =
-        boost::dynamic_pointer_cast<gazebo::physics::Collision>(
-        this->world->EntityByName(contacts->contact(i).collision1()));
-      gazebo::physics::CollisionPtr collision2 =
-        boost::dynamic_pointer_cast<gazebo::physics::Collision>(
-        this->world->EntityByName(contacts->contact(i).collision2()));
+  if(this->isMagnetized && !this->fixedJoint && contacts->contact_size()) {
+    gazebo::physics::CollisionPtr collision1 =
+      boost::dynamic_pointer_cast<gazebo::physics::Collision>(
+      this->world->EntityByName(contacts->contact(0).collision1()));
+    gazebo::physics::CollisionPtr collision2 =
+      boost::dynamic_pointer_cast<gazebo::physics::Collision>(
+      this->world->EntityByName(contacts->contact(0).collision2()));
 
-      gzmsg << "Atached links: [" << collision1->GetLink()->GetName()
-            << "] and [" << collision2->GetLink()->GetName() << "]\n";
+    gzmsg << "Atached links: [" << collision1->GetLink()->GetName()
+          << "] and [" << collision2->GetLink()->GetName() << "]\n";
 
-      ignition::math::Pose3d diff = collision1->GetLink()->WorldPose() -
-                                     collision2->GetLink()->WorldPose();
-      this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
-      this->fixedJoint->Init();
-      //advertise attached
-      mbzirc_comm_objs::GripperAttached msg;
-      msg.attached = true;
-      this->attached_pub.publish(msg);
-    }
+    ignition::math::Pose3d diff = collision1->GetLink()->WorldPose() -
+                                   collision2->GetLink()->WorldPose();
+    this->fixedJoint = this->world->Physics()->CreateJoint("fixed");
+    this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
+    this->fixedJoint->Init();
+    //advertise attached
+    mbzirc_comm_objs::GripperAttached msg;
+    msg.attached = true;
+    this->attached_pub.publish(msg);
   }
 }
 
