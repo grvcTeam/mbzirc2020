@@ -70,7 +70,7 @@
          </collision>
          <visual name="visual">
            <geometry>
-             <mesh> <uri>/home/eloy/Development/catkin_ws/src/catkin_mbzirc2020/mbzirc_gazebo_simulation/mbzirc_gazebo_plugins/mesh/obj_detect_fov.dae</uri></mesh>
+             <mesh> <uri>/home/eloy/Development/catkin_ws/src/mbzirc2020/mbzirc_gazebo_simulation/mbzirc_gazebo_plugins/mesh/obj_detect_fov.dae</uri></mesh>
            </geometry>
            <material>
              <script>

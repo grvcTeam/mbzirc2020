@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>fake_object_detection</name>
+  <name>fake_compute_search_path</name>
   <version>0.0.0</version>
-  <description>The fake_object_detection package</description>
+  <description>The fake_compute_search_path package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

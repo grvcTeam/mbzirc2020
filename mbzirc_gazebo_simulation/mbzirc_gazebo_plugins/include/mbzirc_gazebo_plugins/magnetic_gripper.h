@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include "mbzirc_comm_objs/Magnetize.h"
+#include "mbzirc_comm_objs/GripperAttached.h"
 
 #include <stdio.h>
 #include <thread>
@@ -37,6 +38,7 @@ class MagneticGripper : public gazebo::ModelPlugin
 
     std::unique_ptr<ros::NodeHandle> rosNode;
     ros::ServiceServer magnet_service;
+    ros::Publisher attached_pub;
 
     void QueueThread();
     ros::CallbackQueue rosQueue;

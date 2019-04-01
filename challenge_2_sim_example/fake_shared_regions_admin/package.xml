@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>compute_search_path</name>
+  <name>fake_shared_regions_admin</name>
   <version>0.0.0</version>
-  <description>The compute_search_path package</description>
+  <description>The fake_shared_regions_admin package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

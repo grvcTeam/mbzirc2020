@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import Pose
-from agent_node_example_comm_objects.srv import SearchRegionPath, SearchRegionPathResponse
+from challenge_2_example_comm_objects.srv import SearchRegionPath, SearchRegionPathResponse
 
 def compute_path_cb(req):
     res = SearchRegionPathResponse()

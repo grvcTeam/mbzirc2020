@@ -1,1 +1,1 @@
-<?xml version="1.0"?><robot xmlns:xacro="http://www.ros.org/wiki/xacro"><xacro:include filename="$(find challenge_worlds)/urdf/includes/brick_link.xacro" /><macro name="{model_name}" params="id pose"><model name="${{id}}.pile"><pose>${{pose}}</pose><self_collide>true</self_collide>
+<?xml version="1.0"?><robot xmlns:xacro="http://www.ros.org/wiki/xacro"><xacro:include filename="$(find challenge_worlds)/urdf/includes/brick_link.xacro" /><macro name="{model_name}" params="id pose"><model name="${{id}}.pile"><pose>${{pose}}</pose>

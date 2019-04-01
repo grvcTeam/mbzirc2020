@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot>
-  <macro name="magnetic_gripper" params="parent *origin">
+  <macro name="magnetic_gripper" params="parent *origin robot_name">
     <joint name="gripper_attach_joint" type="fixed">
       <insert_block name="origin" />
       <parent link="${parent}"/>
@@ -16,19 +16,19 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <box size="0.01 0.01 0.01" />
+          <box size="0.1 0.1 0.05" />
         </geometry>
       </collision>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <box size="0.01 0.01 0.01" />
+          <box size="0.1 0.1 0.05" />
         </geometry>
       </visual>
     </link>
     <gazebo>
       <plugin name="ros_gripper" filename="libmagnetic_gripper_plugin.so">
-            <robot_name>test_gripper</robot_name>
+            <robot_name>${robot_name}</robot_name>
             <!-- We are forced to magnetize the parent link because of gazebo
                  automatically lumping fixed joints. This can be prevented just from
                  SDF 5.0 onwards:

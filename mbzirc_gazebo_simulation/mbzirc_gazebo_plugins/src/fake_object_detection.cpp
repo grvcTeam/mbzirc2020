@@ -6,6 +6,7 @@ namespace gazebo
 GZ_REGISTER_SENSOR_PLUGIN(FakeObjectDetection)
 
 std::string type_from_name(const std::string &link_name);
+ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr);
 
 FakeObjectDetection::FakeObjectDetection()
 {
@@ -249,10 +250,13 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
           shape_ptr = collision->GetShape();
           if (shape_ptr)
           {
-            rec_object.scale.x = shape_ptr->Scale().X();
-            rec_object.scale.y = shape_ptr->Scale().Y();
-            rec_object.scale.z = shape_ptr->Scale().Z();
+            ignition::math::Vector3d scale = scaleFromShape(shape_ptr);
+            rec_object.scale.x = scale.X();
+            rec_object.scale.y = scale.Y();
+            rec_object.scale.z = scale.Z();
           }
+          else
+            gzmsg << "Collision object " << collision_name << " has no shape" << std::endl;
 
           //Other properties. Color.
           /*sdf_element = shape_ptr->GetSDF();
@@ -293,6 +297,42 @@ std::string type_from_name(const std::string &link_name)
     return "unknown";
   else
     return link_name.substr(link_name.find_first_of(".")+1,std::string::npos);
+}
+
+//
+ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr) {
+  //Box case
+  physics::BoxShapePtr box =
+    boost::dynamic_pointer_cast<physics::BoxShape>(
+      shape_ptr);
+  if(box)
+    return box->Size();
+  //Cylinder case
+  physics::CylinderShapePtr cylinder =
+    boost::dynamic_pointer_cast<physics::CylinderShape>(
+      shape_ptr);
+  if(cylinder)
+    return ignition::math::Vector3d(cylinder->GetRadius(),cylinder->GetRadius(),cylinder->GetLength());
+  //Sphere case
+  physics::SphereShapePtr sphere =
+    boost::dynamic_pointer_cast<physics::SphereShape>(
+      shape_ptr);
+  if(sphere)
+    return ignition::math::Vector3d(sphere->GetRadius(),sphere->GetRadius(),sphere->GetRadius());
+  //Mesh case
+  physics::MeshShapePtr mesh =
+    boost::dynamic_pointer_cast<physics::MeshShape>(
+      shape_ptr);
+  if(mesh)
+    return mesh->Size();
+  //Plane case
+  physics::PlaneShapePtr plane =
+    boost::dynamic_pointer_cast<physics::PlaneShape>(
+      shape_ptr);
+  if(plane)
+    return ignition::math::Vector3d(plane->Size().X(),plane->Size().Y(),1);
+
+  return ignition::math::Vector3d(1,1,1);
 }
 
 }
