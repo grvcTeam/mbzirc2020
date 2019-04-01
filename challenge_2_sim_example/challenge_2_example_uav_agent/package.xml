@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>agent_node_example_comm_objects</name>
+  <name>challenge_2_example_uav_agent</name>
   <version>0.0.0</version>
-  <description>The agent_node_example_comm_objects package</description>
+  <description>The challenge_2_example_uav_agent package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/agent_node_example_comm_objects</url> -->
+  <!-- <url type="website">http://wiki.ros.org/challenge_2_example_uav_agent</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->

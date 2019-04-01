@@ -41,7 +41,7 @@ with open('../urdf/'+model_name+'.xacro','w') as pile_model:
     for i in range(num_x):
         for j in range(num_y):
             for k in range(num_z):
-                pile_model.write(brick_string(counter,mass,material,sx,sy,sz,i*sx,j*sy,1.1*k*sz+sz/2.))
+                pile_model.write(brick_string(counter,mass,material,sx,sy,sz,i*(sx+0.05),j*(sy+0.05),k*(sz+0.05)+sz/2.))
                 counter += 1
     #end
     with open('../urdf/includes/pile_model.xacro.end') as end:

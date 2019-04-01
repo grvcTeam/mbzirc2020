@@ -5,10 +5,9 @@ import rospy
 import smach
 import smach_ros
 
-from agent_node import *
+from agent_node_help import *
 from mbzirc_comm_objs.msg import ObjectDetectionList,  WallBluePrint
 from mbzirc_comm_objs.srv import DetectTypes, DetectTypesRequest, SearchForObject, SearchForObjectResponse, BuildWall, BuildWallResponse
-from agent_node_example_comm_objects.srv import SearchRegionPath, SearchRegionPathRequest
 from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest, TakeOff, TakeOffRequest, Land, LandRequest
 from geometry_msgs.msg import Pose, PoseStamped, Point, Point32, Quaternion, PolygonStamped, Vector3
 
@@ -60,7 +59,7 @@ class BuildWallTaskWrapper(AgentTaskWrapper):
 class UAVAgent():
 
     #task exec callbacks
-    def SearchForObject_cb(self, req):
+    '''def SearchForObject_cb(self, req):
         #build state machine userdata from request
         userdata = smach.UserData()
         userdata.header = req.header
@@ -74,7 +73,7 @@ class UAVAgent():
         self.agentInterface['pub_start_task'].publish(
                 StartTask(agent_id=self.agent_id,task_id='search_for_object'))
 
-        return SearchForObjectResponse(success=True)
+        return SearchForObjectResponse(success=True)'''
 
     def GoToWaypoint_cb(self, req):
         shared_region = PolygonStamped()
@@ -174,18 +173,18 @@ class UAVAgent():
         header = Header(frame_id='map',stamp=rospy.Time.now())
         userdata.uav_frame = 'uav_1'
         userdata.gripper_frame = 'gripper_link'
-        userdata.red_pile = PoseStamped(header=header,pose=Pose(position=Point(0.3,10.2,0),orientation=Quaternion(0,0,0,1)))
-        userdata.green_pile = PoseStamped(header=header,pose=Pose(position=Point(0.6,-9.8,0),orientation=Quaternion(0,0,0,1)))
+        userdata.red_pile = PoseStamped(header=header,pose=Pose(position=Point(0.6,-9.8,0),orientation=Quaternion(0,0,0,1)))
+        userdata.green_pile = PoseStamped(header=header,pose=Pose(position=Point(0.3,10.2,0),orientation=Quaternion(0,0,0,1)))
         userdata.blue_pile = PoseStamped(header=header,pose=Pose(position=Point(-9.4,0.2,0),orientation=Quaternion(0,0,0,1)))
         userdata.orange_pile = PoseStamped(header=header,pose=Pose(position=Point(11.8,0.2,0),orientation=Quaternion(0,0,0,1)))
         userdata.interface = self.agentInterface
         #wall map
         wall =  WallBluePrint()
         wall.wall_frame = PoseStamped(header=header,pose=Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1)))
-        wall.size_x = 4
+        wall.size_x = 6
         wall.size_y = 1
-        wall.size_z = 2
-        wall.blueprint = [2, 0, 2, 0, 3, 0, 0, 0]
+        wall.size_z = 3
+        wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0, 4, 0, 0, 0, 0, 0]
         userdata.wall_map = wall
 
         self.tasks_dic['build_wall'].userdata = userdata

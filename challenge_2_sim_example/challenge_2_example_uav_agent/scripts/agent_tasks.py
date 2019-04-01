@@ -9,10 +9,10 @@ import PyKDL
 from shapely.geometry import Point
 from geom_help import *
 
-from agent_node import *
+from agent_node_help import *
 from mbzirc_comm_objs.msg import ObjectDetectionList, GripperAttached, WallBluePrint
 from mbzirc_comm_objs.srv import DetectTypes, DetectTypesRequest, SearchForObject, SearchForObjectResponse, RequestSharedRegion, RequestSharedRegionResponse, RequestSharedRegionRequest, Magnetize, MagnetizeRequest
-from agent_node_example_comm_objects.srv import SearchRegionPath, SearchRegionPathRequest
+from challenge_2_example_comm_objects.srv import SearchRegionPath, SearchRegionPathRequest
 from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest, TakeOff, TakeOffRequest, Land, LandRequest
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion
 from std_msgs.msg import Header
@@ -200,7 +200,6 @@ class PickObjectTask(smach.State):
             userdata.interface['tf_listener'] = tf2_ros.TransformListener(userdata.interface['tf_buffer'])
 
         #TODO: match requested object with object detection information
-        print userdata.obj_pose
 
         #compute a waypoint from where to approach the object
         z_separation = 0.5
@@ -218,16 +217,9 @@ class PickObjectTask(smach.State):
         trans_global2uav = trans_global2gripper * from_geom_msgs_Transform_to_KDL_Frame(trans_gripper2uav.transform)
 
         #send the way point
-
         way = GoToWaypointRequest(waypoint=PoseStamped(
         header=Header(frame_id=userdata.global_frame,stamp=rospy.Time.now()),pose=
         from_KDL_Frame_to_geom_msgs_Pose(trans_global2uav)),blocking=True )
-
-        print way
-
-        print 'Write something to approach!'
-
-        #raw_input()
 
         userdata.interface['cli_go_waypoint'](way)
 
@@ -264,16 +256,10 @@ class PickObjectTask(smach.State):
                 return 'error'
 
         trans_uav2object = from_geom_msgs_Transform_to_KDL_Frame(trans_uav2global.transform) * trans_global2object #TODO: Z value does not seems to be right
-        print trans_uav2global.transform
-        print trans_global2object
-        print trans_uav2object
         userdata.trans_uav2object = from_KDL_Frame_to_geom_msgs_Transform(trans_uav2object)
         userdata.interface['sub_gripper_attached'].unregister()
         to_client = rospy.ServiceProxy('/uav_1/ual/take_off', TakeOff)
         to_client(TakeOffRequest(height=2,blocking=True))
-        print 'Write something to pick!'
-
-        #raw_input()
 
         return 'success'
 
@@ -299,18 +285,18 @@ class PlaceObjectTask(smach.State):
         trans_global2object.p += PyKDL.Vector(0,0,userdata.scale.z/2 + z_drop)
         trans_global2object.M = PyKDL.Rotation.Quaternion(0,0,0,1) #TODO: ignoring goal pose rotation
 
-        print userdata.goal_pose
-        print userdata.trans_uav2object
-
         trans_global2uav = trans_global2object * from_geom_msgs_Transform_to_KDL_Frame(userdata.trans_uav2object).Inverse()
 
-        #send waypoint
+        #send waypoints
         header = Header(frame_id=userdata.global_frame,stamp=rospy.Time.now())
+
+        trans_global2uav.p += PyKDL.Vector(0,0,2.)
+        userdata.interface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(
+        header=header,pose=from_KDL_Frame_to_geom_msgs_Pose(trans_global2uav)),blocking=True ))
+        trans_global2uav.p -= PyKDL.Vector(0,0,2.)
         userdata.interface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(
         header=header,pose=from_KDL_Frame_to_geom_msgs_Pose(trans_global2uav)),blocking=True ))
         rospy.sleep(2.)
-
-        print 'Write something to place!'
 
         #raw_input()
 
@@ -369,8 +355,8 @@ class PickFromPileTask(smach.State):
 
         #go over pile ceontroid
         header = Header(frame_id=userdata.global_frame,stamp=rospy.Time.now())
-        pose = Pose(position=Point(userdata.pile_centroid.x,userdata.pile_centroid.y,3),
-        orientation = Quaternion(0,0,0,1))
+        pose = Pose(position=Point(userdata.pile_centroid.x-0.5,userdata.pile_centroid.y,3),
+        orientation = Quaternion(0,0,0,1)) #TODO: -0.5 reflex the transformation UAV --> camera_sensor, do this properly
         userdata.interface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(header=header,pose=pose),blocking=True ))
         rospy.sleep(2.)
         #select object
@@ -457,10 +443,10 @@ class BuildWallTask(smach.State):
 
         return np.array(mm)
 
-    def brick_goal_pose(self, length, i, j, k):
-        x = i * 0.30 + length / 2
-        y = j * 0.20 + 0.20 / 2
-        z = k * 0.20 + 0.20 / 2
+    def brick_goal_pose(self, length, buffer, i, j, k):
+        x = i * (0.30+buffer) + (length + buffer) / 2
+        y = j * (0.20+buffer) + (0.20+buffer) / 2
+        z = k * (0.20+buffer) + (0.20+buffer) / 2
 
         return PyKDL.Frame(PyKDL.Rotation.Quaternion(0,0,0,1),PyKDL.Vector(x,y,z))
 
@@ -487,22 +473,22 @@ class BuildWallTask(smach.State):
             for j in range(wall_matrix.shape[1]):
                 for i in range(wall_matrix.shape[2]):
                     if wall_matrix[k,j,i] == 1: #red brick
-                        trans_wall2brick = self.brick_goal_pose(0.30,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(0.30, 0.01,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.red_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 2: #green brick
-                        trans_wall2brick = self.brick_goal_pose(0.60,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(0.60, 0.02,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.green_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 3: #blue brick
-                        trans_wall2brick = self.brick_goal_pose(1.20,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(1.20, 0.04,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.blue_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 4: #orange brick
-                        trans_wall2brick = self.brick_goal_pose(1.80,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(1.80, 0.06,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.orange_pile.pose.position
                         p_n_p_task.execute(ud)
