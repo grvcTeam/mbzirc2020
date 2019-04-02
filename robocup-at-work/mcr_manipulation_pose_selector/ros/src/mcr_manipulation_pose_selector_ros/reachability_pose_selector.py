@@ -61,15 +61,15 @@ class PoseSelector(object):
         group = moveit_commander.MoveGroupCommander(self.arm)
         # joints to compute the inverse kinematics
         self.joint_uris = group.get_joints()
-        del self.joint_uris[1:3]
+        del self.joint_uris[2:4]
 
 
         # units of the joint position values
         self.units = rospy.get_param('~units', 'rad')
 
         # linear offset for the X, Y and Z axis.
-        #self.linear_offset = rospy.get_param('~linear_offset', None)
-        self.linear_offset = None
+        self.linear_offset = rospy.get_param('~linear_offset', None)
+        #self.linear_offset = None
 
         # kinematics class to compute the inverse kinematics
         self.kinematics = kinematics.Kinematics(self.arm)
@@ -194,13 +194,13 @@ class PoseSelector(object):
         """
         for ii, pose in enumerate(poses):
             rospy.logdebug("IK solver attempt number: {0}".format(ii))
-            #if offset:
-            #    solution = self.kinematics.inverse_kinematics(
-            #        pose_selector_utils.add_linear_offset_to_pose(pose, offset),
-            #        timeout=self.ik_timeout
-            #    )
-            #else:
-            solution = self.kinematics.inverse_kinematics(
+            if offset:
+                solution = self.kinematics.inverse_kinematics(
+                    pose_selector_utils.add_linear_offset_to_pose(pose, offset),
+                    timeout=self.ik_timeout
+                )
+            else:
+                solution = self.kinematics.inverse_kinematics(
                     pose, timeout=self.ik_timeout)
             
             if solution:

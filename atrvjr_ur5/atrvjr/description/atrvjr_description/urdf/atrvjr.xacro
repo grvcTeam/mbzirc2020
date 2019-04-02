@@ -58,7 +58,7 @@
         <parent link="base_link"/>
         <child link="teste_link"/>
         <axis xyz="1 0 0"/>
-        <limit effort="80.0" lower="-1" upper="1" velocity="0.5"/>
+        <limit effort="80.0" lower="-2" upper="2" velocity="0.5"/>
     </joint>
 
 
@@ -81,7 +81,7 @@
         <parent link="teste_link"/>
         <child link="teste2_link"/>
         <axis xyz="0 1 0"/>
-        <limit effort="80.0" lower="-1" upper="1" velocity="0.5"/>
+        <limit effort="80.0" lower="-2" upper="2" velocity="0.5"/>
     </joint>
 
 

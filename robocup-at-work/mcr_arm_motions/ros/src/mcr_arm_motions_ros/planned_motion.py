@@ -175,29 +175,37 @@ class PlannedMotion(object):
         :rtype: bool
 
         """
+        print joint_configuration
+        joint_configuration.positions=joint_configuration.positions[2:]
+        print joint_configuration
+
         joint_list = utils.brics_joint_positions_to_list(joint_configuration)
 
-
-        base_position_pose = geometry_msgs.msg.PoseStamped()
-
-        base_position_pose.header.stamp = rospy.Time.now()
-        base_position_pose.header.frame_id = 'base_link'
-
-        base_position_pose.pose.position.x= joint_list[0]
-        base_position_pose.pose.position.y= 0 
-        base_position_pose.pose.position.z= 0
-
-        base_position_pose.pose.orientation.x= 0 
-        base_position_pose.pose.orientation.y= 0
-        base_position_pose.pose.orientation.z= 0
-        base_position_pose.pose.orientation.w= 1
+        print joint_list
 
 
-        self.base_position_pub.publish(base_position_pose)
+        # base_position_pose = geometry_msgs.msg.PoseStamped()
 
-        rospy.sleep(1)
+        # base_position_pose.header.stamp = rospy.Time.now()
+        # base_position_pose.header.frame_id = 'base_link'
 
-        joint_list[0]=0
+        # base_position_pose.pose.position.x= joint_list[0]
+        # base_position_pose.pose.position.y= joint_list[1]
+        # base_position_pose.pose.position.z= 0
+
+        # base_position_pose.pose.orientation.x= 0 
+        # base_position_pose.pose.orientation.y= 0
+        # base_position_pose.pose.orientation.z= 0
+        # base_position_pose.pose.orientation.w= 1
+
+
+        # self.base_position_pub.publish(base_position_pose)
+
+        #rospy.sleep(joint_list[1]*5)
+
+        #joint_list[0]=0
+        #joint_list[1]=0
+
 
         self.arm.set_joint_value_target(joint_list)
         status = self.arm.go(wait=wait)

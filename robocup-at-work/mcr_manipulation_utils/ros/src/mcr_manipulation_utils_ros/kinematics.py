@@ -29,7 +29,7 @@ class Kinematics:
         self.link_names = self.commander.get_link_names(self.group_name)
 
         print self.joint_names
-        del self.joint_names[1:3]
+        del self.joint_names[2:4]
 
         # service clients
         rospy.loginfo("Waiting for 'compute_ik' service")

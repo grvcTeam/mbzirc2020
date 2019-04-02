@@ -26,7 +26,7 @@
     <rosparam param="linear_offset">
       - 0.00
       - 0.00
-      - 0.00
+      - 0.00  <!--0.20 for 20 centimeters higher-->
     </rosparam>
     <remap from="~goal_pose_array"
            to="/mir_manipulation/pregrasp_planner_pipeline/pose_generator/poses_list"/>
@@ -40,7 +40,7 @@
   <node pkg="mcr_arm_motions" type="planned_motion_node" name="move_arm_planned_motion" output="screen">
     <param name="~loop_rate"  type="double" value="10"/>
     <param name="~move_group"  type="string" value="move_group"/>
-    <param name="~arm"  type="string" value="manipulator"/>
+    <param name="~arm"  type="string" value="manipulator2"/>
     <remap from="~target_configuration" to="/mir_manipulation/pregrasp_planner_pipeline/configuration_out"/>
   </node>
 

@@ -7,9 +7,7 @@ arm_controller:
      - ur5_wrist_1_joint
      - ur5_wrist_2_joint
      - ur5_wrist_3_joint
-     - teste_joint
-     #- teste2_joint
-     #- teste3_joint
+  
 
   gains: # Required because we're controlling an velocity interface
       ur5_shoulder_pan_joint: {p: &kp_default 100,  d: &kd_default 0.1, i: &ki_default 0.0, i_clamp: &ki_clamp_default 1} # & defines 1 time only
@@ -18,10 +16,7 @@ arm_controller:
       ur5_wrist_1_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
       ur5_wrist_2_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
       ur5_wrist_3_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
-      teste_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
-      #teste2_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
-      #teste3_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
-
+      
 
   constraints:
       goal_time: 4.0
@@ -44,16 +39,37 @@ arm_controller:
       ur5_wrist_3_joint:
         goal: *goal_pos_constraint
         trajectory: *trajectory_pos_constraint
+
+
+      stop_trajectory_duration: 1.0
+
+testes_controller:
+  type: velocity_controllers/JointTrajectoryController
+  joints:
+     - teste_joint
+     - teste2_joint
+     #- teste3_joint
+
+  gains: # Required because we're controlling an velocity interface
+      teste_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
+      teste2_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
+      #teste3_joint: {p: *kp_default,  d: *kd_default, i: *ki_default, i_clamp: *ki_clamp_default}
+
+
+  constraints:
+      goal_time: 4.0
+      stopped_velocity_tolerance: 1.0
       teste_joint:
         goal: *goal_pos_constraint
         trajectory: *trajectory_pos_constraint
-      #teste2_joint:
-      #  goal: *goal_pos_constraint
-      #  trajectory: *trajectory_pos_constraint
+      teste2_joint:
+        goal: *goal_pos_constraint
+        trajectory: *trajectory_pos_constraint
       #teste3_joint:
       #  goal: *goal_pos_constraint
       #  trajectory: *trajectory_pos_constraint
 
 
       stop_trajectory_duration: 1.0
+
 
