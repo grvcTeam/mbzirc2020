@@ -444,7 +444,8 @@ class BuildWallTask(smach.State):
         return np.array(mm)
 
     def brick_goal_pose(self, length, buffer, i, j, k):
-        x = i * (0.30+buffer) + (length + buffer) / 2
+        n_cells = length/0.30
+        x = i * (0.30+buffer) + (length + buffer*n_cells) / 2
         y = j * (0.20+buffer) + (0.20+buffer) / 2
         z = k * (0.20+buffer) + (0.20+buffer) / 2
 
@@ -478,17 +479,17 @@ class BuildWallTask(smach.State):
                         ud.pile_centroid = userdata.red_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 2: #green brick
-                        trans_wall2brick = self.brick_goal_pose(0.60, 0.02,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(0.60, 0.01,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.green_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 3: #blue brick
-                        trans_wall2brick = self.brick_goal_pose(1.20, 0.04,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(1.20, 0.01,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.blue_pile.pose.position
                         p_n_p_task.execute(ud)
                     elif wall_matrix[k,j,i] == 4: #orange brick
-                        trans_wall2brick = self.brick_goal_pose(1.80, 0.06,i,j,k)
+                        trans_wall2brick = self.brick_goal_pose(1.80, 0.01,i,j,k)
                         ud.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         ud.pile_centroid = userdata.orange_pile.pose.position
                         p_n_p_task.execute(ud)
