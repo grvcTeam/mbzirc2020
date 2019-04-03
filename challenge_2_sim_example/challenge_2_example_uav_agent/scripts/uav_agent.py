@@ -216,7 +216,7 @@ class UAVAgent():
         self.agentInterface['pub_obj_det'] = obj_pub
         self.agentInterface['pub_start_task'] = task_exec_pub
         #Task execution request services
-        rospy.Service('uav_search_for_object', SearchForObject, self.SearchForObject_cb)
+        #rospy.Service('uav_search_for_object', SearchForObject, self.SearchForObject_cb)
         rospy.Service('uav_go_to_waypoint', SearchForObject, self.GoToWaypoint_cb)
         rospy.Service('uav_pick_object', SearchForObject, self.PickObject_cb)
         rospy.Service('uav_place_object', SearchForObject, self.PlaceObject_cb)
