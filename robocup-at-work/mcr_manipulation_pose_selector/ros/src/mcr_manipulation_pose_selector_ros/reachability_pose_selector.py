@@ -26,6 +26,7 @@ class PoseSelector(object):
         self.event = None
         self.goal_pose = None
         self.goal_pose_array = None
+        self.flag = None
         
         # node cycle rate (in hz)
         self.loop_rate = rospy.Rate(rospy.get_param('~loop_rate', 10.0))
@@ -37,6 +38,10 @@ class PoseSelector(object):
         )
         self.joint_configuration = rospy.Publisher(
             "~joint_configuration", brics_actuator.msg.JointPositions, queue_size=1
+        )
+
+        self.flag_pub= rospy.Publisher(
+            "~flag", std_msgs.msg.Bool, queue_size=1
         )
 
         # subscribers
@@ -54,15 +59,17 @@ class PoseSelector(object):
         client.wait_for_server()
         rospy.loginfo("Found server '{0}'".format(move_group))
 
-        # name of the group to compute the inverse kinematics
+
         self.arm = rospy.get_param('~arm', None)
         assert self.arm is not None, "Group to move (e.g. arm) must be specified."
 
-        group = moveit_commander.MoveGroupCommander(self.arm)
-        # joints to compute the inverse kinematics
-        self.joint_uris = group.get_joints()
-        del self.joint_uris[2:4]
+        print self.arm
 
+        self.group = moveit_commander.MoveGroupCommander(self.arm)
+
+        print self.group
+
+        self.kinematics = kinematics.Kinematics(self.arm)
 
         # units of the joint position values
         self.units = rospy.get_param('~units', 'rad')
@@ -71,11 +78,8 @@ class PoseSelector(object):
         self.linear_offset = rospy.get_param('~linear_offset', None)
         #self.linear_offset = None
 
-        # kinematics class to compute the inverse kinematics
-        self.kinematics = kinematics.Kinematics(self.arm)
-
         # Time allowed for the IK solver to find a solution (in seconds).
-        self.ik_timeout = 0.1
+        self.ik_timeout = 0.05
 
 
     def goal_pose_cb(self, msg):
@@ -192,7 +196,16 @@ class PoseSelector(object):
             that reaches that pose (of the requested poses).
         :rtype: (geometry_msgs.msg.PoseStamped, list) or None
         """
+
+        # name of the group to compute the inverse kinematics
+        
+        # joints to compute the inverse kinematics
+        self.copy=self.group.get_joints()
+        self.joint_uris = self.copy[4:]
+
+
         for ii, pose in enumerate(poses):
+            print ii
             rospy.logdebug("IK solver attempt number: {0}".format(ii))
             if offset:
                 solution = self.kinematics.inverse_kinematics(
@@ -204,11 +217,33 @@ class PoseSelector(object):
                     pose, timeout=self.ik_timeout)
             
             if solution:
-                print"ha solucaoooo"
+                print"HA SOLUCAOOOOOOOOOOOOOOOOOOO"
                 print solution
                 return pose, solution
-                
-        print("No solution found")
+
+         # joints to compute the inverse kinematics
+        self.joint_uris = self.copy[0:2]+self.copy[4:]
+
+        # kinematics class to compute the inverse kinematics
+        self.flag = True #this one is for the publisher
+        print "com BASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
+        self.kinematics.switch_joints()
+
+        for ii, pose in enumerate(poses):
+
+            solution = self.kinematics.inverse_kinematics(
+                pose_selector_utils.add_linear_offset_to_pose(pose, offset),
+                timeout=self.ik_timeout
+            )
+            
+        if solution:
+        
+            print"ha solucaoooo"
+            print solution
+            return pose, solution
+            self.flag_pub.publish(self.flag)
+
+        print("NO SOLUTION AT ALL WITH OR WITHOUT BASE")
         return None
 
     def publish_result(self, solution):

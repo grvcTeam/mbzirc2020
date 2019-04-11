@@ -16,20 +16,26 @@ import extractors
 class Kinematics:
     def __init__(self, group_name, move_group='move_group'):
         # wait for MoveIt! to come up
-        client = actionlib.SimpleActionClient(move_group, moveit_msgs.msg.MoveGroupAction)
-        rospy.loginfo("Waiting for '{0}' server".format(move_group))
-        client.wait_for_server()
-        rospy.loginfo("Found server '{0}'".format(move_group))
+        #client = actionlib.SimpleActionClient(move_group, moveit_msgs.msg.MoveGroupAction)
+        #rospy.loginfo("Waiting for '{0}' server".format(move_group))
+        #client.wait_for_server()
+        #rospy.loginfo("Found server '{0}'".format(move_group))
 
         self.group_name = group_name
+       
         self.group = moveit_commander.MoveGroupCommander(self.group_name)
+        
         self.commander = moveit_commander.RobotCommander()
         self.state = moveit_commander.RobotState()
-        self.joint_names = self.commander.get_joint_names(self.group_name)
-        self.link_names = self.commander.get_link_names(self.group_name)
+        self.copy = self.commander.get_joint_names(self.group_name)
 
-        print self.joint_names
-        del self.joint_names[2:4]
+        self.joint_names = self.copy[4:]
+    
+        self.config = self.group.get_current_joint_values()
+        self.configuration = self.config[2:]
+
+        self.groupIK = 'manipulator2'
+        
 
         # service clients
         rospy.loginfo("Waiting for 'compute_ik' service")
@@ -44,7 +50,17 @@ class Kinematics:
                                             moveit_msgs.srv.GetPositionFK)
         rospy.loginfo("Found service 'compute_fk'")
 
-    def inverse_kinematics(self, goal_pose, configuration=None, timeout=0.1, attempts=3):
+    def switch_joints(self):
+
+        self.joint_names = self.copy[0:2] + self.copy[4:]
+        self.configuration = self.config
+        self.groupIK = 'manipulator'
+
+        print "esta no switch joints"
+
+        
+
+    def inverse_kinematics(self, goal_pose, timeout=0.05, attempts=3):
         """
         Calls the IK solver to calculate the joint configuration to reach the
         goal pose. The configuration parameter is the start position of the
@@ -67,23 +83,24 @@ class Kinematics:
         :rtype: Float[] or None
 
         """
-        if not configuration:
-            configuration = self.group.get_current_joint_values()
- 
+        #print self.groupIK
+        #print self.joint_names
+        #print self.configuration
 
-
-        if len(self.joint_names) != len(configuration):
-            print "erro do numero lenght"
+        if len(self.joint_names) != len(self.configuration):
+            print "erro de lenght"
             return None
+
 
         req = moveit_msgs.srv.GetPositionIKRequest()
         req.ik_request.timeout = rospy.Duration(timeout)
         req.ik_request.attempts = attempts
-        req.ik_request.group_name = self.group_name
+        req.ik_request.group_name = self.groupIK
         req.ik_request.robot_state.joint_state.name = self.joint_names
-        req.ik_request.robot_state.joint_state.position = configuration
+        req.ik_request.robot_state.joint_state.position = self.configuration
         req.ik_request.pose_stamped = goal_pose
         req.ik_request.avoid_collisions = True
+
         try:
             resp = self.ik_client(req)
         except rospy.ServiceException, e:
@@ -94,10 +111,9 @@ class Kinematics:
             return extractors.extract_positions(
                 resp.solution.joint_state, self.joint_names
             )
-
-            #print resp.solution.joint_state
         else:
             return None
+
 
     def forward_kinematics(
             self, reference_header, configuration=None,

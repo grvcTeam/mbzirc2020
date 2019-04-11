@@ -23,6 +23,7 @@
     <param name="move_group" type="str" value="move_group"/>
     <!-- Arm name to be used for giving commands-->
     <param name="arm" type="str" value="manipulator"/>
+   <!--  <param name="arm_secondary" type="str" value="manipulator"/> -->
     <rosparam param="linear_offset">
       - 0.00
       - 0.00
@@ -40,7 +41,7 @@
   <node pkg="mcr_arm_motions" type="planned_motion_node" name="move_arm_planned_motion" output="screen">
     <param name="~loop_rate"  type="double" value="10"/>
     <param name="~move_group"  type="string" value="move_group"/>
-    <param name="~arm"  type="string" value="manipulator2"/>
+    <param name="~arm"  type="string" value="manipulator"/>
     <remap from="~target_configuration" to="/mir_manipulation/pregrasp_planner_pipeline/configuration_out"/>
   </node>
 
