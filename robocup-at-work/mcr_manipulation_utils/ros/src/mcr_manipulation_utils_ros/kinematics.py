@@ -29,12 +29,14 @@ class Kinematics:
         self.state = moveit_commander.RobotState()
         self.copy = self.commander.get_joint_names(self.group_name)
 
-        self.joint_names = self.copy[4:]
+        
     
         self.config = self.group.get_current_joint_values()
-        self.configuration = self.config[2:]
 
-        self.groupIK = 'manipulator2'
+        #self.joint_names = self.copy[4:]
+        #self.configuration = self.config[2:]
+
+        #self.groupIK = 'manipulator2'
         
 
         # service clients
@@ -50,13 +52,24 @@ class Kinematics:
                                             moveit_msgs.srv.GetPositionFK)
         rospy.loginfo("Found service 'compute_fk'")
 
-    def switch_joints(self):
+    
+
+    def switch_joints_arm_only(self):
+
+        self.joint_names = self.copy[4:]
+        self.configuration = self.config[2:]
+        self.groupIK = 'manipulator2'
+
+        print "esta no switch joints arm only"
+
+
+    def switch_joints_with_base(self):
 
         self.joint_names = self.copy[0:2] + self.copy[4:]
         self.configuration = self.config
         self.groupIK = 'manipulator'
 
-        print "esta no switch joints"
+        print "esta no switch joints base"
 
         
 

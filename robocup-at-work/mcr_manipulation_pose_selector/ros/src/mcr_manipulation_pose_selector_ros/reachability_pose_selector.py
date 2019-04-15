@@ -203,10 +203,13 @@ class PoseSelector(object):
         self.copy=self.group.get_joints()
         self.joint_uris = self.copy[4:]
 
+        print self.copy
 
         for ii, pose in enumerate(poses):
             print ii
             rospy.logdebug("IK solver attempt number: {0}".format(ii))
+            self.kinematics.switch_joints_arm_only()
+
             if offset:
                 solution = self.kinematics.inverse_kinematics(
                     pose_selector_utils.add_linear_offset_to_pose(pose, offset),
@@ -222,12 +225,14 @@ class PoseSelector(object):
                 return pose, solution
 
          # joints to compute the inverse kinematics
-        self.joint_uris = self.copy[0:2]+self.copy[4:]
+        print self.copy
+        self.joint_uris = self.copy[0:2] + self.copy[4:]
+        print self.joint_uris
 
         # kinematics class to compute the inverse kinematics
         self.flag = True #this one is for the publisher
         print "com BASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE"
-        self.kinematics.switch_joints()
+        self.kinematics.switch_joints_with_base()
 
         for ii, pose in enumerate(poses):
 

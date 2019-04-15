@@ -91,6 +91,7 @@ class PlannedMotion(object):
 
         """
         self.flag = msg.data
+        print self.flag
 
     def start(self):
         """
@@ -188,7 +189,7 @@ class PlannedMotion(object):
        
        
             
-        joint_configuration.positions=joint_configuration.positions[2:]
+        #joint_configuration.positions=joint_configuration.positions[2:]
         print joint_configuration
 
         joint_list = utils.brics_joint_positions_to_list(joint_configuration)
