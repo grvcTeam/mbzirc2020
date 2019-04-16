@@ -23,7 +23,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <group if="$(eval mode=='sitl')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
-        <node pkg="px4_bringup02" type="launch_gzworld.py" name="gazebo_world" output="screen"
+        <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
         args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge3.world">
             <rosparam param="sim_origin">[37.558542, -5.931074, 7.89]</rosparam><!-- [lat,lon,alt] -->
         </node>
@@ -36,7 +36,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         - custom: to fully customize fcu and gcs urls
     -->
     <!-- Launch robot id=1 -->
-    <include file="$(find px4_bringup02)/launch/spawn_robot.launch" ns="$(arg ns_prefix)1">
+    <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)1">
         <arg name="id" value="1"/>
         <arg name="material" value="Orange"/>
         <arg name="mode" value="$(arg mode)"/>
@@ -48,7 +48,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
     <group if="$(arg multi)">
         <!-- Launch robot id=2 -->
-        <include file="$(find px4_bringup02)/launch/spawn_robot.launch" ns="$(arg ns_prefix)2">
+        <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)2">
             <arg name="id" value="2"/>
             <arg name="material" value="Indigo"/>
             <arg name="mode" value="sitl"/>
@@ -58,7 +58,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             <arg name="yaw" value="0"/>
         </include>
         <!-- Launch robot id=3 -->
-        <include file="$(find px4_bringup02)/launch/spawn_robot.launch" ns="$(arg ns_prefix)3">
+        <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)3">
             <arg name="id" value="3"/>
             <arg name="material" value="ZincYellow"/>
             <arg name="mode" value="sitl"/>
