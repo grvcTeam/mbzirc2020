@@ -196,3 +196,58 @@ material Gazebo/yellow
     }
   }
 }
+
+material Gazebo/Bricks
+{
+  technique
+  {
+    pass
+    {
+      ambient 1.0 1.0 1.0 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.2 0.2 0.2 1.0 12.5
+
+      texture_unit
+      {
+        texture bricks.png
+        filtering trilinear
+      }
+    }
+  }
+}
+material Gazebo/CeilingTiled
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture ceiling_tiled.jpg
+      }
+    }
+  }
+}
+
+material Gazebo/Fire
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture fire.png
+        
+      }
+    }
+  }
+}

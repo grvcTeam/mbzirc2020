@@ -71,3 +71,12 @@ The world is composed of a ground plane and four piles of bricks. The piles are 
 
 -----------
 ## **CHALLENGE 3**	
+
+
+The world represents the arena for the challenge 3, including:
+- Realistic sized area (50x60m).
+- Structure simulating the high-rise Building (up to 20m in high).
+- Fires to be simulated at various random locations at ground level in the arena (indoor and
+outdoor), and at different heights of the building.
+
+In case of needing to modify the building model, the files are contained in the folder urdf.
