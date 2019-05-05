@@ -45,11 +45,11 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   StartTask.msg
    ObjectDetection.msg
    ObjectDetectionList.msg
    GripperAttached.msg
    WallBluePrint.msg
+   RegionOwnerList.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -58,8 +58,12 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
    DetectTypes.srv
    SearchForObject.srv
    Magnetize.srv
+   AddSharedRegion.srv
+   RemoveSharedRegion.srv
    RequestSharedRegion.srv
    BuildWall.srv
+   PickNPlace.srv
+   PFPNPlace.srv
  )
 
 ## Generate actions in the 'action' folder

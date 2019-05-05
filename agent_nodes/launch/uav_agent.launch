@@ -1,0 +1,37 @@
+<launch>
+  <arg name="ns" default="" />
+  <arg name="uav_id" default="1" />
+  <arg name="height" default="2.0" />
+  <arg name="x" default="0" />
+  <arg name="y" default="0" />
+  <arg name="z" default="0" />
+  
+  <group ns="$(arg ns)">
+    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_1" output="screen" args="-model=mbzirc -id=$(arg uav_id) -namespace=$(arg ns)/uav_1/ual -backend='light' -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/>
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg ns)/uav_1 $(arg ns)/gripper_link 10" />
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_base_tf" args="0 0 0 0 0 0 $(arg ns)/uav_1 $(arg ns)/base_link 10" />
+
+    <node pkg="uav_abstraction_layer" type="server" name="ual" ns="uav_1" output="screen">
+	<param name="tf_prefix" value="$(arg ns)" />
+        <param name="uav_id" value="$(arg uav_id)"/>
+        <param name="backend" value="light"/>
+        <param name="pose_frame_id" value="map"/>
+	<param name="uav_home_frame" value="$(arg ns)/uav_1_home"/>
+	<param name="uav_frame" value="$(arg ns)/uav_1"/>
+        <param name="ual_server" value="on"/>
+        <param name="noise_var" value="0.0"/>
+        <param name="max_pose_error" value="0.01"/>
+        <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), 0, 0]</rosparam><!-- [x,y,z,yaw] -->
+    </node>
+
+    <node name="agent_node" pkg="agent_nodes" type="uav_agent_c2.py" output="screen">
+        <param name="uav_ns" value="uav_1/ual"/>
+        <param name="agent_id" value="uav_$(arg uav_id)"/>
+        <param name="z_offset" value="0.5" type="double"/>
+        <param name="height" value="$(arg height)" type="double"/>
+        <param name="global_frame" value="map"/>
+        <param name="uav_frame" value="$(arg ns)/uav_1"/>
+        <param name="gripper_frame" value="$(arg ns)/gripper_link"/>
+    </node>
+  </group>
+</launch>
