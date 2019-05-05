@@ -27,39 +27,9 @@ def gen_userdata(req):
     userdata.type = req.type
     userdata.goal_pose = req.goal_pose
     userdata.pile_centroid = req.pile_centroid
-    userdata.shared_regions = req.shared_regions
-
-    ''' --- harcoded for testing ---
-    s = req.type
-
-    # shared region
-    rospy.wait_for_service('/add_shared_region',5.0)
     userdata.shared_regions = {}
-    try:
-        add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
-        req = AddSharedRegionRequest()
-        req.frame_id = 'map'
-        req.waiting_points = [Point(2,-8,0)]
-        p = Polygon()
-        p.points = [Point32(-2,-12,0),Point32(2,-12,0),Point32(2,-8,0),Point32(-2,-8,0)]
-        req.region = p
-        if s:
-            res = add_reg(req)
-        userdata.shared_regions[0]=p
-        req.waiting_points = [Point(-2,-2,0)]
-        p = Polygon()
-        p.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)]
-        req.region = p
-        if s:
-            res = add_reg(req)
-        userdata.shared_regions[1]=p
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
-
-    # other members
-    userdata.type = 'brick'
-    userdata.goal_pose = Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1))
-    userdata.pile_centroid = Point(0.6,-9.8,0)'''
+    for i in range(len(req.shared_regions)):
+        userdata.shared_regions[i] = req.shared_regions[i]
 
     return userdata
 

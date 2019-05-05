@@ -21,6 +21,9 @@ class AgentInterface():
         self.subscribers = {}
         self.servers = {}
 
+        self.isIdle = True
+        agent_fsm.call_transition_cbs = self.check_idle
+
         #init
         self.callables['tf_buffer'] = tf2_ros.Buffer()
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
@@ -43,7 +46,13 @@ class AgentInterface():
         return get_active_states(self.fsm)[0]
 
     def is_agent_idle(self):
-        return 'DEFAULT' in self.fsm.get_active_states()
+        return self.isIdle
+
+    def check_idle(self):
+        self.isIdle = 'DEFAULT' in self.fsm.get_active_states()
+
+    def set_idle(self, isIdle):
+        self.isIdle = isIdle
 
     def get_active_states(self, task):
         actives = []
@@ -236,6 +245,7 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
     def cb(req):
         wrapper.userdata = task.gen_userdata(req)
         if interface.is_agent_idle():
+            interface.set_idle(False) #because the fsm takes some time to do the transition
             interface['exec_task'].publish(
                     ExecTask(agent_id=interface.agent_id,task_id=name))
 

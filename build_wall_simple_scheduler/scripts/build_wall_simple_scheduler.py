@@ -4,11 +4,12 @@ import roslib
 import rospy
 import smach
 import smach_ros
+import numpy as np
 import PyKDL #Vector, Rotation, Quaternion, Frame
 
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Polygon, Point32
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 from mbzirc_comm_objs.srv import PFPNPlace,PFPNPlaceResponse, AddSharedRegion, AddSharedRegionRequest, PFPNPlace, PFPNPlaceRequest, AgentIdle, AgentIdleRequest
 from mbzirc_comm_objs.msg import WallBluePrint
 
@@ -51,16 +52,18 @@ class node():
 
         return PyKDL.Frame(PyKDL.Rotation.Quaternion(0,0,0,1),PyKDL.Vector(x,y,z))
 
-    def sent_task(self,req):
+    def send_task(self,req):
         #keep checking until an agent is idle
         r = rospy.Rate(2)
         while 1:
             if self.isidle_1().isIdle:
+                print 'iddle!'
                 self.pfpnp_1(req)
-                return
+                break
             elif self.isidle_2().isIdle:
                 self.pfpnp_2(req)
                 return
+            r.sleep()
 
     def build_wall_cb(self,req):
 
@@ -68,45 +71,52 @@ class node():
         wall_matrix = self.from_msg_to_matrix(self.wall_map)
         trans_global2wall = from_geom_msgs_Pose_to_KDL_Frame(self.wall_map.wall_frame.pose)
 
+        #print wall_matrix
+
         #call pick from pile Tasks in the right order
+
         for k in range(wall_matrix.shape[0]):
             for j in range(wall_matrix.shape[1]):
                 for i in range(wall_matrix.shape[2]):
                     if wall_matrix[k,j,i] == 1: #red brick
+                        print '1'
                         trans_wall2brick = self.brick_goal_pose(0.30, 0.01,i,j,k)
                         self.pfpnp_req.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         self.pfpnp_req.pile_centroid = self.red_pile.pose.position
-                        self.sent_task(self.pfpnp_req)
+                        self.send_task(self.pfpnp_req)
                     elif wall_matrix[k,j,i] == 2: #green brick
+                        print '2'
                         trans_wall2brick = self.brick_goal_pose(0.60, 0.01,i,j,k)
                         self.pfpnp_req.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         self.pfpnp_req.pile_centroid = self.green_pile.pose.position
-                        self.sent_task(self.pfpnp_req)
+                        self.send_task(self.pfpnp_req)
                     elif wall_matrix[k,j,i] == 3: #blue brick
+                        print '3'
                         trans_wall2brick = self.brick_goal_pose(1.20, 0.01,i,j,k)
                         self.pfpnp_req.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         self.pfpnp_req.pile_centroid = self.blue_pile.pose.position
-                        self.sent_task(self.pfpnp_req)
+                        self.send_task(self.pfpnp_req)
                     elif wall_matrix[k,j,i] == 4: #orange brick
+                        print '4'
                         trans_wall2brick = self.brick_goal_pose(1.80, 0.01,i,j,k)
                         self.pfpnp_req.goal_pose = from_KDL_Frame_to_geom_msgs_Pose(trans_global2wall * trans_wall2brick)
                         self.pfpnp_req.pile_centroid = self.orange_pile.pose.position
-                        self.sent_task(self.pfpnp_req)
+                        self.send_task(self.pfpnp_req)
 
-        return 'success'
+        return EmptyResponse()
 
-    def __init__():
+    def __init__(self):
 
         #clients
         add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
-        self.pfpnp_1 = rospy.ServiceProxy('/the_right_address', PFPNPlace)
-        self.pfpnp_2 = rospy.ServiceProxy('/the_right_address', PFPNPlace)
-        self.isidle_1 = rospy.ServiceProxy('/the_right_address', AgentIdle)
-        self.isidle_2 = rospy.ServiceProxy('/the_right_address', AgentIdle)
+        self.pfpnp_1 = rospy.ServiceProxy('/agent_1/uav_1/pfpnp_task', PFPNPlace)
+        self.pfpnp_2 = rospy.ServiceProxy('/agent_2/uav_2/pfpnp_task', PFPNPlace)
+        self.isidle_1 = rospy.ServiceProxy('/agent_1/uav_1/is_idle', AgentIdle)
+        self.isidle_2 = rospy.ServiceProxy('/agent_2/uav_2/is_idle', AgentIdle)
 
 
         #server
-        rospy.Service('build_wall', Empty, build_wall_cb)
+        rospy.Service('build_wall', Empty, self.build_wall_cb)
 
         #map information
         header = Header(frame_id='map',stamp=rospy.Time.now())
@@ -142,27 +152,27 @@ class node():
         #green pile
         p = Polygon()
         p.points = [Point32(-1.7,8.2,0),Point32(2.3,8.2,0),Point32(2.3,12.2,0),Point32(-1.7,12.2,0)]
-        shared_regions[0] = p
-        waiting_points[0] = [Point(-1.7,8.2,0)]
+        shared_regions[2] = p
+        waiting_points[2] = [Point(-1.7,8.2,0)]
 
         #blue pile
         p = Polygon()
         p.points = [Point32(-11.4,-1.8,0),Point32(-7.4,-1.8,0),Point32(-7.4,2.2,0),Point32(-11.4,2.2,0)]
-        shared_regions[0] = p
-        waiting_points[0] = [Point(-7.4,2.2,0)]
+        shared_regions[3] = p
+        waiting_points[3] = [Point(-7.4,2.2,0)]
 
         #orange pile
         p = Polygon()
         p.points = [Point32(9.8,-1.8,0),Point32(13.8,-1.8,0),Point32(13.8,2.2,0),Point32(9.8,2.2,0)]
-        shared_regions[0] = p
-        waiting_points[0] = [Point(9.8,-1.8,0)]
+        shared_regions[4] = p
+        waiting_points[4] = [Point(9.8,-1.8,0)]
 
 
         for id in shared_regions:
             req = AddSharedRegionRequest()
             req.frame_id = 'map'
             req.waiting_points = waiting_points[id]
-            req.region.points = shared_regions[id]
+            req.region = shared_regions[id]
             res = add_reg(req)
 
         shared_regions =shared_regions
@@ -172,7 +182,7 @@ class node():
         self.pfpnp_req.type = 'brick'
         #self.pfpnp_req.goal_pose =
         #self.pfpnp_req.pile_centroid =
-        self.pfpnp_req.shared_regions = shared_regions
+        self.pfpnp_req.shared_regions = [shared_regions[i] for i in range(5)]
 
 
 def main():
