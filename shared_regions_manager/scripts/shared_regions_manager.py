@@ -10,7 +10,7 @@ class SharedRegionAdmin():
 
     def add_region_cb(self, req):
         #region = (0: frame,1: polygon,2: [Point],3: [wp occupants], 4: queue, 5: region_owner). #TODO: maybe waiting points could be computed here
-        print "add region requested"
+        # print "add region requested"
         self.regions += [[req.frame_id, req.region, req.waiting_points,
                         ["" for i in range(len(req.waiting_points))],
                         Queue.Queue(maxsize=len(req.waiting_points)), ""]]
@@ -26,11 +26,11 @@ class SharedRegionAdmin():
         return RemoveSharedRegionResponse(success=success)
 
     def handle_request_cb(self, req):
-        print "reserve region requested"
         res = RequestSharedRegionResponse()
         if req.region_id in range(len(self.regions)):
             r = self.regions[req.region_id]
             if req.question == RequestSharedRegionRequest.FREE_SHARED_REGION:
+                # print "exit region {r} granted".format(r=req.region_id)
                 res.answer = RequestSharedRegionResponse.OK
                 #release region and move waiting queue
                 next_agent = r[4].get() if not r[4].empty() else ""
@@ -39,12 +39,15 @@ class SharedRegionAdmin():
                         r[3][i] = ""
                 r[5] = next_agent
             elif req.question == RequestSharedRegionRequest.RESERVE_SHARED_REGION:
+                # print "reserve region {r} requested".format(r=req.region_id)
                 #region empty
                 if not r[5]:
+                    # print "reserve region {r} granted".format(r=req.region_id)
                     res.answer = RequestSharedRegionResponse.OK
                     r[5] = req.agent_id
                 #queue not full
                 elif not r[4].full():
+                    # print "reserve region {r} please wait".format(r=req.region_id)
                     res.answer = RequestSharedRegionResponse.WAIT
                     #assigns waiting point and put in queue
                     r[4].put(req.agent_id)
@@ -56,8 +59,10 @@ class SharedRegionAdmin():
                             res.waiting_point = PointStamped(header=h,point=p)
                 #queue is full
                 else:
+                    # print "reserve region {r}  ERROR".format(r=req.region_id)
                     res.answer = RequestSharedRegionResponse.ERROR
         else:
+            # print "reserve region {r}  ERROR".format(r=req.region_id)
             res.answer = RequestSharedRegionResponse.ERROR
 
         #publish owners list
