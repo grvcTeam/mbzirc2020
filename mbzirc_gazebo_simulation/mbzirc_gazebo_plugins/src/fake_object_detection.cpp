@@ -108,7 +108,7 @@ void FakeObjectDetection::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   // resolve tf prefix
   //TODO: works?
   std::string prefix;
-  this->rosnode_->getParam(std::string("tf_prefix"), prefix);
+  this->rosnode_->getParam("/"+robot_name+"/tf_prefix", prefix);
   this->frame_name_ = tf::resolve(prefix, this->frame_name_);
 
   if (this->topic_name_ != "")
