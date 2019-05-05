@@ -17,6 +17,7 @@ from mbzirc_comm_objs.msg import RegionOwnerList
 class Task(smach.State):
 
     def granted_cb(self, msg):
+        self.region_own = -1
         for i in range(len(msg.region_owners)):
             if msg.region_owners[i] == self.iface.agent_id:
                 self.region_own = i
@@ -28,6 +29,7 @@ class Task(smach.State):
             point.z = self.height #TODO: here assuming res.waiting_point is expressed in the same frame as global_frame
             pose = Pose(position=point,orientation=Quaternion(0,0,0,1))
             self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(header=res.waiting_point.header,pose=pose),blocking=True ))
+            rospy.loginfo("REACHED WAITING POINT")
             r = rospy.Rate(10)
             while not self.region_own == region_id:
                 r.sleep()

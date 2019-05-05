@@ -42,19 +42,7 @@ def gen_userdata(req):
     wall.size_z = 2
     wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0]
     userdata.wall_map = wall
-
-    # shared region
-    rospy.wait_for_service('/add_shared_region')
-    try:
-        add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
-        req = AddSharedRegionRequest()
-        req.frame_id = 'map'
-        req.waiting_points = [Point(8,-2,0)]
-        req.region.points = [Point32(8,-2,0),Point32(12,-2,0),Point32(12,2,0),Point32(8,2,0)]
-        res = add_reg(req)
-        userdata.shared_regions = {res.region_id:req.region}
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+    userdata.shared_regions = {}
 
     return userdata
 
