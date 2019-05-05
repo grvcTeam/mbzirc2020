@@ -6,6 +6,7 @@ import smach_ros
 import tf2_ros
 
 from agent_nodes.msg import ExecTask
+from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse
 
 #handles an agent interface. Stores elements in the interface with the particularity
 #that callbacks depends on the active task in the agent fsm
@@ -25,12 +26,24 @@ class AgentInterface():
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
         self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
+        #services
+        self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
+
     def __getitem__(self,item):
 
         if not item in self.callables:
             raise ValueError('{agent_id} AgentInterface does not have an element {element}'.format(agent_id=self.agent_id,element=item))
         else:
             return self.callables[item]
+
+    def is_idle_cb(self,req):
+        return AgentIdleResponse(isIdle=self.is_agent_idle())
+
+    def current_tasks(self):
+        return get_active_states(self.fsm)[0]
+
+    def is_agent_idle(self):
+        return 'DEFAULT' in self.fsm.get_active_states()
 
     def get_active_states(self, task):
         actives = []
@@ -222,7 +235,7 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
 
     def cb(req):
         wrapper.userdata = task.gen_userdata(req)
-        if 'DEFAULT' in interface.fsm.get_active_states():
+        if interface.is_agent_idle():
             interface['exec_task'].publish(
                     ExecTask(agent_id=interface.agent_id,task_id=name))
 
