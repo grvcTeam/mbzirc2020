@@ -16,11 +16,14 @@ class AgentInterface():
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
+
+        # members of the agent interface
         self.callables = {}
         self.callbacks = {}
         self.subscribers = {}
         self.servers = {}
 
+        # elements related with assessing active task
         self.isIdle = True
         agent_fsm.call_transition_cbs = self.check_idle
 
@@ -32,6 +35,7 @@ class AgentInterface():
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
 
+    # returns an interface element
     def __getitem__(self,item):
 
         if not item in self.callables:
@@ -39,21 +43,27 @@ class AgentInterface():
         else:
             return self.callables[item]
 
+    # service callback
     def is_idle_cb(self,req):
         return AgentIdleResponse(isIdle=self.is_agent_idle())
 
+    # return active tasks names
     def current_tasks(self):
         return get_active_states(self.fsm)[0]
 
+    #
     def is_agent_idle(self):
         return self.isIdle
 
+    # AgentFSM transition callback. Used to update isIdle
     def check_idle(self):
         self.isIdle = 'DEFAULT' in self.fsm.get_active_states()
 
+    # force a value for isIdle
     def set_idle(self, isIdle):
         self.isIdle = isIdle
 
+    # find active tasks in AgentFSM
     def get_active_states(self, task):
         actives = []
         a_ids = []
@@ -80,6 +90,7 @@ class AgentInterface():
 
         return actives, a_ids
 
+    # add a publisher to the agent interface
     def add_publisher(self,name,topic_name, data_class, queue_size):
 
         if not name in self.callables:
@@ -87,6 +98,7 @@ class AgentInterface():
         else:
             rospy.logdebug('An element with name {name} already exists in {agent_id} AgentInterface'.format(agent_id=self.agent_id,name=name))
 
+    # add a client to the agent interface
     def add_client(self,name,topic_name, data_class):
 
         if not name in self.callables:
@@ -96,6 +108,7 @@ class AgentInterface():
         else:
             rospy.logdebug('An element with name {name} already exists in this AgentInterface'.format(name=name))
 
+    # add a subscriber to the agent interface
     def add_subscriber(self, task, topic_name, data_class, callback):
 
         if not topic_name in self.callbacks:
@@ -113,7 +126,7 @@ class AgentInterface():
 
         self.callbacks[topic_name][id(task)] = callback
 
-
+    # add a server to the agent interface
     def add_server(self, task, topic_name, data_class, callback, inactive_callback):
 
         if not topic_name in self.callbacks:
@@ -135,6 +148,7 @@ class AgentInterface():
         self.callbacks[topic_name][id(task)] = callback
 
 #Runs in a loop until a request to execute a new task arrives
+#To be executed in paralel with Default task in the DefaultTaskContainer
 class ExecTaskWatch(smach.State):
     def exec_task_cb(self,msg):
         self.task = msg.task_id
@@ -154,18 +168,18 @@ class ExecTaskWatch(smach.State):
                 return self.task if self.task in self.task_list else 'invalid_task'
             r.sleep()
 
-#called if a child state terminates
+#called if a child state terminates in the DefaultTaskContainer
 def child_term_cb(outcome_map):
     return True
 
-#concurrent outcome map
+#concurrent outcome map in the DefaultTaskContainer
 def out_cb(outcome_map):
     if outcome_map['DEFAULT_TASK'] == 'error':
         return 'error'
     else:
         return outcome_map['EXEC_TASK_WATCH']
 
-#default task container running in paralel the execute task watcher
+#default task container running in paralel the execute task watcher and the default task
 class DefaultTaskContainer(smach.Concurrence):
 
     '''Parameters:
@@ -193,9 +207,7 @@ class AgentTaskWrapper(smach.StateMachine):
         with self:
             smach.StateMachine.add(name, task, transitions)
 
-#TODO: maybe implement DefaultTask class??
-
-#Agent sm transiting from requested tasks to default task
+#Agent fsm transiting from requested tasks to default task
 class AgentStateMachine(smach.StateMachine):
 
     def __init__(self):
@@ -229,7 +241,7 @@ class AgentStateMachine(smach.StateMachine):
         else:
             rospy.logerr('Agent State Machine must be initialized before execution')
 
-#Add a task to a tasks dictionary to initialize an AgentFSM
+#Add a task to a tasks dictionary to be used to initialize an AgentFSM
 def add_task(name, tasks_dic, interface, task, task_args = []):
 
     if not hasattr(task, 'Task') or not hasattr(task, 'DataType') or \
