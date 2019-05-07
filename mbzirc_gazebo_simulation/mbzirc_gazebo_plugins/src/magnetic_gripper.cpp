@@ -42,7 +42,7 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
 
   gazebo::physics::ModelPtr model = _parent;
   this->world = model->GetWorld();
-  gazebo::physics::PhysicsEnginePtr physics = this->world->Physics();
+  gazebo::physics::PhysicsEnginePtr physics = this->world->GetPhysicsEngine();
   this->fixedJoint = nullptr;
 
   std::string gripper_link_name = "gripper";
@@ -96,7 +96,7 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
     collisionNames.push_back(collision->GetScopedName());
   }
 
-  this->node->Init(this->world->Name());
+  this->node->Init(this->world->GetName());
   gazebo::physics::ContactManager *contactManager = physics->GetContactManager();
   contactManager->PublishContacts();
 
@@ -150,17 +150,17 @@ void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
   if(this->isMagnetized && !this->fixedJoint && contacts->contact_size()) {
     gazebo::physics::CollisionPtr collision1 =
       boost::dynamic_pointer_cast<gazebo::physics::Collision>(
-      this->world->EntityByName(contacts->contact(0).collision1()));
+      this->world->GetEntity(contacts->contact(0).collision1()));
     gazebo::physics::CollisionPtr collision2 =
       boost::dynamic_pointer_cast<gazebo::physics::Collision>(
-      this->world->EntityByName(contacts->contact(0).collision2()));
+      this->world->GetEntity(contacts->contact(0).collision2()));
 
     gzmsg << "Atached links: [" << collision1->GetLink()->GetName()
           << "] and [" << collision2->GetLink()->GetName() << "]\n";
 
-    ignition::math::Pose3d diff = collision1->GetLink()->WorldPose() -
-                                   collision2->GetLink()->WorldPose();
-    this->fixedJoint = this->world->Physics()->CreateJoint("fixed");
+    gazebo::math::Pose diff = collision1->GetLink()->GetWorldPose() -
+                              collision2->GetLink()->GetWorldPose();
+    this->fixedJoint = this->world->GetPhysicsEngine()->CreateJoint("fixed");
     this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
     this->fixedJoint->Init();
     //advertise attached
