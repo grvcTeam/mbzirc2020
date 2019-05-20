@@ -30,7 +30,7 @@ def gen_userdata(req):
     pose.orientation = Quaternion(0,0,0,1)
     pose.position = Point(0,9.9,0)
     userdata.shared_regions = []
-    userdata.gripper_pose = pose
+    userdata.obj_pose = pose
     return userdata
 
 #aabb format = [xmin, ymin, xmax, ymax] expressed in robot base frame
@@ -60,9 +60,8 @@ def check_collision(occ_grid, aabb, threshold):
     min = coord2index(ori,occ_grid.info.width,occ_grid.info.height,occ_grid.info.resolution,[aabb[0],aabb[1]],True)
     max = coord2index(ori,occ_grid.info.width,occ_grid.info.height,occ_grid.info.resolution,[aabb[2],aabb[3]],False)
 
-    print aabb
-
-    print 'checking collision: ori {ori}, res {res}, w {w}, h {h}, min {min}, max {max}'.format(ori=ori,res=occ_grid.info.resolution,w=occ_grid.info.width,h=occ_grid.info.height,min=min,max=max)
+    #print aabb
+    #print 'checking collision: ori {ori}, res {res}, w {w}, h {h}, min {min}, max {max}'.format(ori=ori,res=occ_grid.info.resolution,w=occ_grid.info.width,h=occ_grid.info.height,min=min,max=max)
 
     #check there are no occupied cells in the range
     for i in range(min[0],max[0]+1):
@@ -77,12 +76,11 @@ def get_safe_pose(occ_grid, aabb, range, threshold, x_step, y_step):
 
     ws_dim = [aabb[2]-aabb[0], aabb[3]-aabb[1]]
 
-    print ws_dim
-
+    '''print ws_dim
     print 'x range'
     print np.arange(range[0],range[2],x_step)
     print 'y range'
-    print np.arange(range[1],range[3],y_step)
+    print np.arange(range[1],range[3],y_step)'''
 
     for x in np.arange(range[0],range[2],x_step): #TODO: take the last one
         for y in np.arange(range[1],range[3],y_step): #TODO: take the last one
@@ -100,7 +98,7 @@ class Task(smach.State):
     #aabbs are supposed to be expressed in robot frame and  centered in the origin
     def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, rb_aabb, ws_aabb):
         smach.State.__init__(self,outcomes=['success','error'],
-                input_keys = ['shared_regions','gripper_pose'],
+                input_keys = ['shared_regions','obj_pose'],
                 io_keys = ['way_pose'])
 
         #members
@@ -131,7 +129,7 @@ class Task(smach.State):
             occ_grid = self.occ_grid
 
         #compute a waypoint from where to grip the object
-        g_point = [userdata.gripper_pose.position.x,userdata.gripper_pose.position.y]
+        g_point = [userdata.obj_pose.position.x,userdata.obj_pose.position.y]
         rb_range = get_aabb_range(self.ws_aabb, self.rb_aabb, g_point)
         min_point = get_safe_pose(occ_grid, self.rb_aabb, rb_range, 0.5, 0.1, 0.1) #TODO threshold, x_step, y_step params
 

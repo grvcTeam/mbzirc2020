@@ -6,7 +6,7 @@
     <node name="agent_node" pkg="agent_nodes" type="ugv_agent_c2.py" output="screen">
         <param name="ugv_ns" value="ugv_1/ual"/>
         <param name="agent_id" value="ugv_1"/>
-        <param name="z_offset" value="0.5" type="double"/>
+        <param name="z_offset" value="0.25" type="double"/>
         <param name="global_frame" value="map"/>
         <param name="ugv_frame" value="base_link"/>
         <param name="gripper_frame" value="gripper_link"/>

@@ -36,7 +36,7 @@ class Task(smach.State):
 
             self.mb_client.send_goal(goal)
             wait = self.mb_client.wait_for_result()
-            
+
             rospy.loginfo("REACHED WAITING POINT")
             r = rospy.Rate(10)
             while not self.region_own == region_id:
@@ -66,7 +66,7 @@ class Task(smach.State):
     def execute(self, userdata):
         #Get UAV pose.
         try:
-            trans_global2uav = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+            trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'
@@ -74,7 +74,7 @@ class Task(smach.State):
 
         #Test if the initial or goal pose are inside of a shared region.
         #TODO: not checking if the path intersects a region
-        uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
+        uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2ugv.transform)
         goal_point = from_geom_msgs_Pose_to_Shapely_Point(userdata.way_pose)
         def point_in_region(point,regions):
             for r_id in regions:
