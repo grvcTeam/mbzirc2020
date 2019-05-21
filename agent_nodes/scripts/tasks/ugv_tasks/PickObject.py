@@ -7,6 +7,7 @@ import moveit_commander
 import sys
 from moveit_commander.exception import MoveItCommanderException
 import moveit_msgs
+import copy
 
 from utils.geom import *
 from utils.agent import *
@@ -33,7 +34,7 @@ def gen_userdata(req):
     userdata = smach.UserData()
     pose = Pose()
     pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(0,9.9,0)
+    pose.position = Point(0.106,9.9,0)
     userdata.shared_regions = []
     userdata.obj_pose = pose
     userdata.type = 'brick'
@@ -42,6 +43,18 @@ def gen_userdata(req):
 
 # main class
 class Task(smach.State):
+
+    def arm_vertical(self, inc):
+
+        vals = self.group.get_current_joint_values()
+        vals[1] = vals[1] + inc
+        try:
+          self.group.set_joint_value_target(vals)
+        except MoveItCommanderException, e:
+          print 'can not set goal pose'
+          print e
+        finally:
+          self.group.go(wait=True)
 
     def attached_cb(self, msg):
         rospy.logdebug('Attached changed!!')
@@ -64,9 +77,9 @@ class Task(smach.State):
         self.z_offset = z_offset
 
         #interface elements
-        #interface.add_client('cli_magnetize',ugv_ns+'/'+'magnetize',Magnetize)
-        #interface.add_subscriber(self,ugv_ns+'/'+'attached', GripperAttached,
-        #                        self.attached_cb)
+        interface.add_client('cli_magnetize','/'+'magnetize',Magnetize)
+        interface.add_subscriber(self,'/'+'attached', GripperAttached,
+                                self.attached_cb)
 
         self.iface = interface
 
@@ -91,11 +104,10 @@ class Task(smach.State):
 
         #move gripper to close to object pose
         #print self.group.get_pose_reference_frame()
-
-        self.group.set_goal_position_tolerance(0.01) #TODO: param
+        self.group.set_goal_position_tolerance(0.02) #TODO: param
 
         pose_target = userdata.obj_pose
-        pose_target.orientation = Quaternion(0.487505048212,0.485644673398,-0.511961062221,0.514182798172)
+        pose_target.orientation = Quaternion(0.487505048212,0.485644673398,-0.511961062221,0.514182798172) #gripper facing downwards
         pose_target.position.z = pose_target.position.z + self.z_offset
 
         header = Header(frame_id=self.global_frame,stamp=rospy.Time.now())
@@ -105,40 +117,40 @@ class Task(smach.State):
         self.group.execute(plan)
 
         #active magnetic gripper
-        '''self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
+        self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
-        #send velocity commands until the object is gripped
-        vel_cmd = TwistStamped()
-        vel_cmd.header.frame_id = self.global_frame
-        vel_cmd.twist.linear.z = -0.1 #TODO: should be a parameter
+        #move gripper vertically until contact
         rate = rospy.Rate(10.0)
-        trans_uav2global = None
         while not self.gripper_attached:
-            vel_cmd.header.stamp = rospy.Time.now()
-            self.iface['pub_velocity'].publish(vel_cmd)
+            self.arm_vertical(0.01)
             rate.sleep()
 
-        rospy.logdebug('Attached!!')
-
         #compute object pose respect to itself for output_keys
-        if not trans_uav2global:
-            try:
-                trans_uav2global = lookup_tf_transform(self.ugv_frame, self.global_frame,self.iface['tf_buffer'],5)
-            except Exception as error:
-                print repr(error)
-                print self.name + ' Task could not be executed'
-                return 'error'
-
-        trans_gripper2object = from_geom_msgs_Transform_to_KDL_Frame(trans_uav2global.transform) * trans_global2object
-        userdata.trans_gripper2object = from_KDL_Frame_to_geom_msgs_Transform(trans_gripper2object)
-
         try:
-            trans_global2uav = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+            trans_gripper2global = lookup_tf_transform(self.gripper_frame, self.global_frame,self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'
             return 'error'
 
-        self.iface['cli_take_off'](TakeOffRequest(height=self.height-trans_global2uav.transform.translation.z,blocking=True))'''
+        #moves object to carry position
+        self.arm_vertical(-0.1)
+
+        wpose = self.group.get_current_pose().pose
+        wpose.position.z = wpose.position.z + 0.5
+
+        (plan, fraction) = self.group.compute_cartesian_path(
+                             [wpose],   # waypoints to follow
+                             0.01,        # eef_step
+                             0.0)         # jump_threshold
+
+        self.group.execute(plan)
+
+        rospy.logdebug('Attached!!')
+
+        #compute object pose respect to itself for output_keys
+        trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.obj_pose)
+        trans_gripper2object = from_geom_msgs_Transform_to_KDL_Frame(trans_gripper2global.transform) * trans_global2object
+        userdata.trans_gripper2object = from_KDL_Frame_to_geom_msgs_Transform(trans_gripper2object)
 
         return 'success'

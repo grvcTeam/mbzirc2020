@@ -9,7 +9,7 @@
         <param name="z_offset" value="0.25" type="double"/>
         <param name="global_frame" value="map"/>
         <param name="ugv_frame" value="base_link"/>
-        <param name="gripper_frame" value="gripper_link"/>
+        <param name="gripper_frame" value="ur5_ee_link"/>
     </node>
 
 </launch>

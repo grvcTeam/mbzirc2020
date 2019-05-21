@@ -4,6 +4,9 @@ import rospy
 import actionlib
 import moveit_commander
 from moveit_commander.exception import MoveItCommanderException
+import moveit_msgs
+import copy
+import geometry_msgs
 
 from control_msgs.msg import GripperCommandAction, GripperCommandGoal
 from std_srvs.srv import Empty
