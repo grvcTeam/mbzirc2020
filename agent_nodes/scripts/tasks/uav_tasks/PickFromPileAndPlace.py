@@ -13,7 +13,7 @@ import tasks.uav_tasks.GoToWaypoint as GoToWaypoint
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3, Polygon, Point32
 
 # required message definitions
-from mbzirc_comm_objs.srv import PFPNPlace,PFPNPlaceResponse, AddSharedRegion, AddSharedRegionRequest
+from mbzirc_comm_objs.srv import PFPNPlace,PFPNPlaceResponse
 
 # task properties
 ResponseType = PFPNPlaceResponse

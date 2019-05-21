@@ -9,6 +9,7 @@ from utils.agent import *
 import tasks.ugv_tasks.Idle
 import tasks.ugv_tasks.GoToGripPose
 import tasks.ugv_tasks.PickObject
+import tasks.ugv_tasks.PlaceObject
 
 def main():
 
@@ -34,6 +35,7 @@ def main():
     tasks_dic = {}
     add_task('gogrip_task', tasks_dic, iface, tasks.ugv_tasks.GoToGripPose, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb])
     add_task('pick_task', tasks_dic, iface, tasks.ugv_tasks.PickObject, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
+    add_task('place_task', tasks_dic, iface, tasks.ugv_tasks.PlaceObject, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
 
     # initialize state machine
     fsm.initialize(id, default_task, tasks_dic)

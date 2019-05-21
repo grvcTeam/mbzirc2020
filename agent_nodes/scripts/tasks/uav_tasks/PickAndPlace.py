@@ -11,7 +11,7 @@ import tasks.uav_tasks.PlaceObject as PlaceObject
 import tasks.uav_tasks.GoToWaypoint as GoToWaypoint
 
 # required message definitions
-from mbzirc_comm_objs.srv import PickNPlace,PickNPlaceResponse, AddSharedRegion, AddSharedRegionRequest
+from mbzirc_comm_objs.srv import PickNPlace,PickNPlaceResponse
 
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3, Polygon, Point32
 

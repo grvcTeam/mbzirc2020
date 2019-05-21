@@ -18,7 +18,7 @@ import tasks.ugv_tasks.GoToGripPose as GoToGripPose
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
 from std_msgs.msg import Header
-from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point
+from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3
 
 from std_srvs.srv import SetBool, SetBoolResponse
 
@@ -38,7 +38,7 @@ def gen_userdata(req):
     userdata.shared_regions = []
     userdata.obj_pose = pose
     userdata.type = 'brick'
-    userdata.scale = None
+    userdata.scale = Vector3(0.2,0.2,0.2)
     return userdata
 
 # main class
@@ -108,7 +108,7 @@ class Task(smach.State):
 
         pose_target = userdata.obj_pose
         pose_target.orientation = Quaternion(0.487505048212,0.485644673398,-0.511961062221,0.514182798172) #gripper facing downwards
-        pose_target.position.z = pose_target.position.z + self.z_offset
+        pose_target.position.z = pose_target.position.z + userdata.scale.z/2 + self.z_offset
 
         header = Header(frame_id=self.global_frame,stamp=rospy.Time.now())
         self.group.set_pose_target(PoseStamped(header=header,pose=pose_target))
@@ -122,7 +122,7 @@ class Task(smach.State):
         #move gripper vertically until contact
         rate = rospy.Rate(10.0)
         while not self.gripper_attached:
-            self.arm_vertical(0.01)
+            self.arm_vertical(-0.01)
             rate.sleep()
 
         #compute object pose respect to itself for output_keys
@@ -134,7 +134,7 @@ class Task(smach.State):
             return 'error'
 
         #moves object to carry position
-        self.arm_vertical(-0.1)
+        self.arm_vertical(0.1)
 
         wpose = self.group.get_current_pose().pose
         wpose.position.z = wpose.position.z + 0.5
