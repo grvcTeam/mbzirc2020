@@ -117,7 +117,7 @@ class Task(smach.State):
         self.group.execute(plan)
 
         #active magnetic gripper
-        self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
+        #self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
         #move gripper vertically until contact
         rate = rospy.Rate(10.0)
