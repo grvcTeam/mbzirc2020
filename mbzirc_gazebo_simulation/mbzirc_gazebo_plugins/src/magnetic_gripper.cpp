@@ -160,9 +160,13 @@ void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
 
     ignition::math::Pose3d diff = collision1->GetLink()->WorldPose() -
                                    collision2->GetLink()->WorldPose();
+
+
     this->fixedJoint = this->world->Physics()->CreateJoint("fixed");
     this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
+    this->fixedJoint->ApplyStiffnessDamping();
     this->fixedJoint->Init();
+
     //advertise attached
     mbzirc_comm_objs::GripperAttached msg;
     msg.attached = true;

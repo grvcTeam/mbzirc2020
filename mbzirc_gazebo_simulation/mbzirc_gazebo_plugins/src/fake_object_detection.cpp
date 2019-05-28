@@ -224,8 +224,15 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
           rec_object.type = type_from_name(collision->GetLink()->GetName());
 
           //Pose
-          link_pose = collision->GetLink()->WorldPose();
-          link_pose = sensor_frame_pose.Inverse() * link_pose;
+          ignition::math::Pose3d link_pose_g = collision->GetLink()->WorldPose();
+          link_pose = link_pose_g - sensor_frame_pose;
+
+          /*if(rec_object.type == "brick") {
+          std::cout << this->parent_link_->GetName() << std::endl;
+          std::cout << sensor_frame_pose << std::endl;
+          std::cout << link_pose_g << std::endl;
+        std::cout << link_pose << std::endl;}*/
+
 
           rec_object.pose.pose.position.x = link_pose.Pos().X();
           rec_object.pose.pose.position.y = link_pose.Pos().Y();
