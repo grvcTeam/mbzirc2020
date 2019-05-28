@@ -1,12 +1,17 @@
+<?xml version="1.0"?>
 <launch>
   <arg name="x" default="0" />
   <arg name="y" default="0" />
   <arg name="z" default="0" />
+
+    <include file="$(find atrvjr_description)/launch/atrv_ur5.launch" /> 
+    <!--<include file="$(find atrvjr_moveit_config)/launch/atrvjr_movit.launch" />
+    <include file="$(find atrvjr_description)/launch/navigation.launch" />-->
   
     <node name="agent_node" pkg="agent_nodes" type="ugv_agent_c2.py" output="screen">
         <param name="ugv_ns" value="ugv_1/ual"/>
         <param name="agent_id" value="ugv_1"/>
-        <param name="z_offset" value="0.25" type="double"/>
+        <param name="z_offset" value="0.15" type="double"/>
         <param name="global_frame" value="map"/>
         <param name="ugv_frame" value="base_link"/>
         <param name="gripper_frame" value="ur5_ee_link"/>
