@@ -1,5 +1,6 @@
 controller_frequency: 5.0
 recovery_behaviour_enabled: true
+recovery_behaviors: [{name: rotate_recovery, type: rotate_recovery/RotateRecovery}] 
 
 NavfnROS:
   allow_unknown: true # Specifies whether or not to allow navfn to create plans that traverse unknown space.
@@ -10,7 +11,7 @@ TrajectoryPlannerROS:
   acc_lim_x: 2.5
   acc_lim_theta:  3.2
 
-  max_vel_x: 1.0
+  max_vel_x: 5.0
   min_vel_x: 0.0
 
   max_vel_theta: 1.0
