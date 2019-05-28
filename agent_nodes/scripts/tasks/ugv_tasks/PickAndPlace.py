@@ -22,7 +22,7 @@ transitions={'success':'success','error':'error'}
 # function to create userdata from a task execution request matching the task
 # input keys
 def gen_userdata(req):
-    userdata = smach.UserData()
+    '''userdata = smach.UserData()
     userdata.type = req.type
     userdata.scale = req.scale
     userdata.goal_pose = req.goal_pose
@@ -30,6 +30,25 @@ def gen_userdata(req):
     userdata.shared_regions = {}
     for i in range(len(req.shared_regions)):
         userdata.shared_regions[i] = req.shared_regions[i]
+
+    return userdata'''
+
+    userdata = smach.UserData()
+
+    userdata.shared_regions = []
+
+    pose = Pose()
+    pose.orientation = Quaternion(0,0,0.707106781186547,0.707106781186547)
+    pose.position = Point(10,0,0)
+    userdata.obj_pose = pose
+    userdata.type = 'brick'
+    userdata.scale = Vector3(0.6,0.2,0.2)
+
+    pose = Pose()
+    pose.orientation = Quaternion(0,0,0,1)
+    pose.position = Point(0,0,0)
+    userdata.shared_regions = []
+    userdata.goal_pose = pose
 
     return userdata
 

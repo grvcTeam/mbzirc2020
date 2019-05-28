@@ -18,29 +18,9 @@ import tasks.ugv_tasks.GoToGripPose as GoToGripPose
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
 from std_msgs.msg import Header
-from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3
+from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3, Twist
 
 from std_srvs.srv import SetBool, SetBoolResponse
-
-# task properties
-ResponseType = SetBoolResponse
-DataType = SetBool
-transitions={'success':'success','error':'error'}
-
-# function to create userdata from a task execution request matching the task
-# input keys
-def gen_userdata(req):
-
-    userdata = smach.UserData()
-    pose = Pose()
-    pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(0,0,0)
-    userdata.shared_regions = []
-    userdata.goal_pose = pose
-    userdata.type = 'brick'
-    userdata.scale = Vector3(0.2,0.2,0.2)
-    userdata.trans_gripper2object = pose
-    return userdata
 
 # main class
 class Task(smach.State):
@@ -81,6 +61,8 @@ class Task(smach.State):
         interface.add_client('cli_magnetize','/'+'magnetize',Magnetize)
         interface.add_subscriber(self,'/'+'attached', GripperAttached,
                                 self.attached_cb)
+        interface.add_publisher('pub_vel','/mobile_base_controller/cmd_vel',
+                                Twist, 10)
 
         self.iface = interface
 
@@ -111,7 +93,7 @@ class Task(smach.State):
 
         #move gripper to drop pose
         #print self.group.get_pose_reference_frame()
-        self.group.set_goal_position_tolerance(0.02) #TODO: param
+        self.group.set_goal_position_tolerance(0.04) #TODO: param
         pose_target = from_KDL_Frame_to_geom_msgs_Pose(trans_global2gripper)
         header = Header(frame_id=self.global_frame,stamp=rospy.Time.now())
         self.group.set_pose_target(PoseStamped(header=header,pose=pose_target))
@@ -121,5 +103,16 @@ class Task(smach.State):
 
         # drop the object
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=False ))
+        rospy.sleep(2.) #wait for stabilization
+
+        # move away cause move_base gets stuck
+        rate = rospy.Rate(10.0)
+        ctr = 0
+        while ctr < 20:
+            ctr += 1
+            self.iface['pub_vel'].publish(Twist(linear=Vector3(-0.5,0,0)))
+            rate.sleep()
+
+        rospy.sleep(1.) #wait for stabilization
 
         return 'success'

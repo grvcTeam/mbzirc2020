@@ -34,27 +34,31 @@ def gen_userdata(req):
     userdata = smach.UserData()
     pose = Pose()
     pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(0.106,9.9,0)
+    pose.position = Point(0.350020373191,-9.74999731461,0.0999974468085)
     userdata.shared_regions = []
     userdata.obj_pose = pose
     userdata.type = 'brick'
-    userdata.scale = Vector3(0.2,0.2,0.2)
+    userdata.scale = Vector3(0.3,0.2,0.2)
     return userdata
 
 # main class
 class Task(smach.State):
 
-    def arm_vertical(self, inc):
+    def go_to_joint_pose(self, pose):
 
-        vals = self.group.get_current_joint_values()
-        vals[1] = vals[1] + inc
         try:
-          self.group.set_joint_value_target(vals)
+          self.group.set_joint_value_target(pose)
         except MoveItCommanderException, e:
           print 'can not set goal pose'
           print e
         finally:
           self.group.go(wait=True)
+
+    def arm_vertical(self, inc):
+
+        vals = self.group.get_current_joint_values()
+        vals[2] = vals[2] + inc
+        self.go_to_joint_pose(vals)
 
     def attached_cb(self, msg):
         rospy.logdebug('Attached changed!!')
@@ -103,8 +107,14 @@ class Task(smach.State):
         self.call_task('go_task',userdata)
 
         #move gripper to close to object pose
+        #go to harcoded joint pose
+        grip_pose = [0.0008393889069360227, -0.008401700396952982, 0.5992523496947246, -2.2012104337559846, -1.598768962404419, -0.00019741267188067013]
+        hold_pose = [0.0009725755082081733, -0.7091356220415337, 1.2990882056648774, -2.200745601415173, -1.5986056177795644, -0.0003149149102164017]
+
+        self.go_to_joint_pose(grip_pose)
+
         #print self.group.get_pose_reference_frame()
-        self.group.set_goal_position_tolerance(0.02) #TODO: param
+        '''self.group.set_goal_position_tolerance(0.02) #TODO: param
 
         pose_target = userdata.obj_pose
         pose_target.orientation = Quaternion(0.487505048212,0.485644673398,-0.511961062221,0.514182798172) #gripper facing downwards
@@ -114,15 +124,15 @@ class Task(smach.State):
         self.group.set_pose_target(PoseStamped(header=header,pose=pose_target))
 
         plan = self.group.plan()
-        self.group.execute(plan)
+        self.group.execute(plan)'''
 
         #active magnetic gripper
-        #self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
+        self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
         #move gripper vertically until contact
         rate = rospy.Rate(10.0)
         while not self.gripper_attached:
-            self.arm_vertical(-0.01)
+            self.arm_vertical(0.01)
             rate.sleep()
 
         #compute object pose respect to itself for output_keys
@@ -134,8 +144,7 @@ class Task(smach.State):
             return 'error'
 
         #moves object to carry position
-        self.arm_vertical(0.1)
-
+        '''self.arm_vertical(-0.1)
         wpose = self.group.get_current_pose().pose
         wpose.position.z = wpose.position.z + 0.5
 
@@ -144,7 +153,9 @@ class Task(smach.State):
                              0.01,        # eef_step
                              0.0)         # jump_threshold
 
-        self.group.execute(plan)
+        self.group.execute(plan)'''
+
+        self.go_to_joint_pose(hold_pose)
 
         rospy.logdebug('Attached!!')
 
