@@ -91,6 +91,22 @@ void FakeObjectDetection::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
           this->topic_name_ << std::endl;
   }
 
+  this->service_name_ = "set_types";
+  sdf::ElementPtr serviceName = _sdf->GetElement("service_name");
+  if (!serviceName)
+  {
+    gzmsg << "fake object detection: Using default serviceName " <<
+          this->service_name_ <<
+          " because no <serviceName> element specified." <<
+          std::endl;
+  }
+  else
+  {
+    this->service_name_ = serviceName->Get<std::string>();
+    gzmsg << "fake object detection: Using serviceName " <<
+          this->service_name_ << std::endl;
+  }
+
   this->laser_connect_count_ = 0;
 
   // Initialize ROS stuff
@@ -120,11 +136,23 @@ void FakeObjectDetection::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
     this->pub_ = this->rosnode_->advertise(ao);
   }
 
+  if (this->service_name_ != "")
+    this->srv_ = this->rosnode_->advertiseService(this->service_name_, &FakeObjectDetection::ChangeTypesCB, this);
+
   // sensor generation off by default
   this->parent_ray_sensor_->SetActive(false);
   this->callback_laser_queue_thread_ = boost::thread( boost::bind( &FakeObjectDetection::LaserQueueThread,this ) );
 
   gzmsg << "Loaded fake object detection plugin" << std::endl;
+}
+
+// Change Detection Types
+bool FakeObjectDetection::ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
+                          mbzirc_comm_objs::DetectTypes::Response &res)
+{
+  this->type_list = req.types;
+  res.success = true;
+  return true;
 }
 
 // Increment count
@@ -222,6 +250,8 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
       {
           //Type
           rec_object.type = type_from_name(collision->GetLink()->GetName());
+          if(this->type_list.size() && std::find(this->type_list.begin(), this->type_list.end(), rec_object.type) == this->type_list.end())
+            continue;
 
           //Pose
           ignition::math::Pose3d link_pose_g = collision->GetLink()->WorldPose();

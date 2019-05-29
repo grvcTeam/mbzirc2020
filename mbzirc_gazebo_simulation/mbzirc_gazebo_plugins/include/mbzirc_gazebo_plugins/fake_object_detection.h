@@ -10,6 +10,7 @@
 #include <sensor_msgs/ChannelFloat32.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
+#include <mbzirc_comm_objs/DetectTypes.h>
 
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
@@ -52,6 +53,8 @@ namespace gazebo
 
       // Publish Recognition data to the ROS topic
       void PutRecData(common::Time &_updateTime);
+      bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
+                                mbzirc_comm_objs::DetectTypes::Response &res);
 
       physics::WorldPtr world_;
       physics::LinkPtr parent_link_;
@@ -62,9 +65,12 @@ namespace gazebo
 
       std::unique_ptr<ros::NodeHandle> rosnode_;
       ros::Publisher pub_;
+      ros::ServiceServer srv_;
       mbzirc_comm_objs::ObjectDetectionList rec_list;
+      std::vector<std::string> type_list;
 
       std::string topic_name_;
+      std::string service_name_;
       std::string frame_name_;
       std::string robot_namespace_;
 

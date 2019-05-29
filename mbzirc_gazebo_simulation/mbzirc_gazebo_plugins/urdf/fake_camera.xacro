@@ -54,7 +54,8 @@
           </ray>
           <plugin name="ros_object_detection" filename="libfake_object_detection_plugin.so">
               	    <topic_name>sensed_objects</topic_name>
-  	                <robot_name>${robot_name}</robot_name>
+              	    <service_name>set_types</service_name>
+  	            <robot_name>${robot_name}</robot_name>
           </plugin>
           <always_on>1</always_on>
           <update_rate>30</update_rate>
