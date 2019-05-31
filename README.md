@@ -8,7 +8,8 @@ NOTE: this is the parent src folder in a typical catkin structure
 
 External dependencies:
 
-- shapely python package. Can be install with: pip install shapely
+- shapely python package: pip install shapely
+- pydispatch python package: sudo apt install python-pydispatch
 
 
 -------------------
