@@ -20,33 +20,15 @@
   <!-- Instantiate dji_f550 "mechanics" -->
   <xacro:include filename="$(find uavs_description)/models/dji_f550/geometry.xacro" />
 
-  <!-- Magnetic gripper -->
-  <!--link name="magnetic_gripper">
-    <inertial>
-      <origin xyz="0 0 0"/>
-      <mass value="0.015"/>
-      <inertia ixx="1e-05" ixy="0" ixz="0" iyy="1e-05" iyz="0" izz="1e-05"/>
-    </inertial>
-    <visual>
-      <origin xyz="0 0 0"/>
-      <geometry>
-        <cylinder radius="0.01" length="0.01"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="base_to_gripper" type="revolute">
-    <origin xyz="0 0 0"/>
-    <parent link="base_link"/>
-    <child link="magnetic_gripper"/>
-    <limit effort="0" lower="0" upper="0" velocity="0"/>
-  </joint-->
-  <gazebo>
-    <plugin name="magnetic_gripper" filename="libmagnetic_gripper_plugin.so">
-      <!-- <robotNamespace>"${namespace}"</robotNamespace> -->
-      <gripper_link_name>base_link</gripper_link_name>
-      <robot_name>dji_f550_$(arg robot_id)</robot_name>
-    </plugin>
-  </gazebo>
+<include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
+<magnetic_gripper parent="base_link" robot_name="dji_f550_$(arg robot_id)">
+		<origin xyz="0 0 -0.275" rpy="0 0 0" />
+</magnetic_gripper>
+
+<include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+<fake_camera parent="base_link" robot_name="dji_f550_$(arg robot_id)">
+		<origin xyz="0.5 0 -0.27" rpy="0 1.57 0" />
+</fake_camera>
 
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->
