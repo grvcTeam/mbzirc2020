@@ -4,6 +4,8 @@ project(mbzirc_gazebo_plugins)
 find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
   roscpp
+  rospy
+  std_msgs
   mbzirc_comm_objs
   sensor_msgs
   geometry_msgs
@@ -57,6 +59,8 @@ add_library(fake_object_detection_plugin SHARED src/fake_object_detection.cpp)
 add_dependencies(magnetic_gripper_plugin ${catkin_EXPORTED_TARGETS})
 add_dependencies(fake_object_detection_plugin ${catkin_EXPORTED_TARGETS})
 
+add_executable(target_drone_trajectory src/target_drone_trajectory.cpp)
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(magnetic_gripper_plugin
 	${catkin_LIBRARIES}
@@ -70,3 +74,7 @@ target_link_libraries(fake_object_detection_plugin
 	${Boost_LIBRARIES}
   RayPlugin
 )
+
+ target_link_libraries(target_drone_trajectory
+   ${catkin_LIBRARIES}
+ )

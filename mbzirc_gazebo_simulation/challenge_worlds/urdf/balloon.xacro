@@ -1,0 +1,636 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="balloon"
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:arg name="id"         default="0"/>
+    <xacro:arg name="x"          default="0"/>
+    <xacro:arg name="y"          default="0"/>
+    <xacro:arg name="z"          default="0"/>
+    <xacro:arg name="height"     default="2"/>
+    <xacro:arg name="colour"      default="Gazebo/red"/>
+
+    <xacro:property name="mesh_balloon"                value="$(find challenge_worlds)/meshes/balloon.dae" />
+    <xacro:property name="balloon_radio"               value="0.24"/>
+    <xacro:property name="balloon_height"              value="0.36"/>
+    <xacro:property name="balloon_model_scale_factor"  value="0.0025"/>
+
+    <xacro:property name="bar_length"                  value="$(arg height)"/>
+    <xacro:property name="sphere_rad"                  value="0.02"/>
+
+    <xacro:property name="base_height"                 value="0.1"/>
+    <xacro:property name="base_side"                   value="1"/>
+
+    <!-- <xacro:include filename="$(find dji_f450_description)/urdf/dji_f450.gazebo" /> -->
+    <!-- <xacro:include filename="$(find dji_f450_description)/urdf/materials.xacro" /> -->
+
+    <!-- TODO: simplify poses referenciation-->
+    <!-- TODO: fix slow balloon movements-->
+
+
+
+
+
+    <!--================STANDED BALLOON MACRO=================-->
+    <xacro:macro name="standed_balloon" >
+
+      <link name='base'>
+        <kinematic>1</kinematic>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <gravity>1</gravity>
+        <visual name='visual'>
+          <transparency>1</transparency>
+          <geometry>
+            <box>
+              <size>${base_side} ${base_side} ${base_height}</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.2 0.2 1</ambient>
+            <diffuse>0.421 0.225 0 1</diffuse>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <script>
+              <name>ModelPreview_1::roof::visual_MATERIAL_</name>
+              <uri>__default__</uri>
+            </script>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <box>
+              <size>${base_side} ${base_side} ${base_height}</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.1</mu>
+                <mu2>0</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <use_patch_radius>1</use_patch_radius>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <link name="sphere_base">
+        <pose frame=''>0 0 ${(base_height/2)+sphere_rad} 0 -0 0</pose>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.67 0.658 0.658 1</ambient>
+            <diffuse>0.421 0.225 0 1</diffuse>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <script>
+              <name>ModelPreview_1::sphere_1::visual_MATERIAL_</name>
+              <uri>__default__</uri>
+            </script>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <patch_radius>0</patch_radius>
+                <surface_radius>0</surface_radius>
+                <use_patch_radius>1</use_patch_radius>
+                <ode>
+                  <slip>0</slip>
+                </ode>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <joint name='base_2_sphere_base_joint' type='fixed'>
+        <pose frame=''>0 0 ${(base_height/2)} 0 -0 0</pose>
+        <parent>base</parent>
+        <child>sphere_base</child>
+        <physics>
+          <ode>
+            <limit>
+              <erp>0.2</erp>
+            </limit>
+            <suspension>
+              <erp>0.2</erp>
+            </suspension>
+          </ode>
+        </physics>
+      </joint>
+
+      <link name='bar'>
+        <pose frame=''>0 0 ${((base_height+bar_length)/2)+2*sphere_rad} 0 -0 0</pose>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>0.166671</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.166671</iyy>
+            <iyz>0</iyz>
+            <izz>9e-06</izz>
+          </inertia>
+          <mass>0.5</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>0</gravity>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>0.006</radius>
+              <length>${bar_length}</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.729 0.552 0.384 1</ambient>
+            <diffuse>0.421 0.225 0 1</diffuse>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <script>
+              <name>ModelPreview_1::bar::visual_MATERIAL_</name>
+              <uri>__default__</uri>
+            </script>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <cylinder>
+              <radius>0.006</radius>
+              <length>${bar_length}</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <use_patch_radius>1</use_patch_radius>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <joint name='sphere_base_2_bar_joint' type='fixed'>
+        <pose frame=''>0 0 ${(base_height/2)+2*sphere_rad} 0 -0 0</pose>
+        <parent>sphere_base</parent>
+        <child>bar</child>
+        <physics>
+          <ode>
+            <limit>
+              <erp>0.2</erp>
+            </limit>
+            <suspension>
+              <erp>0.2</erp>
+            </suspension>
+          </ode>
+        </physics>
+      </joint>
+
+      <link name="sphere_mid">
+        <pose frame=''>0 0 ${(base_height/2)+3*sphere_rad+bar_length} 0 -0 0</pose>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.67 0.658 0.658 1</ambient>
+            <diffuse>0.421 0.225 0 1</diffuse>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <script>
+              <name>ModelPreview_1::sphere_1::visual_MATERIAL_</name>
+              <uri>__default__</uri>
+            </script>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <patch_radius>0</patch_radius>
+                <surface_radius>0</surface_radius>
+                <use_patch_radius>1</use_patch_radius>
+                <ode>
+                  <slip>0</slip>
+                </ode>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <joint name='bar_2_sphere_mid_joint' type='fixed'>
+        <pose frame=''>0 0 ${(base_height/2)+2*sphere_rad+bar_length} 0 -0 0</pose>
+        <parent>bar</parent>
+        <child>sphere_mid</child>
+        <physics>
+          <ode>
+            <limit>
+              <erp>0.2</erp>
+            </limit>
+            <suspension>
+              <erp>0.2</erp>
+            </suspension>
+          </ode>
+        </physics>
+      </joint>
+
+      <link name="sphere_top">
+        <pose frame=''>0 0 ${(base_height/2)+5*sphere_rad+bar_length} 0 -0 0</pose>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+        <visual name='visual'>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.67 0.658 0.658 1</ambient>
+            <diffuse>0.421 0.225 0 1</diffuse>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader>
+            <script>
+              <name>ModelPreview_1::sphere_1::visual_MATERIAL_</name>
+              <uri>__default__</uri>
+            </script>
+            <specular>0 0 0 1</specular>
+            <emissive>0 0 0 1</emissive>
+          </material>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <sphere>
+              <radius>${sphere_rad}</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <patch_radius>0</patch_radius>
+                <surface_radius>0</surface_radius>
+                <use_patch_radius>1</use_patch_radius>
+                <ode>
+                  <slip>0</slip>
+                </ode>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <joint name='sphere_mid_2_sphere_top_joint' type='ball'>
+        <parent>sphere_mid</parent>
+        <child>sphere_top</child>
+        <physics>
+          <ode>
+            <limit>
+              <erp>0.2</erp>
+            </limit>
+            <suspension>
+              <erp>0.2</erp>
+            </suspension>
+          </ode>
+        </physics>
+      </joint>
+
+      <link name='balloon'>
+        <pose frame=''>0 0 ${((base_height+balloon_height)/2)+6*sphere_rad+bar_length} 0 -0 0</pose>
+        <self_collide>1</self_collide>
+        <inertial>
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <inertia>
+            <ixx>0.000156</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.000156</iyy>
+            <iyz>0</iyz>
+            <izz>9.6e-05</izz>
+          </inertia>
+          <mass>0.01</mass>
+        </inertial>
+        <enable_wind>1</enable_wind>
+        <kinematic>0</kinematic>
+        <gravity>0</gravity>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>${mesh_balloon}</uri>
+              <scale>${balloon_model_scale_factor*balloon_radio} ${balloon_model_scale_factor*balloon_radio} ${balloon_model_scale_factor*balloon_radio}</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <!-- <ambient>0 0 0 1</ambient>
+            <diffuse>0 0 0 1</diffuse>
+            <specular>1 1 1 1</specular>
+            <shader type='pixel'>
+              <normal_map>__default__</normal_map>
+            </shader> -->
+            <script>
+              <uri>$(find challenge_worlds)/materials/mbzirc.material</uri>
+              <name>$(arg colour)</name>
+            </script>
+          </material>
+          <pose frame=''>0 0 -0.19 0 -0 0</pose>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <geometry>
+            <box>
+              <size>${balloon_radio} ${balloon_radio} ${balloon_height}</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+              </ode>
+              <torsional>
+                <coefficient>1</coefficient>
+                <use_patch_radius>1</use_patch_radius>
+              </torsional>
+            </friction>
+            <bounce>
+              <threshold>1e+06</threshold>
+            </bounce>
+            <contact>
+              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
+              <collide_bitmask>1</collide_bitmask>
+              <ode>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+              </ode>
+              <bullet>
+                <split_impulse>1</split_impulse>
+                <split_impulse_penetration_threshold>-0.01</split_impulse_penetration_threshold>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+13</kp>
+                <kd>1</kd>
+              </bullet>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <joint name='sphere_top_2_balloon_joint' type='fixed'>
+        <pose frame=''>0 0 ${(base_height/2)+6*sphere_rad+bar_length} 0 -0 0</pose>
+        <parent>sphere_top</parent>
+        <child>balloon</child>
+        <physics>
+          <ode>
+            <limit>
+              <erp>0.2</erp>
+            </limit>
+            <suspension>
+              <erp>0.2</erp>
+            </suspension>
+          </ode>
+        </physics>
+      </joint>
+
+    </xacro:macro>
+
+
+
+    <xacro:standed_balloon></xacro:standed_balloon>
+
+
+
+  </model>
+</sdf>

@@ -1,0 +1,15 @@
+<launch>
+  
+  <arg name="target_drone_speed"          default="5"/>
+  <arg name="target_drone_trajectory_a"   default="40"/>
+  <arg name="target_drone_trajectory_b"   default="4"/>
+  <arg name="max_balloons_height"         default="4"/>
+
+  <node pkg="mbzirc_gazebo_plugins" type="target_drone_trajectory" name="target_drone_trajectory" output="screen">
+      <param name="speed"                 type="double"  value="$(arg target_drone_speed)"/>
+      <param name="a"                     type="double"  value="$(arg target_drone_trajectory_a)"/>
+      <param name="b"                     type="double"  value="$(arg target_drone_trajectory_b)"/>
+      <param name="max_ballons_height"    type="double"  value="$(arg max_balloons_height)"/>
+  </node>
+
+</launch>

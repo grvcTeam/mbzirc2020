@@ -1,0 +1,228 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='support'    xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+
+    <xacro:arg name="bar_l"           default="1.2"/>
+    <xacro:arg name="ball_r"          default="0.09"/>
+
+    <!--  TODO: Clean up pose definitions-->
+    <!--  bar_joint_type could be fixed or revolute2-->
+    <xacro:property name="bar_length"        value="$(arg bar_l)"/>
+    <xacro:property name="ball_radio"        value="$(arg ball_r)"/>
+    <xacro:property name="support_width"     value="0.04"/>
+
+    <link name='support_0'>
+      <kinematic>1</kinematic>
+      <gravity>0</gravity>
+      <self_collide>0</self_collide>
+      <visual name='support_0_visual'>
+        <pose>0.123 0.22 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/FlatBlack</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+      <collision name='support_0_collision'>
+        <pose>0.123 0.22 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>100.0</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>100.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+    </link>
+
+    <link name='support_1'>
+      <kinematic>1</kinematic>
+      <gravity>0</gravity>
+      <self_collide>0</self_collide>
+      <visual name='support_1_visual'>
+        <pose>-0.14 0.21 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/FlatBlack</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+      <collision name='support_1_collision'>
+        <pose>-0.14 0.21 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>100.0</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>100.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+    </link>
+
+    <link name='support_2'>
+      <kinematic>1</kinematic>
+      <gravity>0</gravity>
+      <self_collide>0</self_collide>
+      <visual name='support_2_visual'>
+        <pose>0.123 -0.22 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/FlatBlack</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+      <collision name='support_2_collision'>
+        <pose>0.123 -0.22 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>100.0</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>100.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+    </link>
+
+    <link name='support_3'>
+      <kinematic>1</kinematic>
+      <gravity>0</gravity>
+      <self_collide>0</self_collide>
+      <visual name='support_3_visual'>
+        <pose>-0.14 -0.21 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/FlatBlack</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+        </material>
+      </visual>
+      <collision name='support_3_collision'>
+        <pose>-0.14 -0.21 ${(ball_radio+bar_length)/2} 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>${support_width} ${support_width} ${ball_radio+bar_length}</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <max_vel>100.0</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>100</mu>
+              <mu2>100.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <inertial>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+    </link>
+
+  </model>
+</sdf>
