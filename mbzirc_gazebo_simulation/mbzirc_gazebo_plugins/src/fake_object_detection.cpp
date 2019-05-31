@@ -1,9 +1,11 @@
 #include "mbzirc_gazebo_plugins/fake_object_detection.h"
+#if GAZEBO_MAJOR_VERSION < 8
 #include "mbzirc_gazebo_plugins/dirty_hacks.h"
 
 //error: ‘std::vector<boost::shared_ptr<gazebo::physics::RayShape> > gazebo::physics::MultiRayShape::rays’ is protected
 //       protected: std::vector<RayShapePtr> rays;
-ENABLE_ACCESS(rays, ::gazebo::physics::MultiRayShape, rays, std::vector<gazebo::physics::RayShapePtr>);
+  ENABLE_ACCESS(rays, ::gazebo::physics::MultiRayShape, rays, std::vector<gazebo::physics::RayShapePtr>);
+#endif
 
 namespace gazebo
 {
@@ -11,7 +13,12 @@ namespace gazebo
 GZ_REGISTER_SENSOR_PLUGIN(FakeObjectDetection)
 
 std::string type_from_name(const std::string &link_name);
-gazebo::math::Vector3 scaleFromShape(physics::ShapePtr shape_ptr);
+
+#if GAZEBO_MAJOR_VERSION >= 8
+  ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr);
+#else
+  gazebo::math::Vector3 scaleFromShape(physics::ShapePtr shape_ptr);
+#endif
 
 FakeObjectDetection::FakeObjectDetection()
 {
@@ -44,7 +51,12 @@ void FakeObjectDetection::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   this->parent_sensor_ = _parent;
   std::string worldName = _parent->WorldName();
   this->world_ = physics::get_world(worldName);
-  this->last_update_time_ = this->world_->GetSimTime();
+
+  #if GAZEBO_MAJOR_VERSION >= 8
+    this->last_update_time_ = this->world_->SimTime();
+  #else
+    this->last_update_time_ = this->world_->GetSimTime();
+  #endif
 
   this->node_ = transport::NodePtr(new transport::Node());
   this->node_->Init(worldName);
@@ -54,9 +66,15 @@ void FakeObjectDetection::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   if (!this->parent_ray_sensor_)
     gzthrow("fake object detection plugin requires a Ray Sensor as its parent");
 
-  this->parent_link_ =
-    boost::dynamic_pointer_cast<physics::Link>(
-    this->world_->GetEntity(this->parent_sensor_->ParentName()));
+  #if GAZEBO_MAJOR_VERSION >= 8
+    this->parent_link_ =
+      boost::dynamic_pointer_cast<physics::Link>(
+      this->world_->EntityByName(this->parent_sensor_->ParentName()));
+  #else
+    this->parent_link_ =
+      boost::dynamic_pointer_cast<physics::Link>(
+      this->world_->GetEntity(this->parent_sensor_->ParentName()));
+  #endif
 
   if (!this->parent_link_)
       gzthrow("fake object detection: error loading plugin, sensor parent can not be found");
@@ -175,9 +193,16 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
 
   physics::ShapePtr shape_ptr;
   //sdf::ElementPtr sdf_element;
-  gazebo::math::Vector3 scale;
-  gazebo::math::Pose link_pose;
-  gazebo::math::Pose sensor_frame_pose = this->parent_link_->GetWorldPose();
+
+  #if GAZEBO_MAJOR_VERSION >= 8
+    ignition::math::Vector3d scale;
+    ignition::math::Pose3d link_pose;
+    ignition::math::Pose3d sensor_frame_pose = this->parent_link_->WorldPose();
+  #else
+    gazebo::math::Vector3 scale;
+    gazebo::math::Pose link_pose;
+    gazebo::math::Pose sensor_frame_pose = this->parent_link_->GetWorldPose();
+  #endif
 
   mbzirc_comm_objs::ObjectDetection rec_object;
   rec_object.header.frame_id = this->frame_name_;
@@ -196,12 +221,24 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
 
   //  Point scan from laser
   boost::mutex::scoped_lock sclock(this->lock);
-  std::vector<physics::RayShapePtr> rays = ACCESS(*this->parent_ray_sensor_->LaserShape(), rays);
 
   // Get Intersection for every ray, get the collision and add it to the list.
+  #if GAZEBO_MAJOR_VERSION >= 8
+  int rayCount = this->parent_ray_sensor_->RayCount();
+  int verticalRayCount = this->parent_ray_sensor_->VerticalRayCount();
+  for (int i = 0; i < (verticalRayCount * rayCount - 1); i++)
+  {
+    if(i >= this->parent_ray_sensor_->LaserShape()->RayCount()) {
+         gzthrow("Trying to access more rays than defined in the sensor!!");
+    }
+
+    this->parent_ray_sensor_->LaserShape()->Ray(i)->GetIntersection(distance, collision_name);
+  #else
+  std::vector<physics::RayShapePtr> rays = ACCESS(*this->parent_ray_sensor_->LaserShape(), rays);
   for (int i = 0; i < rays.size(); i++)
   {
       rays[i]->GetIntersection(distance, collision_name);
+  #endif
 
       // If distance is between min range and max range add it to the list
       if(collision_name != "" && distance >= minRange && distance <= maxRange)
@@ -212,9 +249,16 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
   for(std::set<std::string>::iterator it = collisions.begin(); it != collisions.end(); it++)
   {
       std::string collision_name = *it;
-      physics::CollisionPtr collision =
-        boost::dynamic_pointer_cast<physics::Collision>(
-          this->world_->GetEntity(collision_name));
+
+      #if GAZEBO_MAJOR_VERSION >= 8
+        physics::CollisionPtr collision =
+          boost::dynamic_pointer_cast<physics::Collision>(
+            this->world_->EntityByName(collision_name));
+      #else
+        physics::CollisionPtr collision =
+          boost::dynamic_pointer_cast<physics::Collision>(
+            this->world_->GetEntity(collision_name));
+      #endif
 
       //Compose object detection message
       if(collision)
@@ -223,16 +267,29 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
           rec_object.type = type_from_name(collision->GetLink()->GetName());
 
           //Pose
-          link_pose = collision->GetLink()->GetWorldPose();
-          link_pose = sensor_frame_pose.GetInverse() * link_pose;
+          #if GAZEBO_MAJOR_VERSION >= 8
+            link_pose = collision->GetLink()->WorldPose();
+            link_pose = sensor_frame_pose.Inverse() * link_pose;
 
-          rec_object.pose.pose.position.x = link_pose.pos.x;
-          rec_object.pose.pose.position.y = link_pose.pos.y;
-          rec_object.pose.pose.position.z = link_pose.pos.z;
-          rec_object.pose.pose.orientation.w = link_pose.rot.w;
-          rec_object.pose.pose.orientation.x = link_pose.rot.x;
-          rec_object.pose.pose.orientation.y = link_pose.rot.y;
-          rec_object.pose.pose.orientation.z = link_pose.rot.z;
+            rec_object.pose.pose.position.x = link_pose.Pos().X();
+            rec_object.pose.pose.position.y = link_pose.Pos().Y();
+            rec_object.pose.pose.position.z = link_pose.Pos().Z();
+            rec_object.pose.pose.orientation.w = link_pose.Rot().W();
+            rec_object.pose.pose.orientation.x = link_pose.Rot().X();
+            rec_object.pose.pose.orientation.y = link_pose.Rot().Y();
+            rec_object.pose.pose.orientation.z = link_pose.Rot().Z();
+          #else
+            link_pose = collision->GetLink()->GetWorldPose();
+            link_pose = sensor_frame_pose.GetInverse() * link_pose;
+
+            rec_object.pose.pose.position.x = link_pose.pos.x;
+            rec_object.pose.pose.position.y = link_pose.pos.y;
+            rec_object.pose.pose.position.z = link_pose.pos.z;
+            rec_object.pose.pose.orientation.w = link_pose.rot.w;
+            rec_object.pose.pose.orientation.x = link_pose.rot.x;
+            rec_object.pose.pose.orientation.y = link_pose.rot.y;
+            rec_object.pose.pose.orientation.z = link_pose.rot.z;
+          #endif
 
           for(u_int i = 0; i < rec_object.pose.covariance.size(); i++)
             rec_object.pose.covariance[i] = 0;
@@ -249,10 +306,17 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
           shape_ptr = collision->GetShape();
           if (shape_ptr)
           {
+            #if GAZEBO_MAJOR_VERSION >= 8
+            ignition::math::Vector3d scale = scaleFromShape(shape_ptr);
+            rec_object.scale.x = scale.X();
+            rec_object.scale.y = scale.Y();
+            rec_object.scale.z = scale.Z();
+            #else
             gazebo::math::Vector3 scale = scaleFromShape(shape_ptr);
             rec_object.scale.x = scale.x;
             rec_object.scale.y = scale.y;
             rec_object.scale.z = scale.z;
+            #endif
           }
           else
             gzmsg << "Collision object " << collision_name << " has no shape" << std::endl;
@@ -299,6 +363,42 @@ std::string type_from_name(const std::string &link_name)
 }
 
 //
+#if GAZEBO_MAJOR_VERSION >= 8
+ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr) {
+  //Box case
+  physics::BoxShapePtr box =
+    boost::dynamic_pointer_cast<physics::BoxShape>(
+      shape_ptr);
+  if(box)
+    return box->Size();
+  //Cylinder case
+  physics::CylinderShapePtr cylinder =
+    boost::dynamic_pointer_cast<physics::CylinderShape>(
+      shape_ptr);
+  if(cylinder)
+    return ignition::math::Vector3d(cylinder->GetRadius(),cylinder->GetRadius(),cylinder->GetLength());
+  //Sphere case
+  physics::SphereShapePtr sphere =
+    boost::dynamic_pointer_cast<physics::SphereShape>(
+      shape_ptr);
+  if(sphere)
+    return ignition::math::Vector3d(sphere->GetRadius(),sphere->GetRadius(),sphere->GetRadius());
+  //Mesh case
+  physics::MeshShapePtr mesh =
+    boost::dynamic_pointer_cast<physics::MeshShape>(
+      shape_ptr);
+  if(mesh)
+    return mesh->Size();
+  //Plane case
+  physics::PlaneShapePtr plane =
+    boost::dynamic_pointer_cast<physics::PlaneShape>(
+      shape_ptr);
+  if(plane)
+    return ignition::math::Vector3d(plane->Size().X(),plane->Size().Y(),1);
+
+  return ignition::math::Vector3d(1,1,1);
+}
+#else
 gazebo::math::Vector3 scaleFromShape(physics::ShapePtr shape_ptr) {
   //Box case
   physics::BoxShapePtr box =
@@ -333,5 +433,5 @@ gazebo::math::Vector3 scaleFromShape(physics::ShapePtr shape_ptr) {
 
   return gazebo::math::Vector3(1,1,1);
 }
-
+#endif
 }
