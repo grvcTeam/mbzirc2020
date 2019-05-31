@@ -68,7 +68,7 @@ class AgentInterface():
     def get_active_states(self, task):
         actives = []
         a_ids = []
-        if isinstance(task,smach.StateMachine):
+        if isinstance(task,smach.StateMachine) or isinstance(task,smach.Concurrence):
             actives = task.get_active_states()
             sub_actives = []
             sub_ids = []
@@ -84,6 +84,7 @@ class AgentInterface():
 
             actives += sub_actives
             a_ids += sub_ids
+
         if hasattr(task, 'get_active_subtask') and task.get_active_subtask():
             a = self.get_active_states(task.get(task.get_active_subtask()))
             actives += [task.get_active_subtask()] + a[0]
@@ -154,7 +155,7 @@ class ExecTaskWatch(smach.State):
     def exec_task_cb(self,task_id):#msg):
         self.task = task_id #msg.task_id
         self.request_preempt()
-        
+
     def __init__(self, agent_id, task_list):
         self.task = ''
         self.task_list = task_list

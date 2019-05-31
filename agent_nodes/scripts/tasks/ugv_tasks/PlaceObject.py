@@ -81,7 +81,6 @@ class Task(smach.State):
 
         #TODO: match requested object pose with object detection information
 
-
         #move base to a pose where object can be reached
         userdata.obj_pose = userdata.goal_pose
         self.call_task('go_task',userdata)

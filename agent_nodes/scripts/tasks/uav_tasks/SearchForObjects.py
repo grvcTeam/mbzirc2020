@@ -54,7 +54,7 @@ class Task(smach.State):
                                 GoToWaypoint)
         interface.add_publisher('pub_obj_det',interface.agent_id+'/'+'detected_objects',
                                 ObjectDetectionList, 10)
-        interface.add_subscriber(self,uav_ns+'/'+'sensed_objects',ObjectDetectionList,
+        interface.add_subscriber(self,'sensed_objects',ObjectDetectionList,
                                 self.object_detection_cb)
 
         self.iface = interface

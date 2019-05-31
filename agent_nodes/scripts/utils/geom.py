@@ -9,6 +9,11 @@ from math import tan, ceil, pi
 #import matplotlib.pyplot as plt
 
 #conversions
+def from_geom_msgs_Transform_to_geom_msgs_Pose(transform):
+    pos = geometry_msgs.msg.Point(transform.translation.x,transform.translation.y,transform.translation.z)
+    rot = geometry_msgs.msg.Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w)
+    return geometry_msgs.msg.Pose(pos,rot)
+
 def from_geom_msgs_Transform_to_KDL_Frame(transform):
     pos = PyKDL.Vector(transform.translation.x,transform.translation.y,transform.translation.z)
     rot = PyKDL.Rotation.Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w)

@@ -63,7 +63,7 @@ class Task(smach.State):
 
         # interface elements
         #interface.add_client('cli_go_waypoint',uav_ns+'/'+'go_to_waypoint', GoToWaypoint)
-        interface.add_subscriber(self,uav_ns+'/'+'sensed_objects',ObjectDetectionList,
+        interface.add_subscriber(self,'sensed_objects',ObjectDetectionList,
                                 self.object_detection_cb)
 
         self.iface = interface

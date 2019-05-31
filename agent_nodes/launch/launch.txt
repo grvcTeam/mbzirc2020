@@ -1,5 +1,0 @@
-roslaunch atrvjr_description atrv_ur5.launch
-roslaunch atrvjr_description navigation.launch 
-roslaunch atrvjr_moveit_config atrvjr_movit.launch
-rosrun shared_regions_manager shared_regions_manager.py
-roslaunch agent_nodes ugv_agent.launch
