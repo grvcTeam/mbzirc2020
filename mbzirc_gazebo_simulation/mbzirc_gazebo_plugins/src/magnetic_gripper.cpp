@@ -189,7 +189,9 @@ void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
 
 
     this->fixedJoint->Load(collision1->GetLink(), collision2->GetLink(), diff);
+    this->fixedJoint->ApplyStiffnessDamping();
     this->fixedJoint->Init();
+
     //advertise attached
     mbzirc_comm_objs::GripperAttached msg;
     msg.attached = true;
