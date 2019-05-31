@@ -4,6 +4,7 @@ import rospy
 import smach
 import smach_ros
 import tf2_ros
+from pydispatch import dispatcher
 
 from agent_nodes.msg import ExecTask
 from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse
@@ -30,7 +31,7 @@ class AgentInterface():
         #init
         self.callables['tf_buffer'] = tf2_ros.Buffer()
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
-        self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
+        #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
@@ -150,13 +151,16 @@ class AgentInterface():
 #Runs in a loop until a request to execute a new task arrives
 #To be executed in paralel with Default task in the DefaultTaskContainer
 class ExecTaskWatch(smach.State):
-    def exec_task_cb(self,msg):
-        self.task = msg.task_id
+    def exec_task_cb(self,task_id):#msg):
+        self.task = task_id #msg.task_id
         self.request_preempt()
+        
     def __init__(self, agent_id, task_list):
         self.task = ''
         self.task_list = task_list
-        self.sub = rospy.Subscriber(agent_id+'/'+'exec_task', ExecTask, self.exec_task_cb)
+        #self.sub = rospy.Subscriber(agent_id+'/'+'exec_task', ExecTask, self.exec_task_cb)
+        dispatcher.connect( self.exec_task_cb, signal='exec_task', sender=dispatcher.Any )
+
         smach.State.__init__(self, outcomes=task_list+['invalid_task'])
     def execute(self, userdata):
         #initialize
@@ -258,8 +262,9 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
         wrapper.userdata = task.gen_userdata(req)
         if interface.is_agent_idle():
             interface.set_idle(False) #because the fsm takes some time to do the transition
-            interface['exec_task'].publish(
-                    ExecTask(agent_id=interface.agent_id,task_id=name))
+            dispatcher.send( signal='exec_task', task_id=name )
+            #interface['exec_task'].publish(
+                    #ExecTask(agent_id=interface.agent_id,task_id=name))
 
             return task.ResponseType(success=True) #TODO: add estimated time to execute Task
         else:
