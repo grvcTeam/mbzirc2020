@@ -60,9 +60,12 @@ class node():
                 print 'iddle!'
                 self.pfpnp_1(req)
                 break
-            elif self.isidle_2().isIdle:
+            if self.isidle_2().isIdle:
                 self.pfpnp_2(req)
-                return
+                break
+            '''if self.isidle_3().isIdle:
+                self.pfpnp_3(req)
+                break'''
             r.sleep()
 
     def build_wall_cb(self,req):
@@ -109,10 +112,12 @@ class node():
 
         #clients
         add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
-        self.pfpnp_1 = rospy.ServiceProxy('/agent_1/uav_1/pfpnp_task', PFPNPlace)
-        self.pfpnp_2 = rospy.ServiceProxy('/agent_2/uav_2/pfpnp_task', PFPNPlace)
-        self.isidle_1 = rospy.ServiceProxy('/agent_1/uav_1/is_idle', AgentIdle)
-        self.isidle_2 = rospy.ServiceProxy('/agent_2/uav_2/is_idle', AgentIdle)
+        self.pfpnp_1 = rospy.ServiceProxy('/dji_f550_1/dji_f550_1/pfpnp_task', PFPNPlace)
+        self.isidle_1 = rospy.ServiceProxy('/dji_f550_1/dji_f550_1/is_idle', AgentIdle)
+        self.pfpnp_2 = rospy.ServiceProxy('/dji_f550_2/dji_f550_2/pfpnp_task', PFPNPlace)
+        self.isidle_2 = rospy.ServiceProxy('/dji_f550_2/dji_f550_2/is_idle', AgentIdle)
+        '''self.pfpnp_3 = rospy.ServiceProxy('/ugv_1/pfpnp_task', PFPNPlace)
+        self.isidle_3 = rospy.ServiceProxy('/ugv_1/is_idle', AgentIdle)'''
 
 
         #server

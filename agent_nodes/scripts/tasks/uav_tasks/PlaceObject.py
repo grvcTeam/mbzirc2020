@@ -9,7 +9,7 @@ from utils.agent import *
 # required message definitions
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
-from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest, TakeOff, TakeOffRequest
+from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point
 
@@ -30,8 +30,7 @@ class Task(smach.State):
         self.z_offset = z_offset
 
         #interface elements
-        interface.add_client('cli_magnetize',uav_ns+'/'+'magnetize',Magnetize)
-        interface.add_client('cli_take_off',uav_ns+'/'+'take_off',TakeOff)
+        interface.add_client('cli_magnetize','magnetize',Magnetize)
         interface.add_client('cli_go_waypoint',uav_ns+'/'+'go_to_waypoint',
                                 GoToWaypoint)
 
@@ -39,6 +38,14 @@ class Task(smach.State):
 
     #main function
     def execute(self, userdata):
+
+        #save uav pose for later
+        try:
+            trans_global2uav_old = lookup_tf_transform(self.global_frame, self.uav_frame,self.iface['tf_buffer'],5)
+        except Exception as error:
+            print repr(error)
+            print self.name + ' Task could not be executed'
+            return 'error'
 
         #compute uav pose before dropping
         trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.goal_pose)
@@ -56,13 +63,10 @@ class Task(smach.State):
         #drop the object
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=False ))
 
-        try:
-            trans_global2uav = lookup_tf_transform(self.global_frame, self.uav_frame, self.iface['tf_buffer'],5)
-        except Exception as error:
-            print repr(error)
-            print self.name + ' Task could not be executed'
-            return 'error'
+        way = GoToWaypointRequest(waypoint=PoseStamped(
+        header=Header(frame_id=self.global_frame,stamp=rospy.Time.now()),pose=
+        from_geom_msgs_Transform_to_geom_msgs_Pose(trans_global2uav_old.transform)),blocking=True )
 
-        self.iface['cli_take_off'](TakeOffRequest(height=self.height-trans_global2uav.transform.translation.z,blocking=True))
+        self.iface['cli_go_waypoint'](way)
 
         return 'success'

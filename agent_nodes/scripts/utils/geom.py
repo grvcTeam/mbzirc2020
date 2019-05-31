@@ -1,6 +1,7 @@
 import PyKDL #Vector, Rotation, Quaternion, Frame
 import shapely.geometry #Point, Polygon
 import shapely.ops # transform
+import shapely.affinity
 import geometry_msgs.msg #Pose, Transform, Polygon
 import rospy
 
@@ -8,6 +9,11 @@ from math import tan, ceil, pi
 #import matplotlib.pyplot as plt
 
 #conversions
+def from_geom_msgs_Transform_to_geom_msgs_Pose(transform):
+    pos = geometry_msgs.msg.Point(transform.translation.x,transform.translation.y,transform.translation.z)
+    rot = geometry_msgs.msg.Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w)
+    return geometry_msgs.msg.Pose(pos,rot)
+
 def from_geom_msgs_Transform_to_KDL_Frame(transform):
     pos = PyKDL.Vector(transform.translation.x,transform.translation.y,transform.translation.z)
     rot = PyKDL.Rotation.Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w)
@@ -48,8 +54,8 @@ def from_geom_msgs_Polygon_to_Shapely_Polygon(polygon):
 #operations
 def transform_Shapely_Polygon_with_KDL_Frame(transform,polygon):
     rot_angle = transform.M.GetRotAngle()
-    if rot_angle[1][2] != 1:
-        rospy.logwarn("just rotations in the Z axis are supported for polygon transformations")
+    if abs(rot_angle[1][2]) != 1:
+        rospy.logwarn("just rotations in the Z axis are supported for polygon transformations: {r}".format(r=rot_angle))
         return polygon
 
     def poly_transform(x,y,z=None):
@@ -141,6 +147,7 @@ def compute_search_path(aov, height, polygon, pos):
     plt.show()'''
 
     return path
+
 
 #pos = shapely.geometry.Point(40.,10.)
 #pol = shapely.geometry.Polygon([(1,1),(31,1),(31,70),(1,70)])

@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: atrvjr_description
+    relative_path: urdf/atrvjr_ur5.urdf.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/atrvjr.srdf
+  CONFIG:
+    author_name: Eloy R
+    author_email: retamino@isr.tecnico.ulisboa.pt
+    generated_timestamp: 1557949385

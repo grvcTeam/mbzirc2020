@@ -9,7 +9,7 @@ from utils.agent import *
 # required message definitions
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
-from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest, TakeOff, TakeOffRequest
+from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point
 
@@ -35,13 +35,12 @@ class Task(smach.State):
         self.z_offset = z_offset
 
         #interface elements
-        interface.add_client('cli_magnetize',uav_ns+'/'+'magnetize',Magnetize)
+        interface.add_client('cli_magnetize','magnetize',Magnetize)
         interface.add_client('cli_go_waypoint',uav_ns+'/'+'go_to_waypoint',
                                 GoToWaypoint)
-        interface.add_client('cli_take_off',uav_ns+'/'+'take_off',TakeOff)
         interface.add_publisher('pub_velocity',uav_ns+'/'+'set_velocity',
                                 TwistStamped, 1)
-        interface.add_subscriber(self,uav_ns+'/'+'attached', GripperAttached,
+        interface.add_subscriber(self,'attached', GripperAttached,
                                 self.attached_cb)
 
         self.iface = interface
@@ -51,6 +50,14 @@ class Task(smach.State):
         self.gripper_attached = False
 
         #TODO: match requested object pose with object detection information
+
+        #save uav pose for later
+        try:
+            trans_global2uav_old = lookup_tf_transform(self.global_frame, self.uav_frame,self.iface['tf_buffer'],5)
+        except Exception as error:
+            print repr(error)
+            print self.name + ' Task could not be executed'
+            return 'error'
 
         #compute a waypoint from where to approach the object
         trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.obj_pose)
@@ -77,11 +84,11 @@ class Task(smach.State):
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
         #send velocity commands until the object is gripped
+        trans_uav2global = None
         vel_cmd = TwistStamped()
         vel_cmd.header.frame_id = self.global_frame
         vel_cmd.twist.linear.z = -0.1 #TODO: should be a parameter
         rate = rospy.Rate(10.0)
-        trans_uav2global = None
         while not self.gripper_attached:
             vel_cmd.header.stamp = rospy.Time.now()
             self.iface['pub_velocity'].publish(vel_cmd)
@@ -101,13 +108,10 @@ class Task(smach.State):
         trans_uav2object = from_geom_msgs_Transform_to_KDL_Frame(trans_uav2global.transform) * trans_global2object
         userdata.trans_uav2object = from_KDL_Frame_to_geom_msgs_Transform(trans_uav2object)
 
-        try:
-            trans_global2uav = lookup_tf_transform(self.global_frame, self.uav_frame, self.iface['tf_buffer'],5)
-        except Exception as error:
-            print repr(error)
-            print self.name + ' Task could not be executed'
-            return 'error'
+        way = GoToWaypointRequest(waypoint=PoseStamped(
+        header=Header(frame_id=self.global_frame,stamp=rospy.Time.now()),pose=
+        from_geom_msgs_Transform_to_geom_msgs_Pose(trans_global2uav_old.transform)),blocking=True )
 
-        self.iface['cli_take_off'](TakeOffRequest(height=self.height-trans_global2uav.transform.translation.z,blocking=True))
+        self.iface['cli_go_waypoint'](way)
 
         return 'success'
