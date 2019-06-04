@@ -120,6 +120,11 @@ class AgentInterface():
 
         if not topic_name in self.callbacks:
             def meta_callback(msg):
+                #call agent level callbacks
+                if 'AGENT' in self.callbacks[topic_name]:
+                    self.callbacks[topic_name]['AGENT'](msg)
+
+                #call task callbacks
                 if self.fsm.isInit:
                     actives = self.get_active_states(self.fsm)
                     #print 'ACTIVES: {actives}'.format(actives=actives)
@@ -131,13 +136,19 @@ class AgentInterface():
             self.callbacks[topic_name]['meta'] = meta_callback
             self.subscribers[topic_name] = rospy.Subscriber(topic_name, data_class, meta_callback)
 
-        self.callbacks[topic_name][id(task)] = callback
+        label = 'AGENT' if type(task) == 'str' and task == 'AGENT' else id(task)
+        self.callbacks[topic_name][label] = callback
 
     # add a server to the agent interface
     def add_server(self, task, topic_name, data_class, callback, inactive_callback):
 
         if not topic_name in self.callbacks:
             def meta_callback(req):
+                #call agent level callbacks. If defined, it will override define task callbacks
+                if 'AGENT' in self.callbacks[topic_name]:
+                    return self.callbacks[topic_name]['AGENT'](req)
+
+                #call task callbacks
                 if self.fsm.isInit:
                     actives = self.get_active_states(self.fsm)
                     #print 'ACTIVES: {actives}'.format(actives=actives)
@@ -152,7 +163,8 @@ class AgentInterface():
             self.callbacks[topic_name]['inactive'] = inactive_callback
             self.servers[topic_name] = rospy.Service(topic_name, data_class, meta_callback)
 
-        self.callbacks[topic_name][id(task)] = callback
+        label = 'AGENT' if type(task) == 'str' and task == 'AGENT' else id(task)
+        self.callbacks[topic_name][label] = callback
 
 #Runs in a loop until a request to execute a new task arrives
 #To be executed in paralel with Default task in the DefaultTaskContainer
