@@ -8,12 +8,14 @@ from pydispatch import dispatcher
 
 from agent_nodes.msg import ExecTask
 from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse
+from multimaster_msgs_fkie.msg import MasterState
+from multimaster_msgs_fkie.srv import DiscoverMasters
 
 #handles an agent interface. Stores elements in the interface with the particularity
 #that callbacks depends on the active task in the agent fsm
 class AgentInterface():
 
-    def __init__(self, agent_id, agent_fsm):
+    def __init__(self, agent_id, agent_fsm, is_multi = False, graph_change_cb = None):
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
@@ -31,6 +33,14 @@ class AgentInterface():
         #init
         self.callables['tf_buffer'] = tf2_ros.Buffer()
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
+
+        self.callables['graph_list'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
+        if is_multi:
+            self.add_client(self,'graph_list','/master_discovery/list_masters', DiscoverMasters)
+
+        if graph_change_cb:
+            self.add_subscriber(self, 'AGENT', '/master_discovery/changes', MasterState, graph_change_cb):
+
         #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
         #services
