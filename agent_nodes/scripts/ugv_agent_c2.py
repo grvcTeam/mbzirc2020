@@ -43,7 +43,8 @@ def main():
     add_task('pfpnp_task', tasks_dic, iface, tasks.ugv_tasks.PickFromPileAndPlace, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
 
     # initialize state machine
-    fsm.initialize(id, default_task, tasks_dic)
+    d_dic = {'idle': default_task}
+    fsm.initialize(id, d_dic, 'idle', tasks_dic)
 
     # execute state machine
     userdata = smach.UserData()

@@ -90,6 +90,11 @@ class AgentInterface():
             actives += [task.get_active_subtask()] + a[0]
             a_ids += [id(task.get(task.get_active_subtask()))] + a[1]
 
+        if hasattr(task, 'get_default'):
+            a = self.get_active_states(task.get(task.get_default()))
+            actives += [task.get_default()] + a[0]
+            a_ids += [id(task.get(task.get_default()))] + a[1]
+
         return actives, a_ids
 
     # add a publisher to the agent interface
@@ -187,16 +192,46 @@ def out_cb(outcome_map):
 #default task container running in paralel the execute task watcher and the default task
 class DefaultTaskContainer(smach.Concurrence):
 
+    def set_default(self, task_name):
+
+        self.m_default.set_default(task_name)
+
     '''Parameters:
         - default_task: the task the agents execute on idle
         - task_list: names of the tasks the agent can execute'''
-    def __init__(self, agent_id, default_task, task_list):
-        smach.Concurrence.__init__(self,input_keys=list(default_task._input_keys),outcomes=task_list+['error','invalid_task'],
+    def __init__(self, agent_id, d_dic, default_name, task_list):
+        smach.Concurrence.__init__(self,input_keys=[],outcomes=task_list+['error','invalid_task'],
                                    default_outcome='error',child_termination_cb=child_term_cb,
                                    outcome_cb=out_cb)
+
+        class MetaDefault(smach.State):
+
+            def __init__(self, d_dic, default_name):
+                self.default = default_name
+                self.d_tasks = d_dic
+                smach.State.__init__(self, outcomes=['success','error'])
+
+            def execute(self, ud):
+                outcome = self.d_tasks[self.default].execute(ud)
+                return 'success' if outcome != 'error' else 'error'
+
+            def set_default(self, task_name):
+                if task_name in self.d_tasks:
+                    self.default = task_name
+                else:
+                    rospy.logwarn('Task {t} does not exist. It cannot be set as default'.format(t=task_name))
+
+            def get_default(self):
+                return self.default
+
+            def get(self, t_name):
+                return self.d_tasks[self.default]
+
+        self.m_default = MetaDefault(d_dic, default_name)
+
         with self:
             smach.Concurrence.add('EXEC_TASK_WATCH', ExecTaskWatch(agent_id, task_list))
-            smach.Concurrence.add('DEFAULT_TASK', default_task)
+            smach.Concurrence.add('DEFAULT_TASK', self.m_default)
 
 #Wraps a Task so the agent can expose it for external execution
 #Ensures it has the right outcomes: success, error
@@ -221,13 +256,13 @@ class AgentStateMachine(smach.StateMachine):
     '''Parameters:
         - default_task: the task the agents execute on idle
         - tasks_dic: names and objects of the tasks the agent can execute'''
-    def initialize(self, agent_id, default_task, tasks_dic):
+    def initialize(self, agent_id, d_dic, default_name, tasks_dic):
         #TODO: 'error' outcome here simbolizes a critical recovery task, which needs to be an actual
         #state in the statemachine, same as default
         smach.StateMachine.__init__(self,outcomes=['error'],
                                     input_keys=list(default_task._input_keys))
 
-        default = DefaultTaskContainer(agent_id, default_task, tasks_dic.keys())
+        default = DefaultTaskContainer(agent_id, d_dic, default_name, tasks_dic.keys())
         default_trans = {'invalid_task':'DEFAULT','error':'error'}
         for task in tasks_dic.keys():
             default_trans[task]=task

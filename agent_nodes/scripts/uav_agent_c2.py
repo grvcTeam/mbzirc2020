@@ -36,11 +36,11 @@ def main():
     add_task('build_wall', tasks_dic, iface, tasks.uav_tasks.BuildWall, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
 
     # initialize state machine
-    fsm.initialize(id, default_task, tasks_dic)
+    d_dic = {'hovering': default_task}
+    fsm.initialize(id, d_dic, 'hovering', tasks_dic)
 
     # execute state machine
     userdata = smach.UserData()
-    userdata.height = 2.0
     fsm.execute(userdata)
 
 if __name__ == '__main__':
