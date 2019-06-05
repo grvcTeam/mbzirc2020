@@ -39,7 +39,7 @@ class AgentInterface():
             self.add_client(self,'graph_list','/master_discovery/list_masters', DiscoverMasters)
 
         if graph_change_cb:
-            self.add_subscriber(self, 'AGENT', '/master_discovery/changes', MasterState, graph_change_cb):
+            self.add_subscriber(self, 'AGENT', '/master_discovery/changes', MasterState, graph_change_cb)
 
         #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
@@ -282,7 +282,7 @@ class AgentStateMachine(smach.StateMachine):
         #TODO: 'error' outcome here simbolizes a critical recovery task, which needs to be an actual
         #state in the statemachine, same as default
         smach.StateMachine.__init__(self,outcomes=['error'],
-                                    input_keys=list(default_task._input_keys))
+                                    input_keys=[])
 
         default = DefaultTaskContainer(agent_id, d_dic, default_name, tasks_dic.keys())
         default_trans = {'invalid_task':'DEFAULT','error':'error'}
