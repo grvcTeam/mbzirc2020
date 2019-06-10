@@ -1,0 +1,3 @@
+
+---
+string agents # json string with the format {'agent_id': [(task_service_type,task_service_address), ...], ...}

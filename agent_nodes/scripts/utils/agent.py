@@ -330,7 +330,7 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
             agent_id=interface.agent_id,name=name,active=interface.fsm.get_active_states()))
             return task.ResponseType(success=False)
 
-    return rospy.Service(interface.agent_id+'/'+name, task.DataType, cb)
+    return rospy.Service(interface.agent_id+'/task/'+name, task.DataType, cb)
 
 #add a subtask to a task that can be later called
 def add_sub_task(name, parent_task, child_task, task_args = []):
