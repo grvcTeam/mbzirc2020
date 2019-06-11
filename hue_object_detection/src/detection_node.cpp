@@ -147,11 +147,20 @@ int main(int argc, char** argv) {
         for (auto item: detected) {
           geometry_msgs::Point position;
           if (geoLocate(item.centroid, &position, camera_K, camera_R, camera_T, 0.0)) {  // TODO: z_estimation based on brick height
+            tf2::Vector3 orientation_camera(cos(item.orientation), sin(item.orientation), 0);
+            tf2::Vector3 orientation_world = camera_R * orientation_camera;
+            double theta_world = atan2(orientation_world[1], orientation_world[0]);
+            // printf("orientation_world = [%lf, %lf, %lf]\n", orientation_world[0], orientation_world[1], orientation_world[2]);
+            // printf("theta_world = %lf\n", theta_world);
             mbzirc_comm_objs::ObjectDetection object;
             object.header.frame_id = "map";
             object.header.stamp = ros::Time::now();
             object.type = "brick";
             object.pose.pose.position = position;  // TODO: Covariance and orientation?
+            object.pose.pose.orientation.x = 0;
+            object.pose.pose.orientation.y = 0;
+            object.pose.pose.orientation.z = sin(0.5*theta_world);
+            object.pose.pose.orientation.w = cos(0.5*theta_world);
             object.pose.covariance[0] = 0.01;
             object.pose.covariance[7] = 0.01;
             object.pose.covariance[14] = 0.01;
