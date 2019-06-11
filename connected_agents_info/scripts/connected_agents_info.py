@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from multimaster_msgs_fkie.msg import MasterState
-from mbzirc_comm_objs.srv import GetAgents, GetAgentsResponse
+from mbzirc_comm_objs.srv import GetJson, GetJsonResponse
 
 import rospy
+import json
 import rosservice
 from std_msgs.msg import String
 
@@ -30,7 +31,7 @@ class ConnectedAgentsInfo():
 
     def get_agents_cb(self, req):
 
-        return  GetAgentsResponse(agents=str(self.get_agents()))
+        return  GetJsonResponse(jsonStr=json.dumps(self.get_agents()))
 
     def graph_change_cb(self, msg):
 
@@ -39,7 +40,7 @@ class ConnectedAgentsInfo():
     def __init__(self):
 
         self.pub = rospy.Publisher('changes', String, queue_size=1)
-        rospy.Service('agent_list', GetAgents, self.get_agents_cb)
+        rospy.Service('agent_list', GetJson, self.get_agents_cb) # json string with the format {'agent_id': [(task_service_type,task_service_address), ...], ...}
 
         rospy.spin()
 

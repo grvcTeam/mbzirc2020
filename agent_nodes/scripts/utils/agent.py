@@ -5,17 +5,16 @@ import smach
 import smach_ros
 import tf2_ros
 from pydispatch import dispatcher
+import json
 
 from agent_nodes.msg import ExecTask
-from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse
-from multimaster_msgs_fkie.msg import MasterState
-from multimaster_msgs_fkie.srv import DiscoverMasters
+from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonResponse
 
 #handles an agent interface. Stores elements in the interface with the particularity
 #that callbacks depends on the active task in the agent fsm
 class AgentInterface():
 
-    def __init__(self, agent_id, agent_fsm, is_multi = False, graph_change_cb = None):
+    def __init__(self, agent_id, agent_fsm, self.agent_props = {}, graph_change_cb = None):
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
@@ -35,16 +34,16 @@ class AgentInterface():
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
 
         self.callables['graph_list'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
-        if is_multi:
-            self.add_client(self,'graph_list','/master_discovery/list_masters', DiscoverMasters)
+        self.add_client(self,'agent_list','/agent_list', GetJson)
 
         if graph_change_cb:
-            self.add_subscriber(self, 'AGENT', '/master_discovery/changes', MasterState, graph_change_cb)
+            self.add_subscriber(self, 'AGENT', '/changes', String, graph_change_cb)
 
         #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
+        self.props_server = rospy.Service(self.agent_id+'/'+'agent_props', GetJson, self.get_props_cb)
 
     # returns an interface element
     def __getitem__(self,item):
@@ -57,6 +56,9 @@ class AgentInterface():
     # service callback
     def is_idle_cb(self,req):
         return AgentIdleResponse(isIdle=self.is_agent_idle())
+
+    def get_props_cb(self,req):
+        return GetJsonResponse(jsonStr=json.dumps(self.agent_props))
 
     # return active tasks names
     def current_tasks(self):
