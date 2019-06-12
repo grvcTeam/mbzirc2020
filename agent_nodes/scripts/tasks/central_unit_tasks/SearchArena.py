@@ -3,6 +3,7 @@ import rospy
 import smach
 import smach_ros
 import json
+import sys
 
 from utils.geom import *
 from utils.agent import *
@@ -46,7 +47,19 @@ class Task(smach.State):
 
     #returns the bounding box for all centroid extruded by object scale vector length
     def objects2group(list):
-        pass
+        #find group aabb
+        xmin = ymin = sys.float_info.max
+        xmax = ymax = - sys.float_info.max
+
+        for object in list:
+            p = list.pose.pose.position
+            xmax = p.x if p.x > xmax else xmax
+            xmin = p.x if p.x < xmin else xmin
+            ymax = p.y if p.y > ymax else ymax
+            ymin = p.y if p.y < ymin else ymin
+
+        
+
 
     # find aabb larger size and divides it in n.
     def divide_regions(self, aabb, n):

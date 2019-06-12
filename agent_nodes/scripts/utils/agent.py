@@ -14,7 +14,7 @@ from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonR
 #that callbacks depends on the active task in the agent fsm
 class AgentInterface():
 
-    def __init__(self, agent_id, agent_fsm, self.agent_props = {}, graph_change_cb = None):
+    def __init__(self, agent_id, agent_fsm, agent_props = {}, graph_change_cb = None):
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
