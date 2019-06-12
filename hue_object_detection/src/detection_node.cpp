@@ -124,45 +124,19 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
     object.pose.covariance[7] = 0.01;
     object.pose.covariance[14] = 0.01;
 
-    object.scale.x = 1;  // TODO: Something based in item.area
-    object.scale.y = 1;
-    object.scale.z = 1;
+    // Suppose item is a rectangle: P = 2 * (side_1 + side_2); A = side_1 * side_2
+    // side_i = (P ± sqrt(P*P - 16*A)) / 4
+    aux = sqrt(item.perimeter * item.perimeter - 16.0 * item.area);
+    double pixel_to_metric_x = lambda / K_0[0];
+    double pixel_to_metric_y = lambda / K_1[1];
+    object.scale.x = pixel_to_metric_x * (item.perimeter + aux) / 4.0;
+    object.scale.y = pixel_to_metric_y * (item.perimeter - aux) / 4.0;
+    object.scale.z = estimated_z;
     object.properties = "{color: \'" + item.detector_id + "\'}";
     object_list.objects.push_back(object);
     // std::cout << object << '\n';
   }
   return object_list;
-}
-
-// bool geoLocate(const cv::Point& _image_point, geometry_msgs::Point *_world_point, const tf2::Matrix3x3& _K, const tf2::Matrix3x3& _R, const tf2::Vector3& _T, double _estimated_z) {
-
-// 	tf2::Vector3 ray;
-// 	double aux = (_image_point.y - _K.getRow(1)[2]) / _K.getRow(1)[1];
-// 	ray[0] = (_image_point.x - _K.getRow(0)[2] - _K.getRow(0)[1] * aux) / _K.getRow(0)[0];
-//   ray[1] = aux;
-//   ray[2] = 1.0;
-//   // TODO: We end using only _R.transpose()...
-//   const tf2::Matrix3x3 Rt = _R.transpose();
-//   tf2::Vector3 ray_world = Rt * ray;
-//   tf2::Vector3 T_world = Rt * _T;
-//   if (ray_world[2] == 0) {
-//     ROS_WARN("geoLocate: ray_world[2] == 0");
-//     return false;
-//   }
-// 	// The line equation is X = lambda * ray_world - T_world
-// 	// lambda can be set because the z is known (estimated)
-// 	double lambda = (_estimated_z + T_world[2]) / ray_world[2];
-//   _world_point->x = lambda * ray_world[0] - T_world[0];
-//   _world_point->y = lambda * ray_world[1] - T_world[1];
-//   _world_point->z = lambda * ray_world[2] - T_world[2];
-//   return true;
-// }
-
-geometry_msgs::Vector3 calculateRectangleScale(double perimeter, double area) {
-  geometry_msgs::Vector3 scale;
-  scale.x = sqrt(0.5 * (perimeter - 2.0 * area));
-  scale.y = area / scale.x;
-  scale.z = 0.1;  // TODO: as a function of colour!
 }
 
 int main(int argc, char** argv) {
@@ -191,9 +165,8 @@ int main(int argc, char** argv) {
   double u0 = 400;
   double v0 = 300;
   double gamma = 0;
-  const tf2::Matrix3x3 camera_K(fx,gamma,u0, 0,fy,v0, 0,0,1);
   CameraParameters camera;
-  camera.K = camera_K;
+  camera.K = tf2::Matrix3x3(fx,gamma,u0, 0,fy,v0, 0,0,1);
 
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
@@ -216,11 +189,8 @@ int main(int argc, char** argv) {
         geometry_msgs::TransformStamped camera_link_tf = tf_buffer.lookupTransform(tf_prefix + "/camera_link", "map", ros::Time(0));
         tf2::Stamped<tf2::Transform> camera_link_tf2;
         tf2::fromMsg(camera_link_tf, camera_link_tf2);
-        tf2::Matrix3x3 camera_R = link_to_cv * camera_link_tf2.getBasis();
-        tf2::Vector3   camera_T = link_to_cv * camera_link_tf2.getOrigin();
-        camera.R = camera_R;
-        camera.T = camera_T;
-        // mbzirc_comm_objs::ObjectDetectionList object_list;
+        camera.R = link_to_cv * camera_link_tf2.getBasis();
+        camera.T = link_to_cv * camera_link_tf2.getOrigin();
         sensed_pub.publish(fromHueItem(detected, camera));
 
       } catch (tf2::TransformException &e) {
