@@ -9,6 +9,7 @@ struct HueItem {
 	std::string detector_id;
 	cv::Point centroid;
 	double area;
+	double perimeter;
 	double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
 };
 

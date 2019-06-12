@@ -98,36 +98,7 @@ std::vector<HueItem> HueDetection::detect(const std::string _id, bool _draw) {
 		double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
 		double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
 		double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
-		// printf("theta_1 = %lf\n", theta);
 
-		// cv::Mat covariance = cv::Mat(2, 2, CV_32FC1);
-		// covariance.at<float>(0, 0) = mu20_prime;
-		// covariance.at<float>(0, 1) = mu11_prime;
-		// covariance.at<float>(1, 0) = mu11_prime;
-		// covariance.at<float>(1, 1) = mu02_prime;
-		// cv::Mat eigenvalues, eigenvectors;
-		// cv::eigen(covariance, eigenvalues, eigenvectors);
-
-		// theta = atan2(eigenvectors.at<float>(0,1), eigenvectors.at<float>(0,0));
-		// printf("theta_2 = %lf\n\n", theta);
-
-		// cv::Mat points;
-		// if (polygon.size().height > 4) {
-		// 	printf("more than 4 points!\n");
-		// 	// TODO: reduce number of points
-
-		// } else {
-		// 	points = polygon;
-		// }
-		// std::cout << "polygon.size() = " << polygon.size() <<'\n';
-		// std::cout << "i = " << i << '\n';
-		// std::cout << "values = " << eigenvalues << '\n';
-		// std::cout << "vectors = " << eigenvectors << '\n';
-		// std::cout << '\n';
-		// for (int j = 0; j < 2; j++) {
-		// 	// printf("contour[%d], eigen[%d]: value = %f, vector = [%f, %f]\n", i, j, eigenvalues.at<float>(j), eigenvectors.at(j,0), eigenvectors.at(j,1));
-		// }
-		
 		if (_draw) {
 			cv::Scalar colour = colour_[_id];
 			cv::circle(frame_, centroid, 4, colour, -1);
@@ -140,6 +111,7 @@ std::vector<HueItem> HueDetection::detect(const std::string _id, bool _draw) {
 		item.detector_id = _id;
 		item.centroid = centroid;
 		item.area = area;
+		item.perimeter = cv::arcLength(polygon, true);
 		item.orientation = theta;
 		item_list.push_back(item);
      }
