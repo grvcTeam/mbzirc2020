@@ -4,6 +4,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -13,7 +14,8 @@
 class ImageConverter {
 public:
 
-  ImageConverter(const std::string& _input_topic, const std::string& _output_topic, bool _use_gui = false): it_(nh_), use_gui_(_use_gui) {
+  ImageConverter(const std::string& _info_topic, const std::string& _input_topic, const std::string& _output_topic, bool _use_gui = false): it_(nh_), use_gui_(_use_gui) {
+    info_sub_ = nh_.subscribe(_info_topic, 1, &ImageConverter::infoCallback, this);
     image_sub_ = it_.subscribe(_input_topic, 1, &ImageConverter::imageCallback, this);
     image_pub_ = it_.advertise(_output_topic, 1);
     if (use_gui_) {
@@ -26,20 +28,33 @@ public:
     if (use_gui_) { cv::destroyWindow(gui_window_name_); }
   }
 
+  void infoCallback(const sensor_msgs::CameraInfoConstPtr& msg) {
+    camera_info_ = *msg;
+    has_camera_info_ = true;
+  }
+
+  bool hasCameraInfo() { return has_camera_info_; }
+
+  tf2::Matrix3x3 getCameraK() {
+    return tf2::Matrix3x3(camera_info_.K[0], camera_info_.K[1], camera_info_.K[2], 
+                          camera_info_.K[3], camera_info_.K[4], camera_info_.K[5],
+                          camera_info_.K[6], camera_info_.K[7], camera_info_.K[8]);
+  }
+
   void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     try {
       cv_ptr_ = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-      has_new_data_ = true;
+      has_new_image_ = true;
     } catch (cv_bridge::Exception& e) {
       ROS_ERROR("cv_bridge exception: %s", e.what());
       return;
     }
   }
 
-  bool hasNewData() { return has_new_data_; }
+  bool hasNewImage() { return has_new_image_; }
 
   cv_bridge::CvImagePtr getCvImagePtr() {
-    has_new_data_ = false;
+    has_new_image_ = false;
     return cv_ptr_;
   }
 
@@ -58,11 +73,15 @@ public:
 protected:
 
   ros::NodeHandle nh_;
+  ros::Subscriber info_sub_;
+  sensor_msgs::CameraInfo camera_info_;
+  bool has_camera_info_ = false;
+
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
   cv_bridge::CvImagePtr cv_ptr_ = nullptr;
-  bool has_new_data_ = false;
+  bool has_new_image_ = false;
 
   bool use_gui_;
   std::string gui_window_name_;
@@ -150,7 +169,7 @@ int main(int argc, char** argv) {
   }
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter("camera_0/image_raw", "hue_detection", true);
+  ImageConverter image_converter("camera_0/camera_info", "camera_0/image_raw", "hue_detection", true);
 
   HueDetection detection;
   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
@@ -159,14 +178,13 @@ int main(int argc, char** argv) {
   detection.addDetector("blue", histogram_folder + "blue.yaml", cvScalar(0, 255, 255));
   detection.addDetector("orange", histogram_folder + "orange.yaml", cvScalar(255, 0, 0));
 
-  // TODO: from camera_info topic at ImageConverter?
-  double fx = 674;
-  double fy = 674;
-  double u0 = 400;
-  double v0 = 300;
-  double gamma = 0;
+  while (!image_converter.hasCameraInfo() && ros::ok()) {
+    ROS_INFO("detection_node: Waiting for camera info...");
+    ros::spinOnce();
+    sleep(1);
+  }
   CameraParameters camera;
-  camera.K = tf2::Matrix3x3(fx,gamma,u0, 0,fy,v0, 0,0,1);
+  camera.K = image_converter.getCameraK();
 
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
@@ -174,7 +192,7 @@ int main(int argc, char** argv) {
 
   ros::Rate rate(10);  // [Hz]
   while (ros::ok()) {
-    if (image_converter.hasNewData()) {
+    if (image_converter.hasNewImage()) {
       cv_bridge::CvImagePtr cv_ptr = image_converter.getCvImagePtr();
       // Pass frame to the hue-model-based tracker:
       detection.setFrame(cv_ptr->image);
