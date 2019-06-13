@@ -25,10 +25,10 @@
 		<origin xyz="0 0 -0.275" rpy="0 0 0" />
 </magnetic_gripper>
 
-<include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+<!--include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
 <fake_camera parent="base_link" robot_name="dji_f550_$(arg robot_id)">
 		<origin xyz="0.5 0 -0.27" rpy="0 1.57 0" />
-</fake_camera>
+</fake_camera-->
 
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->
