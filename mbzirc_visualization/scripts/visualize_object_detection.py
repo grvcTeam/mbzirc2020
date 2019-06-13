@@ -9,9 +9,12 @@ from visualization_msgs.msg import Marker, MarkerArray
 # TODO: namespacing?
 marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)
 
-def get_color(properties_dict, alpha):
+def get_color(properties_dict, alpha = 1.0):
     color_out = ColorRGBA()
     color_out.a = alpha
+    color_out.r = 0.5  # Default is gray
+    color_out.g = 0.5
+    color_out.b = 0.5
     if 'color' in properties_dict:
         color_in = properties_dict['color']
         if color_in == 'red':
@@ -69,7 +72,9 @@ def sensed_objects_callback(data):
         pose_marker.color.a = 1.0
         marker_array.markers.append(pose_marker)
 
-        properties_dict = json.loads(sensed.properties)
+        properties_dict = {}
+        if sensed.properties:
+            properties_dict = json.loads(sensed.properties)
 
         scale_marker = Marker()
         scale_marker.header = sensed.header
