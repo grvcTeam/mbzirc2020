@@ -14,6 +14,7 @@
 class ImageConverter {
 public:
 
+  // TODO(performance): Another constructor that takes camera_info from static data or config file
   ImageConverter(const std::string& _info_topic, const std::string& _input_topic, const std::string& _output_topic, bool _use_gui = false): it_(nh_), use_gui_(_use_gui) {
     info_sub_ = nh_.subscribe(_info_topic, 1, &ImageConverter::infoCallback, this);
     image_sub_ = it_.subscribe(_input_topic, 1, &ImageConverter::imageCallback, this);
@@ -179,7 +180,8 @@ int main(int argc, char** argv) {
   detection.addDetector("orange", histogram_folder + "orange.yaml", cvScalar(255, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
-    ROS_INFO("detection_node: Waiting for camera info...");
+    // TODO(performance): If camera info is constant, having a subscriber is overkill
+    ROS_INFO("Waiting for camera info...");
     ros::spinOnce();
     sleep(1);
   }
