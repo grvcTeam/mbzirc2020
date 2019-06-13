@@ -152,7 +152,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
     object.scale.x = pixel_to_metric_x * (item.perimeter + aux) / 4.0;
     object.scale.y = pixel_to_metric_y * (item.perimeter - aux) / 4.0;
     object.scale.z = estimated_z;
-    object.properties = "{color: \'" + item.detector_id + "\'}";
+    object.properties = "{\"color\": \"" + item.detector_id + "\"}";
     object_list.objects.push_back(object);
     // std::cout << object << '\n';
   }
