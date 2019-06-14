@@ -34,7 +34,7 @@ class AgentInterface():
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
 
         self.callables['graph_list'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
-        self.add_client(self,'agent_list','/agent_list', GetJson)
+        self.add_client('agent_list','/agent_list', GetJson)
 
         if graph_change_cb:
             self.add_subscriber(self, 'AGENT', '/changes', String, graph_change_cb)

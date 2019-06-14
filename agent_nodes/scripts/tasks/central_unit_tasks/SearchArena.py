@@ -4,6 +4,7 @@ import smach
 import smach_ros
 import json
 import sys
+from math import sqrt, pow
 
 from utils.geom import *
 from utils.agent import *
@@ -37,29 +38,50 @@ class Task(smach.State):
         return True
 
     def object_detection_cb(self, msg):
-        # check if any of the objects can be one of the searched items
+        if self.all_found():
+            return
+
+        # group objects by similar objects. TODO: Hardcoded for bricks and piles
+        groups = self.objects2group(msg.objects)
+
+        # check if any of the objects can be one of the searched items. TODO: in can take partially detected pile as item
         for item in self.items:
             if self.items[item] == None:
-                self.items[item] = self.find_item(self.items_d[item], msg)
+                self.items[item] = self.find_item(self.items_d[item], groups)
 
-    def find_item(self, item, msg):
-        pass
+    def find_item(self, item, groups):
+        for scale in groups:
+            if item == scale:
+                return groups[scale]
+        return None
 
-    #returns the bounding box for all centroid extruded by object scale vector length
+    #returns the bounding box for all centroids extruded by object scale vector length
     def objects2group(list):
-        #find group aabb
-        xmin = ymin = sys.float_info.max
-        xmax = ymax = - sys.float_info.max
+        if not list:
+            return 0,0,0,0
+
+        #find groups aabb
+        groups = {}
 
         for object in list:
+            #find group to which object belongs. TODO: harcoded for bricks detected with fake camera
+            if object.scale.x not in groups:
+                xmin = ymin = sys.float_info.max
+                xmax = ymax = - sys.float_info.max
+                groups[object.scale.x] = [xmin,ymin,xmax,ymax]
+
+            #update bb
             p = list.pose.pose.position
-            xmax = p.x if p.x > xmax else xmax
-            xmin = p.x if p.x < xmin else xmin
-            ymax = p.y if p.y > ymax else ymax
-            ymin = p.y if p.y < ymin else ymin
+            groups[object.scale.x][2] = p.x if p.x > groups[object.scale.x][2] else groups[object.scale.x][2]
+            groups[object.scale.x][0] = p.x if p.x < groups[object.scale.x][0] else groups[object.scale.x][0]
+            groups[object.scale.x][3] = p.y if p.y > groups[object.scale.x][3] else groups[object.scale.x][3]
+            groups[object.scale.x][1] = p.y if p.y < groups[object.scale.x][1] else groups[object.scale.x][1]
 
-        
+        #inflates aabbs
+        for scale in groups:
+            groups[scale] = [groups[scale][0]-scale,groups[scale][1]-scale,groups[scale][2]+scale,groups[scale][3]+scale,]
 
+        return groups
 
     # find aabb larger size and divides it in n.
     def divide_regions(self, aabb, n):
@@ -114,10 +136,10 @@ class Task(smach.State):
         sub_regions = self.divide_regions(aabb,len(uav_dic.keys()))
 
         #items. Harcoded, should be taken from key
-        self.items_d = {'red_pile':{'type':'brick','scale':(0.3,0.2,0.2),'is_group':True},
-                        'blue_pile':{'type':'brick','scale':(0.6,0.2,0.2),'is_group':True},
-                        'green_pile':{'type':'brick','scale':(1.2,0.2,0.2),'is_group':True},
-                        'orange_pile':{'type':'brick','scale':(1.8,0.2,0.2),'is_group':True}}
+        self.items_d = {'red_pile':0.3,
+                        'blue_pile':0.6,
+                        'green_pile':1.2,
+                        'orange_pile':1.8}
 
         self.items = {}
         for item in self.items_d:
