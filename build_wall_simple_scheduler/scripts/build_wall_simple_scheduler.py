@@ -116,7 +116,7 @@ class node():
         self.isidle_1 = rospy.ServiceProxy('/dji_f550_1/dji_f550_1/is_idle', AgentIdle)
         self.pfpnp_2 = rospy.ServiceProxy('/dji_f550_2/dji_f550_2/pfpnp_task', PFPNPlace)
         self.isidle_2 = rospy.ServiceProxy('/dji_f550_2/dji_f550_2/is_idle', AgentIdle)'''
-        self.pfpnp_3 = rospy.ServiceProxy('/ugv_1/pfpnp_task', PFPNPlace)
+        self.pfpnp_3 = rospy.ServiceProxy('/ugv_1/task/pfpnp_task', PFPNPlace)
         self.isidle_3 = rospy.ServiceProxy('/ugv_1/is_idle', AgentIdle)
 
 

@@ -64,12 +64,13 @@ def transform_Shapely_Polygon_with_KDL_Frame(transform,polygon):
 
     return shapely.ops.transform(poly_transform,polygon)
 
-def lookup_tf_transform(parent_frame,child_frame,tf_buffer,n_tries=0,freq=2):
+def lookup_tf_transform(parent_frame,child_frame,tf_buffer,n_tries=0,freq=2, time = None):
     ctr = 0
     rate = rospy.Rate(freq)
     while 1:
         try:
-            trans = tf_buffer.lookup_transform(parent_frame, child_frame, rospy.Time())
+            t = time if time else rospy.Time()
+            trans = tf_buffer.lookup_transform(parent_frame, child_frame, t)
             break
         except Exception as error:
         #except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
