@@ -207,7 +207,7 @@ class Task(smach.State):
                 trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
                 trans_ugv2goal = from_geom_msgs_Transform_to_KDL_Frame(trans_global2ugv.transform).Inverse() * r_pose
                 print abs(trans_ugv2goal.p.x())
-                return abs(trans_ugv2goal.p.x())
+                return trans_ugv2goal.p.x()
             except Exception as error:
                 print repr(error)
                 print self.name + ' Task could not be executed'
@@ -215,8 +215,13 @@ class Task(smach.State):
 
         rate = rospy.Rate(10.0)
         print 'approaching!'
-        while x_rb2obj() > 0.06:
-            self.iface['pub_vel'].publish(Twist(linear=Vector3(0.1,0,0)))
+        while 1:
+            d = x_rb2obj()
+            if abs(d) > 0.06:
+                v = 0.1 if d > 0 else -0.1
+                self.iface['pub_vel'].publish(Twist(linear=Vector3(0.1,0,0)))
+            else:
+                break
             rate.sleep()
 
 
