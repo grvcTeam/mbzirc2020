@@ -252,6 +252,9 @@ class DefaultTaskContainer(smach.Concurrence):
             def get(self, t_name):
                 return self.d_tasks[self.default]
 
+            def request_preempt(self):
+                self.d_tasks[self.default].request_preempt()
+
         self.m_default = MetaDefault(d_dic, default_name)
 
         with self:
