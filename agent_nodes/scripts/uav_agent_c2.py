@@ -10,6 +10,7 @@ import tasks.uav_tasks.Hovering
 import tasks.uav_tasks.PickAndPlace
 import tasks.uav_tasks.PickFromPileAndPlace
 import tasks.uav_tasks.BuildWall
+import tasks.uav_tasks.SearchForObjects
 
 def main():
 
@@ -23,10 +24,11 @@ def main():
     global_frame = rospy.get_param('~global_frame')
     uav_frame = rospy.get_param('~uav_frame')
     gripper_frame = rospy.get_param('~gripper_frame')
+    aov = rospy.get_param('~aov')
 
     # instantiate agent structures
     fsm = AgentStateMachine()
-    iface = AgentInterface(id,fsm)
+    iface = AgentInterface(id,fsm,{'type':'UAV'})
 
     # create tasks
     default_task = tasks.uav_tasks.Hovering.Task('hovering',iface,uav_ns, height, global_frame, uav_frame)
@@ -34,6 +36,7 @@ def main():
     add_task('pfpnp_task', tasks_dic, iface, tasks.uav_tasks.PickFromPileAndPlace, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
     add_task('pnp_task', tasks_dic, iface, tasks.uav_tasks.PickAndPlace, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
     add_task('build_wall', tasks_dic, iface, tasks.uav_tasks.BuildWall, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
+    add_task('search_region', tasks_dic, iface, tasks.uav_tasks.SearchForObjects, [uav_ns, height, global_frame, uav_frame, aov])
 
     # initialize state machine
     d_dic = {'hovering': default_task}

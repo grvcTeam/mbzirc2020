@@ -31,7 +31,7 @@ def main():
 
     # instantiate agent structures
     fsm = AgentStateMachine()
-    iface = AgentInterface(id,fsm)
+    iface = AgentInterface(id,fsm,{'type':'UGV'})
 
     # create tasks
     default_task = tasks.ugv_tasks.Idle.Task('idle',iface)

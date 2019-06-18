@@ -6,7 +6,7 @@ import geometry_msgs.msg #Pose, Transform, Polygon
 import rospy
 
 from math import tan, ceil, pi
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 #conversions
 def from_geom_msgs_Transform_to_geom_msgs_Pose(transform):
@@ -86,8 +86,8 @@ def compute_search_path(aov, height, polygon, pos):
 
     #compute coverage square
     aov = aov * (pi/180.)
-    r = tan(aov) * height
-    lx = ly = 2 * r
+    r = (tan(aov/2) * height)
+    lx = ly = 2 * r #TODO: typically aov takes different values in x and y directions
     rospy.loginfo('coverage size: {l}'.format(l=lx))
 
     #compute polygon bounds and path grid size
@@ -132,8 +132,8 @@ def compute_search_path(aov, height, polygon, pos):
         for i in r:
             path += [(x_plus(ox,lx*i),y_plus(oy,ly*j))]
 
-    '''ln = shapely.geometry.LineString(path)
-    ln2 = shapely.geometry.LineString(list(pol.exterior.coords))
+    ln = shapely.geometry.LineString(path)
+    ln2 = shapely.geometry.LineString(list(polygon.exterior.coords))
     ox -= lx/2
     oy -= ly/2
     ln3 = shapely.geometry.LineString([(ox,oy),(ox+lx,oy),(ox+lx,oy+ly),(ox,oy+ly),(ox,oy)])
@@ -143,8 +143,8 @@ def compute_search_path(aov, height, polygon, pos):
     plt.plot(x,y,'r')
     x, y = ln3.xy
     plt.plot(x,y,'g')
-    plt.axis([0, 80, 0, 80])
-    plt.show()'''
+    #plt.axis([0, 80, 0, 80])
+    plt.show()
 
     return path
 

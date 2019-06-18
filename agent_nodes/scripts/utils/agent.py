@@ -18,6 +18,7 @@ class AgentInterface():
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
+        self.agent_props = agent_props
 
         # members of the agent interface
         self.callables = {}

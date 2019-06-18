@@ -33,6 +33,7 @@
       <param name="global_frame" value="map"/>
       <param name="uav_frame" value="$(arg ns)_$(arg uav_id)/base_link"/>
       <param name="gripper_frame" value="$(arg ns)_$(arg uav_id)/gripper_link"/>
+      <param name="aov" value="40"/> <!-- angle of view of the camera used to detect objects -->
     </node>
   </group>
 </launch>
