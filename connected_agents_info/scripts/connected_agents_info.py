@@ -19,9 +19,9 @@ class ConnectedAgentsInfo():
                 print service
                 e = service.find('/task')
                 s = s1 = 0
-                while s1 >= 0:
+                '''while s1 >= 0:
                     s1 = service.find('/',s,e)
-                    s = s1+1 if s1 >= 0 else s
+                    s = s1+1 if s1 >= 0 else s'''
 
                 a_name = service[s:e]
                 s = (rosservice.get_service_type(service), service)
