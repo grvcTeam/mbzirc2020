@@ -24,7 +24,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
         <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
-        args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge3.world">
+        args="-physics=ode -add_model_path=$(find challenge_worlds)/models -world=$(find challenge_worlds)/worlds/challenge3.world">
             <rosparam param="sim_origin">[37.558542, -5.931074, 7.89]</rosparam><!-- [lat,lon,alt] -->
         </node>
     </group>
@@ -37,6 +37,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     -->
     <!-- Launch robot id=1 -->
     <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)1">
+        <arg name="robot_model" value="mbzirc2020"/>
+        <arg name="description_package" value="challenge_worlds"/>
         <arg name="id" value="1"/>
         <arg name="material" value="Orange"/>
         <arg name="mode" value="$(arg mode)"/>
@@ -49,6 +51,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <group if="$(arg multi)">
         <!-- Launch robot id=2 -->
         <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)2">
+            <arg name="robot_model" value="mbzirc2020"/>
+            <arg name="description_package" value="challenge_worlds"/>
             <arg name="id" value="2"/>
             <arg name="material" value="Indigo"/>
             <arg name="mode" value="sitl"/>
@@ -59,6 +63,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         </include>
         <!-- Launch robot id=3 -->
         <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg ns_prefix)3">
+            <arg name="robot_model" value="mbzirc2020"/>
+            <arg name="description_package" value="challenge_worlds"/>
             <arg name="id" value="3"/>
             <arg name="material" value="ZincYellow"/>
             <arg name="mode" value="sitl"/>
