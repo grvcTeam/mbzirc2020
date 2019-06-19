@@ -46,10 +46,9 @@
   </xacro:property>
 
   <!-- Included URDF Files -->
-  <xacro:include filename="$(find challenge_worlds)/urdf/multirotor_base.xacro" />
-  <xacro:include filename="$(find challenge_worlds)/urdf/component_snippets.xacro" />
-  <xacro:include filename="$(find challenge_worlds)/models/teraranger_description/urdf/teraranger_evo.urdf.xacro" />
-  
+  <xacro:include filename="$(find challenge_worlds)/models/mbzirc2020/multirotor_base.xacro" />
+  <xacro:include filename="$(find challenge_worlds)/models/mbzirc2020/component_snippets.xacro" />
+   
   <!-- Instantiate multirotor_base_macro once -->
   <xacro:multirotor_base_macro
     model_name="${model_name}"
