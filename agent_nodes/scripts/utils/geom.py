@@ -6,7 +6,7 @@ import geometry_msgs.msg #Pose, Transform, Polygon
 import rospy
 
 from math import tan, ceil, pi
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 #conversions
 def from_geom_msgs_Transform_to_geom_msgs_Pose(transform):
@@ -133,7 +133,7 @@ def compute_search_path(aov, height, polygon, pos):
         for i in r:
             path += [(x_plus(ox,lx*i),y_plus(oy,ly*j))]
 
-    ln = shapely.geometry.LineString(path)
+    '''ln = shapely.geometry.LineString(path)
     ln2 = shapely.geometry.LineString(list(polygon.exterior.coords))
     ox -= lx/2
     oy -= ly/2
@@ -144,8 +144,7 @@ def compute_search_path(aov, height, polygon, pos):
     plt.plot(x,y,'r')
     x, y = ln3.xy
     plt.plot(x,y,'g')
-    #plt.axis([0, 80, 0, 80])
-    plt.show()
+    plt.show()'''
 
     return path
 

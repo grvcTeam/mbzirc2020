@@ -27,7 +27,7 @@ transitions={'success':'success','failure':'success','error':'error'}
 def gen_userdata(req):
 
     userdata = smach.UserData()
-    userdata.search_region = Polygon(points=[Point32(-15,-15,0),Point32(15,-15,0),Point32(15,15,0),Point32(-15,15,0)])
+    userdata.search_region = Polygon(points=[Point32(-15,-5,0),Point32(15,-5,0),Point32(15,0,0),Point32(-15,0,0)])
     userdata.items = None
     return userdata
 
@@ -36,8 +36,8 @@ def gen_userdata(req):
 class Task(smach.State):
 
     def all_found(self):
-        for item in self.items:
-            if self.items[item] == None:
+        for item in self.items_d:
+            if self.items_d[item]['aabb'] == None:
                 return False
         return True
 
@@ -45,12 +45,12 @@ class Task(smach.State):
         '''if self.all_found():
             return'''
 
-        # group objects by similar objects. TODO: Hardcoded for bricks and piles
-        groups = self.objects2group(msg.objects)
+        # group objects by similar objects.
+        piles = self.bricks2pile(msg.objects)
 
-        # check if any of the objects can be one of the searched items. TODO: in can take partially detected pile as item
-        for item in self.items:
-            bb = self.find_item(self.items_d[item], groups)
+        # check if any of the objects can be one of the searched items.
+        for item in self.items_d:
+            bb = self.find_pile(self.items_d[item]['scale_x'], piles)
             if bb:
                 cam_frame = msg.objects[0].header.frame_id
                 try:
@@ -66,61 +66,64 @@ class Task(smach.State):
                 bb = bb_p.bounds
                 #print 'bb: {b}'.format(b=bb)
 
-                if self.items[item] and self.bb_do_intersect(bb,self.items[item]):
-                    bb = self.bb_union(bb,self.items[item])
-                    print 'item updated {item}!!'.format(item=bb)
+                if self.items_d[item]['aabb'] and self.bb_do_intersect(bb,self.items_d[item]['aabb']):
+                    bb = self.bb_union(bb,self.items_d[item]['aabb'])
+                    #print 'item updated {item}!!'.format(item=bb)
 
-                self.items[item] = bb
+                self.items_d[item]['aabb'] = bb
 
+    def find_pile(self, value, piles):
+        for prop in piles:
+            if value == prop:
+                return piles[prop]
+        return None
+
+    # groups objects in the list according to a property (TODO: harcoded for scale.x)
+    # and computes the bounding box of the centers of group extruded by a value. (TODO: harcoded for scale.x)
+    def bricks2pile(self, list):
+        if not list:
+            return 0,0,0,0
+
+        #find piles aabb
+        piles = {}
+
+        for object in list:
+            #find group to which object belongs.
+            if object.scale.x not in piles:
+                xmin = ymin = sys.float_info.max
+                xmax = ymax = - sys.float_info.max
+                piles[object.scale.x] = [xmin,ymin,xmax,ymax]
+
+            #update bb
+            p = object.pose.pose.position
+            piles[object.scale.x][2] = p.x if p.x > piles[object.scale.x][2] else piles[object.scale.x][2]
+            piles[object.scale.x][0] = p.x if p.x < piles[object.scale.x][0] else piles[object.scale.x][0]
+            piles[object.scale.x][3] = p.y if p.y > piles[object.scale.x][3] else piles[object.scale.x][3]
+            piles[object.scale.x][1] = p.y if p.y < piles[object.scale.x][1] else piles[object.scale.x][1]
+
+        #inflates aabbs
+        for scale in piles:
+            piles[scale] = [piles[scale][0]-scale/2,piles[scale][1]-scale/2,piles[scale][2]+scale/2,piles[scale][3]+scale/2]
+
+        return piles
+
+    # test if two bbs intersects. Also returns true if one contains the other.
     def bb_do_intersect(self,bb1,bb2):
         def in_seg(s1,s2,p):
             return s1 <= p and s2 >= p
 
         def inter_seg(s11,s12,s21,s22):
-            return in_seg(s11,s12,s21) or in_seg(s11,s12,s22)
+            return in_seg(s11,s12,s21) or in_seg(s11,s12,s22) or in_seg(s21,s22,s11)
 
-        print '{b1} I {b2} = {i}'.format(b1=bb1,b2=bb2,i=inter_seg(bb1[0],bb1[2],bb2[0],bb2[2]) and inter_seg(bb1[1],bb1[3],bb2[1],bb2[3]))
+        #print '{b1} I {b2} = {i}'.format(b1=bb1,b2=bb2,i=inter_seg(bb1[0],bb1[2],bb2[0],bb2[2]) and inter_seg(bb1[1],bb1[3],bb2[1],bb2[3]))
 
         return inter_seg(bb1[0],bb1[2],bb2[0],bb2[2]) and inter_seg(bb1[1],bb1[3],bb2[1],bb2[3])
 
+    # returns the bb of two bbs
     def bb_union(self,bb1,bb2):
         return [min(bb1[0],bb2[0]),min(bb1[1],bb2[1]),max(bb1[2],bb2[2]),max(bb1[3],bb2[3])]
 
-    def find_item(self, item, groups):
-        for scale in groups:
-            if item == scale:
-                return groups[scale]
-        return None
-
-    #returns the bounding box for all centroids extruded by object scale vector length
-    def objects2group(self, list):
-        if not list:
-            return 0,0,0,0
-
-        #find groups aabb
-        groups = {}
-
-        for object in list:
-            #find group to which object belongs. TODO: harcoded for bricks detected with fake camera
-            if object.scale.x not in groups:
-                xmin = ymin = sys.float_info.max
-                xmax = ymax = - sys.float_info.max
-                groups[object.scale.x] = [xmin,ymin,xmax,ymax]
-
-            #update bb
-            p = object.pose.pose.position
-            groups[object.scale.x][2] = p.x if p.x > groups[object.scale.x][2] else groups[object.scale.x][2]
-            groups[object.scale.x][0] = p.x if p.x < groups[object.scale.x][0] else groups[object.scale.x][0]
-            groups[object.scale.x][3] = p.y if p.y > groups[object.scale.x][3] else groups[object.scale.x][3]
-            groups[object.scale.x][1] = p.y if p.y < groups[object.scale.x][1] else groups[object.scale.x][1]
-
-        #inflates aabbs
-        for scale in groups:
-            groups[scale] = [groups[scale][0]-scale/2,groups[scale][1]-scale/2,groups[scale][2]+scale/2,groups[scale][3]+scale/2]
-
-        return groups
-
-    # find aabb larger size and divides it in n.
+    # find aabb larger size and divides it in n sub-bbs.
     def divide_regions(self, aabb, n):
         x_l = aabb[2] - aabb[0]
         y_l = aabb[3] - aabb[1]
@@ -144,7 +147,8 @@ class Task(smach.State):
     #init
     def __init__(self, name, interface):
         smach.State.__init__(self,outcomes=['success','error','failure'],
-                input_keys = ['search_region', 'items']) #items = {'name': {'prop':value,...},...}
+                input_keys = ['search_region'],
+                io_keys = ['items']) #items = {'name': {'prop':value,...},...}
 
         #members
         self.is_searching = False
@@ -177,14 +181,12 @@ class Task(smach.State):
         #print sub_regions
 
         #items. Harcoded, should be taken from key
-        self.items_d = {'red_pile':0.3,
-                        'blue_pile':0.6,
-                        'green_pile':1.2,
-                        'orange_pile':1.8}
+        self.items_d = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
+                        'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
+                        'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
+                        'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}
 
-        self.items = {}
-        for item in self.items_d:
-            self.items[item] = None
+        userdata.items = self.items_d
 
         # send search tasks and wait
         n = 0
@@ -216,6 +218,13 @@ class Task(smach.State):
             if all_idle:
                 break
             r.sleep()
+
+        for item in self.items_d:
+            if self.items_d[item]['aabb']:
+                bb = self.items_d[item]['aabb']
+                self.items_d[item]['centroid'] = ((bb[2]+bb[0])/2,(bb[3]+bb[1])/2)
+
+        print userdata.items
 
         res =  'success' if self.all_found() else 'failure'
         return res
