@@ -1,0 +1,7 @@
+string type
+geometry_msgs/Vector3 scale
+geometry_msgs/Pose obj_pose
+geometry_msgs/Pose goal_pose
+geometry_msgs/Polygon[] shared_regions
+---
+bool success

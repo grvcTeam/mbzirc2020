@@ -3,7 +3,6 @@ geometry_msgs/PoseStamped red_pile
 geometry_msgs/PoseStamped green_pile
 geometry_msgs/PoseStamped blue_pile
 geometry_msgs/PoseStamped orange_pile
-string uav_frame
-string gripper_frame
+geometry_msgs/Polygon[] shared_regions
 ---
 bool success
