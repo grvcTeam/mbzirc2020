@@ -3,3 +3,4 @@ string[] object_types
 bool stop_after_find
 ---
 bool success
+string outcome
