@@ -1,0 +1,5 @@
+geometry_msgs/PolygonStamped search_region
+string[] object_types
+bool stop_after_find
+---
+bool success

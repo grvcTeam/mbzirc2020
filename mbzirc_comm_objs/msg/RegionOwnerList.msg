@@ -1,0 +1,1 @@
+string[] region_owners
