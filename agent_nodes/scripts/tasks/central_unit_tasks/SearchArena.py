@@ -9,17 +9,18 @@ from math import sqrt, pow
 from utils.geom import *
 from utils.agent import *
 import shapely.geometry
+import threading
 
 # required message definitions
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from std_msgs.msg import String
 from mbzirc_comm_objs.msg import ObjectDetectionList
-from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest
+from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, BuildWall, BuildWallResponse
 from geometry_msgs.msg import Polygon, Point32,  PolygonStamped
 
 # task properties
-ResponseType = SetBoolResponse
-DataType = SetBool
+ResponseType = BuildWallResponse
+DataType = BuildWall
 transitions={'success':'success','failure':'success','error':'error'}
 
 # function to create userdata from a task execution request matching the task
@@ -27,7 +28,7 @@ transitions={'success':'success','failure':'success','error':'error'}
 def gen_userdata(req):
 
     userdata = smach.UserData()
-    userdata.search_region = Polygon(points=[Point32(-15,-5,0),Point32(15,-5,0),Point32(15,0,0),Point32(-15,0,0)])
+    userdata.search_region = Polygon(points=[Point32(-11,-11,0),Point32(11,-11,0),Point32(11,11,0),Point32(-11,11,0)])
     userdata.items = None
     return userdata
 
@@ -201,7 +202,9 @@ class Task(smach.State):
             n += 1
 
             c = rospy.ServiceProxy(uav_dic[a], SearchForObject)
-            c(req)
+            #c(req)
+            t = threading.Thread(target=c, args=[req,])
+            t.start()
             self.iface.add_subscriber(self,'{agent_id}/detected_objects'.format(agent_id=a),ObjectDetectionList,
                                     self.object_detection_cb)
 
