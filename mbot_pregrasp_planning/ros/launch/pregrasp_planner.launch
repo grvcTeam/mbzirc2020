@@ -41,9 +41,14 @@
   <node pkg="mcr_arm_motions" type="planned_motion_node" name="move_arm_planned_motion" output="screen">
     <param name="~loop_rate"  type="double" value="10"/>
     <param name="~move_group"  type="string" value="move_group"/>
-    <param name="~arm"  type="string" value="manipulator2"/>
+    <param name="~arm"  type="string" value="manipulator"/>
     <remap from="~target_configuration" to="/mir_manipulation/pregrasp_planner_pipeline/configuration_out"/>
   </node>
+
+  <node pkg="mbot_moveit_planning_scene" type="mbot_moveit_scene_node" name="mbot_moveit_scene_node" output="screen">
+    <param name="~loop_rate" type="double" value="10"/>
+  </node>
+
 
   <group ns="mir_manipulation/pregrasp_planner_pipeline">
 

@@ -60,6 +60,16 @@ class Kinematics:
         self.configuration = self.config[2:]
         self.groupIK = 'manipulator2'
 
+
+        ############################
+
+        self.joint_names = self.copy[2:-1]
+        self.configuration = self.config
+        self.groupIK = 'manipulator'
+
+        print self.joint_names
+        print self. configuration
+
         print "esta no switch joints arm only"
 
 

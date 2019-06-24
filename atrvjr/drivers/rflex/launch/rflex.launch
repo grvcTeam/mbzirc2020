@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="ns" default="/rflex"/>
+    <arg name="serialPort" default="/dev/ttyUSB0"/>
+
+    <node ns="$(arg ns)" pkg="rflex" type="atrvjr_node" name="atrvjr_node" output="screen">
+        <param name="port" value="$(arg serialPort)"/>    
+        <rosparam command="load" file="$(find rflex)/params/odom_covariance.yaml" />
+        
+        <!-- Low-level configuration, use caution -->
+        <param name="odo_distance_conversion" value="90000"/>
+        <param name="odo_angle_conversion" value="36000"/>
+        <param name="trans_acceleration" value="1.5"/>
+        <param name="trans_torque" value="0.075"/>
+        <param name="rot_acceleration" value="2.5"/>
+        <param name="rot_torque" value="0.7"/>
+    </node>
+
+</launch>

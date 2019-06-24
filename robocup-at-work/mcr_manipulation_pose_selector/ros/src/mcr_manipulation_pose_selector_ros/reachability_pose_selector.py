@@ -63,11 +63,11 @@ class PoseSelector(object):
         self.arm = rospy.get_param('~arm', None)
         assert self.arm is not None, "Group to move (e.g. arm) must be specified."
 
-        print self.arm
+        #print self.arm
 
         self.group = moveit_commander.MoveGroupCommander(self.arm)
 
-        print self.group
+        #print self.group
 
         self.kinematics = kinematics.Kinematics(self.arm)
 
@@ -200,10 +200,18 @@ class PoseSelector(object):
         # name of the group to compute the inverse kinematics
         
         # joints to compute the inverse kinematics
+        # self.copy=self.group.get_joints()
+        # self.joint_uris = self.copy[4:]
+
+        # print self.copy
+
+
+
         self.copy=self.group.get_joints()
-        self.joint_uris = self.copy[4:]
+        self.joint_uris = self.copy[2:-1]  #PARA O BRACO REAL
 
         print self.copy
+        print self.joint_uris
 
         for ii, pose in enumerate(poses):
             print ii

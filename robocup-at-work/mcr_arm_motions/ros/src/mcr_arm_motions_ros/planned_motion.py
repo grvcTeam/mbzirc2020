@@ -34,7 +34,6 @@ class PlannedMotion(object):
         # Params
         self.event = None
         self.target_configuration = None
-        self.flag = None
 
         # MoveIt! interface
         move_group = rospy.get_param('~move_group', None)
@@ -68,8 +67,10 @@ class PlannedMotion(object):
 
         # Subscribers
         rospy.Subscriber("~event_in", std_msgs.msg.String, self.event_in_cb)
-        rospy.Subscriber("~target_configuration", brics_actuator.msg.JointPositions, self.target_configuration_cb)  
-        rospy.Subscriber("/pregrasp_pipeline_pose_selector/flag", std_msgs.msg.Bool, self.flag_cb)
+        rospy.Subscriber(
+            "~target_configuration", brics_actuator.msg.JointPositions,
+            self.target_configuration_cb
+        )
 
     def target_configuration_cb(self, msg):
         """
@@ -84,14 +85,6 @@ class PlannedMotion(object):
 
         """
         self.event = msg.data
-
-    def flag_cb(self, msg):
-        """
-        Obtains the joint configuration where the arm will be moved.
-
-        """
-        self.flag = msg.data
-        print self.flag
 
     def start(self):
         """
@@ -182,19 +175,20 @@ class PlannedMotion(object):
         :rtype: bool
 
         """
-
-        # SE usar o manipulator2 nos dois nodes esta cena nao funciona, tenho que criar uma flag para para mandar do reachability para este planned motion node
-        # que diga se e para cortar estes dois primeiros elementos do joint_configuration.positions ou nao
-
-       
-       
-            
-        #joint_configuration.positions=joint_configuration.positions[2:]
+        print "plannnnnnnnnnnnnnnnnnnnneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddd"
         print joint_configuration
+
+
 
         joint_list = utils.brics_joint_positions_to_list(joint_configuration)
 
-        # print joint_list
+        if len(joint_list) > 6:
+            joint_list=joint_list[2:]
+
+            
+        print joint_list
+
+
 
 
         # base_position_pose = geometry_msgs.msg.PoseStamped()
@@ -212,7 +206,7 @@ class PlannedMotion(object):
         # base_position_pose.pose.orientation.w= 1
 
 
-        #self.base_position_pub.publish(base_position_pose)
+        # self.base_position_pub.publish(base_position_pose)
 
         #rospy.sleep(joint_list[1]*5)
 

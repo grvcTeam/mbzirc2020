@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atrvjr">
-  <xacro:include filename="$(find atrvjr_description)/urdf/atrvjr.xacro" />
-  <xacro:atrvjr armConnectionFrame="arm_base_frame" />
-</robot>

@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="ns" default=""/>
+
+    <include file="$(find rflex)/launch/rflex.launch">
+        <arg name="ns" value="$(arg ns)/rflex"/>
+        <arg name="serialPort" value="/dev/ttyUSB0"/>
+    </include>
+
+
+    <!-- CROSSBOW -->
+
+    <include file="$(find xbow6x)/launch/xbow6x.launch" >
+        <arg name="ns" value="$(arg ns)/xbow6x"/>
+        <arg name="serialPort" value="/dev/ttyUSB1"/>
+        <arg name="frame_id" value="cbimu_frame"/>
+    </include>
+
+    <!-- MPU IMU -->
+
+    <include file="$(find atrvjr)/launch/mpuimu.launch" >
+        <arg name="ns" value="$(arg ns)/atrvjr/mpu"/>
+        <arg name="port" value="/dev/mpuimu"/>
+        <arg name="imu_frame_id" value="mpuimu_frame"/>
+        <arg name="frame_id" value="mpuimu_frame"/>
+        <arg name="tf_frame_id" value="mpuimu_frame"/>
+    </include>
+
+    <!-- HOKUYO -->
+    <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
+        <param name="serial_port" value="/dev/ttyACM1"/>
+        <param name="frame_id" value="hokuyo"/>
+        <param name="angle_min" value="-1.5"/>
+        <param name="angle_max" value="1.5"/>
+    </node>
+
+    <!-- <include file="$(find teleop_twist_joy)/launch/teleop.launch" /> -->
+
+
+    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen">
+    	<remap from="/cmd_vel" to="/rflex/atrvjr_node/cmd_vel"/>
+    </node>
+
+</launch>
+
+
+
+
+<!-- TESTADO COM O RFLEX NOVATEL CROSSBOW E HOKUYO, TODOS A FUNCIONAR -->
