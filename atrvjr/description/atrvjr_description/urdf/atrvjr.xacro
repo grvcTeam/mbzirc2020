@@ -130,7 +130,7 @@
     <link name="${armConnectionFrame}"/>
 
     <joint name="$to_{armConnectionFrame}_joint" type="fixed">
-        <origin xyz="0.09 0 0.5" rpy="0 0 0"/>
+        <origin xyz="0.09 0 0.47" rpy="0 0 0"/>
         <parent link="base_link"/>
         <child link="${armConnectionFrame}"/>
     </joint>

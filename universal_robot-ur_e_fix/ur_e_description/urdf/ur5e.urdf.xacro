@@ -278,7 +278,7 @@
     <joint name="${prefix}wrist_3_joint" type="revolute">
       <parent link="${prefix}wrist_2_link" />
       <child link = "${prefix}wrist_3_link" />
-      <origin xyz="0 0.12 ${wrist_2_length}" rpy="1.57 0.0 0.0" />
+      <origin xyz="0 0.13 ${wrist_2_length}" rpy="1.57 0.0 0.0" />
       <axis xyz="0 0 1" />
       <xacro:unless value="${joint_limited}">
         <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="28.0" velocity="6.28"/>
@@ -293,7 +293,7 @@
       <visual>
         <geometry>
           <!-- <mesh filename="package://ur_e_description/meshes/ur5e/visual/wrist3.dae" /> -->
-          <cylinder radius="0.04" length="0.15"/>
+          <cylinder radius="0.04" length="0.168"/>
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -302,7 +302,7 @@
       <collision>
         <geometry>
           <!-- <mesh filename="package://ur_e_description/meshes/ur5e/collision/wrist3.stl" /> -->
-          <cylinder radius="0.04" length="0.15"/>
+          <cylinder radius="0.04" length="0.168"/>
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_3_mass}">
