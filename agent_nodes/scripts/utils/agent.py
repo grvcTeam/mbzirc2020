@@ -292,7 +292,7 @@ class AgentTaskWrapper(smach.StateMachine):
                                              (self._current_label, self._current_state)
                                              + traceback.format_exc())
 
-        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome )
+        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, sender=self )
         outcome = self._current_transitions[outcome]
 
         # Set current state
@@ -362,7 +362,7 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
                 if task_id == name:
                     task_outcome['outcome'] = outcome # because cannot assign nonlocal vars in python 2.x
 
-            dispatcher.connect( completed_cb, signal='task_completed', sender=dispatcher.Any )
+            dispatcher.connect( completed_cb, signal='task_completed', sender=wrapper )
 
             r = rospy.Rate(10)
             while not rospy.is_shutdown() and not task_outcome:
@@ -372,7 +372,7 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
         else:
             rospy.logwarn('Agent {agent_id} cannot execute task {name}. Currently executing: {active}'.format(
             agent_id=interface.agent_id,name=name,active=interface.fsm.get_active_states()))
-            return task.ResponseType(success=False)
+            return task.ResponseType(success=False,outcome='not_executed')
 
     return rospy.Service(interface.agent_id+'/task/'+name, task.DataType, cb)
 
