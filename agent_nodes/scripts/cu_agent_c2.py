@@ -8,6 +8,7 @@ import smach_ros
 from utils.agent import *
 import tasks.central_unit_tasks.Idle
 import tasks.central_unit_tasks.SearchArena
+import tasks.central_unit_tasks.BuildWall
 
 def main():
 
@@ -24,6 +25,7 @@ def main():
     default_task = tasks.central_unit_tasks.Idle.Task('idle',iface)
     tasks_dic = {}
     add_task('search_arena', tasks_dic, iface, tasks.central_unit_tasks.SearchArena, [])
+    add_task('build_wall', tasks_dic, iface, tasks.central_unit_tasks.BuildWall, [])
 
     # initialize state machine
     d_dic = {'idle': default_task}
