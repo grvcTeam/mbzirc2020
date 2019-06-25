@@ -11,6 +11,7 @@ import tasks.uav_tasks.PickAndPlace
 import tasks.uav_tasks.PickFromPileAndPlace
 import tasks.uav_tasks.BuildWall
 import tasks.uav_tasks.SearchForObjects
+import tasks.uav_tasks.GoToWaypoint
 
 def main():
 
@@ -37,6 +38,7 @@ def main():
     add_task('pnp_task', tasks_dic, iface, tasks.uav_tasks.PickAndPlace, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
     add_task('build_wall', tasks_dic, iface, tasks.uav_tasks.BuildWall, [uav_ns, height, global_frame, uav_frame, gripper_frame, z_offset])
     add_task('search_region', tasks_dic, iface, tasks.uav_tasks.SearchForObjects, [uav_ns, height, global_frame, uav_frame, aov])
+    add_task('go_waypoint', tasks_dic, iface, tasks.uav_tasks.GoToWaypoint, [uav_ns, height, global_frame, uav_frame])
 
     # initialize state machine
     d_dic = {'hovering': default_task}

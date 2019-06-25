@@ -15,12 +15,12 @@ import threading
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from std_msgs.msg import String
 from mbzirc_comm_objs.msg import ObjectDetectionList
-from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, BuildWall, BuildWallResponse
+from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, SearchEnvironment, SearchEnvironmentResponse
 from geometry_msgs.msg import Polygon, Point32,  PolygonStamped
 
 # task properties
-ResponseType = BuildWallResponse
-DataType = BuildWall
+ResponseType = SearchEnvironmentResponse
+DataType = SearchEnvironment
 transitions={'success':'success','failure':'success','error':'error'}
 
 # function to create userdata from a task execution request matching the task
@@ -28,8 +28,14 @@ transitions={'success':'success','failure':'success','error':'error'}
 def gen_userdata(req):
 
     userdata = smach.UserData()
-    userdata.search_region = Polygon(points=[Point32(-11,-11,0),Point32(11,-11,0),Point32(11,11,0),Point32(-11,11,0)])
-    userdata.items = None
+    userdata.search_region = req.search_region
+    userdata.items = req.items
+
+    '''userdata.search_region = Polygon(points=[Point32(-11,-11,0),Point32(11,-11,0),Point32(11,11,0),Point32(-11,11,0)])
+    userdata.items = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}'''
     return userdata
 
 # Task. At initialization it adds required elements to the AgentInterface
@@ -181,13 +187,8 @@ class Task(smach.State):
 
         #print sub_regions
 
-        #items. Harcoded, should be taken from key
-        self.items_d = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
-                        'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
-                        'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
-                        'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}
-
-        userdata.items = self.items_d
+        #items.
+        self.items_d = userdata.items
 
         # send search tasks and wait
         n = 0
