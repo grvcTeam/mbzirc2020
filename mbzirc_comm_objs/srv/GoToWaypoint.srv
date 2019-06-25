@@ -1,0 +1,6 @@
+string global_frame
+geometry_msgs/Pose way_pose
+geometry_msgs/Polygon[] shared_regions
+---
+bool success
+string outcome

@@ -66,6 +66,9 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
    PFPNPlace.srv
    AgentIdle.srv
    GetJson.srv
+   GoToWaypoint.srv
+   SearchEnvironment.srv
+   SearchAndBuild.srv
  )
 
 ## Generate actions in the 'action' folder

@@ -7,11 +7,25 @@ from utils.geom import *
 from utils.agent import *
 
 # message definitions
-from mbzirc_comm_objs.srv import RequestSharedRegion, RequestSharedRegionResponse, RequestSharedRegionRequest
+from mbzirc_comm_objs.srv import RequestSharedRegion, RequestSharedRegionResponse, RequestSharedRegionRequest, GoToWaypoint, GoToWaypointResponse
 from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point
 from std_msgs.msg import Header
 from mbzirc_comm_objs.msg import RegionOwnerList
+
+# task properties
+ResponseType = GoToWaypointResponse
+DataType = GoToWaypoint
+transitions={'success':'success','error':'error'}
+
+# function to create userdata from a task execution request matching the task
+# input keys
+def gen_userdata(req):
+
+    userdata = smach.UserData()
+    userdata.way_pose = req.way_pose
+    userdata.shared_regions = req.shared_regions
+    return userdata
 
 # main class
 class Task(smach.State):

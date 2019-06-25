@@ -20,7 +20,7 @@ from mbzirc_comm_objs.msg import ObjectDetectionList
 from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest
 from geometry_msgs.msg import Polygon, Point32,  PolygonStamped, Point, Pose, PoseStamped, Quaternion
 
-from mbzirc_comm_objs.srv import PFPNPlace, BuildWall, BuildWallResponse, AddSharedRegion, AddSharedRegionRequest
+from mbzirc_comm_objs.srv import PFPNPlace, BuildWall, BuildWallResponse, AddSharedRegion, AddSharedRegionRequest, GoToWaypoint, GoToWaypointRequest
 from mbzirc_comm_objs.msg import WallBluePrint
 
 # task properties
@@ -32,8 +32,17 @@ transitions={'success':'success','failure':'success','error':'error'}
 # input keys
 def gen_userdata(req):
 
+    #wall def
+    header = Header(frame_id='map',stamp=rospy.Time.now())
+    wall =  WallBluePrint()
+    wall.wall_frame = PoseStamped(header=header,pose=Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1)))
+    wall.size_x = 6
+    wall.size_y = 1
+    wall.size_z = 2
+    wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0]
+
     userdata = smach.UserData()
-    userdata.wall = None
+    userdata.wall = wall
     userdata.items = {'red_pile': {'scale_x': 0.3, 'frame_id': 'map', 'aabb': [-0.2605240219463596, -10.149997164259327, 0.498081876014302, -9.599997164259069],
     'centroid': (0.1187789270339712, -9.874997164259199), 'type': 'brick_pile'},
     'blue_pile': {'scale_x': 1.2, 'frame_id': 'map', 'aabb': [-10.592243186737846, -0.6302098295615275, -8.02393939651886, 0.8499999988991274],
@@ -172,13 +181,22 @@ class Task(smach.State):
             res = client(**task_info.parameters)
             task_info.state = Task2Dispatch.states[2]
             task_info.outcome = res.outcome
-            print 'completed task {t} with outcome {o}'.format(t=task_info.id, o = res.outcome)
-            dispatcher.send( signal='task_completed', task_id = task_info.id, outcome=res.outcome, sender=self )
 
-            return res
     	except rospy.ServiceException, e:
     		print "Service call failed: %s"%e
     		return None
+
+
+        # sends agent out of the wall shared region. TODO: this is dirty hack
+        rospy.wait_for_service(task_info.agent_id+'/task/go_waypoint', 5)
+    	client = rospy.ServiceProxy(task_info.srv_address,GoToWaypoint)
+        client(global_frame='map',shared_regions=self.shared_regions, way_pose=Pose(position=Point(3,0,0),orientation=Quaternion(0,0,0,1)))
+        ################3
+
+        print 'completed task {t} with outcome {o}'.format(t=task_info.id, o = res.outcome)
+        dispatcher.send( signal='task_completed', task_id = task_info.id, outcome=res.outcome, sender=self )
+
+        return res
 
     # updates front. TODO: could trigger actions depending on outcome
     def completed_cb(self, task_id, outcome):
@@ -249,15 +267,6 @@ class Task(smach.State):
     # main function
     def execute(self, userdata):
 
-        #wall msg. TODO: should be taken from key
-        header = Header(frame_id='map',stamp=rospy.Time.now())
-        wall =  WallBluePrint()
-        wall.wall_frame = PoseStamped(header=header,pose=Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1)))
-        wall.size_x = 6
-        wall.size_y = 1
-        wall.size_z = 2
-        wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0]
-
         # check items are present
         if not 'red_pile' in userdata.items or not 'green_pile' in userdata.items or not 'blue_pile' in userdata.items or not 'orange_pile' in userdata.items:
             rospy.loginfo('task {t} could not be executed'.format(t=self.name))
@@ -274,7 +283,7 @@ class Task(smach.State):
             return p
 
         p = Polygon()
-        p.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)]
+        p.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)] #TODO: the central shared region should be computed from wall blueprint
         shared_regions = [p]
 
         for pile in self.items:
@@ -292,7 +301,7 @@ class Task(smach.State):
             res = add_reg(req)
 
         #build list of tasks and set constraints
-        wall_matrix, task_dic =  self.build_task_matrix(wall)
+        wall_matrix, task_dic =  self.build_task_matrix(userdata.wall)
         self.set_brick_constraints(wall_matrix)
         self.tasks = task_dic
 
