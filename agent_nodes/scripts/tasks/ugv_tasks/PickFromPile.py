@@ -20,24 +20,6 @@ from uav_abstraction_layer.srv import TakeOff, TakeOffRequest #, GoToWaypoint, G
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3, Twist
 
-from std_srvs.srv import SetBool, SetBoolResponse
-
-
-# task properties
-ResponseType = SetBoolResponse
-DataType = SetBool
-transitions={'success':'success','error':'error'}
-
-# function to create userdata from a task execution request matching the task
-# input keys
-def gen_userdata(req):
-
-    userdata = smach.UserData()
-    userdata.shared_regions = []
-    userdata.pile_centroid = Point(10,0,0)
-    userdata.type = 'brick'
-    return userdata
-
 # main class
 class Task(smach.State):
 
@@ -110,7 +92,7 @@ class Task(smach.State):
             self.objects = msg.objects
 
     # init
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','pile_centroid'],
                 output_keys = ['trans_gripper2object'],
@@ -136,7 +118,7 @@ class Task(smach.State):
         self.iface = interface
 
         # sub_tasks
-        add_sub_task('pick_task', self, PickObject, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
+        add_sub_task('pick_task', self, PickObject, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset])
         add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns, global_frame, ugv_frame])
 
     # main function

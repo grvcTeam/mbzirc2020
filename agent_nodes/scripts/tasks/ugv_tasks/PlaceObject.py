@@ -20,8 +20,6 @@ from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3, Twist
 
-from std_srvs.srv import SetBool, SetBoolResponse
-
 # main class
 class Task(smach.State):
 
@@ -42,7 +40,7 @@ class Task(smach.State):
         self.gripper_attached = msg.attached
 
     #aabbs are supposed to be expressed in robot frame and  centered in the origin
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','scale','goal_pose','trans_gripper2object'],
                 output_keys = ['trans_gripper2object'],
@@ -72,7 +70,7 @@ class Task(smach.State):
         self.robot = moveit_commander.RobotCommander()
 
         #sub tasks
-        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb])
+        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb])
 
 
     #main function

@@ -78,7 +78,7 @@ class Task(smach.State):
 
     #main function
     def execute(self, userdata):
-        #Get UAV pose.
+        #Get UGV pose.
         try:
             trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
         except Exception as error:

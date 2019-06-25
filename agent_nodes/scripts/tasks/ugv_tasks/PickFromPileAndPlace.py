@@ -36,10 +36,10 @@ def gen_userdata(req):
 class Task(smach.StateMachine):
 
     # init
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
         smach.StateMachine.__init__(self,outcomes=['success','error'],
         input_keys = ['shared_regions','type','goal_pose','pile_centroid'])
 
         with self:
-            smach.StateMachine.add('Pick_Task', PickFromPile.Task('PFPile_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset), {'success':'Place_Task','error':'error'})
-            smach.StateMachine.add('Place_Task', PlaceObject.Task('Place_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset), {'success':'success','error':'error'})
+            smach.StateMachine.add('Pick_Task', PickFromPile.Task('PFPile_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset), {'success':'Place_Task','error':'error'})
+            smach.StateMachine.add('Place_Task', PlaceObject.Task('Place_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset), {'success':'success','error':'error'})

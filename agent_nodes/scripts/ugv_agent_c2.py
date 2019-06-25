@@ -13,6 +13,7 @@ import tasks.ugv_tasks.PickFromPile
 import tasks.ugv_tasks.PlaceObject
 import tasks.ugv_tasks.PickAndPlace
 import tasks.ugv_tasks.PickFromPileAndPlace
+import tasks.ugv_tasks.GoToWaypoint
 
 def main():
 
@@ -27,7 +28,6 @@ def main():
     gripper_frame = rospy.get_param('~gripper_frame')
 
     base_aabb = [-0.32, -0.34, 0.37, 0.34]
-    ws_aabb = [-0.32, -0.49, 0.32, 0.49]
 
     # instantiate agent structures
     fsm = AgentStateMachine()
@@ -36,11 +36,10 @@ def main():
     # create tasks
     default_task = tasks.ugv_tasks.Idle.Task('idle',iface)
     tasks_dic = {}
-    add_task('gogrip_task', tasks_dic, iface, tasks.ugv_tasks.GoToGripPose, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb])
-    add_task('pick_task', tasks_dic, iface, tasks.ugv_tasks.PickObject, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
-    add_task('ppile_task', tasks_dic, iface, tasks.ugv_tasks.PickFromPile, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
-    add_task('pplace_task', tasks_dic, iface, tasks.ugv_tasks.PickAndPlace, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
-    add_task('pfpnp_task', tasks_dic, iface, tasks.ugv_tasks.PickFromPileAndPlace, [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset])
+    add_task('pick_task', tasks_dic, iface, tasks.ugv_tasks.PickObject, [ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset])
+    add_task('pplace_task', tasks_dic, iface, tasks.ugv_tasks.PickAndPlace, [ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset])
+    add_task('pfpnp_task', tasks_dic, iface, tasks.ugv_tasks.PickFromPileAndPlace, [ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset])
+    add_task('go_waypoint', tasks_dic, iface, tasks.ugv_tasks.GoToWaypoint, [ugv_ns, global_frame, ugv_frame])
 
     # initialize state machine
     d_dic = {'idle': default_task}

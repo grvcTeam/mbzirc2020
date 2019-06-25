@@ -8,6 +8,7 @@ import sys
 from moveit_commander.exception import MoveItCommanderException
 import moveit_msgs
 import copy
+from math import pi
 
 from utils.geom import *
 from utils.agent import *
@@ -56,16 +57,20 @@ class Task(smach.State):
 
     def arm_vertical(self, inc):
 
-        vals = self.group.get_current_joint_values()
-        vals[2] = vals[2] + inc
-        self.go_to_joint_pose(vals)
+        try:
+          self.group.shift_pose_target(2, inc)
+        except MoveItCommanderException, e:
+          print 'can not set goal pose'
+          print e
+        finally:
+          self.group.go(wait=True)
 
     def attached_cb(self, msg):
         rospy.logdebug('Attached changed!!')
         self.gripper_attached = msg.attached
 
     #aabbs are supposed to be expressed in robot frame and  centered in the origin
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','scale','obj_pose'],
                 output_keys = ['trans_gripper2object'],
@@ -93,7 +98,7 @@ class Task(smach.State):
         self.robot = moveit_commander.RobotCommander()
 
         #sub tasks
-        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb])
+        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb])
 
 
     #main function
@@ -108,8 +113,8 @@ class Task(smach.State):
 
         #move gripper to close to object pose
         #go to harcoded joint pose
-        grip_pose = [0.0008393889069360227, -0.008401700396952982, 0.5992523496947246, -2.2012104337559846, -1.598768962404419, -0.00019741267188067013]
-        hold_pose = [0.0009725755082081733, -0.7091356220415337, 1.2990882056648774, -2.200745601415173, -1.5986056177795644, -0.0003149149102164017]
+        grip_pose = [-pi/2, -0.008401700396952982, 0.5992523496947246, -2.2012104337559846, -1.598768962404419, -0.00019741267188067013]
+        hold_pose = [-pi/2, -0.7091356220415337, 1.2990882056648774, -2.200745601415173, -1.5986056177795644, -0.0003149149102164017]
 
         self.go_to_joint_pose(grip_pose)
 
@@ -132,7 +137,7 @@ class Task(smach.State):
         #move gripper vertically until contact
         rate = rospy.Rate(10.0)
         while not self.gripper_attached:
-            self.arm_vertical(0.01)
+            self.arm_vertical(-0.01)
             rate.sleep()
 
         #compute object pose respect to itself for output_keys
@@ -144,7 +149,7 @@ class Task(smach.State):
             return 'error'
 
         #moves object to carry position
-        '''self.arm_vertical(-0.1)
+        '''self.arm_vertical(0.1)
         wpose = self.group.get_current_pose().pose
         wpose.position.z = wpose.position.z + 0.5
 
