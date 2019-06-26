@@ -3,6 +3,9 @@ import rospy
 import smach
 import smach_ros
 
+from shapely.geometry import LineString, Point
+from math import sqrt, pow, acos, sin, cos
+
 from utils.geom import *
 from utils.agent import *
 
@@ -36,13 +39,68 @@ class Task(smach.State):
             if msg.region_owners[i] == self.iface.agent_id:
                 self.region_own = i
 
-    def cross_region(self, region_id, question):
+    # move agent from p1 to p2 withouth crossing regions
+    def execute_safe_trajectory(self, p1,p2, final_orientation, regions):
+
+        #compute path
+        def segment_in_regions(p1,p2,regions):
+            s = LineString([p1, p2])
+            c = []
+            for r_id in regions:
+                if from_geom_msgs_Polygon_to_Shapely_Polygon(regions[r_id]).crosses(s):
+                    c += [r_id]
+            return c
+
+        crosses = segment_in_regions(p1,p2, regions)
+        paths = []
+        for r_id in crosses:
+            l = trajectory_around_region(p1,p2,regions[r_id])
+            d = p1.distance(Point(l[0]))
+            paths += [(d,l)]
+
+        paths.sort(key = lambda e : e[0],reverse=False)
+        p = [p[1] for p in paths]
+        p_full = [p1.coords[0]]
+        for l in p:
+            p_full += l
+
+        p_full += [p2.coords[0]]
+
+        self.follow_trajectory(p_full, final_orientation)
+
+
+    # sends a list of waypoints
+    def follow_trajectory(self, waypoints, final_orientation):
+        for i in range(len(waypoints)):
+            pose = Pose()
+            p = waypoints[i]
+            #position:
+            pose.position.x = p[0]
+            pose.position.y = [1]
+            pose.position.z = self.height
+            #orientation
+            if i == len(waypoints)-1:
+                pose.orientation = final_orientation
+            else:
+                v = [waypoints[i+1][0]-p[0],waypoints[i+1][1]-p[1]]
+                n = sqrt(pow(v[0],2)+pow(v[1],2))
+                alpha = acos(v[0]/n)
+                if v[1] < 0:
+                    alpha = -alpha
+
+                pose.orientation = Quaternion(0,0,sin(alpha/2),cos(alpha/2))
+
+            self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=
+            PoseStamped(header=Header(frame_id=self.global_frame,stamp =
+            rospy.Time.now()),pose=pose),blocking=True ))
+
+
+    def cross_region(self, region_id, question,regions,p1):
         res = self.iface['cli_req_shared'](RequestSharedRegionRequest(region_id=region_id,question=question,agent_id=self.iface.agent_id))
         if res.answer == RequestSharedRegionResponse.WAIT:
-            point = res.waiting_point.point
-            point.z = self.height #TODO: here assuming res.waiting_point is expressed in the same frame as global_frame
-            pose = Pose(position=point,orientation=Quaternion(0,0,0,1))
-            self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=PoseStamped(header=res.waiting_point.header,pose=pose),blocking=True ))
+            p2 = Point((res.waiting_point.point.x,res.waiting_point.point.y))
+            self.execute_safe_trajectory(p1,p2, Quaternion(0,0,0,1), regions)
+
             rospy.loginfo("REACHED WAITING POINT")
             r = rospy.Rate(10)
             while not self.region_own == region_id:
@@ -80,6 +138,7 @@ class Task(smach.State):
         #TODO: not checking if the path intersects a region
         uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
         goal_point = from_geom_msgs_Pose_to_Shapely_Point(userdata.way_pose)
+
         def point_in_region(point,regions):
             for r_id in regions:
                 if from_geom_msgs_Polygon_to_Shapely_Polygon(regions[r_id]).contains(point):
@@ -89,23 +148,24 @@ class Task(smach.State):
         r_id = point_in_region(uav_point,userdata.shared_regions)
         if r_id >= 0:
             rospy.loginfo("Origin point is in shared region {r_id}, requesting exit".format(r_id=r_id))
-            self.cross_region(r_id,RequestSharedRegionRequest.FREE_SHARED_REGION)
+            self.cross_region(r_id,RequestSharedRegionRequest.FREE_SHARED_REGION,userdata.shared_regions,uav_point)
             rospy.loginfo("Exit granted!")
 
         r_id = point_in_region(goal_point,userdata.shared_regions)
         if r_id >= 0:
             rospy.loginfo("Goal point is in shared region {r_id}, requesting access".format(r_id=r_id))
-            self.cross_region(r_id,RequestSharedRegionRequest.RESERVE_SHARED_REGION)
+            self.cross_region(r_id,RequestSharedRegionRequest.RESERVE_SHARED_REGION,userdata.shared_regions,uav_point)
             rospy.loginfo("Access granted!")
 
         #rospy.loginfo('now, goint to waypoint!')
-        pose = Pose()
-        pose.orientation = userdata.way_pose.orientation
-        pose.position.x = userdata.way_pose.position.x
-        pose.position.y = userdata.way_pose.position.y
-        pose.position.z = self.height
-        self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=
-        PoseStamped(header=Header(frame_id=self.global_frame,stamp =
-        rospy.Time.now()),pose=pose),blocking=True ))
+        try:
+            trans_global2uav = lookup_tf_transform(self.global_frame, self.uav_frame, self.iface['tf_buffer'],5)
+        except Exception as error:
+            print repr(error)
+            print self.name + ' Task could not be executed'
+            return 'error'
+
+        uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
+        self.execute_safe_trajectory(uav_point, goal_point, userdata.way_pose.orientation, userdata.shared_regions)
 
         return 'success'

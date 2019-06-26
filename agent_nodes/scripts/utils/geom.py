@@ -148,6 +148,40 @@ def compute_search_path(aov, height, polygon, pos):
 
     return path
 
+# computes trajectory around region. Assuming convex region
+def trajectory_around_region(p1,p2,region):
+    #inflate region
+    r = from_geom_msgs_Polygon_to_Shapely_Polygon(region).buffer(1,3)
+
+    #find closest points to p1 and p2
+    dp1 = (p1.distance(Point(r.exterior.coords[0])),0)
+    dp2 = (p1.distance(Point(r.exterior.coords[0])),0)
+    for i in range(len(r.exterior.coords)):
+        d1 = p1.distance(Point(r.exterior.coords[i]))
+        if d1 < dp1[0]:
+            dp1 = (d1,i)
+        d2 = p1.distance(Point(r.exterior.coords[i]))
+        if d2 < dp2[0]:
+            dp2 = (d2,i)
+
+    #return shortest path
+    rev = False
+    if dp1[1] > dp2[1]:
+        rev = True
+        dp = dp1
+        dp1 = dp2
+        dp2 = dp
+
+    l1 = LineString(r.exterior.coords[dp1[1]:dp2[2]+1])
+    if l1.length < r.exterior.length / 2:
+        s = list(l1.coords)
+    else:
+        s1 = list(reversed(r.exterior.coords[1:dp1[1]+1]))
+        s2 = list(reversed(r.exterior.coords[dp1[2]:]))
+        s = s1 + s2
+
+    return s if not rev else list(reversed(s))
+
 
 #pos = shapely.geometry.Point(40.,10.)
 #pol = shapely.geometry.Polygon([(1,1),(31,1),(31,70),(1,70)])
