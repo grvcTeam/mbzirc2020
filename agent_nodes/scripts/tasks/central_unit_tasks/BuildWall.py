@@ -36,10 +36,10 @@ def gen_userdata(req):
     header = Header(frame_id='map',stamp=rospy.Time.now())
     wall =  WallBluePrint()
     wall.wall_frame = PoseStamped(header=header,pose=Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1)))
-    wall.size_x = 6
+    wall.size_x = 2
     wall.size_y = 1
-    wall.size_z = 2
-    wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0]
+    wall.size_z = 1
+    wall.blueprint = [1, 1]
 
     userdata = smach.UserData()
     userdata.wall = wall
@@ -189,7 +189,7 @@ class Task(smach.State):
 
         # sends agent out of the wall shared region. TODO: this is dirty hack
         rospy.wait_for_service(task_info.agent_id+'/task/go_waypoint', 5)
-    	client = rospy.ServiceProxy(task_info.srv_address,GoToWaypoint)
+    	client = rospy.ServiceProxy(task_info.agent_id+'/task/go_waypoint',GoToWaypoint)
         client(global_frame='map',shared_regions=self.shared_regions, way_pose=Pose(position=Point(3,0,0),orientation=Quaternion(0,0,0,1)))
         ################3
 
@@ -279,7 +279,7 @@ class Task(smach.State):
 
         def poly_from_aabb(bb):
             p = Polygon()
-            p.points = [Point32(bb[0],bb[1],0),Point32(bb[2],bb[1],0),Point32(bb[2],bb[3],0),Point32(bb[0],bb[3],0)]
+            p.points = [Point32(bb[0]-1,bb[1]-1,0),Point32(bb[2]+1,bb[1]-1,0),Point32(bb[2]+1,bb[3]+1,0),Point32(bb[0]-1,bb[3]+1,0)]
             return p
 
         p = Polygon()
