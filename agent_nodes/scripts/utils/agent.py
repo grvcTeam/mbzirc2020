@@ -8,7 +8,6 @@ from pydispatch import dispatcher
 import json
 import traceback
 
-from agent_nodes.msg import ExecTask
 from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonResponse
 
 #handles an agent interface. Stores elements in the interface with the particularity
@@ -40,8 +39,6 @@ class AgentInterface():
 
         if graph_change_cb:
             self.add_subscriber(self, 'AGENT', '/changes', String, graph_change_cb)
-
-        #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
 
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
@@ -190,7 +187,6 @@ class ExecTaskWatch(smach.State):
     def __init__(self, agent_id, task_list):
         self.task = ''
         self.task_list = task_list
-        #self.sub = rospy.Subscriber(agent_id+'/'+'exec_task', ExecTask, self.exec_task_cb)
         dispatcher.connect( self.exec_task_cb, signal='exec_task', sender=dispatcher.Any )
 
         smach.State.__init__(self, outcomes=task_list+['invalid_task'])
@@ -353,8 +349,6 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
         if interface.is_agent_idle():
             interface.set_idle(False) #because the fsm takes some time to do the transition
             dispatcher.send( signal='exec_task', task_id=name )
-            #interface['exec_task'].publish(
-                    #ExecTask(agent_id=interface.agent_id,task_id=name))
 
             task_outcome = {}
             def completed_cb(task_id,outcome):
