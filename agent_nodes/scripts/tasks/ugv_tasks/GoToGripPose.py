@@ -97,16 +97,24 @@ class Task(smach.State):
 
     #aabbs are supposed to be expressed in ugv_frame
     #rb_aabb = robot base aabb = robot footprint
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, rb_aabb):
+    def __init__(self, name, interface, ugv_ns):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','obj_pose', 'scale', 'type'],
                 io_keys = ['way_pose'])
 
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame', 'rb_aabb']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
+
         #members
         self.name = name
-        self.global_frame = global_frame
-        self.ugv_frame = ugv_frame
-        self.rb_aabb = rb_aabb
         self.occ_grid = None
 
         #interface elements
@@ -116,10 +124,8 @@ class Task(smach.State):
         interface.add_publisher('pub_vel','/mobile_base_controller/cmd_vel',
                                 Twist, 10)
 
-        self.iface = interface
-
         #sub tasks
-        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns, global_frame, ugv_frame])
+        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns])
 
     #main function
     def execute(self, userdata):
@@ -133,7 +139,7 @@ class Task(smach.State):
 
         #compute a waypoint from where to grip the object
         rb2obj = (0.748,0.108) # hardcoded for harcoded gripper pose in PickObject task
-        poses = compute_robot_poses(rb2obj, userdata.obj_pose, userdata.scale, self.rb_aabb)
+        poses = compute_robot_poses(rb2obj, userdata.obj_pose, userdata.scale, self.props['rb_aabb'])
         r_pose = None
 
         for i in range(len(poses)):
@@ -154,7 +160,7 @@ class Task(smach.State):
         #fine tune pose because of movebase goal tolerance
         def x_rb2obj():
             try:
-                trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+                trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'], self.iface['tf_buffer'],5)
                 trans_ugv2goal = from_geom_msgs_Transform_to_KDL_Frame(trans_global2ugv.transform).Inverse() * r_pose
                 print abs(trans_ugv2goal.p.x())
                 return trans_ugv2goal.p.x()

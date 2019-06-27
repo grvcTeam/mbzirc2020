@@ -3,6 +3,7 @@ import rospy
 import smach
 import smach_ros
 import actionlib
+import copy
 
 from shapely.geometry import LineString, Point as ShapelyPoint
 from math import sqrt, pow, acos, sin, cos
@@ -96,7 +97,7 @@ class Task(smach.State):
                 pose.orientation = Quaternion(0,0,sin(alpha/2),cos(alpha/2))
 
             goal = MoveBaseGoal()
-            goal.target_pose.header = Header(frame_id=self.global_frame,stamp=rospy.Time.now())
+            goal.target_pose.header = Header(frame_id=self.props['global_frame'],stamp=rospy.Time.now())
             goal.target_pose.pose = pose
 
             self.mb_client.send_goal(goal)
@@ -114,14 +115,23 @@ class Task(smach.State):
             while not self.region_own == region_id:
                 r.sleep()
 
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame):
+    def __init__(self, name, interface, ugv_ns):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['way_pose','shared_regions']) #TODO: way pose should be 2D since uav is just allowed to travel in Z=height plane
 
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
+
         #members
         self.name = name
-        self.global_frame = global_frame
-        self.ugv_frame = ugv_frame
         self.region_own = -1
 
         #interface elements
@@ -132,14 +142,12 @@ class Task(smach.State):
         self.mb_client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
         self.mb_client.wait_for_server()
 
-        self.iface = interface
-
     #main function
     def execute(self, userdata):
 
         #Get UGV pose.
         try:
-            trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+            trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'], self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'
@@ -175,7 +183,7 @@ class Task(smach.State):
 
         #rospy.loginfo('now, goint to waypoint!')
         try:
-            trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+            trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'], self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'

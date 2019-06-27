@@ -70,19 +70,26 @@ class Task(smach.State):
         self.gripper_attached = msg.attached
 
     #aabbs are supposed to be expressed in robot frame and  centered in the origin
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','scale','obj_pose'],
                 output_keys = ['trans_gripper2object'],
                 io_keys = ['way_pose'])
 
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame', 'gripper_frame', 'rb_aabb']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
+
         #members
         self.gripper_attached = False
         self.name = name
-
-        self.global_frame = global_frame
-        self.ugv_frame = ugv_frame
-        self.gripper_frame = gripper_frame
         self.z_offset = z_offset
 
         #interface elements
@@ -90,15 +97,13 @@ class Task(smach.State):
         interface.add_subscriber(self,'/'+'attached', GripperAttached,
                                 self.attached_cb)
 
-        self.iface = interface
-
         #moveit group is not supported by the interface, so adding it manually for now
         moveit_commander.roscpp_initialize(sys.argv)
         self.group = moveit_commander.MoveGroupCommander("manipulator") #TODO: param
         self.robot = moveit_commander.RobotCommander()
 
         #sub tasks
-        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb])
+        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns])
 
 
     #main function
@@ -125,7 +130,7 @@ class Task(smach.State):
         pose_target.orientation = Quaternion(0.487505048212,0.485644673398,-0.511961062221,0.514182798172) #gripper facing downwards
         pose_target.position.z = pose_target.position.z + userdata.scale.z/2 + self.z_offset
 
-        header = Header(frame_id=self.global_frame,stamp=rospy.Time.now())
+        header = Header(frame_id=self.props['global_frame'],stamp=rospy.Time.now())
         self.group.set_pose_target(PoseStamped(header=header,pose=pose_target))
 
         plan = self.group.plan()
@@ -142,7 +147,7 @@ class Task(smach.State):
 
         #compute object pose respect to itself for output_keys
         try:
-            trans_gripper2global = lookup_tf_transform(self.gripper_frame, self.global_frame,self.iface['tf_buffer'],5)
+            trans_gripper2global = lookup_tf_transform(self.props['gripper_frame'], self.props['global_frame'],self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'

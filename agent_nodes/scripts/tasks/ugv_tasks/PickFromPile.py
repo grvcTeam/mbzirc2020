@@ -49,7 +49,7 @@ class Task(smach.State):
             return None
 
         try:
-            trans_global2camera = lookup_tf_transform(self.global_frame, list[0].header.frame_id,self.iface['tf_buffer'],5)
+            trans_global2camera = lookup_tf_transform(self.props['global_frame'], list[0].header.frame_id,self.iface['tf_buffer'],5)
             trans_global2camera = from_geom_msgs_Transform_to_KDL_Frame(trans_global2camera.transform)
         except Exception as error:
             print repr(error)
@@ -92,20 +92,26 @@ class Task(smach.State):
             self.objects = msg.objects
 
     # init
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','pile_centroid'],
                 output_keys = ['trans_gripper2object'],
                 io_keys = ['scale','obj_pose','way_pose'])
+
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame', 'gripper_frame', 'rb_aabb']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
 
         # members
         self.found = False
         self.objects = None
         self.name = name
 
-        self.global_frame = global_frame
-        self.ugv_frame = ugv_frame
-        self.gripper_frame = gripper_frame
         self.z_offset = z_offset
 
         # interface elements
@@ -115,18 +121,16 @@ class Task(smach.State):
         interface.add_publisher('pub_vel','/mobile_base_controller/cmd_vel',
                                 Twist, 10)
 
-        self.iface = interface
-
         # sub_tasks
-        add_sub_task('pick_task', self, PickObject, task_args = [ugv_ns, global_frame, ugv_frame, base_aabb, gripper_frame, z_offset])
-        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns, global_frame, ugv_frame])
+        add_sub_task('pick_task', self, PickObject, task_args = [ugv_ns, z_offset])
+        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns])
 
     # main function
     def execute(self, userdata):
 
         #go to pose to detect bricks
         try:
-            trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame,self.iface['tf_buffer'],5)
+            trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'],self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print 'Cannot select object because transform global --> ugv_frame is not available'
@@ -143,7 +147,7 @@ class Task(smach.State):
 
         #select object
         try:
-            trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame,self.iface['tf_buffer'],5)
+            trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'],self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print 'Cannot select object because transform global --> ugv_frame is not available'
@@ -166,7 +170,7 @@ class Task(smach.State):
         #pick object
         userdata.scale = object.scale
         try:
-            trans_global2camera = lookup_tf_transform(self.global_frame, object.header.frame_id,self.iface['tf_buffer'],5)
+            trans_global2camera = lookup_tf_transform(self.props['global_frame'], object.header.frame_id,self.iface['tf_buffer'],5)
             trans_global2camera = from_geom_msgs_Transform_to_KDL_Frame(trans_global2camera.transform)
         except Exception as error:
             print repr(error)
