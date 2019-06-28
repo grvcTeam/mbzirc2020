@@ -41,7 +41,7 @@ def main():
     iface = AgentInterface(id,fsm,agent_props)
 
     # create tasks
-    default_task = tasks.uav_tasks.Hovering.Task('hovering',iface,uav_ns, height, global_frame, uav_frame)
+    default_task = tasks.uav_tasks.Hovering.Task('hovering',iface,uav_ns,)
     tasks_dic = {}
     add_task('pfpnp_task', tasks_dic, iface, tasks.uav_tasks.PickFromPileAndPlace, [uav_ns, z_offset])
     add_task('pnp_task', tasks_dic, iface, tasks.uav_tasks.PickAndPlace, [uav_ns, z_offset])

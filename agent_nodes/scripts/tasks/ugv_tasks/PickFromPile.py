@@ -107,6 +107,8 @@ class Task(smach.State):
                 raise AttributeError('{task} is missing required property {prop} and cannot '\
                 'be instantiated.'.format(task=name,prop=prop))
 
+        self.props = self.iface.agent_props
+
         # members
         self.found = False
         self.objects = None
@@ -139,6 +141,7 @@ class Task(smach.State):
         pose = self.compute_detection_pose(userdata.pile_centroid,trans_global2ugv.transform.translation)
 
         userdata.way_pose = pose
+        print pose
         self.call_task('go_task',userdata)
 
         #TODO: setup object detection to detect desired object type
