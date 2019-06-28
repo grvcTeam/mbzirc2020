@@ -15,7 +15,7 @@ import threading
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from std_msgs.msg import String
 from mbzirc_comm_objs.msg import ObjectDetectionList
-from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, SearchEnvironment, SearchEnvironmentResponse
+from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, SearchEnvironment, SearchEnvironmentResponse, SetAgentProp, SetAgentPropRequest
 from geometry_msgs.msg import Polygon, Point32,  PolygonStamped
 
 # task properties
@@ -177,6 +177,8 @@ class Task(smach.State):
             # add to list
             if 'type' in props and props['type'] == 'UAV' and search_address:
                 uav_dic[a] = search_address[0]
+                '''c = rospy.ServiceProxy('{agent_id}/set_agent_props'.format(agent_id=a), SetAgentProp)
+                c(jsonStr=json.dumps({'height':5.0}))'''
 
         #print uav_dic
 

@@ -69,6 +69,7 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
    GoToWaypoint.srv
    SearchEnvironment.srv
    SearchAndBuild.srv
+   SetAgentProp.srv
  )
 
 ## Generate actions in the 'action' folder

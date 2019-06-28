@@ -8,7 +8,7 @@ from pydispatch import dispatcher
 import json
 import traceback
 
-from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonResponse
+from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonResponse, SetAgentProp, SetAgentPropResponse
 
 #handles an agent interface. Stores elements in the interface with the particularity
 #that callbacks depends on the active task in the agent fsm
@@ -18,7 +18,7 @@ class AgentInterface():
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
-        self.agent_props = agent_props
+        self.agent_props = agent_props #TODO: now properties are stored as 'name':value pairs in a dict. For easing setting them from a external service datatype is also needed
 
         # members of the agent interface
         self.callables = {}
@@ -42,7 +42,8 @@ class AgentInterface():
 
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
-        self.props_server = rospy.Service(self.agent_id+'/'+'agent_props', GetJson, self.get_props_cb)
+        self.get_props_server = rospy.Service(self.agent_id+'/'+'agent_props', GetJson, self.get_props_cb)
+        self.set_props_server = rospy.Service(self.agent_id+'/'+'set_agent_props', SetAgentProp, self.set_props_cb)
 
     # returns an interface element
     def __getitem__(self,item):
@@ -58,6 +59,24 @@ class AgentInterface():
 
     def get_props_cb(self,req):
         return GetJsonResponse(jsonStr=json.dumps(self.agent_props))
+
+    def set_props_cb(self,req):
+        try:
+            new_vals = json.loads(req.jsonStr)
+        except Exception as error:
+            print repr(error)
+            print 'Set agent property failed in parsing json: {j}'.format(j=req.jsonStr)
+            return SetAgentPropResponse(success=False)
+
+        set_props = []
+        for prop in new_vals:
+            if prop in self.agent_props:
+                self.agent_props[prop] = new_vals[prop]
+                set_props += [prop]
+
+        success = len(set_props) == len(new_vals)
+
+        return SetAgentPropResponse(success=success, set_props=set_props)
 
     # return active tasks names
     def current_tasks(self):

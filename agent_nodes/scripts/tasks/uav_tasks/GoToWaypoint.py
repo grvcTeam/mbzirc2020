@@ -31,7 +31,8 @@ def gen_userdata(req):
     #userdata.shared_regions[0].points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)]
     userdata.shared_regions = {}
     for i in range(len(req.shared_regions)):
-        userdata.shared_regions[i] = req.shared_regions[i]
+        if len(req.shared_regions[i].points) > 2:
+            userdata.shared_regions[i] = req.shared_regions[i]
     return userdata
 
 # main class
