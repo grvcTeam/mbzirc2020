@@ -277,6 +277,8 @@ class DefaultTaskContainer(smach.Concurrence):
             smach.Concurrence.add('EXEC_TASK_WATCH', ExecTaskWatch(agent_id, task_list))
             smach.Concurrence.add('DEFAULT_TASK', self.m_default)
 
+        dispatcher.connect( self.set_default, signal='change_default_task', sender=dispatcher.Any )
+
 #Wraps a Task so the agent can expose it for external execution
 #Ensures it has the right outcomes: success, error
 class AgentTaskWrapper(smach.StateMachine):
