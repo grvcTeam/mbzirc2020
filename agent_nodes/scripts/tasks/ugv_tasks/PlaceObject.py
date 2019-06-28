@@ -107,14 +107,14 @@ class Task(smach.State):
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=False ))
         rospy.sleep(2.) #wait for stabilization
 
-        # move away cause move_base gets stuck
-        rate = rospy.Rate(10.0)
+        # move away cause move_base gets stuck in gazebo
+        '''rate = rospy.Rate(10.0)
         ctr = 0
         while ctr < 20:
             ctr += 1
             self.iface['pub_vel'].publish(Twist(linear=Vector3(-0.5,0,0)))
             rate.sleep()
 
-        rospy.sleep(1.) #wait for stabilization
+        rospy.sleep(1.) #wait for stabilization'''
 
         return 'success'

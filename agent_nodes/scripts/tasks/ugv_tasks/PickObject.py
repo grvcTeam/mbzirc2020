@@ -21,27 +21,6 @@ from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, TwistStamped, Pose, Quaternion, Point, Vector3
 
-from std_srvs.srv import SetBool, SetBoolResponse
-
-# task properties
-ResponseType = SetBoolResponse
-DataType = SetBool
-transitions={'success':'success','error':'error'}
-
-# function to create userdata from a task execution request matching the task
-# input keys
-def gen_userdata(req):
-
-    userdata = smach.UserData()
-    pose = Pose()
-    pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(0.350020373191,-9.74999731461,0.0999974468085)
-    userdata.shared_regions = []
-    userdata.obj_pose = pose
-    userdata.type = 'brick'
-    userdata.scale = Vector3(0.3,0.2,0.2)
-    return userdata
-
 # main class
 class Task(smach.State):
 
@@ -66,7 +45,7 @@ class Task(smach.State):
           self.group.go(wait=True)
 
     def attached_cb(self, msg):
-        rospy.logdebug('Attached changed!!')
+        rospy.loginfo('Attached changed!!')
         self.gripper_attached = msg.attached
 
     #aabbs are supposed to be expressed in robot frame and  centered in the origin
@@ -108,8 +87,6 @@ class Task(smach.State):
 
     #main function
     def execute(self, userdata):
-        self.gripper_attached = False
-
         #TODO: match requested object pose with object detection information
 
 
@@ -136,11 +113,12 @@ class Task(smach.State):
         plan = self.group.plan()
         self.group.execute(plan)'''
 
+        self.gripper_attached = False
         #active magnetic gripper
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
         #move gripper vertically until contact
-        rate = rospy.Rate(10.0)
+        rate = rospy.Rate(1.0)
         while not self.gripper_attached:
             self.arm_vertical(-0.01)
             rate.sleep()

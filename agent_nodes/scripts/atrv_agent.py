@@ -5,6 +5,8 @@ import rospy
 import smach
 import smach_ros
 
+import threading
+
 from utils.agent import *
 import tasks.ugv_tasks.Idle
 import tasks.ugv_tasks.PickAndPlace
@@ -49,7 +51,12 @@ def main():
 
     # execute state machine
     userdata = smach.UserData()
-    fsm.execute(userdata)
+    #fsm.execute(userdata)
+
+    th = threading.Thread(target=fsm.execute, args=[userdata,])
+    th.start()
+
+    rospy.spin()
 
 if __name__ == '__main__':
     main()
