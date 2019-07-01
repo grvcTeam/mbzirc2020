@@ -217,6 +217,8 @@ class Task(smach.State):
             if self.tasks[t].state != Task2Dispatch.states[2]:
                 n += 1
 
+        return n
+
     # retrieve available agents which can perform a pick and place task
     def get_picknplace_agents(self):
         # get available agents
@@ -301,7 +303,7 @@ class Task(smach.State):
         p_x = userdata.wall.wall_frame.pose.position.x
         p_y = userdata.wall.wall_frame.pose.position.y
         bb = [p_x-1,p_y-1,p_x+x_l+1,p_y+y_l+1]
-        p.points = [Point32(bb[0],bb[1],0),Point32(bb[2]bb[1],0),Point32(bb[2],bb[3],0),Point32(bb[0],bb[3],0)]
+        p.points = [Point32(bb[0],bb[1],0),Point32(bb[2],bb[1],0),Point32(bb[2],bb[3],0),Point32(bb[0],bb[3],0)]
         shared_regions = [p]
 
         for pile in self.items:
@@ -341,4 +343,4 @@ class Task(smach.State):
         ########################################################################
         # dispatch tasks to agents until completion
         self.dispatch2idle() # NOTE: Other dispatch strategies (eg. assing pile to agent) can be implemented in a different functions and replaced here
-        return 'error'
+        return 'success'
