@@ -1,5 +1,0 @@
-string items # items required to find with the format {'name': {'prop':value,...},...}. props are used to identify the item
-geometry_msgs/Polygon search_region
----
-bool success
-string outcome

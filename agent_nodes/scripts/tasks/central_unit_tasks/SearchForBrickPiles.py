@@ -29,10 +29,10 @@ def gen_userdata(req):
 
     userdata = smach.UserData()
     userdata.search_region = req.search_region
-    userdata.items = req.items
+    userdata.piles = req.piles
 
     '''userdata.search_region = Polygon(points=[Point32(-11,-11,0),Point32(11,-11,0),Point32(11,11,0),Point32(-11,11,0)])
-    userdata.items = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
+    userdata.piles = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
                     'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
                     'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
                     'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}'''
@@ -42,22 +42,25 @@ def gen_userdata(req):
 # At execution it uses these elements to coordinate components
 class Task(smach.State):
 
+    # check if all the piles requested in input_keys have been identified
     def all_found(self):
-        for item in self.items_d:
-            if self.items_d[item]['aabb'] == None:
+        for pile in self.piles_d:
+            if self.piles_d[pile]['aabb'] == None:
                 return False
         return True
 
+    # object detection callback. Compose object detection information from all agents
     def object_detection_cb(self, msg):
         '''if self.all_found():
             return'''
 
-        # group objects by similar objects.
+        # group objects by type.
         piles = self.bricks2pile(msg.objects)
 
-        # check if any of the objects can be one of the searched items.
-        for item in self.items_d:
-            bb = self.find_pile(self.items_d[item]['scale_x'], piles)
+        # check if any of the detected group of objects is part of one of the requested piles
+        # and updates its bounding box
+        for pile in self.piles_d:
+            bb = self.find_pile(self.piles_d[pile]['scale_x'], piles)
             if bb:
                 cam_frame = msg.objects[0].header.frame_id
                 try:
@@ -73,11 +76,12 @@ class Task(smach.State):
                 bb = bb_p.bounds
                 #print 'bb: {b}'.format(b=bb)
 
-                if self.items_d[item]['aabb'] and self.bb_do_intersect(bb,self.items_d[item]['aabb']):
-                    bb = self.bb_union(bb,self.items_d[item]['aabb'])
-                    #print 'item updated {item}!!'.format(item=bb)
+                if self.piles_d[pile]['aabb'] and self.bb_do_intersect(bb,self.piles_d[pile]['aabb']):
+                    bb = self.bb_union(bb,self.piles_d[pile]['aabb'])
+                    #print 'pile updated {pile}!!'.format(pile=bb)
 
-                self.items_d[item]['aabb'] = bb
+                self.piles_d[pile]['aabb'] = bb
+
 
     def find_pile(self, value, piles):
         for prop in piles:
@@ -85,8 +89,8 @@ class Task(smach.State):
                 return piles[prop]
         return None
 
-    # groups objects in the list according to a property (TODO: harcoded for scale.x)
-    # and computes the bounding box of the centers of group extruded by a value. (TODO: harcoded for scale.x)
+    # groups objects in the list according to a property. The chosen property is the object scale in x axis
+    # since it is different for each brick type. This would work just for the fake camera plugin.
     def bricks2pile(self, list):
         if not list:
             return 0,0,0,0
@@ -95,7 +99,7 @@ class Task(smach.State):
         piles = {}
 
         for object in list:
-            #find group to which object belongs.
+            #find group to which the object belongs.
             if object.scale.x not in piles:
                 xmin = ymin = sys.float_info.max
                 xmax = ymax = - sys.float_info.max
@@ -155,7 +159,7 @@ class Task(smach.State):
     def __init__(self, name, interface):
         smach.State.__init__(self,outcomes=['success','error','failure'],
                 input_keys = ['search_region'],
-                io_keys = ['items']) #items = {'name': {'prop':value,...},...}
+                io_keys = ['piles']) #piles = {'name': {'prop':value,...},...}
 
         #members
         self.is_searching = False
@@ -177,8 +181,6 @@ class Task(smach.State):
             # add to list
             if 'type' in props and props['type'] == 'UAV' and search_address:
                 uav_dic[a] = search_address[0]
-                '''c = rospy.ServiceProxy('{agent_id}/set_agent_props'.format(agent_id=a), SetAgentProp)
-                c(jsonStr=json.dumps({'height':5.0}))'''
 
         #print uav_dic
 
@@ -189,8 +191,15 @@ class Task(smach.State):
 
         #print sub_regions
 
-        #items.
-        self.items_d = userdata.items
+        #piles.
+        self.piles_d = userdata.piles
+
+        # set different height (altitude) values for each UAV
+        h = 5
+        for uav in uav_dic:
+            c = rospy.ServiceProxy('{agent_id}/set_agent_props'.format(agent_id=uav), SetAgentProp)
+            c(jsonStr=json.dumps({'height':5.0}))
+            h -= 1 # works because there are 3 UAVs maximum
 
         # send search tasks and wait
         n = 0
@@ -205,7 +214,6 @@ class Task(smach.State):
             n += 1
 
             c = rospy.ServiceProxy(uav_dic[a], SearchForObject)
-            #c(req)
             t = threading.Thread(target=c, args=[req,])
             t.start()
             self.iface.add_subscriber(self,'{agent_id}/detected_objects'.format(agent_id=a),ObjectDetectionList,
@@ -225,12 +233,12 @@ class Task(smach.State):
                 break
             r.sleep()
 
-        for item in self.items_d:
-            if self.items_d[item]['aabb']:
-                bb = self.items_d[item]['aabb']
-                self.items_d[item]['centroid'] = ((bb[2]+bb[0])/2,(bb[3]+bb[1])/2)
+        for pile in self.piles_d:
+            if self.piles_d[pile]['aabb']:
+                bb = self.piles_d[pile]['aabb']
+                self.piles_d[pile]['centroid'] = ((bb[2]+bb[0])/2,(bb[3]+bb[1])/2)
 
-        print userdata.items
+        print userdata.piles
 
         res =  'success' if self.all_found() else 'failure'
         return res

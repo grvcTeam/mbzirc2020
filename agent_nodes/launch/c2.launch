@@ -21,7 +21,7 @@
       <arg name="x" value="0"/>
       <arg name="y" value="0"/>
       <arg name="z" value="0"/>
-  </include>
+  </include-->
   
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
       <arg name="ns" value="dji_f550"/>
@@ -31,7 +31,7 @@
       <arg name="x" value="5"/>
       <arg name="y" value="0"/>
       <arg name="z" value="0"/>
-  </include-->
+  </include>
 
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
       <arg name="ns" value="dji_f550"/>
