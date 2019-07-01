@@ -53,10 +53,9 @@ def gen_userdata(req):
     'centroid': (0.40231896062917927, 10.125002165326197), 'type': 'brick_pile'}}
     return userdata
 
-# Task. At initialization it adds required elements to the AgentInterface
-# At execution it uses these elements to coordinate components
+# helper class to contain each of the pick and place task required to build
+# the wall including its parameters
 class Task2Dispatch(object):
-
     states = ['not_sent','active','completed']
 
     def __init__(self, id, taskType):
@@ -69,14 +68,17 @@ class Task2Dispatch(object):
         self.constraints = [] #Tasks which must be completed before this one can be sent
         self.constrains = [] #Tasks this one is constraining
 
+    # print
     def __repr__(self):
         cstr = [task.id for task in self.constraints]
         ccstr = [task.id for task in self.constrains]
         return 'id: {id}, constraints: {c}, constrains: {cc}'.format(id=self.id, c= cstr, cc = ccstr)
 
-
+# Task. At initialization it adds required elements to the AgentInterface
+# At execution it uses these elements to coordinate components
 class Task(smach.State):
 
+    # return a brick pose in wall frame given its index position in the wall matrix representation
     def brick_goal_pose(self, length, buffer, i, j, k):
         n_cells = length/0.30
         x = i * (0.30+buffer) + (length + buffer*n_cells) / 2
@@ -85,7 +87,7 @@ class Task(smach.State):
 
         return PyKDL.Frame(PyKDL.Rotation.Quaternion(0,0,0,1),PyKDL.Vector(x,y,z))
 
-    # returns a matrix representing the wall blueprint from a msg
+    # returns a matrix representing of the wall blueprint from a msg
     def from_msg_to_matrix(self,msg):
         n_x = msg.size_x
         n_y = msg.size_y
@@ -104,7 +106,8 @@ class Task(smach.State):
 
         return mm
 
-    def build_task_matrix(self, wall_map):
+    # Compute required pick and place tasks from wall msg
+    def compute_tasks_from_blueprint(self, wall_map):
 
         #build wall matrix from msg
         wall_matrix = self.from_msg_to_matrix(wall_map)
@@ -151,6 +154,7 @@ class Task(smach.State):
 
         return wall_matrix, task_dic
 
+    # set constraints between pick and place tasks given the brick positions in the wall
     def set_brick_constraints(self, wall_matrix):
 
         def in_seg(s1,s2,p):
@@ -169,7 +173,7 @@ class Task(smach.State):
                         if inter_seg(b_top[0],b_top[1],b_bottom[0],b_bottom[1]):
                             b_top[2].constraints += [b_bottom[2]]
 
-    # send a task calling the right service and blocks until execution is completed.
+    # send a task to an agent calling the right service and blocks until execution is completed.
     def dispatch_task(self, task_info):
 
         if not task_info.srv_address:
@@ -187,25 +191,33 @@ class Task(smach.State):
     		return None
 
 
-        # sends agent out of the wall shared region. TODO: this is dirty hack
+        # sends the agent out of the wall shared region after completing the pick and place
+        # TODO: dirty solution, not even checking if the agent can execute a go to waypoint task
         rospy.wait_for_service(task_info.agent_id+'/task/go_waypoint', 5)
     	client = rospy.ServiceProxy(task_info.agent_id+'/task/go_waypoint',GoToWaypoint)
         client(global_frame='map',shared_regions=self.shared_regions, way_pose=Pose(position=Point(3,0,0),orientation=Quaternion(0,0,0,1)))
-        ################3
+        ################
 
         print 'completed task {t} with outcome {o}'.format(t=task_info.id, o = res.outcome)
         dispatcher.send( signal='task_completed', task_id = task_info.id, outcome=res.outcome, sender=self )
 
         return res
 
-    # updates front. TODO: could trigger actions depending on outcome
+    # callback called when a task is completed. updates ready2dispatch queue.
     def completed_cb(self, task_id, outcome):
-        print 'updating front'
+        print 'updating ready2dispatch queue'
         for task in self.tasks[task_id].constrains:
             task.constraints.remove(self.tasks[task_id])
             if not task.constraints:
-                self.front.put(task)
+                self.ready2dispatch.put(task)
 
+    def uncompleted_tasks(self):
+        n = 0
+        for t in self.tasks:
+            if self.tasks[t].state != Task2Dispatch.states[2]:
+                n += 1
+
+    # retrieve available agents which can perform a pick and place task
     def get_picknplace_agents(self):
         # get available agents
         a_dic = json.loads(self.iface['agent_list']().jsonStr)
@@ -221,6 +233,7 @@ class Task(smach.State):
 
         return pfpnp_dic
 
+    # retrieve agents from a_dic which are currently idle
     def get_idle_agents(self, a_dic):
         idle_l = []
         for a in a_dic:
@@ -230,19 +243,19 @@ class Task(smach.State):
 
         return idle_l
 
-    # first dispatch strategy: get agents able to do pick and place and dipatch to idle
+    # FIRST dispatch strategy: get agents able to do pick and place and dipatch to idles
     def dispatch2idle(self):
 
         a_dic = self.get_picknplace_agents()
 
         r = rospy.Rate(0.5)
-        while 1:
-            if not self.front.empty():
+        while self.uncompleted_tasks():
+            if not self.ready2dispatch.empty():
                 idles = self.get_idle_agents(a_dic)
                 if idles:
                     a = idles[0]
                     # dispatch in thread
-                    t = self.front.get()
+                    t = self.ready2dispatch.get()
                     print 'sending task: {t}'.format(t=t)
                     t.state = Task2Dispatch.states[1]
                     t.agent_id = a
@@ -267,14 +280,14 @@ class Task(smach.State):
     # main function
     def execute(self, userdata):
 
-        # check items are present
+        # check if items are present
         if not 'red_pile' in userdata.items or not 'green_pile' in userdata.items or not 'blue_pile' in userdata.items or not 'orange_pile' in userdata.items:
             rospy.loginfo('task {t} could not be executed'.format(t=self.name))
             return 'failure'
 
         self.items = userdata.items
 
-        # build and add shared regions
+        # compute and add shared regions
         add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
 
         def poly_from_aabb(bb):
@@ -283,7 +296,12 @@ class Task(smach.State):
             return p
 
         p = Polygon()
-        p.points = [Point32(-2,-2,0),Point32(2,-2,0),Point32(2,2,0),Point32(-2,2,0)] #TODO: the central shared region should be computed from wall blueprint
+        x_l = userdata.wall.size_x * 0.30
+        y_l = userdata.wall.size_y * 0.20
+        p_x = userdata.wall.wall_frame.pose.position.x
+        p_y = userdata.wall.wall_frame.pose.position.y
+        bb = [p_x-1,p_y-1,p_x+x_l+1,p_y+y_l+1]
+        p.points = [Point32(bb[0],bb[1],0),Point32(bb[2]bb[1],0),Point32(bb[2],bb[3],0),Point32(bb[0],bb[3],0)]
         shared_regions = [p]
 
         for pile in self.items:
@@ -300,8 +318,8 @@ class Task(smach.State):
             req.region = p
             res = add_reg(req)
 
-        #build list of tasks and set constraints
-        wall_matrix, task_dic =  self.build_task_matrix(userdata.wall)
+        # compute list of tasks and set constraints
+        wall_matrix, task_dic =  self.compute_tasks_from_blueprint(userdata.wall)
         self.set_brick_constraints(wall_matrix)
         self.tasks = task_dic
 
@@ -310,16 +328,17 @@ class Task(smach.State):
                 if task_dic[task_id] in task_dic[task_id2].constraints:
                     task_dic[task_id].constrains += [task_dic[task_id2]]
 
-        front = Queue.Queue()
+        # set the ready2dispatch queue, ie. those tasks corrently unconstraint
+        ready2dispatch = Queue.Queue()
         for j in range(len(wall_matrix[0])):
             for i in range(len(wall_matrix[0][j])):
-                front.put(wall_matrix[0][j][i][2])
+                ready2dispatch.put(wall_matrix[0][j][i][2])
 
-        self.front = front
+        self.ready2dispatch = ready2dispatch
 
         #print self.tasks
 
         ########################################################################
-
-        self.dispatch2idle()
+        # dispatch tasks to agents until completion
+        self.dispatch2idle() # NOTE: Other dispatch strategies (eg. assing pile to agent) can be implemented in a different functions and replaced here
         return 'error'

@@ -309,7 +309,7 @@ class AgentTaskWrapper(smach.StateMachine):
                                              (self._current_label, self._current_state)
                                              + traceback.format_exc())
 
-        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, sender=self )
+        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, sender=self ) #TODO: output keys should be sent as well
         outcome = self._current_transitions[outcome]
 
         # Set current state
