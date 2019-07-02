@@ -19,5 +19,13 @@ Run demo instructions:
 - Challenge 2:
 
 	roslaunch agent_nodes c2.launch
-	rosrun build_wall_simple_scheduler build_wall_simple_scheduler.py
-	rosservice call /build_wall "{}"
+
+	#just if UGV wants to be added ###
+
+	roslaunch agent_nodes ugv_gazebo_noagent.launch
+	roslaunch agent_nodes ugv_agent.launch
+
+	##################################
+
+	rosrun agent_nodes cu_agent_c2.py
+	rosservice call /central_unit/task/search_and_build ...
