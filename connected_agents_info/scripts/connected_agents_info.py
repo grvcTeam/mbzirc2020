@@ -38,10 +38,10 @@ class ConnectedAgentsInfo():
         self.pub.publish(String(data=self.get_agents()))
 
     def __init__(self):
-
+        #
         self.pub = rospy.Publisher('changes', String, queue_size=1)
         rospy.Service('agent_list', GetJson, self.get_agents_cb) # json string with the format {'agent_id': [(task_service_type,task_service_address), ...], ...}
-
+        self.sub = rospy.Subscriber('/master_discovery/changes', MasterState, self.graph_change_cb)
         rospy.spin()
 
 if __name__ == '__main__':
