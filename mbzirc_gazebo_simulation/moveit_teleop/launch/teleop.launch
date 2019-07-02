@@ -1,9 +1,0 @@
-
-<launch>
-
-  <include file="$(find katana_moveit_conf)/launch/demo.launch"/>
-
-  <node name="teleop" pkg="moveit_teleop" type="moveit_teleop.py" respawn="false" output="screen">
-  </node>
-
-</launch>
