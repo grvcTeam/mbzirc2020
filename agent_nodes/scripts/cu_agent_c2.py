@@ -7,7 +7,7 @@ import smach_ros
 
 from utils.agent import *
 import tasks.central_unit_tasks.Idle
-import tasks.central_unit_tasks.SearchEnvironment
+import tasks.central_unit_tasks.SearchForBrickPiles
 import tasks.central_unit_tasks.BuildWall
 import tasks.central_unit_tasks.SearchAndBuild
 
@@ -25,7 +25,7 @@ def main():
     # create tasks
     default_task = tasks.central_unit_tasks.Idle.Task('idle',iface)
     tasks_dic = {}
-    add_task('search_env', tasks_dic, iface, tasks.central_unit_tasks.SearchEnvironment, [])
+    add_task('search_env', tasks_dic, iface, tasks.central_unit_tasks.SearchForBrickPiles, [])
     add_task('build_wall', tasks_dic, iface, tasks.central_unit_tasks.BuildWall, [])
     add_task('search_and_build', tasks_dic, iface, tasks.central_unit_tasks.SearchAndBuild, [])
 

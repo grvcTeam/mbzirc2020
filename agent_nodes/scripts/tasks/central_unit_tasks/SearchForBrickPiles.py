@@ -32,10 +32,10 @@ def gen_userdata(req):
     userdata.piles = req.piles
 
     '''userdata.search_region = Polygon(points=[Point32(-11,-11,0),Point32(11,-11,0),Point32(11,11,0),Point32(-11,11,0)])
-    userdata.piles = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}'''
+    userdata.piles = {'red_pile': {'type':'brick_pile', 'color':'red', 'scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'green_pile':{'type':'brick_pile', 'color':'green','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'blue_pile':{'type':'brick_pile', 'color':'blue','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'orange_pile':{'type':'brick_pile', 'color':'orange','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}'''
     return userdata
 
 # Task. At initialization it adds required elements to the AgentInterface
@@ -55,12 +55,17 @@ class Task(smach.State):
             return'''
 
         # group objects by type.
-        piles = self.bricks2pile(msg.objects)
+        if self.useColor:
+            piles = self.bricks2pile_color(msg.objects)
+            prop = 'color'
+        else:
+            piles = self.bricks2pile_scale(msg.objects)
+            prop = 'scale_x'
 
         # check if any of the detected group of objects is part of one of the requested piles
         # and updates its bounding box
         for pile in self.piles_d:
-            bb = self.find_pile(self.piles_d[pile]['scale_x'], piles)
+            bb = self.find_pile(self.piles_d[pile][prop], piles)
             if bb:
                 cam_frame = msg.objects[0].header.frame_id
                 try:
@@ -89,9 +94,43 @@ class Task(smach.State):
                 return piles[prop]
         return None
 
+    # groups objects in the list according to a property. The chosen property is the object color
+    # since it is different for each brick type. This would work just if the object msg has property color.
+    def bricks2pile_color(self, list):
+        if not list:
+            return 0,0,0,0
+
+        #find piles aabb
+        piles = {}
+
+        for object in list:
+            #find group to which the object belongs.
+            props = json.loads(object.properties)
+            if 'color' not in props:
+                continue
+
+            if props['color'] not in piles:
+                xmin = ymin = sys.float_info.max
+                xmax = ymax = - sys.float_info.max
+                piles[props['color']] = [xmin,ymin,xmax,ymax]
+
+            #update bb
+            p = object.pose.pose.position
+            piles[props['color']][2] = p.x if p.x > piles[props['color']][2] else piles[props['color']][2]
+            piles[props['color']][0] = p.x if p.x < piles[props['color']][0] else piles[props['color']][0]
+            piles[props['color']][3] = p.y if p.y > piles[props['color']][3] else piles[props['color']][3]
+            piles[props['color']][1] = p.y if p.y < piles[props['color']][1] else piles[props['color']][1]
+
+        #inflates aabbs
+        inf_val = 0.5
+        for color in piles:
+            piles[color] = [piles[color][0]-inf_val/2,piles[color][1]-inf_val/2,piles[color][2]+inf_val/2,piles[color][3]+inf_val/2]
+
+        return piles
+
     # groups objects in the list according to a property. The chosen property is the object scale in x axis
     # since it is different for each brick type. This would work just for the fake camera plugin.
-    def bricks2pile(self, list):
+    def bricks2pile_scale(self, list):
         if not list:
             return 0,0,0,0
 
@@ -162,6 +201,7 @@ class Task(smach.State):
                 io_keys = ['piles']) #piles = {'name': {'prop':value,...},...}
 
         #members
+        self.useColor = True
         self.is_searching = False
         self.name = name
 

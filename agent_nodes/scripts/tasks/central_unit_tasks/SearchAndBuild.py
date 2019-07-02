@@ -6,7 +6,7 @@ import smach_ros
 from utils.geom import *
 from utils.agent import *
 
-import tasks.central_unit_tasks.SearchEnvironment as SearchEnvironment
+import tasks.central_unit_tasks.SearchForBrickPiles as SearchForBrickPiles
 import tasks.central_unit_tasks.BuildWall as BuildWall
 
 # required message definitions
@@ -38,10 +38,10 @@ def gen_userdata(req):
     userdata.wall = wall #req.wall_map
 
 
-    userdata.items = {'red_pile': {'type':'brick_pile','scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'green_pile':{'type':'brick_pile','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'blue_pile':{'type':'brick_pile','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
-                    'orange_pile':{'type':'brick_pile','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}
+    userdata.piles = {'red_pile': {'type':'brick_pile', 'color':'red', 'scale_x':0.3, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'green_pile':{'type':'brick_pile', 'color':'green','scale_x':0.6, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'blue_pile':{'type':'brick_pile', 'color':'blue','scale_x':1.2, 'frame_id':'map','centroid': None, 'aabb': None},
+                    'orange_pile':{'type':'brick_pile', 'color':'orange','scale_x':1.8, 'frame_id':'map','centroid': None, 'aabb': None}}
 
     return userdata
 
@@ -52,8 +52,8 @@ class Task(smach.StateMachine):
     # init
     def __init__(self, name, interface):
         smach.StateMachine.__init__(self,outcomes=['success','error'],
-                input_keys = ['search_region', 'wall', 'items'])
+                input_keys = ['search_region', 'wall', 'piles'])
 
         with self:
-            smach.StateMachine.add('search_env', SearchEnvironment.Task('search_env',interface), {'success':'build_wall','failure':'build_wall','error':'error'})
+            smach.StateMachine.add('search_env', SearchForBrickPiles.Task('search_env',interface), {'success':'build_wall','failure':'build_wall','error':'error'})
             smach.StateMachine.add('build_wall', BuildWall.Task('build_wall',interface), {'success':'success','failure':'success','error':'error'})
