@@ -4,3 +4,4 @@ bool stop_after_find
 ---
 bool success
 string outcome
+string output_keys

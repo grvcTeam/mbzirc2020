@@ -67,7 +67,7 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
    AgentIdle.srv
    GetJson.srv
    GoToWaypoint.srv
-   SearchEnvironment.srv
+   SearchForBrickPiles.srv
    SearchAndBuild.srv
    SetAgentProp.srv
  )

@@ -3,3 +3,4 @@ geometry_msgs/Polygon search_region
 ---
 bool success
 string outcome
+string output_keys
