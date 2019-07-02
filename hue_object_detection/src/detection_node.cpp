@@ -10,6 +10,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <hue_object_detection/HueDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
+#include <mbzirc_comm_objs/DetectTypes.h>
 
 class ImageConverter {
 public:
@@ -159,6 +160,14 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
   return object_list;
 }
 
+// dummy service callback to make this node compatible with the fake camera plugin which allows to set the object types which can be recognized
+bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
+                          mbzirc_comm_objs::DetectTypes::Response &res)
+{
+  res.success = true;
+  return true;
+}
+
 int main(int argc, char** argv) {
 
   ros::init(argc, argv, "detection_node");
@@ -171,6 +180,7 @@ int main(int argc, char** argv) {
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
   ImageConverter image_converter("camera_0/camera_info", "camera_0/image_raw", "hue_detection", true);
+  ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
   HueDetection detection;
   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
