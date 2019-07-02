@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find atrvjr_description)/launch/atrv_ur5.launch" /> 
+    <include file="$(find atrvjr_description)/launch/navigation.launch" />
+    <include file="$(find ur5_moveit_config)/launch/atrvjr_movit.launch" />
+
+</launch>

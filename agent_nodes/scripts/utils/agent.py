@@ -309,7 +309,11 @@ class AgentTaskWrapper(smach.StateMachine):
                                              (self._current_label, self._current_state)
                                              + traceback.format_exc())
 
-        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, sender=self ) #TODO: output keys should be sent as well
+        output_keys = {}
+        for key in self._current_state.get_registered_output_keys():
+            output_keys[key] = getattr(self.userdata,key)
+
+        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, output_keys = output_keys, sender=self )
         outcome = self._current_transitions[outcome]
 
         # Set current state
@@ -372,18 +376,19 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
             dispatcher.send( signal='exec_task', task_id=name )
 
             task_outcome = {}
-            def completed_cb(task_id,outcome):
+            def completed_cb(task_id,outcome,output_keys):
                 rospy.loginfo('Task {id} completed with outcome {o}'.format(id=task_id,o=outcome))
                 if task_id == name:
                     task_outcome['outcome'] = outcome # because cannot assign nonlocal vars in python 2.x
+                    task_outcome['output_keys'] = '' # json.dumps(output_keys) TODO: dumps raise error cause some keys are not json seralizable
 
             dispatcher.connect( completed_cb, signal='task_completed', sender=wrapper )
 
-            r = rospy.Rate(10)
-            while not rospy.is_shutdown() and not task_outcome:
+            r = rospy.Rate(1)
+            while not rospy.is_shutdown() and not 'outcome' in task_outcome and not 'output_keys' in task_outcome:
                 r.sleep()
 
-            return task.ResponseType(success=True,outcome=task_outcome['outcome']) #TODO: add estimated time to execute Task
+            return task.ResponseType(success=True,outcome=task_outcome['outcome'],output_keys=task_outcome['output_keys'])
         else:
             rospy.logwarn('Agent {agent_id} cannot execute task {name}. Currently executing: {active}'.format(
             agent_id=interface.agent_id,name=name,active=interface.fsm.get_active_states()))

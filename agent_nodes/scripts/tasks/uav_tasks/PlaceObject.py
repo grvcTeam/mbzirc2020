@@ -19,7 +19,7 @@ class Task(smach.State):
     def __init__(self, name, interface, uav_ns, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['type','scale','goal_pose','trans_uav2object'],
-                output_keys = ['trans_uav2object'])
+                output_keys = ['place_real_pose'])
 
         self.iface = interface
 
@@ -75,5 +75,7 @@ class Task(smach.State):
         from_geom_msgs_Transform_to_geom_msgs_Pose(trans_global2uav_old.transform)),blocking=True )
 
         self.iface['cli_go_waypoint'](way)
+
+        userdata.place_real_pose = userdata.goal_pose #TODO: placeholder for actually detecting the object pose after placing it
 
         return 'success'

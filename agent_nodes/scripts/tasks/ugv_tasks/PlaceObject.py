@@ -43,7 +43,7 @@ class Task(smach.State):
     def __init__(self, name, interface, ugv_ns, z_offset):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','type','scale','goal_pose','trans_gripper2object'],
-                output_keys = ['trans_gripper2object'],
+                output_keys = ['place_real_pose'],
                 io_keys = ['way_pose', 'obj_pose'])
 
         self.iface = interface
@@ -116,5 +116,7 @@ class Task(smach.State):
             rate.sleep()
 
         rospy.sleep(1.) #wait for stabilization
+
+        userdata.place_real_pose = userdata.goal_pose #TODO: placeholder for actually detecting the object pose after placing it
 
         return 'success'

@@ -147,12 +147,21 @@ class Task(smach.State):
             print self.name + ' Task could not be executed'
             return 'error'
 
+        #check if current height is equal to property height, if not move UAV vertically
+        if trans_global2uav.transform.translation.z != self.props['height']:
+            pose = Pose()
+            pose.position.x = trans_global2uav.transform.translation.x
+            pose.position.y = trans_global2uav.transform.translation.y
+            pose.position.z = self.props['height']
+            pose.orientation = trans_global2uav.transform.rotation
+
+            self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=
+            PoseStamped(header=Header(frame_id=self.props['global_frame'],stamp =
+            rospy.Time.now()),pose=pose),blocking=True ))
+
         #Test if the initial or goal pose are inside of a shared region.
-        #TODO: not checking if the path intersects a region
         uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
         goal_point = from_geom_msgs_Pose_to_Shapely_Point(userdata.way_pose)
-
-        print userdata.way_pose
 
         def point_in_region(point,regions):
             for r_id in regions:

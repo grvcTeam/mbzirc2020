@@ -36,7 +36,7 @@ def gen_userdata(req):
 
     return userdata
 
-# main class. TODO: not tested yet
+# main class.
 class Task(smach.State):
 
     #callbacks

@@ -224,6 +224,7 @@ class Task(smach.State):
         # get available agents
         a_dic = json.loads(self.iface['agent_list']().jsonStr)
         pfpnp_dic = {}
+        h = 4
         for a in a_dic:
             # get agent properties
             c = rospy.ServiceProxy('{agent_id}/agent_props'.format(agent_id=a), GetJson)
@@ -232,6 +233,12 @@ class Task(smach.State):
             # add to list
             if pfpnp_address:
                 pfpnp_dic[a] = pfpnp_address[0]
+            # set different height to UAVs
+            if 'type' in props and props['type'] == 'UAV':
+                c = rospy.ServiceProxy('{agent_id}/set_agent_props'.format(agent_id=a), SetAgentProp)
+                c(jsonStr=json.dumps({'height':h}))
+                h -= 1 # works because there are 3 UAVs maximum
+
 
         return pfpnp_dic
 
@@ -247,9 +254,10 @@ class Task(smach.State):
 
     # FIRST dispatch strategy: get agents able to do pick and place and dipatch to idles
     def dispatch2idle(self):
-
+        # retrieve available agents
         a_dic = self.get_picknplace_agents()
 
+        # dispatch tasks
         r = rospy.Rate(0.5)
         while self.uncompleted_tasks():
             if not self.ready2dispatch.empty():

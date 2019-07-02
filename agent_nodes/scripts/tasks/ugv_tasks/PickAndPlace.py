@@ -58,7 +58,8 @@ class Task(smach.StateMachine):
     # init
     def __init__(self, name, interface, ugv_ns, z_offset):
         smach.StateMachine.__init__(self,outcomes=['success','error'],
-        input_keys = ['shared_regions','type','scale','goal_pose','obj_pose'])
+        input_keys = ['shared_regions','type','scale','goal_pose','obj_pose'],
+        output_keys = ['place_real_pose'])
 
         self.iface = interface
 

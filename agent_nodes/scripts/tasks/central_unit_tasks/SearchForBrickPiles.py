@@ -15,12 +15,12 @@ import threading
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from std_msgs.msg import String
 from mbzirc_comm_objs.msg import ObjectDetectionList
-from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, SearchEnvironment, SearchEnvironmentResponse, SetAgentProp, SetAgentPropRequest
+from mbzirc_comm_objs.srv import GetJson, GetJsonRequest, SearchForObject, SearchForObjectRequest, AgentIdle, AgentIdleRequest, SearchForBrickPiles, SearchForBrickPilesResponse, SetAgentProp, SetAgentPropRequest
 from geometry_msgs.msg import Polygon, Point32,  PolygonStamped
 
 # task properties
-ResponseType = SearchEnvironmentResponse
-DataType = SearchEnvironment
+ResponseType = SearchForBrickPilesResponse
+DataType = SearchForBrickPiles
 transitions={'success':'success','failure':'success','error':'error'}
 
 # function to create userdata from a task execution request matching the task
@@ -194,11 +194,11 @@ class Task(smach.State):
         #piles.
         self.piles_d = userdata.piles
 
-        # set different height (altitude) values for each UAV
+        # set different height (altitude) values for each UAV.
         h = 5
         for uav in uav_dic:
             c = rospy.ServiceProxy('{agent_id}/set_agent_props'.format(agent_id=uav), SetAgentProp)
-            c(jsonStr=json.dumps({'height':5.0}))
+            c(jsonStr=json.dumps({'height':h}))
             h -= 1 # works because there are 3 UAVs maximum
 
         # send search tasks and wait
