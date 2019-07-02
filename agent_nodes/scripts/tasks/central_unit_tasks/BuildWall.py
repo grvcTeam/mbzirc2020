@@ -43,7 +43,7 @@ def gen_userdata(req):
 
     userdata = smach.UserData()
     userdata.wall = wall
-    userdata.items = {'red_pile': {'scale_x': 0.3, 'frame_id': 'map', 'aabb': [-0.2605240219463596, -10.149997164259327, 0.498081876014302, -9.599997164259069],
+    userdata.piles = {'red_pile': {'scale_x': 0.3, 'frame_id': 'map', 'aabb': [-0.2605240219463596, -10.149997164259327, 0.498081876014302, -9.599997164259069],
     'centroid': (0.1187789270339712, -9.874997164259199), 'type': 'brick_pile'},
     'blue_pile': {'scale_x': 1.2, 'frame_id': 'map', 'aabb': [-10.592243186737846, -0.6302098295615275, -8.02393939651886, 0.8499999988991274],
     'centroid': (-9.308091291628354, 0.10989508466879994), 'type': 'brick_pile'},
@@ -123,19 +123,19 @@ class Task(smach.State):
                     if wall_matrix[k][j][i] == 1: #red brick
                         #print '1'
                         x_l = 0.30
-                        centroid = self.items['red_pile']['centroid']
+                        centroid = self.piles['red_pile']['centroid']
                     elif wall_matrix[k][j][i] == 2: #green brick
                         #print '2'
                         x_l = 0.60
-                        centroid = self.items['green_pile']['centroid']
+                        centroid = self.piles['green_pile']['centroid']
                     elif wall_matrix[k][j][i] == 3: #blue brick
                         #print '3'
                         x_l = 1.20
-                        centroid =self.items['blue_pile']['centroid']
+                        centroid =self.piles['blue_pile']['centroid']
                     elif wall_matrix[k][j][i] == 4: #orange brick
                         #print '4'
                         x_l = 1.80
-                        centroid = self.items['orange_pile']['centroid']
+                        centroid = self.piles['orange_pile']['centroid']
                     else:
                         continue
 
@@ -277,7 +277,7 @@ class Task(smach.State):
     #init
     def __init__(self, name, interface):
         smach.State.__init__(self,outcomes=['success','error','failure'],
-                input_keys = ['items','wall']) #items = {'name': {'prop':value,...},...}
+                input_keys = ['piles','wall']) #piles = {'name': {'prop':value,...},...}
 
         #members
         self.name = name
@@ -290,12 +290,12 @@ class Task(smach.State):
     # main function
     def execute(self, userdata):
 
-        # check if items are present
-        if not 'red_pile' in userdata.items or not 'green_pile' in userdata.items or not 'blue_pile' in userdata.items or not 'orange_pile' in userdata.items:
+        # check if piles are present
+        if not 'red_pile' in userdata.piles or not 'green_pile' in userdata.piles or not 'blue_pile' in userdata.piles or not 'orange_pile' in userdata.piles:
             rospy.loginfo('task {t} could not be executed'.format(t=self.name))
             return 'failure'
 
-        self.items = userdata.items
+        self.piles = userdata.piles
 
         # compute and add shared regions
         add_reg = rospy.ServiceProxy('/add_shared_region', AddSharedRegion)
@@ -314,9 +314,9 @@ class Task(smach.State):
         p.points = [Point32(bb[0],bb[1],0),Point32(bb[2],bb[1],0),Point32(bb[2],bb[3],0),Point32(bb[0],bb[3],0)]
         shared_regions = [p]
 
-        for pile in self.items:
-            if self.items[pile]['type'] == 'brick_pile':
-                p = poly_from_aabb(self.items[pile]['aabb'])
+        for pile in self.piles:
+            if self.piles[pile]['type'] == 'brick_pile':
+                p = poly_from_aabb(self.piles[pile]['aabb'])
                 shared_regions += [p]
 
         self.shared_regions = shared_regions
