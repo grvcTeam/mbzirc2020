@@ -38,10 +38,18 @@ def main():
     # initialize state machine
     fsm.initialize(id, default_task, tasks_dic)
 
+    # TODO(performance): Make it optional, use only in develop stage
+    viewer = smach_ros.IntrospectionServer('viewer', fsm, id.upper())
+    viewer.start()
+
     # execute state machine
     userdata = smach.UserData()
     userdata.height = 2.0
     fsm.execute(userdata)
+
+    # Wait for ctrl-c to stop the application
+    # rospy.spin()
+    # viewer.stop()
 
 if __name__ == '__main__':
     main()
