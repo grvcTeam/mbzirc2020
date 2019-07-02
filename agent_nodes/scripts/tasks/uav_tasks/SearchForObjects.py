@@ -10,7 +10,8 @@ from utils.agent import *
 from mbzirc_comm_objs.msg import ObjectDetectionList
 from mbzirc_comm_objs.srv import DetectTypes, DetectTypesRequest, SearchForObject, SearchForObjectResponse
 from uav_abstraction_layer.srv import GoToWaypoint, GoToWaypointRequest
-from geometry_msgs.msg import Pose, Quaternion, Point
+from geometry_msgs.msg import Pose, Quaternion, Point, Polygon, Point32, PoseStamped, PolygonStamped
+from std_msgs.msg import Header
 
 # task properties
 ResponseType = SearchForObjectResponse
@@ -21,12 +22,21 @@ transitions={'found':'success','not_found':'success'}
 # input keys
 def gen_userdata(req):
     userdata = smach.UserData()
-    userdata.search_region = req.search_region.polygon
+
+    userdata.search_region = req.search_region
     userdata.object_types = req.object_types
     userdata.stop_after_find = req.stop_after_find
+
+    '''userdata.object_types = ['brick']
+    userdata.stop_after_find = False
+    userdata.search_region = PolygonStamped()
+    userdata.search_region.header.frame_id = "map"
+    userdata.search_region.header.stamp = rospy.Time.now()
+    userdata.search_region.polygon = Polygon(points=[Point32(-15,-15,0),Point32(15,-15,0),Point32(15,0,0),Point32(-15,0,0)])'''
+
     return userdata
 
-# main class. TODO: not tested yet
+# main class.
 class Task(smach.State):
 
     #callbacks
@@ -36,21 +46,28 @@ class Task(smach.State):
             self.found = True
 
     #init
-    def __init__(self, name, interface, uav_ns, height, global_frame, uav_frame, aov): #aov = angle of view of the sensor
+    def __init__(self, name, interface, uav_ns):
         smach.State.__init__(self,outcomes=['found','not_found'],
                 input_keys = ['search_region','object_types','stop_after_find'])
+
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['height', 'global_frame', 'agent_frame', 'aov'] #aov = angle of view of the sensor
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
 
         #members
         self.found = False
         self.name = name
-        self.height = height
-        self.global_frame = global_frame
-        self.uav_frame = uav_frame
-        self.aov = aov
 
         #interface elements
-        interface.add_client('cli_set_obj_types','set_obj_types',DetectTypes)
-        interface.add_client('cli_go_waypoint',name,uav_ns+'/'+'go_to_waypoint',
+        interface.add_client('cli_set_obj_types','set_types',DetectTypes)
+        interface.add_client('cli_go_waypoint',uav_ns+'/'+'go_to_waypoint',
                                 GoToWaypoint)
         interface.add_publisher('pub_obj_det',interface.agent_id+'/'+'detected_objects',
                                 ObjectDetectionList, 10)
@@ -66,29 +83,29 @@ class Task(smach.State):
         #compute search path.
         pol = from_geom_msgs_Polygon_to_Shapely_Polygon(userdata.search_region.polygon) #TODO: assuming polygon expressed in global_frame
         try:
-            trans_global2uav = lookup_tf_transform(self.global_frame, self.uav_frame, self.iface['tf_buffer'],5)
+            trans_global2uav = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'], self.iface['tf_buffer'],5)
         except Exception as error:
             print repr(error)
             print self.name + ' Task could not be executed'
             return 'error'
 
-        pos = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav)
-        path = compute_search_path(self.aov, self.height, pol, pos)
+        pos = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
+        path = compute_search_path(self.props['aov'], self.props['height'], pol, pos)
 
         #set up object detection
         self.iface['cli_set_obj_types'](DetectTypesRequest(types=userdata.object_types))
 
         #start searching
-        for wp in search_path.path:
+        for wp in path:
             #visit each waypoint and check if objects been found
             if self.found and userdata.stop_after_find:
                 break
 
             #TODO: should use the go_to_waypoint task?
-            pose = Pose(position=Point(wp[0],wp[1],userdata.height),
+            pose = Pose(position=Point(wp[0],wp[1],self.props['height']),
             orientation = Quaternion(0,0,0,1))
             self.iface['cli_go_waypoint'](GoToWaypointRequest(waypoint=
-            PoseStamped(header=Header(frame_id=userdata.global_frame,stamp =
+            PoseStamped(header=Header(frame_id=self.props['global_frame'],stamp =
             rospy.Time.now()),pose=pose),blocking=True ))
 
         return 'found' if self.found else 'not_found'

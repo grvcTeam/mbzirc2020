@@ -18,27 +18,6 @@ import tasks.ugv_tasks.GoToWaypoint as GoToWaypoint
 from geometry_msgs.msg import Pose, Quaternion, Point, Vector3, Twist
 from nav_msgs.msg import OccupancyGrid
 
-from std_srvs.srv import SetBool, SetBoolResponse
-
-# task properties
-ResponseType = SetBoolResponse
-DataType = SetBool
-transitions={'success':'success','error':'error'}
-
-# function to create userdata from a task execution request matching the task
-# input keys
-def gen_userdata(req):
-
-    userdata = smach.UserData()
-    pose = Pose()
-    pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(0.350020373191,-9.74999731461,0.0999974468085)
-    userdata.shared_regions = []
-    userdata.obj_pose = pose
-    userdata.type = 'brick'
-    userdata.scale = Vector3(0.3,0.2,0.2)
-    return userdata
-
 # transform a point p coodinates from cartesian to grid index
 def coord2index(o,w,h,r,p,takeFloor):
     f = floor if takeFloor else ceil
@@ -51,7 +30,7 @@ def coord2index(o,w,h,r,p,takeFloor):
 
     return [int(p_i),int(p_j)]
 
-# check if occupied cells in a grid falls inside of an aabb
+# check if occupied cells falls inside of an aabb
 # aabb: expressed in global frame
 def check_collision(occ_grid, aabb, threshold):
     ori = [occ_grid.info.origin.position.x,occ_grid.info.origin.position.y]
@@ -74,9 +53,9 @@ def check_collision(occ_grid, aabb, threshold):
 
     return False
 
-# compute possible robot grip poses and aabbs
-# rb2obj: goal translation vector rb2obj
-# rb_aabb: robot base bb in rb frame
+# compute possible robot grip poses given an object pose and the corresponding aabbs expressed in global frame
+# rb2obj: vector between the requested robot base position and the object center
+# rb_aabb: robot base bb in robot base frame
 def compute_robot_poses(rb2obj, obj_pose, scale, rb_aabb):
     trans_global2obj = from_geom_msgs_Pose_to_KDL_Frame(obj_pose)
     scale_trans = trans_global2obj.M * PyKDL.Vector(scale.x,scale.y,scale.z)
@@ -110,53 +89,32 @@ def compute_robot_poses(rb2obj, obj_pose, scale, rb_aabb):
 
     return poses
 
-#takes a rb and work space aabbs in rb frame and computes the range for rb aabb in global frame
-#so goal_point is inside of ws aabb. Limited to rb orientation aligned with global axis
-#aabb format = [xmin, ymin, xmax, ymax] expressed in robot base frame
-def get_aabb_range(ws_aabb, rb_aabb, goal_point):
-    trans_ws2rb = [rb_aabb[0]-ws_aabb[0],rb_aabb[1]-ws_aabb[1]]
-
-    ws_dim = [ws_aabb[2]-ws_aabb[0], ws_aabb[3]-ws_aabb[1]]
-    ws_range = [goal_point[0]-ws_dim[0],goal_point[1]-ws_dim[1],goal_point[0],goal_point[1]] #for the origin of the aabb in global frame
-    rb_range = [ws_range[0]+trans_ws2rb[0],ws_range[1]+trans_ws2rb[1],ws_range[2]+trans_ws2rb[0],ws_range[3]+trans_ws2rb[1]]
-    return rb_range
-
-# takes an aabb range and check for a safe one
-def get_safe_pose(occ_grid, aabb, range, threshold, x_step, y_step):
-
-    ws_dim = [aabb[2]-aabb[0], aabb[3]-aabb[1]]
-
-    '''print ws_dim
-    print 'x range'
-    print np.arange(range[0],range[2],x_step)
-    print 'y range'
-    print np.arange(range[1],range[3],y_step)'''
-
-    for x in np.arange(range[0],range[2],x_step): #TODO: take the last one
-        for y in np.arange(range[1],range[3],y_step): #TODO: take the last one
-            if not check_collision(occ_grid, [x,y,x+ws_dim[0],y+ws_dim[1]], threshold):
-                return x,y
-
-    return None,None
-
 # main class
 class Task(smach.State):
 
     def map_cb(self, msg):
         self.occ_grid = msg
 
-    #aabbs are supposed to be expressed in robot frame and  centered in the origin
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, rb_aabb, ws_aabb):
+    #aabbs are supposed to be expressed in ugv_frame
+    #rb_aabb = robot base aabb = robot footprint
+    def __init__(self, name, interface, ugv_ns):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = ['shared_regions','obj_pose', 'scale', 'type'],
                 io_keys = ['way_pose'])
 
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame', 'rb_aabb']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
+
         #members
         self.name = name
-        self.global_frame = global_frame
-        self.ugv_frame = ugv_frame
-        self.rb_aabb = rb_aabb
-        self.ws_aabb  = ws_aabb
         self.occ_grid = None
 
         #interface elements
@@ -166,15 +124,13 @@ class Task(smach.State):
         interface.add_publisher('pub_vel','/mobile_base_controller/cmd_vel',
                                 Twist, 10)
 
-        self.iface = interface
-
         #sub tasks
-        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns, global_frame, ugv_frame])
+        add_sub_task('go_task', self, GoToWaypoint, task_args = [ugv_ns])
 
     #main function
     def execute(self, userdata):
 
-        #get occ grip map
+        #get occ grid map
         if not self.occ_grid:
             print self.name + ' Task could not be executed: no map available'
             return 'error'
@@ -182,8 +138,8 @@ class Task(smach.State):
             occ_grid = self.occ_grid
 
         #compute a waypoint from where to grip the object
-        rb2obj = (0.748,0.108) # hardcoded for harcoded gripper pose
-        poses = compute_robot_poses(rb2obj, userdata.obj_pose, userdata.scale, self.rb_aabb)
+        rb2obj = (0.748,0.108) # hardcoded for harcoded gripper pose in PickObject task
+        poses = compute_robot_poses(rb2obj, userdata.obj_pose, userdata.scale, self.props['rb_aabb'])
         r_pose = None
 
         for i in range(len(poses)):
@@ -204,10 +160,10 @@ class Task(smach.State):
         #fine tune pose because of movebase goal tolerance
         def x_rb2obj():
             try:
-                trans_global2ugv = lookup_tf_transform(self.global_frame, self.ugv_frame, self.iface['tf_buffer'],5)
+                trans_global2ugv = lookup_tf_transform(self.props['global_frame'], self.props['agent_frame'], self.iface['tf_buffer'],5)
                 trans_ugv2goal = from_geom_msgs_Transform_to_KDL_Frame(trans_global2ugv.transform).Inverse() * r_pose
                 print abs(trans_ugv2goal.p.x())
-                return abs(trans_ugv2goal.p.x())
+                return trans_ugv2goal.p.x()
             except Exception as error:
                 print repr(error)
                 print self.name + ' Task could not be executed'
@@ -215,8 +171,13 @@ class Task(smach.State):
 
         rate = rospy.Rate(10.0)
         print 'approaching!'
-        while x_rb2obj() > 0.06:
-            self.iface['pub_vel'].publish(Twist(linear=Vector3(0.1,0,0)))
+        while 1:
+            d = x_rb2obj()
+            if abs(d) > 0.06:
+                v = 0.1 if d > 0 else -0.1
+                self.iface['pub_vel'].publish(Twist(linear=Vector3(0.1,0,0)))
+            else:
+                break
             rate.sleep()
 
 

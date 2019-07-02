@@ -56,10 +56,22 @@ def gen_userdata(req):
 class Task(smach.StateMachine):
 
     # init
-    def __init__(self, name, interface, ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset):
+    def __init__(self, name, interface, ugv_ns, z_offset):
         smach.StateMachine.__init__(self,outcomes=['success','error'],
-        input_keys = ['shared_regions','type','scale','goal_pose','obj_pose'])
+        input_keys = ['shared_regions','type','scale','goal_pose','obj_pose'],
+        output_keys = ['place_real_pose'])
+
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = ['global_frame', 'agent_frame', 'gripper_frame', 'rb_aabb']
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
 
         with self:
-            smach.StateMachine.add('Pick_Task', PickObject.Task('Pick_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset), {'success':'Place_Task','error':'error'})
-            smach.StateMachine.add('Place_Task', PlaceObject.Task('Place_Task',interface,ugv_ns, global_frame, ugv_frame, base_aabb, ws_aabb, gripper_frame, z_offset), {'success':'success','error':'error'})
+            smach.StateMachine.add('Pick_Task', PickObject.Task('Pick_Task',interface,ugv_ns, z_offset), {'success':'Place_Task','error':'error'})
+            smach.StateMachine.add('Place_Task', PlaceObject.Task('Place_Task',interface,ugv_ns, z_offset), {'success':'success','error':'error'})

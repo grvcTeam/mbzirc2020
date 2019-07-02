@@ -5,18 +5,20 @@ import smach
 import smach_ros
 import tf2_ros
 from pydispatch import dispatcher
+import json
+import traceback
 
-from agent_nodes.msg import ExecTask
-from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse
+from mbzirc_comm_objs.srv import AgentIdle, AgentIdleResponse, GetJson, GetJsonResponse, SetAgentProp, SetAgentPropResponse
 
 #handles an agent interface. Stores elements in the interface with the particularity
 #that callbacks depends on the active task in the agent fsm
 class AgentInterface():
 
-    def __init__(self, agent_id, agent_fsm):
+    def __init__(self, agent_id, agent_fsm, agent_props = {}, graph_change_cb = None):
 
         self.agent_id = agent_id
         self.fsm = agent_fsm
+        self.agent_props = agent_props #TODO: now properties are stored as 'name':value pairs in a dict. For easing setting them from a external service datatype is also needed
 
         # members of the agent interface
         self.callables = {}
@@ -31,10 +33,17 @@ class AgentInterface():
         #init
         self.callables['tf_buffer'] = tf2_ros.Buffer()
         self.callables['tf_listener'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
-        #self.callables['exec_task'] = rospy.Publisher(self.agent_id+'/'+'exec_task', ExecTask, queue_size=1)
+
+        self.callables['graph_list'] = tf2_ros.TransformListener(self.callables['tf_buffer'])
+        self.add_client('agent_list','/agent_list', GetJson)
+
+        if graph_change_cb:
+            self.add_subscriber(self, 'AGENT', '/changes', String, graph_change_cb)
 
         #services
         self.idle_server = rospy.Service(self.agent_id+'/'+'is_idle', AgentIdle, self.is_idle_cb)
+        self.get_props_server = rospy.Service(self.agent_id+'/'+'agent_props', GetJson, self.get_props_cb)
+        self.set_props_server = rospy.Service(self.agent_id+'/'+'set_agent_props', SetAgentProp, self.set_props_cb)
 
     # returns an interface element
     def __getitem__(self,item):
@@ -47,6 +56,27 @@ class AgentInterface():
     # service callback
     def is_idle_cb(self,req):
         return AgentIdleResponse(isIdle=self.is_agent_idle())
+
+    def get_props_cb(self,req):
+        return GetJsonResponse(jsonStr=json.dumps(self.agent_props))
+
+    def set_props_cb(self,req):
+        try:
+            new_vals = json.loads(req.jsonStr)
+        except Exception as error:
+            print repr(error)
+            print 'Set agent property failed in parsing json: {j}'.format(j=req.jsonStr)
+            return SetAgentPropResponse(success=False)
+
+        set_props = []
+        for prop in new_vals:
+            if prop in self.agent_props:
+                self.agent_props[prop] = new_vals[prop]
+                set_props += [prop]
+
+        success = len(set_props) == len(new_vals)
+
+        return SetAgentPropResponse(success=success, set_props=set_props)
 
     # return active tasks names
     def current_tasks(self):
@@ -90,6 +120,11 @@ class AgentInterface():
             actives += [task.get_active_subtask()] + a[0]
             a_ids += [id(task.get(task.get_active_subtask()))] + a[1]
 
+        if hasattr(task, 'get_default'):
+            a = self.get_active_states(task.get(task.get_default()))
+            actives += [task.get_default()] + a[0]
+            a_ids += [id(task.get(task.get_default()))] + a[1]
+
         return actives, a_ids
 
     # add a publisher to the agent interface
@@ -115,6 +150,11 @@ class AgentInterface():
 
         if not topic_name in self.callbacks:
             def meta_callback(msg):
+                #call agent level callbacks
+                if 'AGENT' in self.callbacks[topic_name]:
+                    self.callbacks[topic_name]['AGENT'](msg)
+
+                #call task callbacks
                 if self.fsm.isInit:
                     actives = self.get_active_states(self.fsm)
                     #print 'ACTIVES: {actives}'.format(actives=actives)
@@ -126,13 +166,19 @@ class AgentInterface():
             self.callbacks[topic_name]['meta'] = meta_callback
             self.subscribers[topic_name] = rospy.Subscriber(topic_name, data_class, meta_callback)
 
-        self.callbacks[topic_name][id(task)] = callback
+        label = 'AGENT' if type(task) == 'str' and task == 'AGENT' else id(task)
+        self.callbacks[topic_name][label] = callback
 
     # add a server to the agent interface
     def add_server(self, task, topic_name, data_class, callback, inactive_callback):
 
         if not topic_name in self.callbacks:
             def meta_callback(req):
+                #call agent level callbacks. If defined, it will override define task callbacks
+                if 'AGENT' in self.callbacks[topic_name]:
+                    return self.callbacks[topic_name]['AGENT'](req)
+
+                #call task callbacks
                 if self.fsm.isInit:
                     actives = self.get_active_states(self.fsm)
                     #print 'ACTIVES: {actives}'.format(actives=actives)
@@ -147,7 +193,8 @@ class AgentInterface():
             self.callbacks[topic_name]['inactive'] = inactive_callback
             self.servers[topic_name] = rospy.Service(topic_name, data_class, meta_callback)
 
-        self.callbacks[topic_name][id(task)] = callback
+        label = 'AGENT' if type(task) == 'str' and task == 'AGENT' else id(task)
+        self.callbacks[topic_name][label] = callback
 
 #Runs in a loop until a request to execute a new task arrives
 #To be executed in paralel with Default task in the DefaultTaskContainer
@@ -159,7 +206,6 @@ class ExecTaskWatch(smach.State):
     def __init__(self, agent_id, task_list):
         self.task = ''
         self.task_list = task_list
-        #self.sub = rospy.Subscriber(agent_id+'/'+'exec_task', ExecTask, self.exec_task_cb)
         dispatcher.connect( self.exec_task_cb, signal='exec_task', sender=dispatcher.Any )
 
         smach.State.__init__(self, outcomes=task_list+['invalid_task'])
@@ -187,16 +233,51 @@ def out_cb(outcome_map):
 #default task container running in paralel the execute task watcher and the default task
 class DefaultTaskContainer(smach.Concurrence):
 
+    def set_default(self, task_name):
+
+        self.m_default.set_default(task_name)
+
     '''Parameters:
         - default_task: the task the agents execute on idle
         - task_list: names of the tasks the agent can execute'''
-    def __init__(self, agent_id, default_task, task_list):
-        smach.Concurrence.__init__(self,input_keys=list(default_task._input_keys),outcomes=task_list+['error','invalid_task'],
+    def __init__(self, agent_id, d_dic, default_name, task_list):
+        smach.Concurrence.__init__(self,input_keys=[],outcomes=task_list+['error','invalid_task'],
                                    default_outcome='error',child_termination_cb=child_term_cb,
                                    outcome_cb=out_cb)
+
+        class MetaDefault(smach.State):
+
+            def __init__(self, d_dic, default_name):
+                self.default = default_name
+                self.d_tasks = d_dic
+                smach.State.__init__(self, outcomes=['success','error'])
+
+            def execute(self, ud):
+                outcome = self.d_tasks[self.default].execute(ud)
+                return 'success' if outcome != 'error' else 'error'
+
+            def set_default(self, task_name):
+                if task_name in self.d_tasks:
+                    self.default = task_name
+                else:
+                    rospy.logwarn('Task {t} does not exist. It cannot be set as default'.format(t=task_name))
+
+            def get_default(self):
+                return self.default
+
+            def get(self, t_name):
+                return self.d_tasks[self.default]
+
+            def request_preempt(self):
+                self.d_tasks[self.default].request_preempt()
+
+        self.m_default = MetaDefault(d_dic, default_name)
+
         with self:
             smach.Concurrence.add('EXEC_TASK_WATCH', ExecTaskWatch(agent_id, task_list))
-            smach.Concurrence.add('DEFAULT_TASK', default_task)
+            smach.Concurrence.add('DEFAULT_TASK', self.m_default)
+
+        dispatcher.connect( self.set_default, signal='change_default_task', sender=dispatcher.Any )
 
 #Wraps a Task so the agent can expose it for external execution
 #Ensures it has the right outcomes: success, error
@@ -208,9 +289,38 @@ class AgentTaskWrapper(smach.StateMachine):
           to 'success' and 'error' '''
     def __init__(self, name, task, transitions):
         smach.StateMachine.__init__(self,outcomes=['success','error'])
+        self.name = name
 
         with self:
             smach.StateMachine.add(name, task, transitions)
+
+    def execute(self, parent_ud = smach.UserData()):
+        # Set current state
+        self._set_current_state(self.name)
+
+        # Execute the state
+        try:
+            outcome = self._current_state.execute(self.userdata)
+        except smach.InvalidUserCodeError as ex:
+            smach.logerr("State '%s' failed to execute." % self._current_label)
+            raise ex
+        except:
+            raise smach.InvalidUserCodeError("Could not execute state '%s' of type '%s': " %
+                                             (self._current_label, self._current_state)
+                                             + traceback.format_exc())
+
+        output_keys = {}
+        for key in self._current_state.get_registered_output_keys():
+            output_keys[key] = getattr(self.userdata,key)
+
+        dispatcher.send( signal='task_completed', task_id = self.name, outcome=outcome, output_keys = output_keys, sender=self )
+        outcome = self._current_transitions[outcome]
+
+        # Set current state
+        self._set_current_state(None)
+
+        return outcome
+
 
 #Agent fsm transiting from requested tasks to default task
 class AgentStateMachine(smach.StateMachine):
@@ -221,13 +331,13 @@ class AgentStateMachine(smach.StateMachine):
     '''Parameters:
         - default_task: the task the agents execute on idle
         - tasks_dic: names and objects of the tasks the agent can execute'''
-    def initialize(self, agent_id, default_task, tasks_dic):
+    def initialize(self, agent_id, d_dic, default_name, tasks_dic):
         #TODO: 'error' outcome here simbolizes a critical recovery task, which needs to be an actual
         #state in the statemachine, same as default
         smach.StateMachine.__init__(self,outcomes=['error'],
-                                    input_keys=list(default_task._input_keys))
+                                    input_keys=[])
 
-        default = DefaultTaskContainer(agent_id, default_task, tasks_dic.keys())
+        default = DefaultTaskContainer(agent_id, d_dic, default_name, tasks_dic.keys())
         default_trans = {'invalid_task':'DEFAULT','error':'error'}
         for task in tasks_dic.keys():
             default_trans[task]=task
@@ -264,16 +374,27 @@ def add_task(name, tasks_dic, interface, task, task_args = []):
         if interface.is_agent_idle():
             interface.set_idle(False) #because the fsm takes some time to do the transition
             dispatcher.send( signal='exec_task', task_id=name )
-            #interface['exec_task'].publish(
-                    #ExecTask(agent_id=interface.agent_id,task_id=name))
 
-            return task.ResponseType(success=True) #TODO: add estimated time to execute Task
+            task_outcome = {}
+            def completed_cb(task_id,outcome,output_keys):
+                rospy.loginfo('Task {id} completed with outcome {o}'.format(id=task_id,o=outcome))
+                if task_id == name:
+                    task_outcome['outcome'] = outcome # because cannot assign nonlocal vars in python 2.x
+                    task_outcome['output_keys'] = '' # json.dumps(output_keys) TODO: dumps raise error cause some keys are not json seralizable
+
+            dispatcher.connect( completed_cb, signal='task_completed', sender=wrapper )
+
+            r = rospy.Rate(1)
+            while not rospy.is_shutdown() and not 'outcome' in task_outcome and not 'output_keys' in task_outcome:
+                r.sleep()
+
+            return task.ResponseType(success=True,outcome=task_outcome['outcome'],output_keys=task_outcome['output_keys'])
         else:
             rospy.logwarn('Agent {agent_id} cannot execute task {name}. Currently executing: {active}'.format(
             agent_id=interface.agent_id,name=name,active=interface.fsm.get_active_states()))
-            return task.ResponseType(success=False)
+            return task.ResponseType(success=False,outcome='not_executed')
 
-    return rospy.Service(interface.agent_id+'/'+name, task.DataType, cb)
+    return rospy.Service(interface.agent_id+'/task/'+name, task.DataType, cb)
 
 #add a subtask to a task that can be later called
 def add_sub_task(name, parent_task, child_task, task_args = []):

@@ -1,6 +1,5 @@
-string type
-geometry_msgs/Point pile_centroid
-geometry_msgs/Pose goal_pose
+string global_frame
+geometry_msgs/Pose way_pose
 geometry_msgs/Polygon[] shared_regions
 ---
 bool success

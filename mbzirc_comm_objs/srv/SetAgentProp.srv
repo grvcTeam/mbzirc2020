@@ -1,0 +1,4 @@
+string jsonStr # json string with the form {property_name: new_value,...} of the properties to be set
+---
+bool success
+string[] set_props # list of strings with the names of properties correctly set

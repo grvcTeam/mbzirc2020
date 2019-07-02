@@ -1,0 +1,6 @@
+string piles # brick piles required to find with the format {'name': {'prop':value,...},...}. props are used to identify the pile
+geometry_msgs/Polygon search_region
+---
+bool success
+string outcome
+string output_keys

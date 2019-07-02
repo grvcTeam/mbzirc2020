@@ -64,12 +64,13 @@ def transform_Shapely_Polygon_with_KDL_Frame(transform,polygon):
 
     return shapely.ops.transform(poly_transform,polygon)
 
-def lookup_tf_transform(parent_frame,child_frame,tf_buffer,n_tries=0,freq=2):
+def lookup_tf_transform(parent_frame,child_frame,tf_buffer,n_tries=0,freq=2, time = None):
     ctr = 0
     rate = rospy.Rate(freq)
     while 1:
         try:
-            trans = tf_buffer.lookup_transform(parent_frame, child_frame, rospy.Time())
+            t = time if time else rospy.Time()
+            trans = tf_buffer.lookup_transform(parent_frame, child_frame, t)
             break
         except Exception as error:
         #except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
@@ -86,8 +87,8 @@ def compute_search_path(aov, height, polygon, pos):
 
     #compute coverage square
     aov = aov * (pi/180.)
-    r = tan(aov) * height
-    lx = ly = 2 * r
+    r = (tan(aov/2) * height)
+    lx = ly = 2 * r #TODO: typically aov takes different values in x and y directions
     rospy.loginfo('coverage size: {l}'.format(l=lx))
 
     #compute polygon bounds and path grid size
@@ -133,7 +134,7 @@ def compute_search_path(aov, height, polygon, pos):
             path += [(x_plus(ox,lx*i),y_plus(oy,ly*j))]
 
     '''ln = shapely.geometry.LineString(path)
-    ln2 = shapely.geometry.LineString(list(pol.exterior.coords))
+    ln2 = shapely.geometry.LineString(list(polygon.exterior.coords))
     ox -= lx/2
     oy -= ly/2
     ln3 = shapely.geometry.LineString([(ox,oy),(ox+lx,oy),(ox+lx,oy+ly),(ox,oy+ly),(ox,oy)])
@@ -143,10 +144,45 @@ def compute_search_path(aov, height, polygon, pos):
     plt.plot(x,y,'r')
     x, y = ln3.xy
     plt.plot(x,y,'g')
-    plt.axis([0, 80, 0, 80])
     plt.show()'''
 
     return path
+
+# computes trajectory around region. Assuming convex region
+def trajectory_around_region(p1,p2,region):
+    #inflate region
+    r = from_geom_msgs_Polygon_to_Shapely_Polygon(region).buffer(1,3)
+
+    #find closest points to p1 and p2
+    dp1 = (p1.distance(shapely.geometry.Point(r.exterior.coords[0])),0)
+    dp2 = (p2.distance(shapely.geometry.Point(r.exterior.coords[0])),0)
+    for i in range(len(r.exterior.coords)):
+        d1 = p1.distance(shapely.geometry.Point(r.exterior.coords[i]))
+        if d1 < dp1[0]:
+            dp1 = (d1,i)
+        d2 = p2.distance(shapely.geometry.Point(r.exterior.coords[i]))
+        if d2 < dp2[0]:
+            dp2 = (d2,i)
+
+    #print '{a},{b},{l}'.format(a=dp1,b=dp2,l=len(r.exterior.coords))
+
+    #return shortest path
+    rev = False
+    if dp1[1] > dp2[1]:
+        rev = True
+        dp = dp1
+        dp1 = dp2
+        dp2 = dp
+
+    l1 = shapely.geometry.LineString(r.exterior.coords[dp1[1]:dp2[1]+1])
+    if l1.length < r.exterior.length / 2:
+        s = list(l1.coords)
+    else:
+        s1 = list(reversed(r.exterior.coords[1:dp1[1]+1]))
+        s2 = list(reversed(r.exterior.coords[dp2[1]:]))
+        s = s1 + s2
+
+    return s if not rev else list(reversed(s))
 
 
 #pos = shapely.geometry.Point(40.,10.)

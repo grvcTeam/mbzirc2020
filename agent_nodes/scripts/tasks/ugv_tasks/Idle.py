@@ -15,10 +15,19 @@ class Task(smach.State):
         smach.State.__init__(self,outcomes=['success','error'],
                 input_keys = [])
 
+        self.iface = interface
+
+        #properties. TODO: properties should be part of the Task module and checking if they are present in AgentInterface be done automatically for every task
+        properties = []
+        for prop in properties:
+            if prop not in interface.agent_props:
+                raise AttributeError('{task} is missing required property {prop} and cannot '\
+                'be instantiated.'.format(task=name,prop=prop))
+
+        self.props = self.iface.agent_props
+
         # members
         self.name = name
-
-        self.iface = interface
 
     # main function
     def execute(self, userdata):
