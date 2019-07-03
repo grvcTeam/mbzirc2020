@@ -1,6 +1,6 @@
 #include "gazebo/gazebo.hh"
 #include "gazebo/physics/physics.hh"
-#include <geometry_msgs/Vector3.h>
+#include <mbzirc_gazebo_plugins/SimDroplet.h>
 #include <ros/ros.h>
 #include <thread>
 
@@ -36,15 +36,15 @@ class DropletFactory: public WorldPlugin {
     ros::spinOnce();
   }
 
-  public: void SpawnDroplet(const geometry_msgs::Vector3ConstPtr &_initial_velocity) {
+  public: void SpawnDroplet(const mbzirc_gazebo_plugins::SimDropletConstPtr &_droplet) {
     math::Pose pose = math::Pose::Zero;
-    pose.pos.x = 0;
-    pose.pos.y = 0;
-    pose.pos.z = 1;
+    pose.pos.x = _droplet->position.x;
+    pose.pos.y = _droplet->position.y;
+    pose.pos.z = _droplet->position.z;
     math::Vector3 velocity;
-    velocity.x = _initial_velocity->x;
-    velocity.y = _initial_velocity->y;
-    velocity.z = _initial_velocity->z;
+    velocity.x = _droplet->velocity.x;
+    velocity.y = _droplet->velocity.y;
+    velocity.z = _droplet->velocity.z;
 
     sdf::SDF sphereSDF;
     sphereSDF.SetFromString(

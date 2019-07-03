@@ -9,14 +9,27 @@ find_package(catkin REQUIRED COMPONENTS
   mbzirc_comm_objs
   sensor_msgs
   geometry_msgs
+  message_generation
 )
 
 find_package(gazebo REQUIRED)
 
+add_message_files(
+  FILES
+  SimDroplet.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+  geometry_msgs
+  std_msgs
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_magnetic_gripper
-  CATKIN_DEPENDS gazebo_ros roscpp mbzirc_comm_objs sensor_msgs geometry_msgs
+  CATKIN_DEPENDS gazebo_ros roscpp mbzirc_comm_objs sensor_msgs geometry_msgs std_msgs message_runtime
   DEPENDS gazebo
 )
 
