@@ -68,6 +68,17 @@ class DropletFactory: public WorldPlugin {
                 <emissive>0 0 0 0</emissive>\
               </material>\
             </visual>\
+            <inertial>\
+              <mass>0.005</mass>\
+              <inertia>\
+                <ixx>2e-7</ixx>\
+                <ixy>0</ixy>\
+                <ixz>0</ixz>\
+                <iyy>2e-7</iyy>\
+                <iyz>0</iyz>\
+                <izz>2e-7</izz>\
+              </inertia>\
+            </inertial>\
           </link>\
         </model>\
       </sdf>");
