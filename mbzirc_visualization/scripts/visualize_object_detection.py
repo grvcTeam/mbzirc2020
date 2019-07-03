@@ -52,7 +52,7 @@ def sensed_objects_callback(data):
         type_marker.color.g = 1.0
         type_marker.color.b = 1.0
         type_marker.color.a = 1.0
-        type_marker.text = 'brick'  # TODO: Add id?
+        type_marker.text = sensed.type  # TODO: Add id?
         marker_array.markers.append(type_marker)
 
         pose_marker = Marker()

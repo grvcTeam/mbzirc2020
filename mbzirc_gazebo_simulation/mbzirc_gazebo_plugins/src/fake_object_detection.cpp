@@ -292,7 +292,7 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
       if(collision)
       {
           //Type
-          rec_object.type = type_from_name(collision->GetLink()->GetName());
+          rec_object.type = type_from_name(collision_name);
           if(this->type_list.size() && std::find(this->type_list.begin(), this->type_list.end(), rec_object.type) == this->type_list.end())
             continue;
 
@@ -389,13 +389,16 @@ void FakeObjectDetection::LaserQueueThread()
   }
 }
 
-// Infer an object type from a link name. Expected convention is name = id.type
+// Infer an object type from a link name
 std::string type_from_name(const std::string &link_name)
 {
-  if(std::count(link_name.begin(), link_name.end(), '.') != 1)
-    return "unknown";
-  else
-    return link_name.substr(link_name.find_first_of(".")+1,std::string::npos);
+  if (link_name.find("brick") != std::string::npos)
+    return "brick";
+
+  if (link_name.find("fire") != std::string::npos)
+    return "fire";
+
+  return "unknown";
 }
 
 //
