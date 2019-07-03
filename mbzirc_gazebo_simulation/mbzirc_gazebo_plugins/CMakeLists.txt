@@ -9,14 +9,27 @@ find_package(catkin REQUIRED COMPONENTS
   mbzirc_comm_objs
   sensor_msgs
   geometry_msgs
+  message_generation
 )
 
 find_package(gazebo REQUIRED)
 
+add_message_files(
+  FILES
+  SimDroplet.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+  geometry_msgs
+  std_msgs
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_magnetic_gripper
-  CATKIN_DEPENDS gazebo_ros roscpp mbzirc_comm_objs sensor_msgs geometry_msgs
+  CATKIN_DEPENDS gazebo_ros roscpp mbzirc_comm_objs sensor_msgs geometry_msgs std_msgs message_runtime
   DEPENDS gazebo
 )
 
@@ -52,12 +65,14 @@ link_directories(
 ## Declare a cpp library
 add_library(magnetic_gripper_plugin SHARED src/magnetic_gripper.cpp)
 add_library(fake_object_detection_plugin SHARED src/fake_object_detection.cpp)
+add_library(droplet_factory SHARED src/droplet_factory.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(gazebo_grasp_plugin_node gazebo_grasp_plugin_generate_messages_cpp)
 add_dependencies(magnetic_gripper_plugin ${catkin_EXPORTED_TARGETS})
 add_dependencies(fake_object_detection_plugin ${catkin_EXPORTED_TARGETS})
+add_dependencies(droplet_factory ${catkin_EXPORTED_TARGETS})
 
 add_executable(target_drone_trajectory src/target_drone_trajectory.cpp)
 
@@ -73,6 +88,12 @@ target_link_libraries(fake_object_detection_plugin
 	${GAZEBO_LIBRARIES}
 	${Boost_LIBRARIES}
   RayPlugin
+)
+
+target_link_libraries(droplet_factory
+	${catkin_LIBRARIES}
+	${GAZEBO_LIBRARIES}
+	${Boost_LIBRARIES}
 )
 
  target_link_libraries(target_drone_trajectory
