@@ -105,12 +105,28 @@
   
 <!-- Installing Teraranger Evo frontal-->
 
-  <xacro:teraranger_macro
+  <!-- <xacro:teraranger_macro
     namespace="${model_name}"
     parent_link="base_link"
     teraranger_suffix="0"
   >
-  </xacro:teraranger_macro>
+  </xacro:teraranger_macro> -->
+
+<!-- Installing Kinect-->
+
+  <xacro:kinect_macro
+    namespace="${model_name}"
+    parent_link="base_link"
+    camera_suffix="0"
+  >
+  </xacro:kinect_macro>
+
+  <!-- Installing MyraBot Kinect -->
+  <xacro:kinect
+    parent_link="base_link">
+		<origin xyz="0.2 0.2 0.2" rpy="0 0 1.5" />
+	</xacro:kinect>
+
 
   <!-- Instantiate rotors -->
   <xacro:vertical_rotor
