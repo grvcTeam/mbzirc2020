@@ -1,3 +1,5 @@
+<?xml version="1.0"?>
+
 <launch>
     <arg name="ns" default=""/>
 
@@ -13,7 +15,7 @@
 
     <include file="$(find atrvjr)/launch/novatel.launch" >
         <arg name="ns" value="$(arg ns)/novatel"/>
-        <arg name="serialPort" value="/dev/ttyUSB2"/>
+        <arg name="serialPort" value="/dev/ttyUSB1"/>
         <arg name="gps_default_logs_period" value="0.05"/>
         <arg name="psrpos_default_logs_period" value="0.05"/>
     </include>

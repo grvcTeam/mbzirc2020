@@ -4,3 +4,4 @@ geometry_msgs/Pose goal_pose
 geometry_msgs/Polygon[] shared_regions
 ---
 bool success
+string outcome

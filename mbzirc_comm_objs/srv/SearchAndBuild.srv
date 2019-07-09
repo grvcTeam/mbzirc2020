@@ -1,0 +1,5 @@
+geometry_msgs/Polygon search_region
+mbzirc_comm_objs/WallBluePrint wall_map
+---
+bool success
+string outcome

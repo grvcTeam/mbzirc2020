@@ -2,7 +2,7 @@ footprint: [[-0.41, -0.31], [-0.41, 0.31], [0.41, 0.31], [0.41, -0.31]]
 footprint_padding: 0.01
 
 robot_base_frame: base_link
-update_frequency: 4.0
+update_frequency: 1    # estava a 4
 publish_frequency: 3.0
 transform_tolerance: 0.5
 
@@ -13,7 +13,7 @@ raytrace_range: 6.0
 
 #layer definitions
 static:
-    map_topic: /map
+    map_topic: /odom   #estava a map
     subscribe_to_updates: true
 
 obstacles_laser:
@@ -21,4 +21,4 @@ obstacles_laser:
     laser: {data_type: LaserScan, clearing: true, marking: true, topic: scan, inf_is_valid: true}
 
 inflation:
-    inflation_radius: 1.0
+    inflation_radius: 0.1

@@ -15,10 +15,12 @@
   <arg name="base_frame" default="$(arg prefix)base" />
   <arg name="tool_frame" default="$(arg prefix)tool0_controller" />
   <arg name="shutdown_on_disconnect" default="true" />
+ 
+
   <!-- robot model -->
-  <include file="$(find ur_e_description)/launch/ur5e_upload.launch">
+  <!-- <include file="$(find ur_e_description)/launch/ur5e_upload.launch">
     <arg name="limited" value="$(arg limited)"/>
-  </include>
+  </include> -->
 
 
   <!-- Load hardware interface -->
@@ -51,7 +53,7 @@
     output="screen" args="load pos_based_pos_traj_controller" />  -->
 
   <!-- Convert joint states to /tf tranforms -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/> -->
 
 </launch>
 

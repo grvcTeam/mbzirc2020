@@ -3,22 +3,20 @@
 <launch>
     <arg name="ns" default=""/>
 
+    <!-- RFLEX -->
     <include file="$(find rflex)/launch/rflex.launch">
         <arg name="ns" value="$(arg ns)/rflex"/>
         <arg name="serialPort" value="/dev/ttyUSB0"/>
     </include>
 
-
     <!-- CROSSBOW -->
-
-    <include file="$(find xbow6x)/launch/xbow6x.launch" >
+    <!-- <include file="$(find xbow6x)/launch/xbow6x.launch" >
         <arg name="ns" value="$(arg ns)/xbow6x"/>
         <arg name="serialPort" value="/dev/ttyUSB1"/>
         <arg name="frame_id" value="cbimu_frame"/>
-    </include>
+    </include> -->
 
     <!-- MPU IMU -->
-
     <include file="$(find atrvjr)/launch/mpuimu.launch" >
         <arg name="ns" value="$(arg ns)/atrvjr/mpu"/>
         <arg name="port" value="/dev/mpuimu"/>
@@ -35,16 +33,29 @@
         <param name="angle_max" value="1.5"/>
     </node>
 
+
     <!-- <include file="$(find teleop_twist_joy)/launch/teleop.launch" /> -->
-
-
     <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen">
     	<remap from="/cmd_vel" to="/rflex/atrvjr_node/cmd_vel"/>
     </node>
 
+
+    <!-- ROBOT DESCRIPTION -->
+
+    <arg name="model" default="$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro" />
+    <arg name="rvizconfig" default="$(find atrvjr_description)/launch/rviz_config_moveit.rviz" />
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+    <param name="use_gui" value="false"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+
+    <!-- ROBOT LOCALIZATION -->
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se" output="screen" clear_params="true">
+        <rosparam command="load" file="$(find robot_localization)/params/ekf_template.yaml" />
+    </node>
+
+
 </launch>
-
-
-
-
-<!-- TESTADO COM O RFLEX NOVATEL CROSSBOW E HOKUYO, TODOS A FUNCIONAR -->

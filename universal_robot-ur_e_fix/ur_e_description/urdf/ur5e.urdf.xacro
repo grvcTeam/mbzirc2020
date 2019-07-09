@@ -23,7 +23,7 @@
      wrist_3_lower_limit:=${-pi}    wrist_3_upper_limit:=${pi}">
 
     <!-- Inertia parameters -->
-    <xacro:property name="base_mass" value="4.0" />  <!-- This mass might be incorrect -->
+    <xacro:property name="base_mass" value="3.7" />  <!-- This mass might be incorrect, but I think the total weight of a ur5e must be 20.7-->
     <xacro:property name="shoulder_mass" value="3.7000" />
     <xacro:property name="upper_arm_mass" value="8.3930" />
     <xacro:property name="forearm_mass" value="2.2750" />
@@ -275,11 +275,12 @@
       </xacro:cylinder_inertial>
     </link>
 
+
     <joint name="${prefix}wrist_3_joint" type="revolute">
       <parent link="${prefix}wrist_2_link" />
       <child link = "${prefix}wrist_3_link" />
-      <origin xyz="0 0.13 ${wrist_2_length}" rpy="1.57 0.0 0.0" />
-      <axis xyz="0 0 1" />
+      <origin xyz="0.0 0.0 ${wrist_2_length}" rpy="0.0 0.0 0.0" />
+      <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
         <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="28.0" velocity="6.28"/>
       </xacro:unless>
@@ -292,8 +293,7 @@
     <link name="${prefix}wrist_3_link">
       <visual>
         <geometry>
-          <!-- <mesh filename="package://ur_e_description/meshes/ur5e/visual/wrist3.dae" /> -->
-          <cylinder radius="0.04" length="0.168"/>
+          <mesh filename="package://ur_e_description/meshes/ur5e/visual/wrist3.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -301,8 +301,7 @@
       </visual>
       <collision>
         <geometry>
-          <!-- <mesh filename="package://ur_e_description/meshes/ur5e/collision/wrist3.stl" /> -->
-          <cylinder radius="0.04" length="0.168"/>
+          <mesh filename="package://ur_e_description/meshes/ur5e/collision/wrist3.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_3_mass}">
@@ -310,20 +309,68 @@
       </xacro:cylinder_inertial>
     </link>
 
+   <!--  <joint name="${prefix}wrist_3_joint" type="revolute">
+      <parent link="${prefix}wrist_2_link" />
+      <child link = "${prefix}wrist_3_link" />
+      <origin xyz="0 0.13 ${wrist_2_length}" rpy="1.57 0.0 0.0" />
+      <axis xyz="0 0 1" />
+      <xacro:unless value="${joint_limited}">
+        <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="28.0" velocity="6.28"/>
+      </xacro:unless>
+      <xacro:if value="${joint_limited}">
+        <limit lower="${wrist_3_lower_limit}" upper="${wrist_3_upper_limit}" effort="28.0" velocity="6.28"/>
+      </xacro:if>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint> -->
+
+<!--     <link name="${prefix}wrist_3_link">
+      <visual>
+        <geometry>
+          <box size="0.06 0.06 0.168"/>
+        </geometry>
+        <material name="LightGrey">
+          <color rgba="0.7 0.7 0.7 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.06 0.06 0.168"/>
+        </geometry>
+      </collision>
+      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_3_mass}">
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      </xacro:cylinder_inertial>
+    </link> -->
+
     <joint name="${prefix}ee_fixed_joint" type="fixed">
       <parent link="${prefix}wrist_3_link" />
       <child link = "${prefix}ee_link" />
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+      <origin xyz="0.0 0.15 0.0" rpy="0.0 0.0 0.0" />        <!--   <origin xyz="0.0 0.15 0.0" rpy="0.0 0.0 0.0" /> -->
     </joint>
 
     <link name="${prefix}ee_link">
-      <!-- <collision>
+      <collision>
+        <geometry>
+          <box size="0.06 0.13 0.06"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </collision>
+    </link>
+
+    <!-- <link name="${prefix}marker_link">
+      <visual>
         <geometry>
           <box size="0.01 0.01 0.01"/>
         </geometry>
-        <origin rpy="0 0 0" xyz="-0.01 0 0"/>
-      </collision> -->
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
     </link>
+
+    <joint name="${prefix}marker_joint" type="fixed">
+      <parent link="${prefix}wrist_3_link" />
+      <child link = "${prefix}marker_link" />
+      <origin xyz="0.1 0.0 0.0" rpy="0.0 0.0 0.0" />
+    </joint> -->
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />

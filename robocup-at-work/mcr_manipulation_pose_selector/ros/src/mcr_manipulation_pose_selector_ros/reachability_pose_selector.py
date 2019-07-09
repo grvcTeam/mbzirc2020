@@ -208,7 +208,7 @@ class PoseSelector(object):
 
 
         self.copy=self.group.get_joints()
-        self.joint_uris = self.copy[2:-1]  #PARA O BRACO REAL
+        self.joint_uris = self.copy  #PARA O BRACO REAL
 
         print self.copy
         print self.joint_uris

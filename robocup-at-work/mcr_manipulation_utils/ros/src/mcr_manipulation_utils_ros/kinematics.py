@@ -63,7 +63,7 @@ class Kinematics:
 
         ############################
 
-        self.joint_names = self.copy[2:-1]
+        self.joint_names = self.copy
         self.configuration = self.config
         self.groupIK = 'manipulator'
 

@@ -13,20 +13,50 @@ from ur_msgs.srv import SetIO, SetIORequest
 from geometry_msgs.msg import WrenchStamped
 from std_msgs.msg import String
 
+from math import sqrt, pow
+
 class node():
 
     def magnetize_cb(self,req):
-        v = 0 if req.magnetize else 24
-        #self.set_io(fun=SetIORequest.FUN_SET_TOOL_VOLTAGE,state=v)
-        self.pub2.publish(data='set_tool_voltage({v})'.format(v=v))
-        return MagnetizeResponse(success=True)
+
+        if not req.magnetize:
+            v = 24
+            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
+            rospy.sleep(1)
+
+            while self.force<0:
+                rospy.sleep(1)
+                self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
+                
+            else:
+                return MagnetizeResponse(success=True)   
+
+        if req.magnetize:
+            v = 0
+            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
+            rospy.sleep(3)
+            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))  #SOLUTION NOT ROBUST AT ALL
+
+            return MagnetizeResponse(success=True)
 
     def wrench_cb(self, msg):
 
-        if abs(msg.wrench.force.y) > self.threshold and not self.attached:
+        self.force = msg.wrench.force.z
+
+         # to compensate gripper weigth ~ 15 N
+        #print f
+
+        '''def norm(v):
+            return sqrt(pow(v.x,2)+pow(v.y,2)+pow(v.z,2))'''
+
+        #print norm(msg.wrench.force) - 15
+
+        if self.force > self.threshold and not self.attached:
+            print self.force
             self.attached = True
             self.pub.publish(attached=True)
-        elif abs(msg.wrench.force.y) < self.threshold and self.attached:
+        elif abs(self.force) < self.threshold and self.attached:
+            print self.force
             self.attached = False
             self.pub.publish(attached=False)
 
@@ -40,7 +70,7 @@ class node():
         self.sub = rospy.Subscriber('/wrench', WrenchStamped, self.wrench_cb)
 
         self.attached = False
-        self.threshold = 15 #N
+        self.threshold = 20  #N
 
 
 def main():
