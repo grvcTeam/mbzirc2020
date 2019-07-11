@@ -36,10 +36,10 @@ def gen_userdata(req):
     header = Header(frame_id='map',stamp=rospy.Time.now())
     wall =  WallBluePrint()
     wall.wall_frame = PoseStamped(header=header,pose=Pose(position=Point(0,0,0),orientation=Quaternion(0,0,0,1)))
-    wall.size_x = 2
+    wall.size_x = 6
     wall.size_y = 1
-    wall.size_z = 1
-    wall.blueprint = [1, 1]
+    wall.size_z = 2
+    wall.blueprint = [1, 3, 0, 0, 0, 1, 2, 0, 1, 1, 2, 0]
 
     userdata = smach.UserData()
     userdata.wall = wall
