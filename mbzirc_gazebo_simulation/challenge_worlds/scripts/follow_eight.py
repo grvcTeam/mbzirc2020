@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 import time
 import rospy
 from uav_abstraction_layer.srv import TakeOff, GoToWaypoint, Land
+from uav_abstraction_layer.msg import State
 from geometry_msgs.msg import PoseStamped
+
+current_state = State()
+def state_callback(state):
+    global current_state
+    if state != current_state:
+        current_state = state
 
 # Generate a lemniscate with 4n+1 points and lenght l
 def generate_lemniscate(n, l):
@@ -112,14 +119,25 @@ if __name__ == "__main__":
     x = [p[0] for p in points]
     y = [p[1] for p in points]
     # print(points)
-    plt.plot(x, y, 'ro')
-    plt.axis('equal')
-    plt.show()
 
+    # Debug: visualize path
+    # plt.plot(x, y, 'ro')
+    # plt.axis('equal')
+    # plt.show()
+
+    take_off_url = 'ual/take_off'
     go_to_waypoint_url = 'ual/go_to_waypoint'
+    rospy.wait_for_service(take_off_url)
     rospy.wait_for_service(go_to_waypoint_url)
+    take_off = rospy.ServiceProxy(take_off_url, TakeOff)
     go_to_waypoint = rospy.ServiceProxy(go_to_waypoint_url, GoToWaypoint)
     pose_pub = rospy.Publisher('ual/set_pose', PoseStamped, queue_size=1)
+    rospy.Subscriber('ual/state', State, state_callback)
+
+    while current_state.state != State.LANDED_ARMED and not rospy.is_shutdown():
+        rospy.loginfo("Waiting for LANDED_ARMED")
+        time.sleep(1.0)
+    take_off(2.0, True)
 
     waypoint = PoseStamped()
     waypoint.header.frame_id = 'map'  # TODO: other?
@@ -149,7 +167,3 @@ if __name__ == "__main__":
             pose_pub.publish(waypoint)
             # print(b)
             time.sleep(dt)
-
-# TODO: Simpler eight?
-# x = a*sin(t)
-# y = a*sin(t)*cos(t)

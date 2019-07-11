@@ -75,4 +75,6 @@
     <param name="uav_id" value="5"/>
   </node>
 
+  <node pkg="challenge_worlds" type="follow_eight.py" name="follow" ns="target_drone" output="screen"/>
+
 </launch>
