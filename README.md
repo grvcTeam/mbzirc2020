@@ -16,6 +16,13 @@ External dependencies:
 
 Run demo instructions:
 
+- Challenge 1 [UNCOMPLETED]:
+
+	roslaunch agent_nodes c1.launch
+
+	rosrun agent_nodes cu_agent_c2.py
+	rosservice call /central_unit/task/search_and_build ...
+
 - Challenge 2:
 
 	roslaunch agent_nodes c2.launch
@@ -28,4 +35,4 @@ Run demo instructions:
 	##################################
 
 	rosrun agent_nodes cu_agent_c2.py
-	rosservice call /central_unit/task/search_and_build ...
+	rosservice call /central_unit/task/search_and_catch ...
