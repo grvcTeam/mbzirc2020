@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="x" default="0" />
+  <arg name="y" default="0" />
+  <arg name="z" default="0" />
+  <arg name="map_file" default="$(find atrvjr_description)/maps/empty_map.yaml"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="map2odom_broadcaster" args="0 0 0 0 0 0 map odom 100" />
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+  
+    <node name="agent_node" pkg="agent_nodes" type="atrv_agent.py" output="screen">
+        <param name="ugv_ns" value="ugv_1/ual"/>
+        <param name="agent_id" value="ugv_1"/>
+        <param name="z_offset" value="0.15" type="double"/>
+        <param name="global_frame" value="map"/>
+        <param name="ugv_frame" value="base_link"/>
+        <param name="gripper_frame" value="ee_link"/>
+    </node>
+
+</launch>
