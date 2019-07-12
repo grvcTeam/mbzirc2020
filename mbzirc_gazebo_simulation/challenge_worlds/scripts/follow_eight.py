@@ -4,9 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import rospy
+import tf
 from uav_abstraction_layer.srv import TakeOff, GoToWaypoint, Land
 from uav_abstraction_layer.msg import State
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PointStamped
 
 current_state = State()
 def state_callback(state):
@@ -75,56 +76,28 @@ def resample_required_distance(path, d):
     new_path.append(path[-1])
     return np.array(new_path)
 
-# Rotate path in x-y plane
-def rotate_2d(path, theta):
-    sin_t = math.sin(theta)
-    cos_t = math.cos(theta)
-    r_post = np.array([[cos_t, sin_t], [-sin_t, cos_t]])
-
-    new_path = []
-    for point in path:
-        new_point = np.dot(point, r_post)
-        new_path.append(new_point)
-        # print(new_point)
-
-    return np.array(new_path)
-
-# Translate path in x-y plane
-def translate_2d(path, x, y):
-    new_path = []
-    for point in path:
-        new_point = point + [x, y]
-        new_path.append(new_point)
-
-    return np.array(new_path)
-
 # Follow an eight-shaped path
-if __name__ == "__main__":
+def main():
 
     rospy.init_node('follow_eight')
 
     eight_n      = 10   # []:    path will have at least 4n+1 points
     eight_length = 75.0 # [m]:   longitudinal length of path
     max_delta    = 0.1  # [m]:   max distance between path points
-    eight_yaw    = 0.1  # [rad]: longitudinal axis yaw
-    x_offset     = 50.0 # [m]:   x offset of eight center
-    y_offset     = 30.0 # [m]:   y offset of eight center
-    z_flight     = 10.0 # [m]:   z for the path
     v_set        = 8.0  # [m/s]  set velocity for path following
-    # TODO: tilt angle, rotation sense
+    # TODO: rotation sense
 
     lemniscate = generate_lemniscate(eight_n, eight_length)
-    points = translate_2d(resample_required_distance(lemniscate, max_delta), x_offset, y_offset)
-    points = rotate_2d(points, eight_yaw)
-    x = [p[0] for p in points]
-    y = [p[1] for p in points]
-    # print(points)
+    points = resample_required_distance(lemniscate, max_delta)
 
     # Debug: visualize path
+    # x = [p[0] for p in points]
+    # y = [p[1] for p in points]
     # plt.plot(x, y, 'ro')
     # plt.axis('equal')
     # plt.show()
 
+    eight_frame_id = 'eight_path'
     take_off_url = 'ual/take_off'
     go_to_waypoint_url = 'ual/go_to_waypoint'
     rospy.wait_for_service(take_off_url)
@@ -133,23 +106,30 @@ if __name__ == "__main__":
     go_to_waypoint = rospy.ServiceProxy(go_to_waypoint_url, GoToWaypoint)
     pose_pub = rospy.Publisher('ual/set_pose', PoseStamped, queue_size=1)
     rospy.Subscriber('ual/state', State, state_callback)
+    tf_listener = tf.TransformListener()
+    tf_listener.waitForTransform('map', eight_frame_id, rospy.Time(), rospy.Duration(5))
 
     while current_state.state != State.LANDED_ARMED and not rospy.is_shutdown():
         rospy.loginfo("Waiting for LANDED_ARMED")
         time.sleep(1.0)
     take_off(2.0, True)
 
+    position = PointStamped()
+    position.header.frame_id = eight_frame_id
+    position.point.x = points[0][0]
+    position.point.y = points[0][1]
+    position.point.z = 0
+
     waypoint = PoseStamped()
-    waypoint.header.frame_id = 'map'  # TODO: other?
-    waypoint.pose.position.x = points[0][0]
-    waypoint.pose.position.y = points[0][1]
-    waypoint.pose.position.z = z_flight
+    waypoint.header.frame_id = 'map'
+    waypoint.pose.position = tf_listener.transformPoint('map', position).point
     waypoint.pose.orientation.x = 0
     waypoint.pose.orientation.y = 0
     waypoint.pose.orientation.z = 0
     waypoint.pose.orientation.w = 1  # TODO: Other?
     print('Going to initial position...')
     go_to_waypoint(waypoint, True)
+    print('Following eight path...')
 
     loop_count = 0
     while not rospy.is_shutdown():
@@ -162,8 +142,12 @@ if __name__ == "__main__":
             ab = b - a
             delta = np.linalg.norm(ab)
             dt = delta / v_set
-            waypoint.pose.position.x = b[0]
-            waypoint.pose.position.y = b[1]
+            position.point.x = b[0]
+            position.point.y = b[1]
+            waypoint.pose.position = tf_listener.transformPoint('map', position).point
             pose_pub.publish(waypoint)
             # print(b)
             time.sleep(dt)
+
+if __name__ == "__main__":
+    main()
