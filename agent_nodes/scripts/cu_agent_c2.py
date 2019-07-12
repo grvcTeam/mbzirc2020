@@ -8,7 +8,8 @@ import smach_ros
 from utils.agent import *
 import tasks.central_unit_tasks.Idle
 import tasks.central_unit_tasks.SearchForBrickPiles
-import tasks.central_unit_tasks.BuildWall
+import tasks.central_unit_tasks.CatchBalloons
+import tasks.central_unit_tasks.SearchAndCatch
 import tasks.central_unit_tasks.SearchAndBuild
 
 def main():
@@ -26,8 +27,9 @@ def main():
     default_task = tasks.central_unit_tasks.Idle.Task('idle',iface)
     tasks_dic = {}
     add_task('search_env', tasks_dic, iface, tasks.central_unit_tasks.SearchForBrickPiles, [])
-    add_task('build_wall', tasks_dic, iface, tasks.central_unit_tasks.BuildWall, [])
+    add_task('catch_balloons', tasks_dic, iface, tasks.central_unit_tasks.CatchBalloons, [])
     add_task('search_and_build', tasks_dic, iface, tasks.central_unit_tasks.SearchAndBuild, [])
+    add_task('search_and_catch', tasks_dic, iface, tasks.central_unit_tasks.SearchAndCatch, [])
 
     # initialize state machine
     d_dic = {'idle': default_task}
