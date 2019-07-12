@@ -26,6 +26,7 @@ def gen_userdata(req):
     userdata.search_region = req.search_region
     userdata.object_types = req.object_types
     userdata.stop_after_find = req.stop_after_find
+    userdata.z_plane = req.z_plane
 
     '''userdata.object_types = ['brick']
     userdata.stop_after_find = False
@@ -48,7 +49,7 @@ class Task(smach.State):
     #init
     def __init__(self, name, interface, uav_ns):
         smach.State.__init__(self,outcomes=['found','not_found'],
-                input_keys = ['search_region','object_types','stop_after_find'])
+                input_keys = ['search_region','z_plane','object_types','stop_after_find'])
 
         self.iface = interface
 
@@ -90,7 +91,7 @@ class Task(smach.State):
             return 'error'
 
         pos = from_geom_msgs_Transform_to_Shapely_Point(trans_global2uav.transform)
-        path = compute_search_path(self.props['aov'], self.props['height'], pol, pos)
+        path = compute_search_path(self.props['aov'], self.props['height'], userdata.z_plane, pol, pos)
 
         #set up object detection
         self.iface['cli_set_obj_types'](DetectTypesRequest(types=userdata.object_types))

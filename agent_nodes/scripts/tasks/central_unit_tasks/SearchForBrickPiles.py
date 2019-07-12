@@ -251,6 +251,7 @@ class Task(smach.State):
             req.search_region.header.frame_id = "map"
             req.search_region.header.stamp = rospy.Time.now()
             req.search_region.polygon = sub_regions[n]
+            req.z_plane = 0
             n += 1
 
             c = rospy.ServiceProxy(uav_dic[a], SearchForObject)
