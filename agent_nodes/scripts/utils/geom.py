@@ -83,11 +83,13 @@ def lookup_tf_transform(parent_frame,child_frame,tf_buffer,n_tries=0,freq=2, tim
     return trans
 
 #compute a path to cover the bounding box of a polygon
-def compute_search_path(aov, height, polygon, pos):
+def compute_search_path(aov, height, z_plane, polygon, pos):
+    if height <= z_plane:
+        return []
 
     #compute coverage square
     aov = aov * (pi/180.)
-    r = (tan(aov/2) * height)
+    r = (tan(aov/2) * (height - z_plane))
     lx = ly = 2 * r #TODO: typically aov takes different values in x and y directions
     rospy.loginfo('coverage size: {l}'.format(l=lx))
 

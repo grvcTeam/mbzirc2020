@@ -1,6 +1,7 @@
 geometry_msgs/PolygonStamped search_region
 string[] object_types
 bool stop_after_find
+float32 z_plane
 ---
 bool success
 string outcome
