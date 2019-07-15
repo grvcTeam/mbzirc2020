@@ -122,10 +122,10 @@
   </xacro:kinect_macro>
 
   <!-- Installing MyraBot Kinect -->
-  <xacro:kinect
+  <!-- <xacro:kinect
     parent_link="base_link">
 		<origin xyz="0.2 0.2 0.2" rpy="0 0 1.5" />
-	</xacro:kinect>
+	</xacro:kinect> -->
 
 
   <!-- Instantiate rotors -->
