@@ -45,25 +45,6 @@ inline double normalizeAngle(double angle) {
     return angle;
 }
 
-inline bool poseIsInMap(const Pose2D& _pose, const nav_msgs::MapMetaData& _map_info) {
-    // TODO: Calculate this each time is not efficient!
-    double x_min = _map_info.origin.position.x;
-    double x_max = x_min + _map_info.width * _map_info.resolution;
-    double y_min = _map_info.origin.position.y;
-    double y_max = y_min + _map_info.height * _map_info.resolution;
-    // ROS_INFO("map: [%lf, %lf] x [%lf, %lf]", x_min, x_max, y_min, y_max);
-
-    if (_pose.x < x_min || _pose.x >= x_max) {
-        ROS_ERROR("poseIsInMap: %lf out of x bounds", _pose.x);
-        return false;
-    }
-    if (_pose.y < y_min || _pose.y >= y_max) {
-        ROS_ERROR("poseIsInMap: %lf out of y bounds", _pose.y);
-        return false;
-    }
-    return true;
-}
-
 class RayCast {
 public:
 
@@ -151,30 +132,6 @@ protected:
 
 class ParticleSet {
 public:
-    std::string id_;
-    std::vector<Pose2D> poses_;
-    std::vector<double> weights_;
-    Pose2D mean_pose_;
-
-    nav_msgs::OccupancyGrid map_;
-    sensor_msgs::LaserScan scan_;
-    bool map_loaded_ = false;
-    bool scan_updated_ = false;
-    std::shared_ptr<RayCast> ray_cast_;
-
-    Noise noise_;
-    std::default_random_engine random_engine_;
-    // std::random_device rd;
-    // std::mt19937 random_engine_(rd());
-
-    ros::Publisher laser_pub_;
-    ros::Subscriber laser_sub_;
-    ros::Subscriber map_sub_;
-
-    std::string laser_pub_topic_;
-    std::string laser_sub_topic_;
-    std::string map_topic_;
-
     ParticleSet(const std::string& _id, const std::string& _laser_sub_topic = "scan", const std::string& _map_topic = "map") {
         id_ = _id;
         laser_pub_topic_ = id_ + "/scan";
@@ -198,42 +155,9 @@ public:
         }
     }
 
-    void mapCallback(const nav_msgs::OccupancyGrid::Ptr& msg) {
-        ROS_INFO("ParticleSet: Updating map...");
-        map_ = *msg;
-
-        cv::Mat map_mat = cv::Mat(map_.info.height, map_.info.width, CV_8UC1, map_.data.data());  // Convert OccupancyGrid to cv::Mat, uint8_t
-        cv::threshold(map_mat, map_mat, 254, 255, cv::THRESH_TOZERO_INV);  // Set unknown space (255) to free space (0)
-        ray_cast_->setGrid(map_mat, map_.info.resolution, cv::Point(map_.info.origin.position.x, map_.info.origin.position.y));  // Update map
-        map_loaded_ = true;
-    }
-
-    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
-        scan_ = *msg;
-        scan_updated_ = true;
-    }
-
     void setNoise(const Noise& _noise) {
         // TODO: assert correct values
         noise_ = _noise;
-    }
-
-    void move(const Pose2D& _delta_pose) {
-        if (!is_ready()) { return; }
-        // TODO: Make noise for all particles equal?
-        for (size_t i = 0; i < poses_.size(); i++) {
-            Pose2D new_pose = poses_[i];
-            // Turn, and add randomness to the turning command
-            new_pose.yaw += _delta_pose.yaw + noise_.turn(random_engine_);
-            new_pose.yaw = normalizeAngle(new_pose.yaw);
-
-            // Move, and add randomness to the motion command
-            new_pose.x += _delta_pose.x + noise_.move(random_engine_);  // TODO: noise is added twice!
-            new_pose.y += _delta_pose.y + noise_.move(random_engine_);  // TODO: noise is added twice!
-            if (poseIsInMap(new_pose, map_.info)) {
-                poses_[i] = new_pose;
-            }
-        }
     }
 
     bool is_ready() {
@@ -256,9 +180,111 @@ public:
         return true;
     }
 
-    void weigh() {
+    void update(const Pose2D& _delta_pose) {
         if (!is_ready()) { return; }
+        move(_delta_pose);
+        weigh();
+        resample();
+    }
 
+    void print() {
+        if (!is_ready()) { return; }
+        for(size_t i = 0; i < poses_.size(); i++) {
+            ROS_INFO("[%ld] in [%lf, %lf, %lf] with weight [%lf]", i, poses_[i].x, poses_[i].y, poses_[i].yaw, weights_[i]);
+        }
+    }
+
+    Pose2D mean() {
+        return mean_pose_;
+    }
+
+    Pose2D best() {
+        if (!is_ready()) {
+            return Pose2D(0, 0, 0);  // Default pose
+        }
+        auto max_i = std::distance(weights_.begin(), std::max_element(weights_.begin(), weights_.end()));
+        return poses_[max_i];
+    }
+
+    void publish_sim(const Pose2D& _laser_pose) {
+        if (!map_loaded_) {
+            ROS_WARN("publish_sim: No map yet!");
+        }
+
+        static tf2_ros::TransformBroadcaster tf_broadcaster;
+        geometry_msgs::TransformStamped tf_laser;
+        
+        tf_laser.header.stamp = ros::Time::now();
+        tf_laser.header.frame_id = "map";
+        tf_laser.child_frame_id = id_;
+        tf_laser.transform.translation.x = _laser_pose.x;
+        tf_laser.transform.translation.y = _laser_pose.y;
+        tf_laser.transform.translation.z = 0.0;
+        tf2::Quaternion q;
+        q.setRPY(0, 0, _laser_pose.yaw);
+        tf_laser.transform.rotation.x = q.x();
+        tf_laser.transform.rotation.y = q.y();
+        tf_laser.transform.rotation.z = q.z();
+        tf_laser.transform.rotation.w = q.w();
+        tf_broadcaster.sendTransform(tf_laser);
+
+        sensor_msgs::LaserScan scan = ray_cast_->getScanParams();
+        scan.ranges = ray_cast_->scan(_laser_pose);
+        scan.header.stamp = ros::Time::now();
+        scan.header.frame_id = id_;
+        laser_pub_.publish(scan);
+    }
+
+protected:
+
+    void mapCallback(const nav_msgs::OccupancyGrid::Ptr& msg) {
+        ROS_INFO("ParticleSet: Updating map...");
+        map_ = *msg;
+        cv::Mat map_mat = cv::Mat(map_.info.height, map_.info.width, CV_8UC1, map_.data.data());  // Convert OccupancyGrid to cv::Mat, uint8_t
+        cv::threshold(map_mat, map_mat, 254, 255, cv::THRESH_TOZERO_INV);  // Set unknown space (255) to free space (0)
+        ray_cast_->setGrid(map_mat, map_.info.resolution, cv::Point(map_.info.origin.position.x, map_.info.origin.position.y));  // Update map
+        map_x_min_ = map_.info.origin.position.x;
+        map_x_max_ = map_x_min_ + map_.info.width * map_.info.resolution;
+        map_y_min_ = map_.info.origin.position.y;
+        map_y_max_ = map_y_min_ + map_.info.height * map_.info.resolution;
+        map_loaded_ = true;
+    }
+
+    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
+        scan_ = *msg;
+        scan_updated_ = true;
+    }
+
+    bool poseIsInMap(const Pose2D& _pose) {
+        if (_pose.x < map_x_min_ || _pose.x > map_x_max_) {
+            ROS_ERROR("poseIsInMap: %lf out of x bounds", _pose.x);
+            return false;
+        }
+        if (_pose.y < map_y_min_ || _pose.y > map_y_max_) {
+            ROS_ERROR("poseIsInMap: %lf out of y bounds", _pose.y);
+            return false;
+        }
+        return true;
+    }
+
+    void move(const Pose2D& _delta_pose) {
+        // TODO: Make noise for all particles equal?
+        for (size_t i = 0; i < poses_.size(); i++) {
+            Pose2D new_pose = poses_[i];
+            // Turn, and add randomness to the turning command
+            new_pose.yaw += _delta_pose.yaw + noise_.turn(random_engine_);
+            new_pose.yaw = normalizeAngle(new_pose.yaw);
+
+            // Move, and add randomness to the motion command
+            new_pose.x += _delta_pose.x + noise_.move(random_engine_);  // TODO: noise is added twice!
+            new_pose.y += _delta_pose.y + noise_.move(random_engine_);  // TODO: noise is added twice!
+            if (poseIsInMap(new_pose)) {
+                poses_[i] = new_pose;
+            }
+        }
+    }
+
+    void weigh() {
         double total_weight = 0;
         ray_cast_->setScanParams(scan_);
         double sense_std_dev = noise_.sense.stddev();
@@ -304,60 +330,34 @@ public:
         }
         poses_ = new_set;
     }
-    // TODO: move + weigh + resample = update (only public interface!)
 
-    void print() {
-        if (!scan_updated_) { 
-            ROS_ERROR("print: scan not updated!"); 
-            return;
-        }
-        if (!map_loaded_) { 
-            ROS_ERROR("print: map not loaded!"); 
-            return;
-        }
+    std::string id_;
+    std::vector<Pose2D> poses_;
+    std::vector<double> weights_;
+    Pose2D mean_pose_ = Pose2D(0, 0, 0);
 
-        for(size_t i = 0; i < poses_.size(); i++) {
-            ROS_INFO("[%ld] in [%lf, %lf, %lf] with weight [%lf]", i, poses_[i].x, poses_[i].y, poses_[i].yaw, weights_[i]);
-        }
-    }
+    nav_msgs::OccupancyGrid map_;
+    sensor_msgs::LaserScan scan_;
+    bool map_loaded_ = false;
+    bool scan_updated_ = false;
+    std::shared_ptr<RayCast> ray_cast_;
+    double map_x_min_;
+    double map_x_max_;
+    double map_y_min_;
+    double map_y_max_;
 
-    Pose2D best() {
-        if (!is_ready()) {
-            return Pose2D(0, 0, 0);  // Default pose
-        }
-        auto max_i = std::distance(weights_.begin(), std::max_element(weights_.begin(), weights_.end()));
-        return poses_[max_i];
-    }
+    Noise noise_;
+    std::default_random_engine random_engine_;
+    // std::random_device rd;
+    // std::mt19937 random_engine_(rd());
 
-    void publish_sim(const Pose2D& _laser_pose) {
-        if (!map_loaded_) {
-            ROS_WARN("publish_sim: No map yet!");
-        }
+    ros::Publisher laser_pub_;
+    ros::Subscriber laser_sub_;
+    ros::Subscriber map_sub_;
 
-        static tf2_ros::TransformBroadcaster tf_broadcaster;
-        geometry_msgs::TransformStamped tf_laser;
-        
-        tf_laser.header.stamp = ros::Time::now();
-        tf_laser.header.frame_id = "map";
-        tf_laser.child_frame_id = id_;
-        tf_laser.transform.translation.x = _laser_pose.x;
-        tf_laser.transform.translation.y = _laser_pose.y;
-        tf_laser.transform.translation.z = 0.0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, _laser_pose.yaw);
-        tf_laser.transform.rotation.x = q.x();
-        tf_laser.transform.rotation.y = q.y();
-        tf_laser.transform.rotation.z = q.z();
-        tf_laser.transform.rotation.w = q.w();
-        tf_broadcaster.sendTransform(tf_laser);
-
-        sensor_msgs::LaserScan scan = ray_cast_->getScanParams();
-        scan.ranges = ray_cast_->scan(_laser_pose);
-        scan.header.stamp = ros::Time::now();
-        scan.header.frame_id = id_;
-        laser_pub_.publish(scan);
-    }
-
+    std::string laser_pub_topic_;
+    std::string laser_sub_topic_;
+    std::string map_topic_;
 };
 
 
@@ -370,8 +370,8 @@ int main(int _argc, char** _argv) {
 
     Pose2D pose(1, 2, 0.5);
 
-    std::uniform_real_distribution<double> x_position(-5.0, 5.0);
-    std::uniform_real_distribution<double> y_position(-5.0, 5.0);
+    std::uniform_real_distribution<double> x_position(-1.0, 3.0);
+    std::uniform_real_distribution<double> y_position(-0.0, 4.0);
     std::uniform_real_distribution<double> yaw_angle(0.0, 1.0);
     particle_set.init(1000, x_position, y_position, yaw_angle);
 
@@ -379,11 +379,9 @@ int main(int _argc, char** _argv) {
     while(ros::ok()) {
         ros::spinOnce();
         laser.publish_sim(pose);
-        particle_set.move(Pose2D(0,0,0));  // Still!
-        particle_set.weigh();
-        particle_set.resample();
+        particle_set.update(Pose2D(0,0,0));  // Still!
         // particle_set.print();
-        particle_set.publish_sim(particle_set.mean_pose_);
+        particle_set.publish_sim(particle_set.mean());
         rate.sleep();
     }
 
