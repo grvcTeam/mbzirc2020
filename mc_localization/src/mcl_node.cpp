@@ -368,11 +368,11 @@ int main(int _argc, char** _argv) {
     ParticleSet laser("laser");
     ParticleSet particle_set("pf", "laser/scan");
 
-    Pose2D pose(1, 2, 0.5);
+    Pose2D pose(20, 25, 0.5);
 
-    std::uniform_real_distribution<double> x_position(-1.0, 3.0);
-    std::uniform_real_distribution<double> y_position(-0.0, 4.0);
-    std::uniform_real_distribution<double> yaw_angle(0.0, 1.0);
+    std::uniform_real_distribution<double> x_position(pose.x - 5.0, pose.x + 5.0);
+    std::uniform_real_distribution<double> y_position(pose.y - 5.0, pose.y + 5.0);
+    std::uniform_real_distribution<double> yaw_angle(-M_PI, M_PI);
     particle_set.init(1000, x_position, y_position, yaw_angle);
 
     ros::Rate rate(10);  // [Hz]

@@ -1,0 +1,8 @@
+<launch>
+
+  <arg name="map_file" default="$(find mc_localization)/maps/ch3.yaml"/>
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mc_localization)/config/ch3.rviz" />
+
+</launch>
