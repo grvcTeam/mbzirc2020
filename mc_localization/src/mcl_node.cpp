@@ -15,15 +15,21 @@
 #include <opencv2/highgui/highgui.hpp>
 
 struct Pose2D {
+    Pose2D() = default;
+    Pose2D(double _x, double _y, double _yaw) {
+        x = _x;
+        y = _y;
+        yaw = _yaw;
+    }
     double x;
     double y;
     double yaw;
 };
 
 struct Noise {
-    std::normal_distribution<double> move  = std::normal_distribution<double>(0, 0.2);
-    std::normal_distribution<double> turn  = std::normal_distribution<double>(0, 0.2);
-    std::normal_distribution<double> sense = std::normal_distribution<double>(0, 2.0);
+    std::normal_distribution<double> move  = std::normal_distribution<double>(0, 0.25);
+    std::normal_distribution<double> turn  = std::normal_distribution<double>(0, 0.25);
+    std::normal_distribution<double> sense = std::normal_distribution<double>(0, 1.00);
 };
 
 // TODO: Use doubles or floats?
@@ -45,7 +51,7 @@ inline bool poseIsInMap(const Pose2D& _pose, const nav_msgs::MapMetaData& _map_i
     double x_max = x_min + _map_info.width * _map_info.resolution;
     double y_min = _map_info.origin.position.y;
     double y_max = y_min + _map_info.height * _map_info.resolution;
-    ROS_INFO("map: [%lf, %lf] x [%lf, %lf]", x_min, x_max, y_min, y_max);
+    // ROS_INFO("map: [%lf, %lf] x [%lf, %lf]", x_min, x_max, y_min, y_max);
 
     if (_pose.x < x_min || _pose.x >= x_max) {
         ROS_ERROR("poseIsInMap: %lf out of x bounds", _pose.x);
@@ -135,109 +141,20 @@ protected:
 
     double angle_min_ = -M_PI_2;  // [rad]
     double angle_max_ = +M_PI_2;  // [rad]
-    double angle_inc_ = 0.01;     // [rad]
+    double angle_inc_ =  0.1;     // [rad]
     double range_min_ =  0.1;       // [m]
     double range_max_ = 10.0;       // [m]
-};
-
-
-class LaserSim {
-public:
-
-    LaserSim() {
-        ray_cast_ = std::make_shared<RayCast>();
-        // Subscribe / Publish
-        ros::NodeHandle node;
-        map_sub_ = node.subscribe(map_topic_, 1, &LaserSim::mapCallback, this);
-        laser_pub_ = node.advertise<sensor_msgs::LaserScan>(laser_topic_, 1);
-    }
-
-    void mapCallback(const nav_msgs::OccupancyGrid::Ptr& grid) {
-        ROS_INFO("LaserSim: Updating map...");
-        map_ = *grid;
-
-        cv::Mat map_mat = cv::Mat(map_.info.height, map_.info.width, CV_8UC1, map_.data.data());  // Convert OccupancyGrid to cv::Mat, uint8_t
-        cv::threshold(map_mat, map_mat, 254, 255, cv::THRESH_TOZERO_INV);  // Set unknown space (255) to free space (0)
-        ray_cast_->setGrid(map_mat, map_.info.resolution, cv::Point(map_.info.origin.position.x, map_.info.origin.position.y));  // Update map
-        map_loaded_ = true;
-    }
-
-    void publish_sim(const Pose2D& _laser_pose) {
-        if (!map_loaded_) {
-            ROS_WARN("LaserSim: Update called, no map yet");
-        }
-
-        static tf2_ros::TransformBroadcaster tf_broadcaster;
-        geometry_msgs::TransformStamped tf_laser;
-        
-        tf_laser.header.stamp = ros::Time::now();
-        tf_laser.header.frame_id = "map";
-        tf_laser.child_frame_id = "laser";  // TODO: laser_frame_id?
-        tf_laser.transform.translation.x = _laser_pose.x;
-        tf_laser.transform.translation.y = _laser_pose.y;
-        tf_laser.transform.translation.z = 0.0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, _laser_pose.yaw);
-        tf_laser.transform.rotation.x = q.x();
-        tf_laser.transform.rotation.y = q.y();
-        tf_laser.transform.rotation.z = q.z();
-        tf_laser.transform.rotation.w = q.w();
-        tf_broadcaster.sendTransform(tf_laser);
-
-        sensor_msgs::LaserScan scan = ray_cast_->getScanParams();
-        scan.ranges = ray_cast_->scan(_laser_pose);
-        scan.header.stamp = ros::Time::now();
-        scan.header.frame_id = "laser";  // TODO: laser_frame_id
-        laser_pub_.publish(scan);
-    }
-
-protected:
-
-    nav_msgs::OccupancyGrid map_;
-    bool map_loaded_ = false;
-
-    ros::Subscriber map_sub_;
-    ros::Publisher laser_pub_;
-    std::shared_ptr<RayCast> ray_cast_;
-
-    std::string map_topic_ = "/map";
-    std::string laser_topic_ = "/scan";
 };
 
 // TODO: Wouldn't be faster to just do one conversion, from real measurement in meters to pixels,
 // instead of many conversions from pixel to meters (enhancement)
 
-/*
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(1, 2);
-    for (int n = 0; n < 10; ++n) {
-        std::cout << dis(gen) << ' ';
-    }
-    std::cout << '\n';
- */
-/*
-    std::random_device rd;
-    std::mt19937 gen(rd());
- 
-    // values near the mean are the most likely
-    // standard deviation affects the dispersion of generated values from the mean
-    std::normal_distribution<> d(5,2);
- 
-    std::map<int, int> hist;
-    for(int n=0; n<10000; ++n) {
-        ++hist[std::round(d(gen))];
-    }
-    for(auto p : hist) {
-        std::cout << std::fixed << std::setprecision(1) << std::setw(2)
-                  << p.first << ' ' << std::string(p.second/200, '*') << '\n';
-    }
- */
-
 class ParticleSet {
 public:
+    std::string id_;
     std::vector<Pose2D> poses_;
     std::vector<double> weights_;
+    Pose2D mean_pose_;
 
     nav_msgs::OccupancyGrid map_;
     sensor_msgs::LaserScan scan_;
@@ -248,25 +165,27 @@ public:
     Noise noise_;
     std::default_random_engine random_engine_;
     // std::random_device rd;
-    // std::mt19937 gen(rd());
+    // std::mt19937 random_engine_(rd());
 
-    // ros::Publisher laser_pub_;
-    ros::Subscriber map_sub_;
+    ros::Publisher laser_pub_;
     ros::Subscriber laser_sub_;
+    ros::Subscriber map_sub_;
 
-    std::string map_topic_ = "/map";
-    // std::string laser_topic_ = "/scan";
-    std::string laser_sub_topic_ = "/scan";
+    std::string laser_pub_topic_;
+    std::string laser_sub_topic_;
+    std::string map_topic_;
 
-    ParticleSet() {
-
-        ray_cast_ = std::make_shared<RayCast>();
-
-        // Subscribe / Publish
+    ParticleSet(const std::string& _id, const std::string& _laser_sub_topic = "scan", const std::string& _map_topic = "map") {
+        id_ = _id;
+        laser_pub_topic_ = id_ + "/scan";
+        laser_sub_topic_ = _laser_sub_topic;
+        map_topic_ = _map_topic;
+    
         ros::NodeHandle n;
-        // laser_pub_ = n.advertise<sensor_msgs::LaserScan>(laser_topic_, 1);
+        laser_pub_ = n.advertise<sensor_msgs::LaserScan>(laser_pub_topic_, 1);
         map_sub_ = n.subscribe(map_topic_, 1, &ParticleSet::mapCallback, this);
         laser_sub_ = n.subscribe(laser_sub_topic_, 1, &ParticleSet::laserCallback, this);
+        ray_cast_ = std::make_shared<RayCast>();
     }
 
     void init(size_t _particle_count, std::uniform_real_distribution<double>& _x, std::uniform_real_distribution<double>& _y, std::uniform_real_distribution<double>& _yaw) {
@@ -299,21 +218,8 @@ public:
         noise_ = _noise;
     }
 
-    // void setPose(const Pose2D& _pose) {
-    //     if (!poseIsInMap(_pose, map_)) {
-    //         ROS_ERROR("setPose: pose is not in map!");
-    //         return;
-    //     }
-
-    //     pose_ = _pose;
-
-    //     if (pose_.yaw < -M_PI || pose_.yaw > M_PI) {
-    //         ROS_WARN("setPose: %lf out of yaw bounds, normalizing...", pose_.yaw);
-    //         pose_.yaw = normalizeAngle(pose_.yaw);
-    //     }
-    // }
-
     void move(const Pose2D& _delta_pose) {
+        if (!is_ready()) { return; }
         // TODO: Make noise for all particles equal?
         for (size_t i = 0; i < poses_.size(); i++) {
             Pose2D new_pose = poses_[i];
@@ -330,19 +236,32 @@ public:
         }
     }
 
-    void weigh() {
+    bool is_ready() {
         if (!scan_updated_) { 
-            ROS_ERROR("weigh: scan not updated!"); 
-            return;
+            ROS_ERROR("Scan not updated!"); 
+            return false;
         }
         if (!map_loaded_) { 
-            ROS_ERROR("weigh: map not loaded!"); 
-            return;
+            ROS_ERROR("Map not loaded!"); 
+            return false;
         }
+        if (poses_.size() == 0) {
+            ROS_ERROR("Poses set is empty!");
+            return false;
+        }
+        // if (weights_.size() == 0) {
+        //     ROS_ERROR("Weights set is empty!");
+        //     return false;
+        // }
+        return true;
+    }
 
+    void weigh() {
+        if (!is_ready()) { return; }
+
+        double total_weight = 0;
         ray_cast_->setScanParams(scan_);
         double sense_std_dev = noise_.sense.stddev();
-        printf("sense_std_dev = %lf\n", sense_std_dev);
         for (size_t i = 0; i < poses_.size(); i++) {
             std::vector<float> sensed = ray_cast_->scan(poses_[i]);  // TODO: there is no sense_noise here?
             if (scan_.ranges.size() != sensed.size()) {
@@ -351,27 +270,27 @@ public:
             // TODO: Use OpenCV to compare scans?
             double w = 1.0;
             for (size_t j = 0; j < scan_.ranges.size(); j++) {
-                // printf("normal_pdf(sensed[j], sense_std_dev, scan_.ranges[j]) = %lf\n", normal_pdf(sensed[j], sense_std_dev, scan_.ranges[j]));
-                printf("w at iteration [%ld] = %lf\n", j, w);
                 w *= normal_pdf(sensed[j], sense_std_dev, scan_.ranges[j]);
             }
             weights_[i] = w;
-            printf("weight[%ld] = %lf\n", i, w);
+            total_weight += w;
+        }
+        mean_pose_ = Pose2D(0, 0, 0);
+        for (size_t i = 0; i < weights_.size(); i++) {
+            weights_[i] /= total_weight;
+            mean_pose_.x += weights_[i] * poses_[i].x;
+            mean_pose_.y += weights_[i] * poses_[i].y;
+            mean_pose_.yaw += weights_[i] * poses_[i].yaw;
         }
     }
 
     void resample() {
         int n = poses_.size();
-        if (n == 0) {
-            ROS_ERROR("Trying to resample an empty set!");
-            return;
-        }
 
         std::uniform_int_distribution<int> uniform_int(0, n);
         int index = uniform_int(random_engine_);
         double beta = 0;
         double max_weight = *std::max_element(weights_.begin(), weights_.end());
-        ROS_INFO("Max weight = %lf", max_weight);
         std::uniform_real_distribution<double> uniform_real(0.0, 2.0 * max_weight);
 
         std::vector<Pose2D> new_set(n);
@@ -385,7 +304,7 @@ public:
         }
         poses_ = new_set;
     }
-    // TODO: move + weigh + resample = update (only public interface!) (all checks: n, map, scan)
+    // TODO: move + weigh + resample = update (only public interface!)
 
     void print() {
         if (!scan_updated_) { 
@@ -401,6 +320,44 @@ public:
             ROS_INFO("[%ld] in [%lf, %lf, %lf] with weight [%lf]", i, poses_[i].x, poses_[i].y, poses_[i].yaw, weights_[i]);
         }
     }
+
+    Pose2D best() {
+        if (!is_ready()) {
+            return Pose2D(0, 0, 0);  // Default pose
+        }
+        auto max_i = std::distance(weights_.begin(), std::max_element(weights_.begin(), weights_.end()));
+        return poses_[max_i];
+    }
+
+    void publish_sim(const Pose2D& _laser_pose) {
+        if (!map_loaded_) {
+            ROS_WARN("publish_sim: No map yet!");
+        }
+
+        static tf2_ros::TransformBroadcaster tf_broadcaster;
+        geometry_msgs::TransformStamped tf_laser;
+        
+        tf_laser.header.stamp = ros::Time::now();
+        tf_laser.header.frame_id = "map";
+        tf_laser.child_frame_id = id_;
+        tf_laser.transform.translation.x = _laser_pose.x;
+        tf_laser.transform.translation.y = _laser_pose.y;
+        tf_laser.transform.translation.z = 0.0;
+        tf2::Quaternion q;
+        q.setRPY(0, 0, _laser_pose.yaw);
+        tf_laser.transform.rotation.x = q.x();
+        tf_laser.transform.rotation.y = q.y();
+        tf_laser.transform.rotation.z = q.z();
+        tf_laser.transform.rotation.w = q.w();
+        tf_broadcaster.sendTransform(tf_laser);
+
+        sensor_msgs::LaserScan scan = ray_cast_->getScanParams();
+        scan.ranges = ray_cast_->scan(_laser_pose);
+        scan.header.stamp = ros::Time::now();
+        scan.header.frame_id = id_;
+        laser_pub_.publish(scan);
+    }
+
 };
 
 
@@ -408,29 +365,27 @@ int main(int _argc, char** _argv) {
 
     ros::init(_argc, _argv, "mcl_node");
 
-    LaserSim laser;
-    ParticleSet particle_set;
+    ParticleSet laser("laser");
+    ParticleSet particle_set("pf", "laser/scan");
 
-    Pose2D pose;
-    pose.x = 1;
-    pose.y = 2;
-    pose.yaw = 0.5;
+    Pose2D pose(1, 2, 0.5);
 
-    std::uniform_real_distribution<double> x_position(-10.0, 10.0);
-    std::uniform_real_distribution<double> y_position(-10.0, 10.0);
-    std::uniform_real_distribution<double> yaw_angle(-M_PI, M_PI);
-    particle_set.init(10, x_position, y_position, yaw_angle);
+    std::uniform_real_distribution<double> x_position(-5.0, 5.0);
+    std::uniform_real_distribution<double> y_position(-5.0, 5.0);
+    std::uniform_real_distribution<double> yaw_angle(0.0, 1.0);
+    particle_set.init(1000, x_position, y_position, yaw_angle);
 
-    ros::Rate rate(0.5);  // [Hz]
+    ros::Rate rate(10);  // [Hz]
     while(ros::ok()) {
         ros::spinOnce();
         laser.publish_sim(pose);
+        particle_set.move(Pose2D(0,0,0));  // Still!
         particle_set.weigh();
         particle_set.resample();
-        particle_set.print();
+        // particle_set.print();
+        particle_set.publish_sim(particle_set.mean_pose_);
         rate.sleep();
     }
 
     return 0;
 }
-
