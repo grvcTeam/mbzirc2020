@@ -111,7 +111,7 @@ bool ROSController::update()
 
 void ROSController::onTimeout()
 {
-  update();
+  // update();     commented out to avoid moving to home when the driver is launched
 }
 
 void ROSController::onRobotStateChange(RobotState state)

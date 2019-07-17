@@ -43,7 +43,8 @@
     <rosparam command="load" file="$(find robot_localization)/params/navsat_transform_template.yaml" />
     <remap from="imu/data" to="/atrvjr/mpu/imu/data"/>
     <remap from="gps/fix" to="/novatel/novatel_node/gps_fix_psr"/>
-      
+
+<!--     falta aqui dar de input o odometry/filtered -->      
 
   </node>
 </launch>

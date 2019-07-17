@@ -17,6 +17,20 @@ from math import sqrt, pow
 
 class node():
 
+    def __init__(self):
+
+        #self.set_io = rospy.ServiceProxy('ur_driver/set_io', SetIO)
+        rospy.Service('magnetize', Magnetize, self.magnetize_cb)
+
+        self.pub = rospy.Publisher('attached', GripperAttached, queue_size=1)
+        self.pub2 = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
+        self.sub = rospy.Subscriber('/wrench', WrenchStamped, self.wrench_cb)
+
+        self.attached = False
+        self.threshold = 20  #N
+
+
+
     def magnetize_cb(self,req):
 
         if not req.magnetize:
@@ -60,17 +74,7 @@ class node():
             self.attached = False
             self.pub.publish(attached=False)
 
-    def __init__(self):
-
-        #self.set_io = rospy.ServiceProxy('ur_driver/set_io', SetIO)
-        rospy.Service('magnetize', Magnetize, self.magnetize_cb)
-
-        self.pub = rospy.Publisher('attached', GripperAttached, queue_size=1)
-        self.pub2 = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
-        self.sub = rospy.Subscriber('/wrench', WrenchStamped, self.wrench_cb)
-
-        self.attached = False
-        self.threshold = 20  #N
+    
 
 
 def main():

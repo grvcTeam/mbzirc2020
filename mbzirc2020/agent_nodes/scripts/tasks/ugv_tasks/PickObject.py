@@ -15,6 +15,10 @@ from utils.agent import *
 
 import tasks.ugv_tasks.GoToGripPose as GoToGripPose
 
+
+from std_msgs.msg import String
+
+
 # required message definitions
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
@@ -76,6 +80,9 @@ class Task(smach.State):
         interface.add_subscriber(self,'/'+'attached', GripperAttached,
                                 self.attached_cb)
 
+        self.pubURscript = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
+
+
         #moveit group is not supported by the interface, so adding it manually for now
         moveit_commander.roscpp_initialize(sys.argv)
         self.group = moveit_commander.MoveGroupCommander("manipulator") #TODO: param
@@ -90,7 +97,9 @@ class Task(smach.State):
         #TODO: match requested object pose with object detection information
 
         #move base to a pose where object can be reached
-        self.call_task('go_task',userdata)
+        #self.call_task('go_task',userdata)
+
+        
 
         #move gripper to close to object pose
         #go to harcoded joint pose
@@ -100,11 +109,19 @@ class Task(smach.State):
 
         self.go_to_joint_pose(grip_pose)
 
-        rate = rospy.Rate(1)
-        rate.sleep()
-        rate.sleep()
-        #rospy.sleep(2)
+        #rate = rospy.Rate(1)
+        #rate.sleep()
+        #rate.sleep()
+        rospy.sleep(5)
 
+
+
+        self.gripper_attached = False
+        
+        #active magnetic gripper
+        #self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
+
+        rospy.sleep(1)
 
 
 
@@ -121,19 +138,16 @@ class Task(smach.State):
         plan = self.group.plan()
         self.group.execute(plan)'''
 
-        
-
-
-        self.gripper_attached = False
-        #active magnetic gripper
-        self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
+    
 
         #move gripper vertically until contact
         
         while not self.gripper_attached:
-            self.arm_vertical(-0.01)
+            self.arm_vertical(-0.02)
             rospy.loginfo('down!!')
-            rate.sleep()
+            #rate.sleep()
+
+            rospy.sleep(1)
 
         #compute object pose respect to itself for output_keys
         try:
@@ -155,11 +169,24 @@ class Task(smach.State):
 
         self.group.execute(plan)'''
 
+        self.arm_vertical(0.05)
+
         rospy.loginfo('Attached!!')
+
+        rospy.sleep(1)
+
+        self.pubURscript.publish(data='set_payload(2.6)')   # for the 1kg brick
+        rospy.sleep(1)
+        #self.pubURscript.publish(data='set_payload(2.6)')   # for the 1kg brick
+
+
+        rospy.sleep(1)
 
         self.go_to_joint_pose(hold_pose)
 
         rospy.logdebug('UP!!')
+
+        rospy.sleep(4)
 
         #compute object pose respect to itself for output_keys
         trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.obj_pose)

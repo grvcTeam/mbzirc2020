@@ -14,6 +14,10 @@ from utils.agent import *
 
 import tasks.ugv_tasks.GoToGripPose as GoToGripPose
 
+
+from std_msgs.msg import String
+
+
 # required message definitions
 from mbzirc_comm_objs.msg import GripperAttached
 from mbzirc_comm_objs.srv import Magnetize, MagnetizeRequest
@@ -76,6 +80,10 @@ class Task(smach.State):
         interface.add_client('cli_magnetize','/'+'magnetize',Magnetize)
         interface.add_subscriber(self,'/'+'attached', GripperAttached,
                                 self.attached_cb)
+
+
+        self.pubURscript = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
+
         
 
         #moveit group is not supported by the interface, so adding it manually for now
@@ -115,11 +123,14 @@ class Task(smach.State):
         grip_pose = [-1.7760866324054163,-0.3856819433024903, 1.4052107969867151,  -2.578330179254049, -1.5498421827899378, -1.9483378569232386]
         self.go_to_joint_pose(grip_pose)
 
-        rospy.sleep(2.) #NEEDS SLEEP TO WAIT FOR ARM TO FINISH MOVEMENT
+        rospy.sleep(3) #NEEDS SLEEP TO WAIT FOR ARM TO FINISH MOVEMENT
         
         # drop the object
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=False ))
-        rospy.sleep(2.) #wait for stabilization
+        rospy.sleep(2) #wait for stabilization
+
+        self.pubURscript.publish(data='set_payload(1.6)')   # back to the installation payload
+
 
         # move away cause move_base gets stuck in gazebo
         '''rate = rospy.Rate(10.0)

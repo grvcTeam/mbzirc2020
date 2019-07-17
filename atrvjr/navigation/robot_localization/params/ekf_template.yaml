@@ -144,7 +144,7 @@ odom0_differential: false
 odom0_relative: false
 
 
-odom1: /odometry/gps
+odom1: /odometry/gps   #OUTPUT DO NAVSAT
 
 odom1_config: [true, true, false,   #[     x    ,     y     ,    z    ]
               false, false, false,    #[  roll    ,   pitch   ,   yaw   ]
