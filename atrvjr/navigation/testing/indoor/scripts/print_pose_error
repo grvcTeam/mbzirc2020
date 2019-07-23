@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+import rospy
+import numpy as np
+
+import tf
+import tf2_ros
+import geometry_msgs.msg
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import PoseStamped
+
+def rosquat_nparray(quat):
+    array = np.array([quat.x, quat.y, quat.z, quat.w])
+    return array
+
+class PoseError:
+    def __init__(self):
+        self.listener3 = tf.TransformListener()
+        self.wait_for_transform = 0.05
+
+        self.sub_mocap = rospy.Subscriber('/vrpn_client_node/RigidBody1/pose', PoseStamped, self.mocap_callback)
+        self.mocap_stamp = rospy.Time.now()
+        self.mocap_x = 0
+        self.mocap_y = 0
+        self.mocap_z = 0
+        self.mocap_yaw = 0
+        self.has_mocap = False
+
+        self.position_error_max = 0
+        self.yaw_error_max = 0
+
+    def mocap_callback(self, msg):
+        self.mocap_stamp = msg.header.stamp
+        self.mocap_x = msg.pose.position.x
+        self.mocap_y = msg.pose.position.y
+        self.mocap_z = msg.pose.position.z
+        self.mocap_yaw = tf.transformations.euler_from_quaternion(rosquat_nparray(msg.pose.orientation))[2]
+        self.has_mocap = True
+
+    def print_error(self):
+        while not(self.has_mocap):
+            rospy.sleep(0.1)
+
+        while not rospy.is_shutdown():
+            # Time to lookup
+            time_to_lookup = self.mocap_stamp
+
+            try:
+                self.listener3.waitForTransform("world", "base_link", time_to_lookup, rospy.Duration(self.wait_for_transform))
+
+                position, quaternion = self.listener3.lookupTransform("world", "base_link", time_to_lookup)
+
+                x_error = self.mocap_x - position[0]
+                y_error = self.mocap_y - position[1]
+
+                position_error = np.sqrt(x_error**2 + y_error**2)
+                if position_error > self.position_error_max:
+                    self.position_error_max = position_error
+
+                yaw_error = np.absolute(self.mocap_yaw -  tf.transformations.euler_from_quaternion(quaternion)[2])
+                yaw_error = ( yaw_error + np.pi) % (2 * np.pi ) - np.pi
+                if yaw_error > self.yaw_error_max:
+                    self.yaw_error_max = yaw_error
+
+                print('Posi err: ' + str(position_error) + '[m], Yaw err: ' + str(yaw_error) + '[rad]')
+                print('Posi err max: ' + str(self.position_error_max) + '[m], Yaw err max: ' + str(self.yaw_error_max) + '[rad]')
+            except tf.Exception as e:
+                #rospy.logwarn('Exception while transforming goal pose: {}'.format(e))
+                pass
+        return
+
+if __name__ == '__main__':
+    rospy.init_node('print_pose_error_node')
+
+    pose_error = PoseError()
+
+    pose_error.print_error()
+
+    pose_error.sub_mocap.unregister()

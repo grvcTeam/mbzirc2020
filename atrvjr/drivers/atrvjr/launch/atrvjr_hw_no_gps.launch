@@ -4,35 +4,34 @@
     <arg name="ns" default=""/>
 
     <!-- RFLEX -->
-    <include file="$(find rflex)/launch/rflex.launch">
+    <!-- <include file="$(find rflex)/launch/rflex.launch">
         <arg name="ns" value="$(arg ns)/rflex"/>
         <arg name="serialPort" value="/dev/ttyUSB0"/>
-    </include>
+    </include> -->
 
-    <!-- CROSSBOW -->
-    <!-- <include file="$(find xbow6x)/launch/xbow6x.launch" >
+    <!-- CROSSBOW
+    <include file="$(find xbow6x)/launch/xbow6x.launch" >
         <arg name="ns" value="$(arg ns)/xbow6x"/>
         <arg name="serialPort" value="/dev/ttyUSB1"/>
         <arg name="frame_id" value="cbimu_frame"/>
-    </include> -->
+    </include>
 
-    <!-- MPU IMU -->
-    <include file="$(find atrvjr)/launch/mpuimu.launch" >
+    <! MPU IMU -->
+ <!--    <include file="$(find atrvjr)/launch/mpuimu.launch" >
         <arg name="ns" value="$(arg ns)/atrvjr/mpu"/>
         <arg name="port" value="/dev/mpuimu"/>
         <arg name="imu_frame_id" value="mpuimu_frame"/>
         <arg name="frame_id" value="mpuimu_frame"/>
         <arg name="tf_frame_id" value="mpuimu_frame"/>
     </include>
-
+ -->
     <!-- HOKUYO -->
-    <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
+   <!--  <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
         <param name="serial_port" value="/dev/ttyACM1"/>
         <param name="frame_id" value="hokuyo"/>
         <param name="angle_min" value="-1.5"/>
         <param name="angle_max" value="1.5"/>
-    </node>
-
+    </node> -->
 
     <!-- <include file="$(find teleop_twist_joy)/launch/teleop.launch" /> -->
     <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen">
@@ -44,7 +43,7 @@
 
     <arg name="model" default="$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro" />
     <arg name="rvizconfig" default="$(find atrvjr_description)/launch/rviz_config_moveit.rviz" />
-    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />        
     <param name="use_gui" value="false"/>
 
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />

@@ -20,4 +20,12 @@
         <arg name="psrpos_default_logs_period" value="0.05"/>
     </include>
 
+   <!--  <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node" clear_params="true">
+        <rosparam command="load" file="$(find robot_localization)/params/navsat_transform_template.yaml" />
+        <remap from="imu/data" to="/atrvjr/mpu/imu/data"/>
+        <remap from="gps/fix" to="/novatel/novatel_node/gps_fix_psr"/>
+        <remap from="odometry/filtered" to="odometry/filtered"/>
+
+    </node>
+ -->
 </launch>
