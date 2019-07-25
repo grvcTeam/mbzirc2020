@@ -21,89 +21,117 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <uav_abstraction_layer/ual.h>
-#include <mbzirc_comm_objs/UALAction.h>
+#include <mbzirc_comm_objs/HoverAction.h>
+#include <mbzirc_comm_objs/GoToAction.h>
+#include <mbzirc_comm_objs/FollowPathAction.h>
 #include <uav_abstraction_layer/State.h>
 
-class UALAction {
+class UalActionServer {
 protected:
 
   ros::NodeHandle nh_;
-  actionlib::SimpleActionServer<mbzirc_comm_objs::UALAction> as_;  // NodeHandle instance must be created before this line. Otherwise strange error occurs.
-  std::string robot_id_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::HoverAction> hover_server_;  // NodeHandle instance must be created before this line. Otherwise strange error occurs.
+  actionlib::SimpleActionServer<mbzirc_comm_objs::GoToAction> go_to_server_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::FollowPathAction> follow_path_server_;
+  std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
-  // create messages that are used to published feedback/result
-  mbzirc_comm_objs::UALFeedback feedback_;
-  mbzirc_comm_objs::UALResult result_;
 
 public:
 
-  UALAction(std::string _robot_id):
-    as_(nh_, "ual_action", boost::bind(&UALAction::executeCallback, this, _1), false),
+  UalActionServer(std::string _robot_id):
+    hover_server_(nh_, "hover_action", boost::bind(&UalActionServer::hoverCallback, this, _1), false),
+    go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
+    follow_path_server_(nh_, "follow_path_action", boost::bind(&UalActionServer::followPathCallback, this, _1), false),
     robot_id_(_robot_id) {
     ual_ = new grvc::ual::UAL();
-    as_.start();
+    hover_server_.start();
+    go_to_server_.start();
+    follow_path_server_.start();
   }
 
-  ~UALAction() {
+  ~UalActionServer() {
     delete ual_;
   }
 
-  void hover(double _flight_level) {
+  void hoverCallback(const mbzirc_comm_objs::HoverGoalConstPtr &_goal) {
+    ROS_INFO("Hover!");
+    // mbzirc_comm_objs::HoverFeedback feedback;
+    mbzirc_comm_objs::HoverResult result;
+
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
       ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
       sleep(1);
     }
+    // TODO: Fill result
     switch (ual_->state().state) {
       case uav_abstraction_layer::State::LANDED_DISARMED:
         ROS_WARN("UAL is disarmed!");
-        as_.setAborted(result_);
+        hover_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::LANDED_ARMED:
-        ual_->takeOff(_flight_level, true);
-        as_.setSucceeded(result_);
+        // TODO: from param, substract current z
+        ual_->takeOff(_goal->height, true);  // TODO: timeout? preempt?
+        hover_server_.setSucceeded(result);
         break;
       case uav_abstraction_layer::State::TAKING_OFF:
         ROS_WARN("UAL is taking off!");
-        as_.setAborted(result_);
+        // TODO: Wait until FLYING_AUTO?
+        hover_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::FLYING_AUTO:
-        // TODO: goto current x,y, but z = flight_level
-        as_.setSucceeded(result_);
+        // TODO: goto current x,y, but z = flight_level?
+        hover_server_.setSucceeded(result);
         break;
       case uav_abstraction_layer::State::FLYING_MANUAL:
         ROS_WARN("UAL is flying manual!");
-        as_.setAborted(result_);
+        hover_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::LANDING:
         ROS_WARN("UAL is landing!");
-        as_.setAborted(result_);
+        // TODO: Wait until LANDED_ARMED and then take off?
+        hover_server_.setAborted(result);
         break;
       default:
         ROS_ERROR("Unexpected UAL state!");
-        as_.setAborted(result_);
+        hover_server_.setAborted(result);
     }
   }
 
-  void executeCallback(const mbzirc_comm_objs::UALGoalConstPtr &_goal) {
-    double flight_level = 2.0;  // TODO: from param, substract current z
-    // TODO: Fill result?
-    switch(_goal->command) {
-      case mbzirc_comm_objs::UALGoal::HOVER:
-        ROS_INFO("HOVER command received");
-        hover(flight_level);
-        break;
-      case mbzirc_comm_objs::UALGoal::GOTO:
-        ROS_INFO("GOTO command received");
-        as_.setSucceeded(result_);
-        break;
-      case mbzirc_comm_objs::UALGoal::PICK:
-        ROS_INFO("PICK command received");
-        as_.setSucceeded(result_);
-        break;
-      default:
-        ROS_ERROR("Unexpected UALGoal command [%d]!", _goal->command);
-        as_.setAborted(result_);
+  void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal) {
+    ROS_INFO("Go to!");
+    // mbzirc_comm_objs::GoToFeedback feedback;
+    mbzirc_comm_objs::GoToResult result;
+    // TODO: Fill result
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      go_to_server_.setAborted(result);
     }
+
+    ual_->goToWaypoint(_goal->waypoint, true);  // TODO: blocking? preemptable?
+    go_to_server_.setSucceeded(result);
+  }
+
+  void followPathCallback(const mbzirc_comm_objs::FollowPathGoalConstPtr &_goal) {
+    ROS_INFO("Follow path!");  // TODO: check for collisions?
+    // mbzirc_comm_objs::GoToFeedback feedback;
+    mbzirc_comm_objs::FollowPathResult result;
+    // TODO: Fill result
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      follow_path_server_.setAborted(result);
+    }
+
+    // for (size_t i = 0; i < _goal->path.size(); i++) {
+    //   ual_->goToWaypoint(_goal->path[i], true);  // TODO: blocking? preemptable?
+    // }
+    for (auto waypoint: _goal->path) {
+      ual_->goToWaypoint(waypoint, true);  // TODO: blocking? preemptable?
+    }
+
+    follow_path_server_.setSucceeded(result);
+  }
 
   /*
     // helper variables
@@ -145,7 +173,7 @@ public:
       as_.setSucceeded(result_);
     }
     */
-  }
+  // }
 
 
 };
@@ -155,7 +183,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ual_action_server");
 
-  UALAction ual_action("");  // Not needed?
+  UalActionServer ual_action_server("");  // Not needed?
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
   // ros::spin();

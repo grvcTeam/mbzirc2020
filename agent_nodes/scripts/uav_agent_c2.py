@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-# import roslib; roslib.load_manifest('smach_tutorials')
 import rospy
 import smach
 import smach_ros
 import time
 
-from mbzirc_comm_objs.msg import UALAction, UALGoal
+from mbzirc_comm_objs.msg import HoverAction, HoverGoal
+from mbzirc_comm_objs.msg import GoToAction, GoToGoal
+from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
+from geometry_msgs.msg import PoseStamped
 # from smach_tutorials.msg import TestAction, TestGoal
 # from actionlib import *
 # from actionlib_msgs.msg import *
@@ -42,19 +44,31 @@ def main():
         #                                                goal = TestGoal(goal=1)),
         #                        {'aborted':'GOAL_CB'})
         smach.StateMachine.add('HOVER',
-                               smach_ros.SimpleActionState('ual_action', UALAction,
-                                                       goal = UALGoal(command=UALGoal.HOVER)),
-                               {'succeeded':'GOTO'})
+                               smach_ros.SimpleActionState('hover_action', HoverAction,
+                                                       goal = HoverGoal(height = 2.0)),  # TODO: height from param?
+                               {'succeeded':'GO_TO'})
 
-        smach.StateMachine.add('GOTO',
-                               smach_ros.SimpleActionState('ual_action', UALAction,
-                                                       goal = UALGoal(command=UALGoal.GOTO)),
-                               {'succeeded':'PICK'})
+        wp = PoseStamped()
+        wp.pose.position.x = 1
+        wp.pose.position.y = 1
+        wp.pose.position.z = 1
+        # wp.pose.orientation.w = 1
 
-        smach.StateMachine.add('PICK',
-                               smach_ros.SimpleActionState('ual_action', UALAction,
-                                                       goal = UALGoal(command=UALGoal.PICK)),
+        smach.StateMachine.add('GO_TO',
+                               smach_ros.SimpleActionState('go_to_action', GoToAction,
+                                                       goal = GoToGoal(waypoint = wp)),
+                               {'succeeded':'FOLLOW_PATH'})
+
+        smach.StateMachine.add('FOLLOW_PATH',
+                               smach_ros.SimpleActionState('follow_path_action', FollowPathAction,
+                                                       goal = FollowPathGoal(path = [PoseStamped(), wp, PoseStamped()])),
                                {'succeeded':'succeeded'})
+
+
+        # smach.StateMachine.add('PICK',
+        #                        smach_ros.SimpleActionState('ual_action', UALAction,
+        #                                                goal = UALGoal(command=UALGoal.PICK)),
+        #                        {'succeeded':'succeeded'})
 
 
         # Add another simple action state. This will give a goal
