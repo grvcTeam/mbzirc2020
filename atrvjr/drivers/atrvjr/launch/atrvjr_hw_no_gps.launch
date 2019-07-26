@@ -17,14 +17,14 @@
     </include>
 
     <! MPU IMU -->
- <!--    <include file="$(find atrvjr)/launch/mpuimu.launch" >
+   <!--  <include file="$(find atrvjr)/launch/mpuimu.launch" >
         <arg name="ns" value="$(arg ns)/atrvjr/mpu"/>
         <arg name="port" value="/dev/mpuimu"/>
         <arg name="imu_frame_id" value="mpuimu_frame"/>
         <arg name="frame_id" value="mpuimu_frame"/>
         <arg name="tf_frame_id" value="mpuimu_frame"/>
-    </include>
- -->
+    </include> -->
+
     <!-- HOKUYO -->
    <!--  <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
         <param name="serial_port" value="/dev/ttyACM1"/>

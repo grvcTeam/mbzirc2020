@@ -52,7 +52,7 @@ odom0: /odom_calibration/odom_calibration_node/odom
 
 odom0_config: [false, false, false,   #[     x    ,     y     ,    z    ]
               false, false, false,    #[  roll    ,   pitch   ,   yaw   ]
-              true, false, false,      #[  x_vel   ,   y_vel   ,   z_vel ]
+              true, true, false,      #[  x_vel   ,   y_vel   ,   z_vel ]
               false, false, false,    #[ roll_vel , pitch_vel , yaw_vel ]
               false, false, false]    #[ x_accel  , y_accel   , z_accel ]
 
@@ -78,14 +78,14 @@ odom1_differential: false
 odom1_relative: false
 
 
-imu0: /atrvjr/mpu/imu/data
+imu0: /atrvjr/mpu/imu/absolute_data
 
 #This will automatically zero out all 3D variables, such as Z, roll, pitch, their respective velocities, and Z acceleration
 
 imu0_config: [false, false, false,   #[     x    ,     y     ,    z    ]
               false, false, true,    #[  roll    ,   pitch   ,   yaw   ]
               false, false, false,   #[  x_vel   ,   y_vel   ,   z_vel ]
-              false, false, true,    #[ roll_vel , pitch_vel , yaw_vel ]
+              false, false, false,    #[ roll_vel , pitch_vel , yaw_vel ]
               false, false, false]   #[ x_accel  , y_accel   , z_accel ]
 
 imu0_queue_size: 5

@@ -8,6 +8,7 @@ import numpy as np
 import PyKDL #Vector, Rotation, Quaternion, Frame
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
+from sensor_msgs.msg import NavSatFix
 from novatel_msgs.msg import BESTPOS
 
 
@@ -42,7 +43,7 @@ class PlannedMotion(object):
 
         #print self.gps_msg.lat, self.gps_msg.lon
 
-        with open('coordinates3.txt', 'a') as the_file:
+        with open('coordinates7.txt', 'a') as the_file:
             the_file.write(str(self.gps_msg.lat) + "," + str(self.gps_msg.lon)+ "\n")
 
     def odom_cb(self, msg):

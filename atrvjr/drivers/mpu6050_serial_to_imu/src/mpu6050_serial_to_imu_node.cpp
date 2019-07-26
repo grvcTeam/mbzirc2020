@@ -37,6 +37,7 @@ int main(int argc, char** argv)
 
   tf::Quaternion orientation;
   tf::Quaternion zero_orientation;
+  tf::Quaternion orientation1;
 
   ros::init(argc, argv, "mpu6050_serial_to_imu_node");
 
@@ -53,12 +54,14 @@ int main(int argc, char** argv)
 
   ros::NodeHandle nh("imu");
   ros::Publisher imu_pub = nh.advertise<sensor_msgs::Imu>("data", 50);
+  ros::Publisher imu_test_pub = nh.advertise<sensor_msgs::Imu>("absolute_data", 50);
   ros::Publisher imu_temperature_pub = nh.advertise<sensor_msgs::Temperature>("temperature", 50);
   ros::ServiceServer service = nh.advertiseService("set_zero_orientation", set_zero_orientation);
 
   ros::Rate r(200); // 200 hz
 
   sensor_msgs::Imu imu;
+  sensor_msgs::Imu imu1;
 
   imu.linear_acceleration_covariance[0] = linear_acceleration_stddev;
   imu.linear_acceleration_covariance[4] = linear_acceleration_stddev;
@@ -116,6 +119,14 @@ int main(int argc, char** argv)
                 double zf = z/16384.0;
 
                 tf::Quaternion orientation(xf, yf, zf, wf);
+
+                tf::Quaternion q_rot;
+
+                double roll=0, pitch=0, yaw=-3.32;  // Rotate the previous pose 
+                q_rot.setRPY(roll, pitch, yaw);
+
+                orientation1 = q_rot*orientation;  // Calculate the new orientation
+                orientation1.normalize();
 
                 if (!zero_orientation_set)
                 {
@@ -181,6 +192,7 @@ int main(int argc, char** argv)
 
                 quaternionTFToMsg(differential_rotation, imu.orientation);
 
+
                 imu.angular_velocity.x = gxf;
                 imu.angular_velocity.y = gyf;
                 imu.angular_velocity.z = gzf;
@@ -189,7 +201,23 @@ int main(int argc, char** argv)
                 imu.linear_acceleration.y = ayf;
                 imu.linear_acceleration.z = azf;
 
+
+                quaternionTFToMsg(orientation1, imu1.orientation);
+
+                imu1.header.stamp = measurement_time;
+                imu1.header.frame_id = frame_id;
+
+                imu1.angular_velocity.x = gxf;
+                imu1.angular_velocity.y = gyf;
+                imu1.angular_velocity.z = gzf;
+
+                imu1.linear_acceleration.x = axf;
+                imu1.linear_acceleration.y = ayf;
+                imu1.linear_acceleration.z = azf;
+
                 imu_pub.publish(imu);
+
+                imu_test_pub.publish(imu1);
 
                 // publish temperature message
                 temperature_msg.header.stamp = measurement_time;
