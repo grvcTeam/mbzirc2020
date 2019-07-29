@@ -1,5 +1,5 @@
+int8 agent_id
 geometry_msgs/PointStamped min_corner
 geometry_msgs/PointStamped max_corner
 ---
 bool success
-int32 region_id
