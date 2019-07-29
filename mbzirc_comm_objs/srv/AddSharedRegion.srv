@@ -1,5 +1,5 @@
-string frame_id
-geometry_msgs/Polygon region
-geometry_msgs/Point[] waiting_points
+geometry_msgs/PointStamped min_corner
+geometry_msgs/PointStamped max_corner
 ---
+bool success
 int32 region_id
