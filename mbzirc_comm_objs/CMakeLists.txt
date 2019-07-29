@@ -58,9 +58,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    DetectTypes.srv
    SearchForObject.srv
    Magnetize.srv
-   AddSharedRegion.srv
-   RemoveSharedRegion.srv
-   RequestSharedRegion.srv
+   AskForRegion.srv
    BuildWall.srv
    PickNPlace.srv
    PFPNPlace.srv

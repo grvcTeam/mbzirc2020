@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from mbzirc_comm_objs.srv import AddSharedRegion, AddSharedRegionResponse
+from mbzirc_comm_objs.srv import AskForRegion, AskForRegionResponse
 # from std_msgs.msg import ColorRGBA
 from geometry_msgs.msg import PointStamped, Pose, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
@@ -58,18 +58,18 @@ class SharedRegionsManager():
     def __init__(self):
         self.regions = {}
         self.marker_duration = rospy.Duration(1.0)
-        rospy.Service('add_shared_region', AddSharedRegion, self.add_region_callback)
+        rospy.Service('ask_for_region', AskForRegion, self.ask_for_region_callback)
         self.marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)  # TODO: namespacing?
         rospy.Timer(self.marker_duration, self.publish_marker_callback)
 
-    def add_region_callback(self, req):
+    def ask_for_region_callback(self, req):
         proposed_region = Region(req.min_corner, req.max_corner)
         for owner_id, region in self.regions.items():
             if region.overlaps_with(proposed_region) and owner_id != req.agent_id:
                 rospy.logwarn("Proposed region by agent {} overlaps with agent {}".format(req.agent_id, owner_id))
-                return AddSharedRegionResponse(success = False)
+                return AskForRegionResponse(success = False)
         self.regions[req.agent_id] = proposed_region
-        return AddSharedRegionResponse(success = True)
+        return AskForRegionResponse(success = True)
 
     def publish_marker_callback(self, event):
         marker_array = MarkerArray()
