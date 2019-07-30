@@ -4,15 +4,85 @@ import rospy
 import smach
 import smach_ros
 import time
+import random
 
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from geometry_msgs.msg import PoseStamped
-# from smach_tutorials.msg import TestAction, TestGoal
-# from actionlib import *
-# from actionlib_msgs.msg import *
+from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest
 
+def build_ask_for_region_request(agent_id, initial_pose, final_pose, radius = 1.0):
+    if initial_pose.header.frame_id != 'map':
+        raise ValueError('frame_id = {} not expected'.format(initial_pose.header.frame_id))  # TODO: transform?
+    if final_pose.header.frame_id != 'map':
+        raise ValueError('frame_id = {} not expected'.format(final_pose.header.frame_id))  # TODO: transform?
+
+    request = AskForRegionRequest()
+    request.agent_id = agent_id
+    request.min_corner.header.frame_id = 'map'
+    request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
+    request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
+    request.min_corner.point.z = min(initial_pose.pose.position.z - radius, final_pose.pose.position.z - radius)
+    request.max_corner.header.frame_id = 'map'
+    request.max_corner.point.x = max(initial_pose.pose.position.x + radius, final_pose.pose.position.x + radius)
+    request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
+    request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
+
+    return request
+
+class GoToTask(smach.StateMachine):
+
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
+
+        with self:
+
+            # TODO: move outside! Rename action to takeoff!
+            def hover_goal_callback(userdata, default_goal):
+                flight_level = rospy.get_param('~flight_level')
+                goal = HoverGoal(height = flight_level)
+                return goal
+            # TODO: move outside! Rename action to takeoff!
+            smach.StateMachine.add('HOVER', smach_ros.SimpleActionState('hover_action', HoverAction,
+                                    input_keys = ['waypoint'],
+                                    output_keys = ['waypoint'],
+                                    goal_cb = hover_goal_callback),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION'})
+
+            # @smach.cb_interface(input_keys = ['waypoint'])
+            def ask_for_region_request_callback(userdata, request):
+                agent_id = rospy.get_param('~agent_id')
+                ask_for_region_request = build_ask_for_region_request(agent_id, self.ual_pose, userdata.waypoint)
+                return ask_for_region_request
+
+            def ask_for_region_response_callback(userdata, response):
+                if response.success:
+                    return 'succeeded'
+                else:
+                    return 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+                                    input_keys = ['waypoint'],
+                                    output_keys = ['waypoint'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'GO_TO'})
+
+            def go_to_goal_callback(userdata, default_goal):
+                goal = GoToGoal(waypoint = userdata.waypoint)
+                return goal
+
+            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState('go_to_action', GoToAction,
+                                    input_keys = ['waypoint'],
+                                    goal_cb = go_to_goal_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
+
+    def ual_pose_callback(self, data):
+        self.ual_pose = data
 
 def main():
     rospy.init_node('uav_agent')
@@ -21,76 +91,22 @@ def main():
         rospy.logwarn("Waiting for (sim) time to begin!")
         time.sleep(1)
 
-    # Create a SMACH state machine
-    fsm = smach.StateMachine(outcomes = ['succeeded', 'aborted', 'preempted'])
+    fsm = GoToTask()
+    flight_level = rospy.get_param('~flight_level')
 
-    # Open the container
-    with fsm:
-        # Add states to the container
+    while not rospy.is_shutdown():
+        userdata = smach.UserData()
+        userdata.waypoint = PoseStamped()
+        userdata.waypoint.header.frame_id = 'map'
+        userdata.waypoint.pose.position.x = random.random() * 10
+        userdata.waypoint.pose.position.y = random.random() * 10
+        userdata.waypoint.pose.position.z = flight_level
+        userdata.waypoint.pose.orientation.z = 0
+        userdata.waypoint.pose.orientation.w = 1
 
-        # Add a simple action state. This will use an empty, default goal
-        # As seen in TestServer above, an empty goal will always return with
-        # GoalStatus.SUCCEEDED, causing this simple action state to return
-        # the outcome 'succeeded'
-        # smach.StateMachine.add('GOAL_DEFAULT',
-        #                        smach_ros.SimpleActionState('test_action', TestAction),
-        #                        {'succeeded':'GOAL_STATIC'})
-
-        # Add another simple action state. This will give a goal
-        # that should abort the action state when it is received, so we
-        # map 'aborted' for this state onto 'succeeded' for the state machine.
-        # smach.StateMachine.add('GOAL_STATIC',
-        #                        smach_ros.SimpleActionState('test_action', TestAction,
-        #                                                goal = TestGoal(goal=1)),
-        #                        {'aborted':'GOAL_CB'})
-        smach.StateMachine.add('HOVER',
-                               smach_ros.SimpleActionState('hover_action', HoverAction,
-                                                       goal = HoverGoal(height = 2.0)),  # TODO: height from param?
-                               {'succeeded':'GO_TO'})
-
-        wp = PoseStamped()
-        wp.pose.position.x = 1
-        wp.pose.position.y = 1
-        wp.pose.position.z = 1
-        # wp.pose.orientation.w = 1
-
-        smach.StateMachine.add('GO_TO',
-                               smach_ros.SimpleActionState('go_to_action', GoToAction,
-                                                       goal = GoToGoal(waypoint = wp)),
-                               {'succeeded':'FOLLOW_PATH'})
-
-        smach.StateMachine.add('FOLLOW_PATH',
-                               smach_ros.SimpleActionState('follow_path_action', FollowPathAction,
-                                                       goal = FollowPathGoal(path = [PoseStamped(), wp, PoseStamped()])),
-                               {'succeeded':'succeeded'})
-
-
-        # smach.StateMachine.add('PICK',
-        #                        smach_ros.SimpleActionState('ual_action', UALAction,
-        #                                                goal = UALGoal(command=UALGoal.PICK)),
-        #                        {'succeeded':'succeeded'})
-
-
-        # Add another simple action state. This will give a goal
-        # that should abort the action state when it is received, so we
-        # map 'aborted' for this state onto 'succeeded' for the state machine.
-        # def goal_callback(userdata, default_goal):
-        #     goal = TestGoal()
-        #     goal.goal = 2
-        #     return goal
-
-        # smach.StateMachine.add('GOAL_CB',
-        #                        smach_ros.SimpleActionState('test_action', TestAction,
-        #                                                goal_cb = goal_callback),
-        #                        {'aborted':'succeeded'})
-
-        # For more examples on how to set goals and process results, see 
-        # executive_smach/smach_ros/tests/smach_actionlib.py
-
-    # Execute SMACH plan
-    outcome = fsm.execute()
-
-    rospy.signal_shutdown('All done.')
+        # print(userdata.waypoint)
+        outcome = fsm.execute(userdata)
+        print(outcome)
 
 
 if __name__ == '__main__':

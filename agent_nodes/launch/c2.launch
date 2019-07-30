@@ -7,7 +7,7 @@
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
         <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
-        args="-physics=none -world=$(find challenge_worlds)/worlds/challenge2.world
+        args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
 			  -add_model_path=$(find challenge_worlds)/urdf
 			  -description_package=uavs_description">
             <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
@@ -15,26 +15,28 @@
     </group>
 
   <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
-  <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/>
+  <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
 
-  
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
-      <arg name="uav_id" value="1"/>
+      <!-- TODO:  Everything from rosparam? -->
+      <arg name="ns" value="uav"/>
+      <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
-      <arg name="height" value="2.0"/>
+      <arg name="flight_level" value="2.0"/>
       <arg name="x" value="5"/>
       <arg name="y" value="0"/>
       <arg name="z" value="0"/>
   </include>
 
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
-      <arg name="uav_id" value="2"/>
+      <!-- TODO:  Everything from rosparam? -->
+      <arg name="ns" value="uav"/>
+      <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
-      <arg name="height" value="3.0"/>
-      <arg name="x" value="5"/>
-      <arg name="y" value="5"/>
+      <arg name="flight_level" value="2.0"/>
+      <arg name="x" value="-5"/>
+      <arg name="y" value="0"/>
       <arg name="z" value="0"/>
   </include>
+
 </launch>

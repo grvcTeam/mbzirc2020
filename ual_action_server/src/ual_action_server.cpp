@@ -43,6 +43,9 @@ public:
     go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
     follow_path_server_(nh_, "follow_path_action", boost::bind(&UalActionServer::followPathCallback, this, _1), false),
     robot_id_(_robot_id) {
+
+    // ros::param::set("~uav_id", _robot_id);
+    // ros::param::set("~pose_frame_id", "map");
     ual_ = new grvc::ual::UAL();
     hover_server_.start();
     go_to_server_.start();
@@ -101,6 +104,51 @@ public:
     ROS_INFO("Go to!");
     // mbzirc_comm_objs::GoToFeedback feedback;
     mbzirc_comm_objs::GoToResult result;
+
+    while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
+      ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
+      sleep(1);
+    }
+    // TODO: Fill result
+    switch (ual_->state().state) {
+      case uav_abstraction_layer::State::LANDED_DISARMED:
+        ROS_WARN("UAL is disarmed!");
+        go_to_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::LANDED_ARMED:
+        ual_->takeOff(_goal->waypoint.pose.position.z - ual_->pose().pose.position.z, true);  // TODO: timeout? preempt?
+        ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
+        go_to_server_.setSucceeded(result);
+        break;
+      case uav_abstraction_layer::State::TAKING_OFF:
+        ROS_WARN("UAL is taking off!");
+        // TODO: Wait until FLYING_AUTO?
+        go_to_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::FLYING_AUTO:
+        ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
+        go_to_server_.setSucceeded(result);
+        break;
+      case uav_abstraction_layer::State::FLYING_MANUAL:
+        ROS_WARN("UAL is flying manual!");
+        go_to_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::LANDING:
+        ROS_WARN("UAL is landing!");
+        // TODO: Wait until LANDED_ARMED and then take off?
+        go_to_server_.setAborted(result);
+        break;
+      default:
+        ROS_ERROR("Unexpected UAL state!");
+        go_to_server_.setAborted(result);
+    }
+  }
+
+/*
+  void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal) {
+    ROS_INFO("Go to!");
+    // mbzirc_comm_objs::GoToFeedback feedback;
+    mbzirc_comm_objs::GoToResult result;
     // TODO: Fill result
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
@@ -111,6 +159,7 @@ public:
     ual_->goToWaypoint(_goal->waypoint, true);  // TODO: blocking? preemptable?
     go_to_server_.setSucceeded(result);
   }
+ */
 
   void followPathCallback(const mbzirc_comm_objs::FollowPathGoalConstPtr &_goal) {
     ROS_INFO("Follow path!");  // TODO: check for collisions?
