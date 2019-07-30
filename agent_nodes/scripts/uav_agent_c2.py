@@ -5,6 +5,7 @@ import smach
 import smach_ros
 import time
 import random
+import actionlib
 
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
@@ -50,7 +51,7 @@ class GoToTask(smach.StateMachine):
                                     goal_cb = hover_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
 
-            # @smach.cb_interface(input_keys = ['waypoint'])
+            # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
                 agent_id = rospy.get_param('~agent_id')
                 ask_for_region_request = build_ask_for_region_request(agent_id, self.ual_pose, userdata.waypoint)
@@ -124,16 +125,30 @@ class FollowPathTask(smach.StateMachine):
 
             smach.StateMachine.add('DISPATCH', WaypointDispatch(),
                                     remapping = {'path': 'path', 'waypoint': 'waypoint'},
-                                    transitions = {'succeeded': 'GO_TO'})
+                                    transitions = {'succeeded': 'GO_TO_TASK'})
 
-            smach.StateMachine.add('GO_TO', GoToTask(), 
+            smach.StateMachine.add('GO_TO_TASK', GoToTask(), 
                                     remapping = {'waypoint': 'waypoint'},
                                     transitions = {'succeeded': 'DISPATCH', 'aborted': 'SLEEP'}
             )
 
             smach.StateMachine.add('SLEEP', Sleep(1.0),
                                     remapping = {'waypoint': 'waypoint'},
-                                    transitions = {'succeeded': 'GO_TO'})
+                                    transitions = {'succeeded': 'GO_TO_TASK'})
+
+class Agent(object):
+
+    def __init__(self):
+        self.follow_path_task = FollowPathTask()
+        self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = True)
+        # self._as.start()
+      
+    def follow_path_callback(self, goal):
+        userdata = smach.UserData()
+        userdata.path = goal.path
+        outcome = self.follow_path_task.execute(userdata)
+        print(outcome)
+        self.follow_path_action_server.set_succeeded()
 
 def main():
     rospy.init_node('uav_agent')
@@ -142,28 +157,15 @@ def main():
         rospy.logwarn("Waiting for (sim) time to begin!")
         time.sleep(1)
 
-    fsm = FollowPathTask()
-    flight_level = rospy.get_param('~flight_level')
+    agent = Agent()
+    # agent_id = rospy.get_param('~agent_id')
+    # flight_level = rospy.get_param('~flight_level')
 
-    path = []
-    for i in range(3):
-        waypoint = PoseStamped()
-        waypoint.header.frame_id = 'map'
-        waypoint.pose.position.x = i*10
-        waypoint.pose.position.y = 1
-        waypoint.pose.position.z = flight_level
-        waypoint.pose.orientation.z = 0
-        waypoint.pose.orientation.w = 1
-        path.append(waypoint)
-
-    print(path)
-
-    # while not rospy.is_shutdown():
-    userdata = smach.UserData()
-    userdata.path = path
-    outcome = fsm.execute(userdata)
-    print(outcome)
-
+    # TODO(performance): Make it optional, use only in develop stage
+    # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
+    # viewer.start()
+    rospy.spin()
+    # viewer.stop()
 
 if __name__ == '__main__':
     main()
