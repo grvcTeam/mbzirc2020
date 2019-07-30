@@ -48,7 +48,7 @@ class GoToTask(smach.StateMachine):
                                     input_keys = ['waypoint'],
                                     output_keys = ['waypoint'],
                                     goal_cb = hover_goal_callback),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
 
             # @smach.cb_interface(input_keys = ['waypoint'])
             def ask_for_region_request_callback(userdata, request):
@@ -62,7 +62,7 @@ class GoToTask(smach.StateMachine):
                 else:
                     return 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+            smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('/ask_for_region', AskForRegion,
                                     input_keys = ['waypoint'],
                                     output_keys = ['waypoint'],
                                     request_cb = ask_for_region_request_callback,
@@ -76,6 +76,12 @@ class GoToTask(smach.StateMachine):
             smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState('go_to_action', GoToAction,
                                     input_keys = ['waypoint'],
                                     goal_cb = go_to_goal_callback),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER'})
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_HOVER', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+                                    input_keys = ['waypoint'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
         self.ual_pose = PoseStamped()
@@ -84,6 +90,51 @@ class GoToTask(smach.StateMachine):
     def ual_pose_callback(self, data):
         self.ual_pose = data
 
+class WaypointDispatch(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'], output_keys = ['waypoint'])
+        self.waypoint_index = 0
+    
+    def execute(self, userdata):
+        if self.waypoint_index >= len(userdata.path):
+            return 'aborted'
+        else:
+            userdata.waypoint = userdata.path[self.waypoint_index]
+            self.waypoint_index += 1
+            return 'succeeded'
+        # TODO: preempted?
+
+class Sleep(smach.State):
+    def __init__(self, duration = 3.0):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
+        self.duration = duration
+
+    def execute(self, userdata):
+        rospy.sleep(self.duration)
+        return 'succeeded'
+        # TODO: aborted?
+        # TODO: preempted?
+
+class FollowPathTask(smach.StateMachine):
+
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
+
+        with self:
+
+            smach.StateMachine.add('DISPATCH', WaypointDispatch(),
+                                    remapping = {'path': 'path', 'waypoint': 'waypoint'},
+                                    transitions = {'succeeded': 'GO_TO'})
+
+            smach.StateMachine.add('GO_TO', GoToTask(), 
+                                    remapping = {'waypoint': 'waypoint'},
+                                    transitions = {'succeeded': 'DISPATCH', 'aborted': 'SLEEP'}
+            )
+
+            smach.StateMachine.add('SLEEP', Sleep(1.0),
+                                    remapping = {'waypoint': 'waypoint'},
+                                    transitions = {'succeeded': 'GO_TO'})
+
 def main():
     rospy.init_node('uav_agent')
 
@@ -91,22 +142,27 @@ def main():
         rospy.logwarn("Waiting for (sim) time to begin!")
         time.sleep(1)
 
-    fsm = GoToTask()
+    fsm = FollowPathTask()
     flight_level = rospy.get_param('~flight_level')
 
-    while not rospy.is_shutdown():
-        userdata = smach.UserData()
-        userdata.waypoint = PoseStamped()
-        userdata.waypoint.header.frame_id = 'map'
-        userdata.waypoint.pose.position.x = random.random() * 10
-        userdata.waypoint.pose.position.y = random.random() * 10
-        userdata.waypoint.pose.position.z = flight_level
-        userdata.waypoint.pose.orientation.z = 0
-        userdata.waypoint.pose.orientation.w = 1
+    path = []
+    for i in range(3):
+        waypoint = PoseStamped()
+        waypoint.header.frame_id = 'map'
+        waypoint.pose.position.x = i*10
+        waypoint.pose.position.y = 1
+        waypoint.pose.position.z = flight_level
+        waypoint.pose.orientation.z = 0
+        waypoint.pose.orientation.w = 1
+        path.append(waypoint)
 
-        # print(userdata.waypoint)
-        outcome = fsm.execute(userdata)
-        print(outcome)
+    print(path)
+
+    # while not rospy.is_shutdown():
+    userdata = smach.UserData()
+    userdata.path = path
+    outcome = fsm.execute(userdata)
+    print(outcome)
 
 
 if __name__ == '__main__':
