@@ -48,7 +48,7 @@ world_frame: odom           # Defaults to the value of odom_frame if unspecified
 
 
 
-odom0: /odom_calibration/odom_calibration_node/odom
+odom0: /odom_calibration/odom_calibration_node/odom     #PENSAR EM USAR ODOM NORMAL DA RFLEX POR CAUSA DOS RESULTADOS DAS EXPERIENCIAS
 
 odom0_config: [false, false, false,   #[     x    ,     y     ,    z    ]
               false, false, false,    #[  roll    ,   pitch   ,   yaw   ]
@@ -85,7 +85,7 @@ imu0: /atrvjr/mpu/imu/absolute_data
 imu0_config: [false, false, false,   #[     x    ,     y     ,    z    ]
               false, false, true,    #[  roll    ,   pitch   ,   yaw   ]
               false, false, false,   #[  x_vel   ,   y_vel   ,   z_vel ]
-              false, false, false,    #[ roll_vel , pitch_vel , yaw_vel ]
+              false, false, true,    #[ roll_vel , pitch_vel , yaw_vel ]
               false, false, false]   #[ x_accel  , y_accel   , z_accel ]
 
 imu0_queue_size: 5

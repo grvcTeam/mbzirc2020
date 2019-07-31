@@ -43,7 +43,7 @@ class PlannedMotion(object):
 
         #print self.gps_msg.lat, self.gps_msg.lon
 
-        with open('coordinates7.txt', 'a') as the_file:
+        with open('coordinates11.txt', 'a') as the_file:
             the_file.write(str(self.gps_msg.lat) + "," + str(self.gps_msg.lon)+ "\n")
 
     def odom_cb(self, msg):
