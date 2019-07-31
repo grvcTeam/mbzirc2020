@@ -23,7 +23,7 @@ class Interval(object):
 
 class Region(object):
     def __init__(self, min_corner, max_corner):
-        self.frame_id = 'map'
+        self.frame_id = 'arena'
 
         if min_corner.header.frame_id != self.frame_id:
             raise ValueError('frame_id = {} not expected'.format(min_corner.header.frame_id))  # TODO: transform?

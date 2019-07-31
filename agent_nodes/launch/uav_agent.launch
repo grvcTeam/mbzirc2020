@@ -7,9 +7,9 @@
   <arg name="x" default="10" />
   <arg name="y" default="0" />
   <arg name="z" default="0" />
+  <arg name="yaw" default="0" />
   
   <group ns="$(arg ns)_$(arg agent_id)">
-    <!-- <param name="tf_prefix" value="$(arg ns)_$(arg agent_id)" /> -->
 
     <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg ns)__$(arg agent_id)/base_link $(arg ns)_$(arg agent_id)/gripper_link 10"/>
     <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg ns)_$(arg agent_id)/base_link $(arg ns)_$(arg agent_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
@@ -20,13 +20,15 @@
         <arg name="x" value="$(arg x)"/>
         <arg name="y" value="$(arg y)"/>
         <arg name="z" value="$(arg z)"/>
+        <arg name="yaw" value="$(arg yaw)"/>
+        <arg name="frame_id" value="arena"/>
         <arg name="material" value="$(arg color)"/>
-        <!-- <arg name="yaw" default="0"/> -->
     </include>
 
     <node pkg="ual_action_server" type="ual_action_server" name="server" output="screen">
       <param name="uav_id" value="$(arg agent_id)"/>
-      <param name="pose_frame_id" value="map"/>
+      <param name="pose_frame_id" value="arena"/>
+      <param name="home_pose_parent_frame" value="arena"/>
       <!-- <param name="home_pose" value="[10, 10, 10]"/>       -->
       <!-- <rosparam param="home_pose">[20, 20, 20]</rosparam> -->
       <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>

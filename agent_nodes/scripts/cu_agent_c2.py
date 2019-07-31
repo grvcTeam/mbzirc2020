@@ -32,9 +32,9 @@ def print_path(path):
     print(']')
 
 # TODO: All these parameters from config!
-field_width = 10  # 60  # TODO: Field is 60 x 50
-field_height = 10  # 50  # TODO: Field is 60 x 50
-column_count = 2  # 6  # TODO: as a function of fov
+field_width = 20  # 60  # TODO: Field is 60 x 50
+field_height = 20  # 50  # TODO: Field is 60 x 50
+column_count = 4  # 6  # TODO: as a function of fov
 def generate_uav_paths(uav_count):
     if uav_count <= 0:
         return []
@@ -90,7 +90,7 @@ def main():
         # print_path(point_path)
         for point in point_path:
             waypoint = PoseStamped()
-            waypoint.header.frame_id = 'map'  # TODO: other frame_id
+            waypoint.header.frame_id = 'arena'  # TODO: other frame_id?
             waypoint.pose.position = point
             waypoint.pose.orientation.z = 0
             waypoint.pose.orientation.w = 1  # TODO: other orientation?

@@ -14,18 +14,18 @@ from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest
 
 def build_ask_for_region_request(agent_id, initial_pose, final_pose, radius = 1.0):
-    if initial_pose.header.frame_id != 'map':
+    if initial_pose.header.frame_id != 'arena':
         raise ValueError('frame_id = {} not expected'.format(initial_pose.header.frame_id))  # TODO: transform?
-    if final_pose.header.frame_id != 'map':
+    if final_pose.header.frame_id != 'arena':
         raise ValueError('frame_id = {} not expected'.format(final_pose.header.frame_id))  # TODO: transform?
 
     request = AskForRegionRequest()
     request.agent_id = agent_id
-    request.min_corner.header.frame_id = 'map'
+    request.min_corner.header.frame_id = 'arena'
     request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
     request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
     request.min_corner.point.z = min(initial_pose.pose.position.z - radius, final_pose.pose.position.z - radius)
-    request.max_corner.header.frame_id = 'map'
+    request.max_corner.header.frame_id = 'arena'
     request.max_corner.point.x = max(initial_pose.pose.position.x + radius, final_pose.pose.position.x + radius)
     request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
     request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)

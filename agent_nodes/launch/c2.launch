@@ -2,6 +2,10 @@
 <launch>
 
 	<arg name="mode" default="sim"/>
+    <arg name="arena_yaw" default="0.01"/>
+
+    <!-- Use tf to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id period_in_ms -->
+    <node pkg="tf" type="static_transform_publisher" name="map_to_arena_tf" args="-10 -10 0 $(arg arena_yaw) 0 0 map arena 10"/>
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
@@ -23,9 +27,10 @@
       <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
       <arg name="flight_level" value="15.0"/>
-      <arg name="x" value="-5"/>
-      <arg name="y" value="0"/>
+      <arg name="x" value="9"/>
+      <arg name="y" value="5"/>
       <arg name="z" value="0"/>
+      <arg name="yaw" value="1.570796327"/>
   </include>
 
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
@@ -34,9 +39,10 @@
       <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
       <arg name="flight_level" value="10.0"/>
-      <arg name="x" value="5"/>
-      <arg name="y" value="0"/>
+      <arg name="x" value="11"/>
+      <arg name="y" value="5"/>
       <arg name="z" value="0"/>
+      <arg name="yaw" value="1.570796327"/>
   </include>
 
 </launch>
