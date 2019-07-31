@@ -22,8 +22,8 @@
       <arg name="ns" value="uav"/>
       <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
-      <arg name="flight_level" value="2.0"/>
-      <arg name="x" value="5"/>
+      <arg name="flight_level" value="15.0"/>
+      <arg name="x" value="-5"/>
       <arg name="y" value="0"/>
       <arg name="z" value="0"/>
   </include>
@@ -33,8 +33,8 @@
       <arg name="ns" value="uav"/>
       <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
-      <arg name="flight_level" value="2.0"/>
-      <arg name="x" value="-5"/>
+      <arg name="flight_level" value="10.0"/>
+      <arg name="x" value="5"/>
       <arg name="y" value="0"/>
       <arg name="z" value="0"/>
   </include>

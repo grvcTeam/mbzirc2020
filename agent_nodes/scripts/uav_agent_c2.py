@@ -32,6 +32,17 @@ def build_ask_for_region_request(agent_id, initial_pose, final_pose, radius = 1.
 
     return request
 
+class Sleep(smach.State):
+    def __init__(self, duration = 3.0):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
+        self.duration = duration
+
+    def execute(self, userdata):
+        rospy.sleep(self.duration)
+        return 'succeeded'
+        # TODO: aborted?
+        # TODO: preempted?
+
 class GoToTask(smach.StateMachine):
 
     def __init__(self):
@@ -68,7 +79,10 @@ class GoToTask(smach.StateMachine):
                                     output_keys = ['waypoint'],
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'GO_TO'})
+                                    transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP'})
+
+            smach.StateMachine.add('SLEEP', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
 
             def go_to_goal_callback(userdata, default_goal):
                 goal = GoToGoal(waypoint = userdata.waypoint)
@@ -93,25 +107,14 @@ class GoToTask(smach.StateMachine):
 
 class WaypointDispatch(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'], output_keys = ['waypoint'])
-        self.waypoint_index = 0
-    
-    def execute(self, userdata):
-        if self.waypoint_index >= len(userdata.path):
-            return 'aborted'
-        else:
-            userdata.waypoint = userdata.path[self.waypoint_index]
-            self.waypoint_index += 1
-            return 'succeeded'
-        # TODO: preempted?
-
-class Sleep(smach.State):
-    def __init__(self, duration = 3.0):
-        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
-        self.duration = duration
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
+        self.go_to_task = GoToTask()
 
     def execute(self, userdata):
-        rospy.sleep(self.duration)
+        for waypoint in userdata.path:
+            child_userdata = smach.UserData()
+            child_userdata.waypoint = waypoint
+            self.go_to_task.execute(child_userdata)
         return 'succeeded'
         # TODO: aborted?
         # TODO: preempted?
@@ -125,23 +128,29 @@ class FollowPathTask(smach.StateMachine):
 
             smach.StateMachine.add('DISPATCH', WaypointDispatch(),
                                     remapping = {'path': 'path', 'waypoint': 'waypoint'},
-                                    transitions = {'succeeded': 'GO_TO_TASK'})
+                                    transitions = {'succeeded': 'succeeded'})
 
-            smach.StateMachine.add('GO_TO_TASK', GoToTask(), 
-                                    remapping = {'waypoint': 'waypoint'},
-                                    transitions = {'succeeded': 'DISPATCH', 'aborted': 'SLEEP'}
-            )
+            # smach.StateMachine.add('GO_TO_TASK', GoToTask(), 
+            #                         remapping = {'waypoint': 'waypoint'},
+            #                         transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP'}
+            # )
 
-            smach.StateMachine.add('SLEEP', Sleep(1.0),
-                                    remapping = {'waypoint': 'waypoint'},
-                                    transitions = {'succeeded': 'GO_TO_TASK'})
+            # smach.StateMachine.add('SLEEP', Sleep(1.0),
+            #                         # remapping = {'waypoint': 'waypoint'},
+            #                         transitions = {'succeeded': 'GO_TO_TASK'})
+
+    # def execute(self, userdata):
+    #     for waypoint in userdata.path:
+    #         child_userdata = smach.UserData()
+    #         child_userdata.waypoint = waypoint
+    #         self.execute(child_userdata)
 
 class Agent(object):
 
     def __init__(self):
         self.follow_path_task = FollowPathTask()
-        self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = True)
-        # self._as.start()
+        self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)
+        self.follow_path_action_server.start()
       
     def follow_path_callback(self, goal):
         userdata = smach.UserData()
