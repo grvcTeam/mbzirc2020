@@ -57,7 +57,7 @@ public:
   }
 
   void hoverCallback(const mbzirc_comm_objs::HoverGoalConstPtr &_goal) {
-    ROS_INFO("Hover!");
+    // ROS_INFO("Hover!");
     // mbzirc_comm_objs::HoverFeedback feedback;
     mbzirc_comm_objs::HoverResult result;
 
@@ -101,7 +101,7 @@ public:
   }
 
   void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal) {
-    ROS_INFO("Go to!");
+    // ROS_INFO("Go to!");
     // mbzirc_comm_objs::GoToFeedback feedback;
     mbzirc_comm_objs::GoToResult result;
 
@@ -162,7 +162,7 @@ public:
  */
 
   void followPathCallback(const mbzirc_comm_objs::FollowPathGoalConstPtr &_goal) {
-    ROS_INFO("Follow path!");  // TODO: check for collisions?
+    // ROS_INFO("Follow path!");  // TODO: check for collisions?
     // mbzirc_comm_objs::GoToFeedback feedback;
     mbzirc_comm_objs::FollowPathResult result;
     // TODO: Fill result
