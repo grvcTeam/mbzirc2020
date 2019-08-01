@@ -14,7 +14,7 @@
   <xacro:arg name='enable_logging' default='false' />
 
   <!-- macros for gazebo plugins, sensors -->
-  <xacro:include filename="$(find uavs_description)/models/mbzirc2020/component_snippets.xacro" />
+  <xacro:include filename="$(find robots_description)/urdf/component_snippets.xacro" />
 
   <!-- Instantiate mbzirc "mechanics" -->
   <xacro:include filename="$(find uavs_description)/models/mbzirc2020/geometry.xacro" />

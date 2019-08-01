@@ -16,13 +16,16 @@
 
     <!-- <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel" output="screen" args="-description_package=uavs_description -model=dji_f550 -id=$(arg agent_id) -material=$(arg color) -backend=light -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/> -->
     <include file="$(find px4_bringup)/launch/spawn_robot.launch">
+        <arg name="mode" value="sitl"/>
+        <arg name="description_package" value="uavs_description"/>
+        <arg name="robot_model" value="mbzirc2020"/>
         <arg name="id" value="$(arg agent_id)"/>
+        <arg name="material" value="$(arg color)"/>
         <arg name="x" value="$(arg x)"/>
         <arg name="y" value="$(arg y)"/>
         <arg name="z" value="$(arg z)"/>
         <arg name="yaw" value="$(arg yaw)"/>
         <arg name="frame_id" value="arena"/>
-        <arg name="material" value="$(arg color)"/>
     </include>
 
     <node pkg="ual_action_server" type="ual_action_server" name="server" output="screen">
