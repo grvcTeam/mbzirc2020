@@ -5,7 +5,9 @@ import rospy
 import actionlib
 import mbzirc_comm_objs.msg
 from geometry_msgs.msg import PoseStamped, Point
+from mbzirc_comm_objs.msg import ObjectDetectionList
 import math
+import json
 
 def generate_area_path(width, height, column_count, z = 3.0):
     spacing = 0.5 * width / column_count
@@ -56,19 +58,32 @@ def set_z(path, z):
         point.z = z
     return path
 
-# def main():
-#     paths = generate_uav_paths(2)
-#     for path in paths:
-#         print_path(path)
 
 # TODO: Unifying robot_model and ns might be an issue for non homogeneous teams, 
 # but it is somehow forced by the way sensor topics are named in gazebo simulation
+
+piles = {}  # TODO: globals!
+def estimation_callback(data):
+    global piles
+    # pile_list =  ObjectDetectionList()
+    for pile in data.objects:
+        # TODO: check type and scale?
+        properties_dict = {}
+        if pile.properties:
+            properties_dict = json.loads(pile.properties)
+        if 'color' in properties_dict:
+            color = properties_dict['color']  # TODO: reused code!
+            pose = PoseStamped()
+            pose.header = pile.header
+            pose.pose = pile.pose.pose
+            piles[color] = pose
 
 def main():
     rospy.init_node('cu_agent_c2')
     uav_ns = 'mbzirc2020'  # TODO: As a parameter
     available_uavs = [1, 2]  # TODO: auto discovery (and update!)
 
+    rospy.Subscriber("estimated_objects", ObjectDetectionList, estimation_callback)
 
     uav_clients = {}
     for i in range(1,4):
@@ -114,6 +129,9 @@ def main():
         print('waiting result of server {}'.format(uav_id))
         uav_clients[uav_id].wait_for_result()
         print(uav_clients[uav_id].get_result())
+
+    print(piles)
+
 
 if __name__ == '__main__':
     main()
