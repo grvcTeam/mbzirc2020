@@ -61,15 +61,20 @@ def set_z(path, z):
 #     for path in paths:
 #         print_path(path)
 
+# TODO: Unifying robot_model and ns might be an issue for non homogeneous teams, 
+# but it is somehow forced by the way sensor topics are named in gazebo simulation
+
 def main():
     rospy.init_node('cu_agent_c2')
+    uav_ns = 'mbzirc2020'  # TODO: As a parameter
     available_uavs = [1, 2]  # TODO: auto discovery (and update!)
+
 
     uav_clients = {}
     for i in range(1,4):
         if i in available_uavs:
             uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
-            uav_clients[uav_id] = actionlib.SimpleActionClient('/uav_' + uav_id + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+            uav_clients[uav_id] = actionlib.SimpleActionClient(uav_ns + '_' + uav_id + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
 
     for uav_id in uav_clients:
         print('waiting for server {}'.format(uav_id))
@@ -78,7 +83,7 @@ def main():
     uav_params = {}
     for uav_id in uav_clients:
         uav_params[uav_id] = {}
-        namespace = 'uav_' + uav_id + '/agent_node/'
+        namespace = uav_ns + '_' + uav_id + '/agent_node/'
         uav_params[uav_id]['flight_level'] = rospy.get_param(namespace + 'flight_level')
 
     uav_paths = {}

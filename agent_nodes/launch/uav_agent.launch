@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="ns" default="uav" />
+  <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
   <arg name="color" default="Orange" />
   <arg name="flight_level" default="2.0" />
@@ -9,16 +9,17 @@
   <arg name="z" default="0" />
   <arg name="yaw" default="0" />
   
-  <group ns="$(arg ns)_$(arg agent_id)">
+  <group ns="$(arg robot_model)_$(arg agent_id)">
+    <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
 
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg ns)__$(arg agent_id)/base_link $(arg ns)_$(arg agent_id)/gripper_link 10"/>
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg ns)_$(arg agent_id)/base_link $(arg ns)_$(arg agent_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
 
     <!-- <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel" output="screen" args="-description_package=uavs_description -model=dji_f550 -id=$(arg agent_id) -material=$(arg color) -backend=light -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/> -->
     <include file="$(find px4_bringup)/launch/spawn_robot.launch">
         <arg name="mode" value="sitl"/>
         <arg name="description_package" value="uavs_description"/>
-        <arg name="robot_model" value="mbzirc2020"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="id" value="$(arg agent_id)"/>
         <arg name="material" value="$(arg color)"/>
         <arg name="x" value="$(arg x)"/>
@@ -44,12 +45,12 @@
       <!-- <param name="z_offset" value="0.5" type="double"/> -->
       <!-- <param name="height" value="$(arg height)" type="double"/> -->
       <!-- <param name="global_frame" value="map"/> -->
-      <!-- <param name="uav_frame" value="$(arg ns)_$(arg agent_id)/base_link"/> -->
-      <!-- <param name="gripper_frame" value="$(arg ns)_$(arg agent_id)/gripper_link"/> -->
+      <!-- <param name="uav_frame" value="$(arg robot_model)_$(arg agent_id)/base_link"/> -->
+      <!-- <param name="gripper_frame" value="$(arg robot_model)_$(arg agent_id)/gripper_link"/> -->
       <!-- <param name="aov" value="40"/> -->
     </node>
 
-    <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/> -->
+    <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/>
 
   </group>
 </launch>
