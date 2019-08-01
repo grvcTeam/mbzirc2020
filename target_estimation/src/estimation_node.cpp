@@ -48,15 +48,6 @@ protected:
                         float y_new = y_min + 0.5 * y_scale;
                         float z_new = 0.5 * z_scale;
 
-                        // float sensed_weight = sensed_radius / (sensed_radius + target_radius);
-                        // float x_new = sensed_weight * sensed.pose.pose.position.x + (1.0 - sensed_weight) * target.pose.pose.position.x;
-                        // float y_new = sensed_weight * sensed.pose.pose.position.y + (1.0 - sensed_weight) * target.pose.pose.position.y;
-                        // float z_new = sensed_weight * sensed.pose.pose.position.z + (1.0 - sensed_weight) * target.pose.pose.position.z;
-
-                        // float x_scale = std::max(x_max - x_new, x_new - x_min);
-                        // float y_scale = std::max(y_max - y_new, y_new - y_min);
-                        // float z_scale = std::max(sensed.scale.z, target.scale.z);  // Supose all objects are at thes same height
-
                         // TODO: Something with covariance?
                         target.pose.pose.position.x = x_new;
                         target.pose.pose.position.y = y_new;
@@ -65,9 +56,6 @@ protected:
                         target.scale.y = y_scale;
                         target.scale.z = z_scale;
                     }
-                    // if (sensed.scale.x > target.scale.x) { target.scale.x = sensed.scale.x; }
-                    // if (sensed.scale.y > target.scale.y) { target.scale.y = sensed.scale.y; }
-                    // if (sensed.scale.z > target.scale.z) { target.scale.z = sensed.scale.z; }
                     first_time_sensed = false;
                     break;
                 }
