@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="ns" default="dji_f550" />
+    <arg name="ns" default="mbzirc2020" />
 
     <!-- TODO: Always all robots? -->
     <node ns="$(arg ns)_1" name="visualize_object_detection" pkg="mbzirc_visualization" type="visualize_object_detection.py" output="screen"/>
     <node ns="$(arg ns)_2" name="visualize_object_detection" pkg="mbzirc_visualization" type="visualize_object_detection.py" output="screen"/>
+    <node                  name="visualize_object_detection" pkg="mbzirc_visualization" type="visualize_object_detection.py" output="screen" args="-topic=estimated_objects"/>
 
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find mbzirc_visualization)/config/c2.rviz"/>
 
