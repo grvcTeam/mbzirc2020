@@ -60,7 +60,10 @@ class GoToTask(smach.StateMachine):
                                     input_keys = ['waypoint'],
                                     output_keys = ['waypoint'],
                                     goal_cb = hover_goal_callback),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE', 'aborted': 'SLEEP_AND_RETRY_HOVER'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_HOVER', Sleep(3.0),
+                                    transitions = {'succeeded': 'HOVER'})
 
             # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
@@ -79,9 +82,9 @@ class GoToTask(smach.StateMachine):
                                     output_keys = ['waypoint'],
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP'})
+                                    transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
 
-            smach.StateMachine.add('SLEEP', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
 
             def go_to_goal_callback(userdata, default_goal):
@@ -156,7 +159,7 @@ class Agent(object):
         userdata = smach.UserData()
         userdata.path = goal.path
         outcome = self.follow_path_task.execute(userdata)
-        print(outcome)
+        print('follow_path_callback output: {}'.format(outcome))
         self.follow_path_action_server.set_succeeded()
 
 def main():
