@@ -5,9 +5,6 @@
     <arg name="robot_model" default="mbzirc2020"/>
     <arg name="arena_yaw" default="0.01"/>
 
-    <!-- Use tf to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id period_in_ms -->
-    <node pkg="tf" type="static_transform_publisher" name="map_to_arena_tf" args="-10 -10 0 $(arg arena_yaw) 0 0 map arena 10"/>
-
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
@@ -18,6 +15,9 @@
             <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
         </node>
     </group>
+
+    <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="-10 -10 0 $(arg arena_yaw) 0 0 map arena" />
 
   <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
   <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
