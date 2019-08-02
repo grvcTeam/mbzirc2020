@@ -147,39 +147,35 @@ def get_build_wall_sequence(wall_blueprint):
 
 def main():
     rospy.init_node('cu_agent_c2')
-    uavs_ns = 'mbzirc2020'  # TODO: As a parameter
-    available_uavs = [1, 2]  # TODO: auto discovery (and update!)
+    agents_ns = 'mbzirc2020'  # TODO: As a parameter
+    available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+
+    uavs_ns = {}
+    for uav_id in available_uavs:
+        uavs_ns[uav_id] = agents_ns + '_' + uav_id
 
     rospy.Subscriber("estimated_objects", ObjectDetectionList, estimation_callback)
 
+    uav_params = {}
     uav_clients = {}  # TODO: is this AgentInterface?
-    for i in available_uavs:
-        uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
-        uav_ns = uavs_ns + '_' + uav_id
-        # TODO: solve uav_id issue!
+    for uav_id in available_uavs:
         uav_clients[uav_id] = {}
-        uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uav_ns + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
-        uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uav_ns + '/get_cost_to_go_to', GetCostToGoTo)
-
-    for uav_id in uav_clients:
-        uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
-        uav_ns = uavs_ns + '_' + uav_id
+        uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+        uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
 
         print('waiting for server {}'.format(uav_id))
         uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
-        rospy.wait_for_service(uav_ns + '/get_cost_to_go_to')  # TODO: Timeout!
+        rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
 
-    uav_params = {}
-    for uav_id in uav_clients:
         uav_params[uav_id] = {}
-        namespace = uavs_ns + '_' + uav_id + '/agent_node/'
-        uav_params[uav_id]['flight_level'] = rospy.get_param(namespace + 'flight_level')
+        agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
+        uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')
 
     uav_paths = {}
     point_paths = generate_uav_paths(len(available_uavs))
     for i, uav_id in enumerate(available_uavs):
         uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
-        flight_level = uav_params[str(uav_id)]['flight_level']
+        flight_level = uav_params[uav_id]['flight_level']
         point_path = set_z(point_paths[i], flight_level)
         # print_path(point_path)
         for point in point_path:
@@ -190,16 +186,16 @@ def main():
             waypoint.pose.orientation.w = 1  # TODO: other orientation?
             uav_path.path.append(waypoint)
             # print(waypoint)
-        uav_paths[str(uav_id)] = uav_path
+        uav_paths[uav_id] = uav_path
 
     # for uav_id in uav_paths:
     #     print(uav_paths[uav_id])
 
-    for uav_id in uav_clients:
+    for uav_id in available_uavs:
         print('sending goal to server {}'.format(uav_id))
         uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
-    for uav_id in uav_clients:
+    for uav_id in available_uavs:
         print('waiting result of server {}'.format(uav_id))
         uav_clients[uav_id]['follow_path'].wait_for_result()
         print(uav_clients[uav_id]['follow_path'].get_result())
@@ -210,8 +206,7 @@ def main():
         for brick in row:
             print('row[{}] brick = {}'.format(i, brick))
             # costs = {}
-            for j in available_uavs:
-                uav_id = str(j)  # TODO: force id to be a string to avoid index confussion?
+            for uav_id in available_uavs:
                 # TODO: check that uav is idle!
                 cost = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color])
                 # costs[uav_id] = cost
