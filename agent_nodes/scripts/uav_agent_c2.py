@@ -6,12 +6,14 @@ import smach_ros
 import time
 import random
 import actionlib
+import tf2_ros
+import tf2_geometry_msgs
 
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from geometry_msgs.msg import PoseStamped
-from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest
+from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
 
 def build_ask_for_region_request(agent_id, initial_pose, final_pose, radius = 1.0):
     if initial_pose.header.frame_id != 'arena':
@@ -151,16 +153,41 @@ class FollowPathTask(smach.StateMachine):
 class Agent(object):
 
     def __init__(self):
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
         self.follow_path_task = FollowPathTask()
-        self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)
+        self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.follow_path_action_server.start()
-      
+
+        rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
+
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
+
+    def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
+        self.ual_pose = data
+
     def follow_path_callback(self, goal):
         userdata = smach.UserData()
         userdata.path = goal.path
         outcome = self.follow_path_task.execute(userdata)
         print('follow_path_callback output: {}'.format(outcome))
         self.follow_path_action_server.set_succeeded()
+
+    def get_cost_to_go_to(self, req):
+        # TODO: these try/except inside a function?
+        waypoint = PoseStamped()
+        try:
+           waypoint = self.tf_buffer.transform(req.waypoint, self.ual_pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
+        except:
+            rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(req.waypoint.header.frame_id, self.ual_pose.header.frame_id))
+
+        delta_x = waypoint.pose.position.x - self.ual_pose.pose.position.x
+        delta_y = waypoint.pose.position.y - self.ual_pose.pose.position.y
+        delta_z = waypoint.pose.position.z - self.ual_pose.pose.position.z
+        manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
+        return GetCostToGoToResponse(cost = manhattan_distance)
 
 def main():
     rospy.init_node('uav_agent')

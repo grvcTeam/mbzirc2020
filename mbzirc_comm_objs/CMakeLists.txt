@@ -68,6 +68,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    SearchForBrickPiles.srv
    SearchAndBuild.srv
    SetAgentProp.srv
+   GetCostToGoTo.srv
  )
 
 ## Generate actions in the 'action' folder
