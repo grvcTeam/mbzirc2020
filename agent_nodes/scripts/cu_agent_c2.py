@@ -1,11 +1,27 @@
 #!/usr/bin/env python
 
+# PARAMETER	SPECIFICATION
+# Number of UAVs per team	Maximum of 3
+# Number of UGVs per team	1
+# Arena size	50mx60mx20m
+# Brick shapes and material	Rectangular cube, Styrofoam material
+# Bricks size (Red, Green, Blue)	Approximately 0.30mx0.20mx0.20m, 0.60mx0.20mx0.20m and1.20x0.20x0.20m
+# Bricks size (Orange)	1.80x0.20x0.20 m
+# Weight of bricks	O <= 2.0kg , B <= 1.5kg , G <= 1kg , R <= 1kg,
+# Brick gripping mechanism	Primarily magnetic, but other gripping mechanisms could be used
+# Environment	Outdoor
+# Mode of operation	Autonomous; manual allowed but penalized
+# RTK/DGPS	Allowed but penalized
+# Challenge duration	30 minutes
+# Communications	TBD
+
 import rospy
 # import smach
 import actionlib
 import mbzirc_comm_objs.msg
-from geometry_msgs.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point, Vector3
 from mbzirc_comm_objs.msg import ObjectDetectionList
+from mbzirc_comm_objs.srv import GetCostToGoTo
 import math
 import json
 
@@ -78,27 +94,85 @@ def estimation_callback(data):
             pose.pose = pile.pose.pose
             piles[color] = pose
 
+# TODO: use enums instead of strings
+brick_scales = {}
+brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['green'] = Vector3(x = 0.6, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
+
+# TODO: from especification, assume x-z layout
+wall_blueprint = [['red', 'green', 'blue', 'orange'], ['orange', 'blue', 'green', 'red']]
+
+class BrickInWall(object):
+    def __init__(self, color, position):
+        self.color = color
+        self.pose = PoseStamped()
+        self.pose.header.frame_id = 'wall'  # TODO: define this frame
+        self.pose.pose.position = position
+        self.pose.pose.orientation.w = 1  # Assume wall is x-oriented
+
+    def __repr__(self):
+        return '[color = {}, pose = [{}: ({},{},{}) ({},{},{},{})]]'.format(self.color, self.pose.header.frame_id, 
+                self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, 
+                self.pose.pose.orientation.x, self.pose.pose.orientation.y, self.pose.pose.orientation.z, self.pose.pose.orientation.w)
+
+def get_build_wall_sequence(wall_blueprint):
+    buid_wall_sequence = []
+    current_z = 0.0
+    for brick_row in wall_blueprint:
+        current_x = 0.0
+        build_row_sequence = []
+        for brick_color in brick_row:
+            brick_position = Point()
+            brick_position.x = current_x + 0.5 * brick_scales[brick_color].x
+            brick_position.y = 0.5 * brick_scales[brick_color].y
+            brick_position.z = current_z + 0.5 * brick_scales[brick_color].z
+            current_x += brick_scales[brick_color].x
+
+            brick_in_wall = BrickInWall(color = brick_color, position = brick_position)
+            build_row_sequence.append(brick_in_wall)
+
+        buid_wall_sequence.append(build_row_sequence)
+        current_z += brick_scales['red'].z  # As all bricks (should) have the same height
+    return buid_wall_sequence
+
+
+# def main():
+#     buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
+#     for i, row in enumerate(buid_wall_sequence):
+#         for brick in row:
+#             print('row[{}].pose = {}'.format(i, brick))
+
+
 def main():
     rospy.init_node('cu_agent_c2')
-    uav_ns = 'mbzirc2020'  # TODO: As a parameter
+    uavs_ns = 'mbzirc2020'  # TODO: As a parameter
     available_uavs = [1, 2]  # TODO: auto discovery (and update!)
 
     rospy.Subscriber("estimated_objects", ObjectDetectionList, estimation_callback)
 
-    uav_clients = {}
-    for i in range(1,4):
-        if i in available_uavs:
-            uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
-            uav_clients[uav_id] = actionlib.SimpleActionClient(uav_ns + '_' + uav_id + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+    uav_clients = {}  # TODO: is this AgentInterface?
+    for i in available_uavs:
+        uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
+        uav_ns = uavs_ns + '_' + uav_id
+        # TODO: solve uav_id issue!
+        uav_clients[uav_id] = {}
+        uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uav_ns + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+        uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uav_ns + '/get_cost_to_go_to', GetCostToGoTo)
 
     for uav_id in uav_clients:
+        uav_id = str(i)  # TODO: force id to be a string to avoid index confussion?
+        uav_ns = uavs_ns + '_' + uav_id
+
         print('waiting for server {}'.format(uav_id))
-        uav_clients[uav_id].wait_for_server()  # TODO: Timeout!
+        uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
+        rospy.wait_for_service(uav_ns + '/get_cost_to_go_to')  # TODO: Timeout!
 
     uav_params = {}
     for uav_id in uav_clients:
         uav_params[uav_id] = {}
-        namespace = uav_ns + '_' + uav_id + '/agent_node/'
+        namespace = uavs_ns + '_' + uav_id + '/agent_node/'
         uav_params[uav_id]['flight_level'] = rospy.get_param(namespace + 'flight_level')
 
     uav_paths = {}
@@ -123,14 +197,26 @@ def main():
 
     for uav_id in uav_clients:
         print('sending goal to server {}'.format(uav_id))
-        uav_clients[uav_id].send_goal(uav_paths[uav_id])
+        uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
     for uav_id in uav_clients:
         print('waiting result of server {}'.format(uav_id))
-        uav_clients[uav_id].wait_for_result()
-        print(uav_clients[uav_id].get_result())
+        uav_clients[uav_id]['follow_path'].wait_for_result()
+        print(uav_clients[uav_id]['follow_path'].get_result())
 
-    print(piles)
+    # print(piles)  # TODO: cache it?
+    buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
+    for i, row in enumerate(buid_wall_sequence):
+        for brick in row:
+            print('row[{}] brick = {}'.format(i, brick))
+            # costs = {}
+            for j in available_uavs:
+                uav_id = str(j)  # TODO: force id to be a string to avoid index confussion?
+                # TODO: check that uav is idle!
+                cost = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color])
+                # costs[uav_id] = cost
+                # print(piles[brick.color])
+                print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, cost))
 
 
 if __name__ == '__main__':
