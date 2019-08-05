@@ -86,7 +86,7 @@ brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config f
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green', 'blue', 'orange'], ['orange', 'blue', 'green', 'red']]
+wall_blueprint = [['red', 'green', 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
 
 class BrickInWall(object):
     def __init__(self, color, position):
@@ -143,7 +143,7 @@ class Agent(object):
             self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
             self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
 
-            print('waiting for server {}'.format(uav_id))
+            print('waiting for servers of agent [{}]'.format(uav_id))
             self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
             self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
             rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
@@ -199,7 +199,7 @@ class Agent(object):
             self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
         for uav_id in self.available_uavs:
-            print('waiting result of server {}'.format(uav_id))
+            print('waiting result of follow_path server [{}]'.format(uav_id))
             self.uav_clients[uav_id]['follow_path'].wait_for_result()
             print(self.uav_clients[uav_id]['follow_path'].get_result())
 
@@ -211,28 +211,59 @@ class Agent(object):
             for brick in row:
                 print('row[{}] brick = {}'.format(i, brick))
                 costs = {}
-                for uav_id in self.available_uavs:
-                    if self.uav_data_feeds[uav_id].is_idle:
-                        costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](self.piles[brick.color]).cost
-                # for uav_id in costs:
-                #     print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, costs[uav_id]))
-                print(costs)
-                if costs:
-                    min_cost_uav_id = min(costs, key = costs.get)
-                    print(min_cost_uav_id)
-                    goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
-                    goal.pile_pose = self.piles[brick.color]
-                    goal.brick_in_wall_pose = brick.pose
-                    self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
+                while not costs:
+                    for uav_id in self.available_uavs:
+                        if self.uav_data_feeds[uav_id].is_idle:
+                            costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](self.piles[brick.color]).cost
+                        else:
+                            rospy.sleep(0.5)
+                min_cost_uav_id = min(costs, key = costs.get)
+                print('costs: {}, min_cost_id: {}'.format(costs, min_cost_uav_id))
+                goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
+                goal.pile_pose = self.piles[brick.color]
+                goal.brick_in_wall_pose = brick.pose
+                self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
                 # TODO: Some sleep here?
                 rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
+        for uav_id in self.available_uavs:
+            print('waiting result of pick_and_place server [{}]'.format(uav_id))
+            self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
+            print(self.uav_clients[uav_id]['pick_and_place'].get_result())
+
+    def finish(self):
+        # TODO: proper finish function with landing and champagne!
+        uav_paths = {}
+        for uav_id in self.available_uavs:
+            uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
+            flight_level = self.uav_params[uav_id]['flight_level']
+            waypoint = PoseStamped()
+            waypoint.header.frame_id = 'arena'
+            waypoint.pose.position.x = 0
+            waypoint.pose.position.y = 0
+            waypoint.pose.position.z = flight_level
+            waypoint.pose.orientation.z = 0
+            waypoint.pose.orientation.w = 1  # TODO: other orientation?
+            uav_path.path.append(waypoint)
+            uav_paths[uav_id] = uav_path
+
+        for uav_id in self.available_uavs:
+            print('sending goal to server {}'.format(uav_id))
+            self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
+
+        for uav_id in self.available_uavs:
+            print('waiting result of follow_path server [{}]'.format(uav_id))
+            self.uav_clients[uav_id]['follow_path'].wait_for_result()
+            print(self.uav_clients[uav_id]['follow_path'].get_result())
 
 def main():
     rospy.init_node('cu_agent_c2')
 
     central_agent = Agent()
-    central_agent.look_for_piles()
+    rospy.sleep(3)
+
+    # central_agent.look_for_piles()
     central_agent.build_wall()
+    central_agent.finish()
 
 
 if __name__ == '__main__':
