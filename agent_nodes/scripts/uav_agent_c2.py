@@ -13,27 +13,9 @@ from mbzirc_comm_objs.msg import AgentDataFeed
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
+from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
-
-def build_ask_for_region_request(agent_id, initial_pose, final_pose, radius = 1.0):
-    if initial_pose.header.frame_id != 'arena':
-        raise ValueError('frame_id = {} not expected'.format(initial_pose.header.frame_id))  # TODO: transform?
-    if final_pose.header.frame_id != 'arena':
-        raise ValueError('frame_id = {} not expected'.format(final_pose.header.frame_id))  # TODO: transform?
-
-    request = AskForRegionRequest()
-    request.agent_id = agent_id
-    request.min_corner.header.frame_id = 'arena'
-    request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
-    request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
-    request.min_corner.point.z = min(initial_pose.pose.position.z - radius, final_pose.pose.position.z - radius)
-    request.max_corner.header.frame_id = 'arena'
-    request.max_corner.point.x = max(initial_pose.pose.position.x + radius, final_pose.pose.position.x + radius)
-    request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
-    request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
-
-    return request
 
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
@@ -51,12 +33,16 @@ class GoToTask(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
 
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: repeatd code, AgentInterface?
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
         with self:
 
             # TODO: move outside! Rename action to takeoff!
             def hover_goal_callback(userdata, default_goal):
                 flight_level = rospy.get_param('~flight_level')
                 goal = HoverGoal(height = flight_level)
+                # userdata.waypoint.pose.position.z = flight_level  # TODO: force flight_level here?!
                 return goal
             # TODO: move outside! Rename action to takeoff!
             smach.StateMachine.add('HOVER', smach_ros.SimpleActionState('hover_action', HoverAction,
@@ -71,7 +57,7 @@ class GoToTask(smach.StateMachine):
             # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
                 agent_id = rospy.get_param('~agent_id')
-                ask_for_region_request = build_ask_for_region_request(agent_id, self.ual_pose, userdata.waypoint)
+                ask_for_region_request = self.build_ask_for_region_request(agent_id, self.ual_pose, userdata.waypoint)
                 return ask_for_region_request
 
             def ask_for_region_response_callback(userdata, response):
@@ -111,6 +97,28 @@ class GoToTask(smach.StateMachine):
     def ual_pose_callback(self, data):
         self.ual_pose = data
 
+    def build_ask_for_region_request(self, agent_id, initial_pose, final_pose, radius = 1.0):
+        try:
+            if initial_pose.header.frame_id != 'arena':
+                initial_pose = self.tf_buffer.transform(initial_pose, 'arena', rospy.Duration(1.0))
+            if final_pose.header.frame_id != 'arena':
+                final_pose = self.tf_buffer.transform(final_pose, 'arena', rospy.Duration(1.0))
+        except:
+            rospy.logerr('Failed to transform points to [{}], ignoring!'.format('arena'))
+
+        request = AskForRegionRequest()
+        request.agent_id = agent_id
+        request.min_corner.header.frame_id = 'arena'
+        request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
+        request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
+        request.min_corner.point.z = min(initial_pose.pose.position.z - radius, final_pose.pose.position.z - radius)
+        request.max_corner.header.frame_id = 'arena'
+        request.max_corner.point.x = max(initial_pose.pose.position.x + radius, final_pose.pose.position.x + radius)
+        request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
+        request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
+
+        return request
+
 class WaypointDispatch(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
@@ -133,32 +141,37 @@ class FollowPathTask(smach.StateMachine):
         with self:
 
             smach.StateMachine.add('DISPATCH', WaypointDispatch(),
-                                    remapping = {'path': 'path', 'waypoint': 'waypoint'},
+                                    remapping = {'path': 'path'},
                                     transitions = {'succeeded': 'succeeded'})
 
-            # smach.StateMachine.add('GO_TO_TASK', GoToTask(), 
-            #                         remapping = {'waypoint': 'waypoint'},
-            #                         transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP'}
-            # )
+class PickAndPlaceTask(smach.StateMachine):
 
-            # smach.StateMachine.add('SLEEP', Sleep(1.0),
-            #                         # remapping = {'waypoint': 'waypoint'},
-            #                         transitions = {'succeeded': 'GO_TO_TASK'})
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_brick_in_wall_pose', 'brick_in_wall_pose'])
 
-    # def execute(self, userdata):
-    #     for waypoint in userdata.path:
-    #         child_userdata = smach.UserData()
-    #         child_userdata.waypoint = waypoint
-    #         self.execute(child_userdata)
+        with self:
+
+            smach.StateMachine.add('GO_TO_PILE', GoToTask(),
+                                    remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'GO_TO_WALL'})
+
+            smach.StateMachine.add('GO_TO_WALL', GoToTask(),
+                                    remapping = {'waypoint': 'above_brick_in_wall_pose'},
+                                    transitions = {'succeeded': 'succeeded'})
 
 class Agent(object):
 
     def __init__(self):
         self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
         self.follow_path_task = FollowPathTask()
         self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.follow_path_action_server.start()
+
+        self.pick_and_place_task = PickAndPlaceTask()
+        self.pick_and_place_action_server = actionlib.SimpleActionServer('task/pick_and_place', PickAndPlaceAction, execute_cb = self.pick_and_place_callback, auto_start = False)  # TODO: change naming from task to agent?
+        self.pick_and_place_action_server.start()
 
         rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
 
@@ -174,6 +187,8 @@ class Agent(object):
         data_feed.is_idle = True
         if self.follow_path_task.is_running():
             data_feed.is_idle = False
+        if self.pick_and_place_task.is_running():
+            data_feed.is_idle = False
         # TODO: Check all other tasks!
         self.feed_publisher.publish(data_feed)
 
@@ -186,6 +201,18 @@ class Agent(object):
         outcome = self.follow_path_task.execute(userdata)
         print('follow_path_callback output: {}'.format(outcome))
         self.follow_path_action_server.set_succeeded()
+
+    def pick_and_place_callback(self, goal):
+        flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+        userdata = smach.UserData()
+        userdata.above_pile_pose = goal.pile_pose
+        userdata.above_pile_pose.pose.position.z = flight_level
+        userdata.above_brick_in_wall_pose = goal.brick_in_wall_pose
+        userdata.above_brick_in_wall_pose.pose.position.z = flight_level
+        userdata.brick_in_wall_pose = goal.brick_in_wall_pose
+        outcome = self.pick_and_place_task.execute(userdata)
+        print('pick_and_place_callback output: {}'.format(outcome))
+        self.pick_and_place_action_server.set_succeeded()
 
     def get_cost_to_go_to(self, req):
         # TODO: these try/except inside a function?

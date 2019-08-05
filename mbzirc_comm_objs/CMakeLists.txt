@@ -79,6 +79,7 @@ add_action_files(
   Hover.action
   GoTo.action
   FollowPath.action
+  PickAndPlace.action
 )
 
 ## Generate added messages and services with any dependencies listed here

@@ -162,18 +162,19 @@ def main():
     uav_data_feeds = {}   # TODO: is this AgentInterface?
     def data_feed_callback(data, uav_id):
         uav_data_feeds[uav_id] = data
-        print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
+        # print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
 
     for uav_id in available_uavs:
         uav_clients[uav_id] = {}
         uav_subscribers[uav_id] = {}
+        uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
         uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
         uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
         uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, data_feed_callback, callback_args = uav_id)
-        # uav_data_feeds[uav_id] = AgentDataFeed()  # This makes it UNINITIALIZED TODO: needed?
 
         print('waiting for server {}'.format(uav_id))
         uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
+        uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
         rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
 
         uav_params[uav_id] = {}
@@ -225,8 +226,12 @@ def main():
             if costs:
                 min_cost_uav_id = min(costs, key = costs.get)
                 print(min_cost_uav_id)
-                # uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(pick_there, place_there)
+                goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
+                goal.pile_pose = piles[brick.color]
+                goal.brick_in_wall_pose = brick.pose
+                uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
             # TODO: Some sleep here?
+            rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
 
 
 if __name__ == '__main__':

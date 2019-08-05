@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import rospy
+import tf2_ros
+import tf2_geometry_msgs
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionResponse
-# from std_msgs.msg import ColorRGBA
 from geometry_msgs.msg import PointStamped, Pose, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -22,14 +23,15 @@ class Interval(object):
         return abs(self.max_value - self.min_value)
 
 class Region(object):
-    def __init__(self, min_corner, max_corner):
+    def __init__(self, min_corner, max_corner, tf_buffer):
         self.frame_id = 'arena'
-
-        if min_corner.header.frame_id != self.frame_id:
-            raise ValueError('frame_id = {} not expected'.format(min_corner.header.frame_id))  # TODO: transform?
-            
-        if max_corner.header.frame_id != self.frame_id:
-            raise ValueError('frame_id = {} not expected'.format(max_corner.header.frame_id))  # TODO: transform?
+        try:
+            if min_corner.header.frame_id != self.frame_id:
+                min_corner = tf_buffer.transform(min_corner, self.frame_id, rospy.Duration(1.0))
+            if max_corner.header.frame_id != self.frame_id:
+                max_corner = tf_buffer.transform(max_corner, self.frame_id, rospy.Duration(1.0))
+        except:
+            rospy.logerr('Failed to transform points to [{}], ignoring!'.format(self.frame_id))
 
         self.x_interval = Interval(min_corner.point.x, max_corner.point.x)
         self.y_interval = Interval(min_corner.point.y, max_corner.point.y)
@@ -61,9 +63,11 @@ class SharedRegionsManager():
         rospy.Service('ask_for_region', AskForRegion, self.ask_for_region_callback)
         self.marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)  # TODO: namespacing?
         rospy.Timer(self.marker_duration, self.publish_marker_callback)
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: repeatd code, AgentInterface?
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
     def ask_for_region_callback(self, req):
-        proposed_region = Region(req.min_corner, req.max_corner)
+        proposed_region = Region(req.min_corner, req.max_corner, self.tf_buffer)
         for owner_id, region in self.regions.items():
             if region.overlaps_with(proposed_region) and owner_id != req.agent_id:
                 rospy.logwarn("Proposed region by agent {} overlaps with agent {}".format(req.agent_id, owner_id))
