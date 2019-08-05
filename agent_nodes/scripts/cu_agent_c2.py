@@ -78,22 +78,6 @@ def set_z(path, z):
 # TODO: Unifying robot_model and ns might be an issue for non homogeneous teams, 
 # but it is somehow forced by the way sensor topics are named in gazebo simulation
 
-piles = {}  # TODO: globals!
-def estimation_callback(data):
-    global piles
-    # pile_list =  ObjectDetectionList()
-    for pile in data.objects:
-        # TODO: check type and scale?
-        properties_dict = {}
-        if pile.properties:
-            properties_dict = json.loads(pile.properties)
-        if 'color' in properties_dict:
-            color = properties_dict['color']  # TODO: reused code!
-            pose = PoseStamped()
-            pose.header = pile.header
-            pose.pose = pile.pose.pose
-            piles[color] = pose
-
 # TODO: use enums instead of strings
 brick_scales = {}
 brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
@@ -137,101 +121,118 @@ def get_build_wall_sequence(wall_blueprint):
         current_z += brick_scales['red'].z  # As all bricks (should) have the same height
     return buid_wall_sequence
 
+class Agent(object):
+    def __init__(self):
+        agents_ns = 'mbzirc2020'  # TODO: As a parameter
+        self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
-# def main():
-#     buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
-#     for i, row in enumerate(buid_wall_sequence):
-#         for brick in row:
-#             print('row[{}].pose = {}'.format(i, brick))
+        uavs_ns = {}
+        for uav_id in self.available_uavs:
+            uavs_ns[uav_id] = agents_ns + '_' + uav_id
 
+        self.uav_params = {}
+        self.uav_clients = {}  # TODO: is this AgentInterface?
+        self.uav_subscribers = {}  # TODO: is this AgentInterface?
+        self.uav_data_feeds = {}   # TODO: is this AgentInterface?
+
+        for uav_id in self.available_uavs:
+            self.uav_clients[uav_id] = {}
+            self.uav_subscribers[uav_id] = {}
+            self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
+            self.uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+            self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
+            self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
+
+            print('waiting for server {}'.format(uav_id))
+            self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
+            self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
+            rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
+
+            self.uav_params[uav_id] = {}
+            agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
+            self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')
+
+        self.piles = {}
+        rospy.Subscriber("estimated_objects", ObjectDetectionList, self.estimation_callback)
+
+    def data_feed_callback(self, data, uav_id):
+        self.uav_data_feeds[uav_id] = data
+        # print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
+
+    def estimation_callback(self, data):
+        # pile_list =  ObjectDetectionList()
+        for pile in data.objects:
+            # TODO: check type and scale?
+            properties_dict = {}
+            if pile.properties:
+                properties_dict = json.loads(pile.properties)
+            if 'color' in properties_dict:
+                color = properties_dict['color']  # TODO: reused code!
+                pose = PoseStamped()
+                pose.header = pile.header
+                pose.pose = pile.pose.pose
+                self.piles[color] = pose
+
+    def look_for_piles(self):
+        uav_paths = {}
+        point_paths = generate_uav_paths(len(self.available_uavs))
+        for i, uav_id in enumerate(self.available_uavs):
+            uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
+            flight_level = self.uav_params[uav_id]['flight_level']
+            point_path = set_z(point_paths[i], flight_level)
+            # print_path(point_path)
+            for point in point_path:
+                waypoint = PoseStamped()
+                waypoint.header.frame_id = 'arena'  # TODO: other frame_id?
+                waypoint.pose.position = point
+                waypoint.pose.orientation.z = 0
+                waypoint.pose.orientation.w = 1  # TODO: other orientation?
+                uav_path.path.append(waypoint)
+                # print(waypoint)
+            uav_paths[uav_id] = uav_path
+
+        # for uav_id in uav_paths:
+        #     print(uav_paths[uav_id])
+
+        for uav_id in self.available_uavs:
+            print('sending goal to server {}'.format(uav_id))
+            self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
+
+        for uav_id in self.available_uavs:
+            print('waiting result of server {}'.format(uav_id))
+            self.uav_clients[uav_id]['follow_path'].wait_for_result()
+            print(self.uav_clients[uav_id]['follow_path'].get_result())
+
+    def build_wall(self):
+        rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
+        # print(piles)  # TODO: cache it? if not piles[r, g, b, o], repeat!!
+        build_wall_sequence = get_build_wall_sequence(wall_blueprint)
+        for i, row in enumerate(build_wall_sequence):
+            for brick in row:
+                print('row[{}] brick = {}'.format(i, brick))
+                costs = {}
+                for uav_id in self.available_uavs:
+                    if self.uav_data_feeds[uav_id].is_idle:
+                        costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](self.piles[brick.color]).cost
+                # for uav_id in costs:
+                #     print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, costs[uav_id]))
+                print(costs)
+                if costs:
+                    min_cost_uav_id = min(costs, key = costs.get)
+                    print(min_cost_uav_id)
+                    goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
+                    goal.pile_pose = self.piles[brick.color]
+                    goal.brick_in_wall_pose = brick.pose
+                    self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
+                # TODO: Some sleep here?
+                rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
 
 def main():
     rospy.init_node('cu_agent_c2')
-    agents_ns = 'mbzirc2020'  # TODO: As a parameter
-    available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
-    uavs_ns = {}
-    for uav_id in available_uavs:
-        uavs_ns[uav_id] = agents_ns + '_' + uav_id
-
-    rospy.Subscriber("estimated_objects", ObjectDetectionList, estimation_callback)
-
-    uav_params = {}
-    uav_clients = {}  # TODO: is this AgentInterface?
-    uav_subscribers = {}  # TODO: is this AgentInterface?
-    uav_data_feeds = {}   # TODO: is this AgentInterface?
-    def data_feed_callback(data, uav_id):
-        uav_data_feeds[uav_id] = data
-        # print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
-
-    for uav_id in available_uavs:
-        uav_clients[uav_id] = {}
-        uav_subscribers[uav_id] = {}
-        uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
-        uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
-        uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
-        uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, data_feed_callback, callback_args = uav_id)
-
-        print('waiting for server {}'.format(uav_id))
-        uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
-        uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
-        rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
-
-        uav_params[uav_id] = {}
-        agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
-        uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')
-
-    uav_paths = {}
-    point_paths = generate_uav_paths(len(available_uavs))
-    for i, uav_id in enumerate(available_uavs):
-        uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
-        flight_level = uav_params[uav_id]['flight_level']
-        point_path = set_z(point_paths[i], flight_level)
-        # print_path(point_path)
-        for point in point_path:
-            waypoint = PoseStamped()
-            waypoint.header.frame_id = 'arena'  # TODO: other frame_id?
-            waypoint.pose.position = point
-            waypoint.pose.orientation.z = 0
-            waypoint.pose.orientation.w = 1  # TODO: other orientation?
-            uav_path.path.append(waypoint)
-            # print(waypoint)
-        uav_paths[uav_id] = uav_path
-
-    # for uav_id in uav_paths:
-    #     print(uav_paths[uav_id])
-
-    for uav_id in available_uavs:
-        print('sending goal to server {}'.format(uav_id))
-        uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
-
-    for uav_id in available_uavs:
-        print('waiting result of server {}'.format(uav_id))
-        uav_clients[uav_id]['follow_path'].wait_for_result()
-        print(uav_clients[uav_id]['follow_path'].get_result())
-
-    rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
-    # print(piles)  # TODO: cache it? if not piles[r, g, b, o], repeat!!
-    buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
-    for i, row in enumerate(buid_wall_sequence):
-        for brick in row:
-            print('row[{}] brick = {}'.format(i, brick))
-            costs = {}
-            for uav_id in available_uavs:
-                if uav_data_feeds[uav_id].is_idle:
-                    costs[uav_id] = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color]).cost
-            # for uav_id in costs:
-            #     print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, costs[uav_id]))
-            print(costs)
-            if costs:
-                min_cost_uav_id = min(costs, key = costs.get)
-                print(min_cost_uav_id)
-                goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
-                goal.pile_pose = piles[brick.color]
-                goal.brick_in_wall_pose = brick.pose
-                uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
-            # TODO: Some sleep here?
-            rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
+    central_agent = Agent()
+    central_agent.look_for_piles()
+    central_agent.build_wall()
 
 
 if __name__ == '__main__':
