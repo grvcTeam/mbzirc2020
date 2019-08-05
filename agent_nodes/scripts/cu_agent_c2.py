@@ -162,7 +162,7 @@ def main():
     uav_data_feeds = {}   # TODO: is this AgentInterface?
     def data_feed_callback(data, uav_id):
         uav_data_feeds[uav_id] = data
-        print('uav_data_feeds[{}] = {}'.format(uav_id, data.status))
+        print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
 
     for uav_id in available_uavs:
         uav_clients[uav_id] = {}
@@ -210,20 +210,22 @@ def main():
         print(uav_clients[uav_id]['follow_path'].get_result())
 
     rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
-    # print(piles)  # TODO: cache it?
+    # print(piles)  # TODO: cache it? if not piles[r, g, b, o], repeat!!
     buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
     for i, row in enumerate(buid_wall_sequence):
         for brick in row:
             print('row[{}] brick = {}'.format(i, brick))
             costs = {}
             for uav_id in available_uavs:
-                if uav_data_feeds[uav_id].status == AgentDataFeed.IDLE:
-                    costs[uav_id] = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color])
+                if uav_data_feeds[uav_id].is_idle:
+                    costs[uav_id] = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color]).cost
             # for uav_id in costs:
             #     print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, costs[uav_id]))
             print(costs)
-            min_cost_uav_id = min(costs, key = costs.get)
-            # uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(pick_here, place_here)
+            if costs:
+                min_cost_uav_id = min(costs, key = costs.get)
+                print(min_cost_uav_id)
+                # uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(pick_there, place_there)
             # TODO: Some sleep here?
 
 

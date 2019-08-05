@@ -171,10 +171,10 @@ class Agent(object):
 
     def update_feed_callback(self, event):
         data_feed = AgentDataFeed()
+        data_feed.is_idle = True
         if self.follow_path_task.is_running():
-            data_feed.status = AgentDataFeed.BUSY
-        else:
-            data_feed.status = AgentDataFeed.IDLE
+            data_feed.is_idle = False
+        # TODO: Check all other tasks!
         self.feed_publisher.publish(data_feed)
 
     def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
