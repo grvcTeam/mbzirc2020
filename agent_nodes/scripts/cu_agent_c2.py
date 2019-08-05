@@ -20,7 +20,7 @@ import rospy
 import actionlib
 import mbzirc_comm_objs.msg
 from geometry_msgs.msg import PoseStamped, Point, Vector3
-from mbzirc_comm_objs.msg import ObjectDetectionList
+from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
 from mbzirc_comm_objs.srv import GetCostToGoTo
 import math
 import json
@@ -158,10 +158,19 @@ def main():
 
     uav_params = {}
     uav_clients = {}  # TODO: is this AgentInterface?
+    uav_subscribers = {}  # TODO: is this AgentInterface?
+    uav_data_feeds = {}   # TODO: is this AgentInterface?
+    def data_feed_callback(data, uav_id):
+        uav_data_feeds[uav_id] = data
+        print('uav_data_feeds[{}] = {}'.format(uav_id, data.status))
+
     for uav_id in available_uavs:
         uav_clients[uav_id] = {}
+        uav_subscribers[uav_id] = {}
         uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
         uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
+        uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, data_feed_callback, callback_args = uav_id)
+        # uav_data_feeds[uav_id] = AgentDataFeed()  # This makes it UNINITIALIZED TODO: needed?
 
         print('waiting for server {}'.format(uav_id))
         uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
@@ -200,18 +209,22 @@ def main():
         uav_clients[uav_id]['follow_path'].wait_for_result()
         print(uav_clients[uav_id]['follow_path'].get_result())
 
+    rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
     # print(piles)  # TODO: cache it?
     buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
     for i, row in enumerate(buid_wall_sequence):
         for brick in row:
             print('row[{}] brick = {}'.format(i, brick))
-            # costs = {}
+            costs = {}
             for uav_id in available_uavs:
-                # TODO: check that uav is idle!
-                cost = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color])
-                # costs[uav_id] = cost
-                # print(piles[brick.color])
-                print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, cost))
+                if uav_data_feeds[uav_id].status == AgentDataFeed.IDLE:
+                    costs[uav_id] = uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color])
+            # for uav_id in costs:
+            #     print('uav[{}] cost to go to the {} pile: {}'.format(uav_id, brick.color, costs[uav_id]))
+            print(costs)
+            min_cost_uav_id = min(costs, key = costs.get)
+            # uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(pick_here, place_here)
+            # TODO: Some sleep here?
 
 
 if __name__ == '__main__':

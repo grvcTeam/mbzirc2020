@@ -9,6 +9,7 @@ import actionlib
 import tf2_ros
 import tf2_geometry_msgs
 
+from mbzirc_comm_objs.msg import AgentDataFeed
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
@@ -155,7 +156,6 @@ class Agent(object):
     def __init__(self):
         self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-
         self.follow_path_task = FollowPathTask()
         self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.follow_path_action_server.start()
@@ -164,6 +164,18 @@ class Agent(object):
 
         self.ual_pose = PoseStamped()
         rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
+
+        # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
+        self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
+        rospy.Timer(rospy.Duration(0.2), self.update_feed_callback)  # TODO: duration?
+
+    def update_feed_callback(self, event):
+        data_feed = AgentDataFeed()
+        if self.follow_path_task.is_running():
+            data_feed.status = AgentDataFeed.BUSY
+        else:
+            data_feed.status = AgentDataFeed.IDLE
+        self.feed_publisher.publish(data_feed)
 
     def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
         self.ual_pose = data
