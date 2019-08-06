@@ -12,6 +12,7 @@ import tf2_geometry_msgs
 from mbzirc_comm_objs.msg import AgentDataFeed
 from mbzirc_comm_objs.msg import HoverAction, HoverGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
+from mbzirc_comm_objs.msg import PickAction, PickGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from geometry_msgs.msg import PoseStamped
@@ -153,7 +154,17 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_TO_PILE', GoToTask(),
                                     remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'PICK'})
+
+            def pick_goal_callback(userdata, default_goal):
+                goal = PickGoal(approximate_pose = userdata.above_pile_pose)
+                return goal
+
+            smach.StateMachine.add('PICK', smach_ros.SimpleActionState('pick_action', PickAction,
+                                    input_keys = ['above_pile_pose'],
+                                    goal_cb = pick_goal_callback),
                                     transitions = {'succeeded': 'GO_TO_WALL'})
+                                    # TODO: go to flight_level first?
 
             smach.StateMachine.add('GO_TO_WALL', GoToTask(),
                                     remapping = {'waypoint': 'above_brick_in_wall_pose'},

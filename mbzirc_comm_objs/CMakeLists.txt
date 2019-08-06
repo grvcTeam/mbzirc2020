@@ -78,6 +78,7 @@ add_action_files(
   # UAL.action
   Hover.action
   GoTo.action
+  Pick.action
   FollowPath.action
   PickAndPlace.action
 )
