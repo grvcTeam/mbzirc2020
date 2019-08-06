@@ -4,13 +4,13 @@
 <xacro:include filename="$(find challenge_worlds)/urdf/single_brick.xacro" />
 
   <world name="default">
-    <include>
+    <xacro:include>
       <uri>model://ground_plane</uri>
-    </include>
+    </xacro:include>
 
-    <include>
+    <xacro:include>
       <uri>model://sun</uri>
-    </include>
+    </xacro:include>
  
    <single_brick id="1" pose="10 0 0 0 0 0" />
      

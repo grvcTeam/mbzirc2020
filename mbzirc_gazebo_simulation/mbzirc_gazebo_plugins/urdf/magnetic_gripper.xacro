@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<robot>
-  <macro name="magnetic_gripper" params="parent *origin robot_name">
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="magnetic_gripper" params="parent *origin robot_name">
     <joint name="gripper_attach_joint" type="fixed">
-      <insert_block name="origin" />
+      <xacro:insert_block name="origin" />
       <parent link="${parent}"/>
       <child link="gripper_link"/>
     </joint>
@@ -36,5 +36,5 @@
             <gripper_link_name>${parent}</gripper_link_name>
           </plugin>
     </gazebo>
-  </macro>
+  </xacro:macro>
 </robot>

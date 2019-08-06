@@ -20,7 +20,7 @@
   <!-- Instantiate dji_f550 "mechanics" -->
   <xacro:include filename="$(find uavs_description)/models/dji_f550/geometry.xacro" />
 
-<include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
+<xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
 <magnetic_gripper parent="base_link" robot_name="dji_f550_$(arg robot_id)">
 		<origin xyz="0 0 -0.275" rpy="0 0 0" />
 </magnetic_gripper>

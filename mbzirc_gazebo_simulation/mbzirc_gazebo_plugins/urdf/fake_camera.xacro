@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <robot>
-  <macro name="fake_camera" params="parent *origin robot_name">
+  <xacro:macro name="fake_camera" params="parent *origin robot_name">
   	<joint name="camera_frame_joint" type="fixed">
-      <insert_block name="origin" />
+      <xacro:insert_block name="origin" />
       <parent link="${parent}"/>
       <child link="camera_link"/>
     </joint>
@@ -62,5 +62,5 @@
           <visualize>false</visualize>
         </sensor>
     </gazebo>
-  </macro>
+  </xacro:macro>
 </robot>
