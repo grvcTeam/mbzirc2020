@@ -28,6 +28,8 @@
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/PickAction.h>
 #include <uav_abstraction_layer/State.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <handy_tools/pid_controller.h>
 
 class HistoryBuffer {  // TODO: template? utils?
 public:
@@ -224,7 +226,6 @@ public:
   void sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
     if (msg->objects.size() > 0) {
       matched_candidate_ = msg->objects[0];  // TODO: Something better than grabbing first found?
-      ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
     }
   }
 
@@ -253,20 +254,25 @@ public:
     #define MAX_DELTA_Z 0.5  // [m] --> [m/s]
     #define MAX_AVG_XY_ERROR 0.3  // [m]
 
+    grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);  // TODO: class members? 
+    grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
+    grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
+
     // TODO: Magnetize catching device
     // catching_device_->setMagnetization(true);
     
+    // TODO: Use HistoryBuffer instead
     // HistoryBuffer history_xy_errors;
     // history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
     std::vector<double> history_xy_errors(AVG_XY_ERROR_WINDOW_SIZE, MAX_AVG_XY_ERROR);
-    unsigned tries_counter = 0;
+    unsigned tries_counter = 0;  // TODO: as feedback?
     ros::Duration timeout(CANDIDATE_TIMEOUT);
     ros::Rate loop_rate(CATCHING_LOOP_RATE);
-    geometry_msgs::Point target_position = matched_candidate_.relative_position;
     while (true) {
       ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
-      ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
+      // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
 
+      geometry_msgs::Point target_position = matched_candidate_.relative_position;
       if (since_last_candidate < timeout) {
         // x-y-control: in candidateCallback
         // z-control: descend
@@ -281,7 +287,7 @@ public:
           avg_xy_error = MAX_AVG_XY_ERROR;
         }
         target_position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
-        ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
+        // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
       } else {  // No fresh candidates (timeout)
         ROS_WARN("Timeout!");
@@ -330,12 +336,17 @@ public:
         // }
 	    }
       // Send target_position  // TODO: find equivalent!
-      // grvc::ual::PositionError error;  
-      // error.vector.x = target_position.x;
-      // error.vector.y = target_position.y;
-      // error.vector.z = target_position.z;
-      // ual_.setPositionError(error);
+      geometry_msgs::TwistStamped velocity;
+      velocity.header.stamp = ros::Time::now();
+      velocity.header.frame_id = "map";
+      velocity.twist.linear.x = x_pid.control_signal(target_position.x, 1.0 / CATCHING_LOOP_RATE);
+      velocity.twist.linear.y = y_pid.control_signal(target_position.y, 1.0 / CATCHING_LOOP_RATE);
+      velocity.twist.linear.z = z_pid.control_signal(target_position.z, 1.0 / CATCHING_LOOP_RATE);
+
+      ual_->setVelocity(velocity);
+      ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
       ROS_INFO("target_position = [%lf, %lf, %lf] target angle = x", target_position.x, target_position.y, target_position.z);
+      ROS_INFO("velocity = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
       // TODO: Look for equivalent!
       // if (catching_device_->switchIsPressed()) {
