@@ -104,7 +104,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
   tf2::Vector3 T_world = Rt * _camera.T;
   tf2::Vector3 K_0 = _camera.K.getRow(0);
   tf2::Vector3 K_1 = _camera.K.getRow(1);
-  double estimated_z = 0.2;  // Estimated height of bricks (TODO: assure they are not stacked!)
+  double estimated_z = 0.2;  // Estimated height of bricks (TODO: assure they are not stacked!) (TODO: use rgbd camera?)
 
   for (auto item: _hue_item_list) {
     // Geolocation:
@@ -121,22 +121,26 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
     }
 
     mbzirc_comm_objs::ObjectDetection object;
-    object.header.frame_id = "map";
+    object.header.frame_id = "map";  // TODO: arena? NO, it would affect relative measures too
     object.header.stamp = ros::Time::now();
     object.type = "brick";
 
     // The line equation is X = lambda * ray_world - T_world
     // lambda can be set because the z is known (estimated)
     double lambda = (estimated_z + T_world[2]) / ray_world[2];
-    object.pose.pose.position.x = lambda * ray_world[0] - T_world[0];
-    object.pose.pose.position.y = lambda * ray_world[1] - T_world[1];
-    object.pose.pose.position.z = lambda * ray_world[2] - T_world[2];
+    object.relative_position.x = lambda * ray_world[0];
+    object.relative_position.y = lambda * ray_world[1];
+    object.relative_position.z = lambda * ray_world[2];
+    object.pose.pose.position.x = object.relative_position.x - T_world[0];
+    object.pose.pose.position.y = object.relative_position.y - T_world[1];
+    object.pose.pose.position.z = object.relative_position.z - T_world[2];
 
     tf2::Vector3 orientation_camera(cos(item.orientation), sin(item.orientation), 0);
     tf2::Vector3 orientation_world = _camera.R * orientation_camera;
     double theta_world = atan2(orientation_world[1], orientation_world[0]);
     // printf("orientation_world = [%lf, %lf, %lf]\n", orientation_world[0], orientation_world[1], orientation_world[2]);
     // printf("theta_world = %lf\n", theta_world);
+    object.relative_yaw = theta_world;
     object.pose.pose.orientation.x = 0;
     object.pose.pose.orientation.y = 0;
     object.pose.pose.orientation.z = sin(0.5*theta_world);
