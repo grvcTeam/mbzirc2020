@@ -77,7 +77,7 @@
     enable_visual="true"
     >
     <box size="0.01 0.01 0.01"/>
-    <origin xyz="0 0 -0.275" rpy="0 1.57079632679 0" />
+    <origin xyz="0 0 -0.295" rpy="0 1.57079632679 0" />
   </xacro:camera_macro>
 
 <!-- Installing Camera 1 -->
