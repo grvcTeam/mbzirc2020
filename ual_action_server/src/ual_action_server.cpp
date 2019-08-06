@@ -24,9 +24,11 @@
 #include <mbzirc_comm_objs/HoverAction.h>
 #include <mbzirc_comm_objs/GoToAction.h>
 #include <mbzirc_comm_objs/FollowPathAction.h>
+#include <mbzirc_comm_objs/PickAction.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
-#include <mbzirc_comm_objs/PickAction.h>
+#include <mbzirc_comm_objs/GripperAttached.h>
+#include <mbzirc_comm_objs/Magnetize.h>
 #include <uav_abstraction_layer/State.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <handy_tools/pid_controller.h>
@@ -112,6 +114,7 @@ protected:
   std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
+  bool gripper_attached_ = false;
 
 public:
 
@@ -224,9 +227,18 @@ public:
   }
 
   void sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
-    if (msg->objects.size() > 0) {
-      matched_candidate_ = msg->objects[0];  // TODO: Something better than grabbing first found?
+    float min_distance = 1e3;  // 1 Km
+    for (auto object: msg->objects) {
+      float distance = object.relative_position.x * object.relative_position.x + object.relative_position.y * object.relative_position.y;
+      if (distance < min_distance) {
+        min_distance = distance;
+        matched_candidate_ = object;  // TODO: Check also color is correct
+      }
     }
+  }
+
+  void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg) {
+    gripper_attached_ = msg->attached;
   }
 
   void pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal) {
@@ -242,7 +254,9 @@ public:
 
     ros::NodeHandle nh;
     ros::Subscriber sensed_sub_ = nh.subscribe("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
-    ros::Duration(1.0).sleep();  // TODO: tune!
+    ros::Subscriber attached_sub_ = nh.subscribe("attached", 1, &UalActionServer::attachedCallback, this);
+    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");
+    ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -260,7 +274,12 @@ public:
 
     // TODO: Magnetize catching device
     // catching_device_->setMagnetization(true);
-    
+    mbzirc_comm_objs::Magnetize magnetize_srv;
+    magnetize_srv.request.magnetize = true;
+    if (!magnetize_client.call(magnetize_srv)) {
+      ROS_ERROR("Failed to call [magnetize] service");
+    }
+
     // TODO: Use HistoryBuffer instead
     // HistoryBuffer history_xy_errors;
     // history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
@@ -350,9 +369,10 @@ public:
 
       // TODO: Look for equivalent!
       // if (catching_device_->switchIsPressed()) {
-      //   pick_server_.setSucceeded(result);
-      //   break;
-      // }
+      if (gripper_attached_) {
+        pick_server_.setSucceeded(result);
+        break;
+      }
 
       // If we're too high, give up
       if (ual_->pose().pose.position.z > Z_GIVE_UP_CATCHING) {

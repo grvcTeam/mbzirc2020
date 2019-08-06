@@ -10,7 +10,7 @@
         <rosparam param="/use_sim_time">true</rosparam>
         <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
         args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
-			  -add_model_path=$(find challenge_worlds)/urdf
+			  -add_model_path=$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
 			  -description_package=uavs_description">
             <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
         </node>
@@ -28,15 +28,14 @@
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
-      <arg name="flight_level" value="15.0"/>
+      <arg name="flight_level" value="5.0"/>
       <arg name="x" value="9"/>
       <arg name="y" value="5"/>
       <arg name="z" value="0"/>
       <arg name="yaw" value="1.570796327"/>
   </include>
 
-  <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <!-- TODO:  Everything from rosparam? -->
+  <!-- <include file="$(find agent_nodes)/launch/uav_agent.launch">
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
@@ -45,6 +44,6 @@
       <arg name="y" value="5"/>
       <arg name="z" value="0"/>
       <arg name="yaw" value="1.570796327"/>
-  </include>
+  </include> -->
 
 </launch>

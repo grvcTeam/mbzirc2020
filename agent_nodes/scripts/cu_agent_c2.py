@@ -124,7 +124,7 @@ def get_build_wall_sequence(wall_blueprint):
 class Agent(object):
     def __init__(self):
         agents_ns = 'mbzirc2020'  # TODO: As a parameter
-        self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+        self.available_uavs = ['1'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
         uavs_ns = {}
         for uav_id in self.available_uavs:
@@ -229,6 +229,7 @@ class Agent(object):
             print('waiting result of pick_and_place server [{}]'.format(uav_id))
             self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
             print(self.uav_clients[uav_id]['pick_and_place'].get_result())
+            # TODO: Possible dead-locks!
 
     def finish(self):
         # TODO: proper finish function with landing and champagne!
