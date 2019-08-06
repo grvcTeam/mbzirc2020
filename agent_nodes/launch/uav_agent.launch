@@ -36,6 +36,8 @@
       <!-- <param name="home_pose" value="[10, 10, 10]"/>       -->
       <!-- <rosparam param="home_pose">[20, 20, 20]</rosparam> -->
       <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>
+      <param name="position_th" value="1.00"/>
+      <param name="orientation_th" value="0.75"/>
     </node>
 
     <node name="agent_node" pkg="agent_nodes" type="uav_agent_c2.py" output="screen">
