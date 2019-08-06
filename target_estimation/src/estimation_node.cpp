@@ -89,13 +89,85 @@ protected:
     float squared_distance_th_ = 25.0;  // TODO: tune, from params?
 };
 
+class StaticEstimator {
+public:
+
+    StaticEstimator(const std::string& _uav_ns) {
+        ros::NodeHandle nh;
+        estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
+        estimation_timer_ = nh.createTimer(ros::Duration(1), &StaticEstimator::estimateCallback, this);  // TODO: frequency as a parameter
+    }
+
+protected:
+
+    void estimateCallback(const ros::TimerEvent& event) {
+        mbzirc_comm_objs::ObjectDetectionList detected;
+        mbzirc_comm_objs::ObjectDetection object;
+        // TODO: From file
+        object.header.stamp = ros::Time::now();
+        object.header.frame_id = "map";
+        object.type = "brick";
+        // object.pose.covariance...  // TODO: needed?
+        // object.relative_position  // ignored here
+        // object.relative_yaw  // ignored here
+        object.pose.pose.position.x = 0.0;
+        object.pose.pose.position.y = -10;
+        object.pose.pose.position.z = 0.1;
+        object.pose.pose.orientation.x = 0.0;
+        object.pose.pose.orientation.y = 0.0;
+        object.pose.pose.orientation.z = 0.0;
+        object.pose.pose.orientation.w = 1.0;
+        object.scale.x = 3.0;
+        object.scale.y = 3.0;
+        object.scale.z = 0.2;
+        object.properties = "{\"color\": \"red\"}";
+        detected.objects.push_back(object);
+
+        // Reuse some previous object info
+        object.pose.pose.position.x = 0.0;
+        object.pose.pose.position.y = 10;
+        object.pose.pose.position.z = 0.1;
+        object.scale.x = 3.0;
+        object.scale.y = 3.0;
+        object.scale.z = 0.2;
+        object.properties = "{\"color\": \"green\"}";
+        detected.objects.push_back(object);
+
+        // Reuse some previous object info
+        object.pose.pose.position.x = -10;
+        object.pose.pose.position.y = 0.0;
+        object.pose.pose.position.z = 0.1;
+        object.scale.x = 5.0;
+        object.scale.y = 5.0;
+        object.scale.z = 0.2;
+        object.properties = "{\"color\": \"blue\"}";
+        detected.objects.push_back(object);
+
+        // Reuse some previous object info
+        object.pose.pose.position.x = 10;
+        object.pose.pose.position.y = 0.0;
+        object.pose.pose.position.z = 0.1;
+        object.scale.x = 5.0;
+        object.scale.y = 5.0;
+        object.scale.z = 0.2;
+        object.properties = "{\"color\": \"orange\"}";
+        detected.objects.push_back(object);
+
+        estimated_pub_.publish(detected);
+    }
+
+    ros::Timer estimation_timer_;
+    ros::Publisher estimated_pub_;
+};
 
 int main(int argc, char** argv) {
 
     ros::init(argc, argv, "estimation_node");
 
     // TODO: parameters from rosparam
-    DummyEstimator estimation("mbzirc2020", 2);
+    // TODO: select estimation type from params
+    // DummyEstimator estimation("mbzirc2020", 2);
+    StaticEstimator estimation("mbzirc2020");
     ros::spin();
 
     return 0;
