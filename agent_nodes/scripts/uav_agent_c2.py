@@ -70,7 +70,6 @@ class GoToTask(smach.StateMachine):
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('/ask_for_region', AskForRegion,
                                     input_keys = ['waypoint'],
-                                    # output_keys = ['waypoint'],  # TODO: Modify waypoint somehow?
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
@@ -155,7 +154,34 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_TO_PILE', GoToTask(),
                                     remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'PICK'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+
+            def ask_for_region_request_callback(userdata, request):
+                agent_id = rospy.get_param('~agent_id')
+                radius = 5.0  # TODO: Tune, assure uav is not going further while pick!
+                request = AskForRegionRequest()
+                request.agent_id = agent_id
+                request.min_corner.header.frame_id = userdata.above_pile_pose.header.frame_id
+                request.min_corner.point.x = userdata.above_pile_pose.pose.position.x - radius
+                request.min_corner.point.y = userdata.above_pile_pose.pose.position.y - radius
+                request.min_corner.point.z = 0
+                request.max_corner.header.frame_id = userdata.above_pile_pose.header.frame_id
+                request.max_corner.point.x = userdata.above_pile_pose.pose.position.x + radius
+                request.max_corner.point.y = userdata.above_pile_pose.pose.position.y + radius
+                request.max_corner.point.z = userdata.above_pile_pose.pose.position.z + radius
+                return request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+                                    input_keys = ['above_pile_pose'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             def pick_goal_callback(userdata, default_goal):
                 goal = PickGoal(approximate_pose = userdata.above_pile_pose)
@@ -164,8 +190,11 @@ class PickAndPlaceTask(smach.StateMachine):
             smach.StateMachine.add('PICK', smach_ros.SimpleActionState('pick_action', PickAction,
                                     input_keys = ['above_pile_pose'],
                                     goal_cb = pick_goal_callback),
+                                    transitions = {'succeeded': 'GO_UP'})
+
+            smach.StateMachine.add('GO_UP', GoToTask(),
+                                    remapping = {'waypoint': 'above_pile_pose'},
                                     transitions = {'succeeded': 'GO_TO_WALL'})
-                                    # TODO: go to flight_level first?
 
             smach.StateMachine.add('GO_TO_WALL', GoToTask(),
                                     remapping = {'waypoint': 'above_brick_in_wall_pose'},
