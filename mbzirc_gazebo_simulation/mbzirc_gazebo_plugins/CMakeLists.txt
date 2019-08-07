@@ -72,7 +72,7 @@ add_library(droplet_factory SHARED src/droplet_factory.cpp)
 # add_dependencies(gazebo_grasp_plugin_node gazebo_grasp_plugin_generate_messages_cpp)
 add_dependencies(magnetic_gripper_plugin ${catkin_EXPORTED_TARGETS})
 add_dependencies(fake_object_detection_plugin ${catkin_EXPORTED_TARGETS})
-add_dependencies(droplet_factory ${catkin_EXPORTED_TARGETS})
+add_dependencies(droplet_factory ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(target_drone_trajectory src/target_drone_trajectory.cpp)
 
