@@ -3,6 +3,7 @@
 import rospy
 import smach
 import smach_ros
+import copy
 import time
 import random
 import actionlib
@@ -16,7 +17,7 @@ from mbzirc_comm_objs.msg import PickAction, PickGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from geometry_msgs.msg import PoseStamped
-from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
+from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse, Magnetize, MagnetizeRequest
 
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
@@ -98,6 +99,7 @@ class GoToTask(smach.StateMachine):
     def ual_pose_callback(self, data):
         self.ual_pose = data
 
+    # TODO: almost repeated code
     def build_ask_for_region_request(self, agent_id, initial_pose, final_pose, radius = 1.0):
         try:
             if initial_pose.header.frame_id != 'arena':
@@ -148,7 +150,7 @@ class FollowPathTask(smach.StateMachine):
 class PickAndPlaceTask(smach.StateMachine):
 
     def __init__(self):
-        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_brick_in_wall_pose', 'brick_in_wall_pose'])
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'brick_in_wall_pose'])
 
         with self:
 
@@ -194,10 +196,31 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_UP', GoToTask(),
                                     remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'GO_TO_WALL'})
+                                    transitions = {'succeeded': 'GO_ABOVE_WALL'})
 
-            smach.StateMachine.add('GO_TO_WALL', GoToTask(),
-                                    remapping = {'waypoint': 'above_brick_in_wall_pose'},
+            smach.StateMachine.add('GO_ABOVE_WALL', GoToTask(),
+                                    remapping = {'waypoint': 'above_wall_pose'},
+                                    transitions = {'succeeded': 'GO_TO_PLACE'})
+
+            smach.StateMachine.add('GO_TO_PLACE', GoToTask(),
+                                    remapping = {'waypoint': 'brick_in_wall_pose'},
+                                    transitions = {'succeeded': 'PLACE'})
+
+            def place_request_callback(userdata, request):
+                request = MagnetizeRequest()
+                request.magnetize = False
+                return request
+
+            def place_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('PLACE', smach_ros.ServiceState('magnetize', Magnetize,
+                                    request_cb = place_request_callback,
+                                    response_cb = place_response_callback),
+                                    transitions = {'succeeded': 'GO_UP_AGAIN'})
+
+            smach.StateMachine.add('GO_UP_AGAIN', GoToTask(),
+                                    remapping = {'waypoint': 'above_wall_pose'},
                                     transitions = {'succeeded': 'succeeded'})
 
 class Agent(object):
@@ -256,12 +279,14 @@ class Agent(object):
 
     def pick_and_place_callback(self, goal):
         flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+        z_offset = 0.4  # TODO: offset in meters between uav and attached brick frames
         userdata = smach.UserData()
-        userdata.above_pile_pose = goal.pile_pose
+        userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
         userdata.above_pile_pose.pose.position.z = flight_level
-        userdata.above_brick_in_wall_pose = goal.brick_in_wall_pose
-        userdata.above_brick_in_wall_pose.pose.position.z = flight_level
-        userdata.brick_in_wall_pose = goal.brick_in_wall_pose
+        userdata.above_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
+        userdata.above_wall_pose.pose.position.z = flight_level
+        userdata.brick_in_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
+        userdata.brick_in_wall_pose.pose.position.z += z_offset
         outcome = self.pick_and_place_task.execute(userdata)
         print('pick_and_place_callback output: {}'.format(outcome))
         self.pick_and_place_action_server.set_succeeded()
