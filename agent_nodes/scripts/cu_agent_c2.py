@@ -138,19 +138,21 @@ class Agent(object):
         for uav_id in self.available_uavs:
             self.uav_clients[uav_id] = {}
             self.uav_subscribers[uav_id] = {}
-            self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
+            self.uav_clients[uav_id]['take_off'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/take_off', mbzirc_comm_objs.msg.TakeOffAction)
             self.uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
+            self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
             self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
             self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
 
             print('waiting for servers of agent [{}]'.format(uav_id))
+            self.uav_clients[uav_id]['take_off'].wait_for_server()  # TODO: Timeout!
             self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
             self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
             rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
 
             self.uav_params[uav_id] = {}
             agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
-            self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')
+            self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')  # TODO: Needed here or leave uav alone?
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", ObjectDetectionList, self.estimation_callback)
@@ -172,6 +174,16 @@ class Agent(object):
                 pose.header = pile.header
                 pose.pose = pile.pose.pose
                 self.piles[color] = pose
+
+    def take_off(self):    
+        for uav_id in self.available_uavs:
+            print('sending goal to take_off server {}'.format(uav_id))
+            self.uav_clients[uav_id]['take_off'].send_goal(mbzirc_comm_objs.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
+
+        for uav_id in self.available_uavs:
+            print('waiting result of take_off server [{}]'.format(uav_id))
+            self.uav_clients[uav_id]['take_off'].wait_for_result()
+            print(self.uav_clients[uav_id]['take_off'].get_result())
 
     def look_for_piles(self):
         uav_paths = {}
@@ -195,7 +207,7 @@ class Agent(object):
         #     print(uav_paths[uav_id])
 
         for uav_id in self.available_uavs:
-            print('sending goal to server {}'.format(uav_id))
+            print('sending goal to follow_path server {}'.format(uav_id))
             self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
         for uav_id in self.available_uavs:
@@ -248,7 +260,7 @@ class Agent(object):
             uav_paths[uav_id] = uav_path
 
         for uav_id in self.available_uavs:
-            print('sending goal to server {}'.format(uav_id))
+            print('sending goal to follow_path server {}'.format(uav_id))
             self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
         for uav_id in self.available_uavs:
@@ -260,9 +272,10 @@ def main():
     rospy.init_node('cu_agent_c2')
 
     central_agent = Agent()
-    rospy.sleep(3)
+    # rospy.sleep(3)
 
-    # central_agent.look_for_piles()
+    central_agent.take_off()
+    central_agent.look_for_piles()
     central_agent.build_wall()
     central_agent.finish()
 

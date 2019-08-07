@@ -10,7 +10,7 @@ import tf2_ros
 import tf2_geometry_msgs
 
 from mbzirc_comm_objs.msg import AgentDataFeed
-from mbzirc_comm_objs.msg import HoverAction, HoverGoal
+from mbzirc_comm_objs.msg import TakeOffAction, TakeOffGoal
 from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import PickAction, PickGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
@@ -29,31 +29,35 @@ class Sleep(smach.State):
         # TODO: aborted?
         # TODO: preempted?
 
+class TakeOffTask(smach.StateMachine):
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['height'])  # TODO: Use rospy.get_param('~flight_level') instead?
+
+        with self:
+
+            def take_off_goal_callback(userdata, default_goal):
+                # TODO: Or from userdata.height?
+                flight_level = rospy.get_param('~flight_level')
+                goal = TakeOffGoal(height = flight_level)
+                return goal
+
+            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState('take_off_action', TakeOffAction,
+                                    input_keys = ['height'],  # TODO: Use rospy.get_param('~flight_level') instead?
+                                    goal_cb = take_off_goal_callback),
+                                    transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY', Sleep(3.0),
+                                    transitions = {'succeeded': 'TAKE_OFF'})
+
 class GoToTask(smach.StateMachine):
 
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
 
-        self.tf_buffer = tf2_ros.Buffer()  # TODO: repeatd code, AgentInterface?
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: repeated code, AgentInterface?
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         with self:
-
-            # TODO: move outside! Rename action to takeoff!
-            def hover_goal_callback(userdata, default_goal):
-                flight_level = rospy.get_param('~flight_level')
-                goal = HoverGoal(height = flight_level)
-                # userdata.waypoint.pose.position.z = flight_level  # TODO: force flight_level here?!
-                return goal
-            # TODO: move outside! Rename action to takeoff!
-            smach.StateMachine.add('HOVER', smach_ros.SimpleActionState('hover_action', HoverAction,
-                                    input_keys = ['waypoint'],
-                                    output_keys = ['waypoint'],
-                                    goal_cb = hover_goal_callback),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE', 'aborted': 'SLEEP_AND_RETRY_HOVER'})
-
-            smach.StateMachine.add('SLEEP_AND_RETRY_HOVER', Sleep(3.0),
-                                    transitions = {'succeeded': 'HOVER'})
 
             # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
@@ -62,14 +66,11 @@ class GoToTask(smach.StateMachine):
                 return ask_for_region_request
 
             def ask_for_region_response_callback(userdata, response):
-                if response.success:
-                    return 'succeeded'
-                else:
-                    return 'aborted'
+                return 'succeeded' if response.success else 'aborted'
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('/ask_for_region', AskForRegion,
                                     input_keys = ['waypoint'],
-                                    output_keys = ['waypoint'],
+                                    # output_keys = ['waypoint'],  # TODO: Modify waypoint somehow?
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
@@ -176,6 +177,10 @@ class Agent(object):
         self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
+        self.take_off_task = TakeOffTask()
+        self.take_off_action_server = actionlib.SimpleActionServer('task/take_off', TakeOffAction, execute_cb = self.take_off_callback, auto_start = False)  # TODO: change naming from task to agent?
+        self.take_off_action_server.start()
+
         self.follow_path_task = FollowPathTask()
         self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.follow_path_action_server.start()
@@ -205,6 +210,13 @@ class Agent(object):
 
     def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
         self.ual_pose = data
+
+    def take_off_callback(self, goal):
+        userdata = smach.UserData()
+        userdata.height = goal.height
+        outcome = self.take_off_task.execute(userdata)
+        print('take_off_callback output: {}'.format(outcome))
+        self.take_off_action_server.set_succeeded()
 
     def follow_path_callback(self, goal):
         userdata = smach.UserData()

@@ -21,9 +21,10 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <uav_abstraction_layer/ual.h>
-#include <mbzirc_comm_objs/HoverAction.h>
+#include <mbzirc_comm_objs/TakeOffAction.h>
+// #include <mbzirc_comm_objs/HoverAction.h>
 #include <mbzirc_comm_objs/GoToAction.h>
-#include <mbzirc_comm_objs/FollowPathAction.h>
+// #include <mbzirc_comm_objs/FollowPathAction.h>
 #include <mbzirc_comm_objs/PickAction.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -32,7 +33,7 @@
 #include <uav_abstraction_layer/State.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <handy_tools/pid_controller.h>
-
+/*
 class HistoryBuffer {  // TODO: template? utils?
 public:
   void set_size(size_t _size) {
@@ -101,15 +102,17 @@ protected:
   std::vector<double> buffer_;
   std::mutex mutex_;
 };
-
+*/
 
 class UalActionServer {
 protected:
 
   ros::NodeHandle nh_;
-  actionlib::SimpleActionServer<mbzirc_comm_objs::HoverAction> hover_server_;  // NodeHandle instance must be created before this line. Otherwise strange error occurs.
+  // NodeHandle instance must be created before this line. Otherwise strange error occurs
+  actionlib::SimpleActionServer<mbzirc_comm_objs::TakeOffAction> take_off_server_;
+  // actionlib::SimpleActionServer<mbzirc_comm_objs::HoverAction> hover_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::GoToAction> go_to_server_;
-  actionlib::SimpleActionServer<mbzirc_comm_objs::FollowPathAction> follow_path_server_;
+  // actionlib::SimpleActionServer<mbzirc_comm_objs::FollowPathAction> follow_path_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::PickAction> pick_server_;
   std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
@@ -119,18 +122,20 @@ protected:
 public:
 
   UalActionServer(std::string _robot_id):
-    hover_server_(nh_, "hover_action", boost::bind(&UalActionServer::hoverCallback, this, _1), false),
+    take_off_server_(nh_, "take_off_action", boost::bind(&UalActionServer::takeOffCallback, this, _1), false),
+    // hover_server_(nh_, "hover_action", boost::bind(&UalActionServer::hoverCallback, this, _1), false),
     go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
-    follow_path_server_(nh_, "follow_path_action", boost::bind(&UalActionServer::followPathCallback, this, _1), false),
+    // follow_path_server_(nh_, "follow_path_action", boost::bind(&UalActionServer::followPathCallback, this, _1), false),
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
     robot_id_(_robot_id) {
 
     // ros::param::set("~uav_id", _robot_id);
     // ros::param::set("~pose_frame_id", "map");
     ual_ = new grvc::ual::UAL();
-    hover_server_.start();
+    take_off_server_.start();
+    // hover_server_.start();
     go_to_server_.start();
-    follow_path_server_.start();
+    // follow_path_server_.start();
     pick_server_.start();
   }
 
@@ -138,6 +143,53 @@ public:
     delete ual_;
   }
 
+  // TODO: Who should know about flight_level? ual_action_server, uav_agent, central_agent...
+  void takeOffCallback(const mbzirc_comm_objs::TakeOffGoalConstPtr &_goal) {
+    // ROS_INFO("Take off!");
+    // mbzirc_comm_objs::TakeOffFeedback feedback;
+    mbzirc_comm_objs::TakeOffResult result;
+
+    while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
+      ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
+      sleep(1);
+    }
+    // TODO: Fill result
+    switch (ual_->state().state) {
+      case uav_abstraction_layer::State::LANDED_DISARMED:
+        ROS_WARN("UAL is disarmed!");
+        take_off_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::LANDED_ARMED: {
+        double current_z = ual_->pose().pose.position.z;
+        ual_->takeOff(_goal->height - current_z, true);  // TODO: timeout? preempt?
+        take_off_server_.setSucceeded(result);
+        break;
+      }
+      case uav_abstraction_layer::State::TAKING_OFF:
+        ROS_WARN("UAL is taking off!");
+        // TODO: Wait until FLYING_AUTO?
+        take_off_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::FLYING_AUTO:
+        // Already flying!
+        take_off_server_.setSucceeded(result);
+        break;
+      case uav_abstraction_layer::State::FLYING_MANUAL:
+        ROS_WARN("UAL is flying manual!");
+        take_off_server_.setAborted(result);
+        break;
+      case uav_abstraction_layer::State::LANDING:
+        ROS_WARN("UAL is landing!");
+        // TODO: Wait until LANDED_ARMED and then take off?
+        take_off_server_.setAborted(result);
+        break;
+      default:
+        ROS_ERROR("Unexpected UAL state!");
+        take_off_server_.setAborted(result);
+    }
+  }
+
+  /*
   void hoverCallback(const mbzirc_comm_objs::HoverGoalConstPtr &_goal) {
     // ROS_INFO("Hover!");
     // mbzirc_comm_objs::HoverFeedback feedback;
@@ -153,20 +205,25 @@ public:
         ROS_WARN("UAL is disarmed!");
         hover_server_.setAborted(result);
         break;
-      case uav_abstraction_layer::State::LANDED_ARMED:
-        // TODO: from param, substract current z
-        ual_->takeOff(_goal->height, true);  // TODO: timeout? preempt?
+      case uav_abstraction_layer::State::LANDED_ARMED: {
+        // TODO: from param?
+        double current_z = ual_->pose().pose.position.z;
+        ual_->takeOff(_goal->height - current_z, true);  // TODO: timeout? preempt?
         hover_server_.setSucceeded(result);
         break;
+      }
       case uav_abstraction_layer::State::TAKING_OFF:
         ROS_WARN("UAL is taking off!");
         // TODO: Wait until FLYING_AUTO?
         hover_server_.setAborted(result);
         break;
-      case uav_abstraction_layer::State::FLYING_AUTO:
-        // TODO: goto current x,y, but z = flight_level?
+      case uav_abstraction_layer::State::FLYING_AUTO: {
+        geometry_msgs::PoseStamped hover_pose = ual_->pose();
+        hover_pose.pose.position.z = _goal->height;
+        ual_->goToWaypoint(hover_pose, true);  // TODO: timeout? preempt?
         hover_server_.setSucceeded(result);
         break;
+      }
       case uav_abstraction_layer::State::FLYING_MANUAL:
         ROS_WARN("UAL is flying manual!");
         hover_server_.setAborted(result);
@@ -181,6 +238,7 @@ public:
         hover_server_.setAborted(result);
     }
   }
+*/
 
   void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal) {
     // ROS_INFO("Go to!");
@@ -417,7 +475,7 @@ public:
     go_to_server_.setSucceeded(result);
   }
  */
-
+  /*
   void followPathCallback(const mbzirc_comm_objs::FollowPathGoalConstPtr &_goal) {
     // ROS_INFO("Follow path!");  // TODO: check for collisions?
     // mbzirc_comm_objs::GoToFeedback feedback;
@@ -438,7 +496,7 @@ public:
 
     follow_path_server_.setSucceeded(result);
   }
-
+  */
   /*
     // helper variables
     ros::Rate r(1);
@@ -480,8 +538,6 @@ public:
     }
     */
   // }
-
-
 };
 
 

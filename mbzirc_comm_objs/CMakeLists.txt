@@ -76,7 +76,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
 add_action_files(
   FILES
   # UAL.action
-  Hover.action
+  TakeOff.action
   GoTo.action
   Pick.action
   FollowPath.action
