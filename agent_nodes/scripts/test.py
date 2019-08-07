@@ -1,5 +1,10 @@
 #! /usr/bin/env python
-from geometry_msgs.msg import Vector3, Point, PoseStamped
+import time
+import rospy
+import smach
+# import tf2_ros
+# import tf2_geometry_msgs
+from geometry_msgs.msg import PoseStamped
 
 
 # PARAMETER	SPECIFICATION
@@ -17,55 +22,36 @@ from geometry_msgs.msg import Vector3, Point, PoseStamped
 # Challenge duration	30 minutes
 # Communications	TBD
 
-# TODO: use enums instead of strings
-brick_scales = {}
-brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['green'] = Vector3(x = 0.6, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
+class GoToTask(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
 
-# TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green', 'blue', 'orange'], ['orange', 'blue', 'green', 'red']]
+    def execute(self, userdata):
+        print('going to: {}'.format(userdata.waypoint))
+        return 'succeeded'
 
-class BrickInWall(object):
-    def __init__(self, color, position):
-        self.color = color
-        self.pose = PoseStamped()
-        self.pose.header.frame_id = 'wall'  # TODO: define this frame
-        self.pose.pose.position = position
-        self.pose.pose.orientation.w = 1  # Assume wall is x-oriented
+class PickAndPlaceTask(smach.StateMachine):
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['pile_pose', 'brick_in_wall_pose'])
+        self.register_input_keys(['above_pile_pose', 'above_brick_in_wall_pose'])
 
-    def __repr__(self):
-        return '[color = {}, pose = [{}: ({},{},{}) ({},{},{},{})]]'.format(self.color, self.pose.header.frame_id, 
-                self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, 
-                self.pose.pose.orientation.x, self.pose.pose.orientation.y, self.pose.pose.orientation.z, self.pose.pose.orientation.w)
+        with self:
 
-def get_build_wall_sequence(wall_blueprint):
-    buid_wall_sequence = []
-    current_z = 0.0
-    for brick_row in wall_blueprint:
-        current_x = 0.0
-        build_row_sequence = []
-        for brick_color in brick_row:
-            brick_position = Point()
-            brick_position.x = current_x + 0.5 * brick_scales[brick_color].x
-            brick_position.y = 0.5 * brick_scales[brick_color].y
-            brick_position.z = current_z + 0.5 * brick_scales[brick_color].z
-            current_x += brick_scales[brick_color].x
+            smach.StateMachine.add('GO_TO_PILE', GoToTask(),
+                                    remapping = {'waypoint': 'pile_pose'},
+                                    transitions = {'succeeded': 'GO_TO_WALL'})
 
-            brick_in_wall = BrickInWall(color = brick_color, position = brick_position)
-            build_row_sequence.append(brick_in_wall)
-
-        buid_wall_sequence.append(build_row_sequence)
-        current_z += brick_scales['red'].z  # As all bricks (should) have the same height
-    return buid_wall_sequence
-
+            smach.StateMachine.add('GO_TO_WALL', GoToTask(),
+                                    remapping = {'waypoint': 'brick_in_wall_pose'},
+                                    transitions = {'succeeded': 'succeeded'})
 
 def main():
-    buid_wall_sequence = get_build_wall_sequence(wall_blueprint)
-    for i, row in enumerate(buid_wall_sequence):
-        for brick in row:
-            print('row[{}].pose = {}'.format(i, brick))
+    pick_and_place_task = PickAndPlaceTask()
+    userdata = smach.UserData()
+    userdata.pile_pose = PoseStamped()
+    userdata.brick_in_wall_pose = PoseStamped()
+    outcome = pick_and_place_task.execute(userdata)
+    print('pick_and_place_callback output: {}'.format(outcome))
 
 if __name__ == '__main__':
     main()
