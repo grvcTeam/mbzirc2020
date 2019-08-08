@@ -8,8 +8,8 @@ from visualization_msgs.msg import Marker, MarkerArray
 
 class Interval(object):
     def __init__(self, min_value, max_value):
-        if min_value >= max_value:
-            raise ValueError('min_value({}) >= max_value ({})'.format(min_value, max_value))
+        if min_value > max_value:
+            raise ValueError('min_value({}) > max_value ({})'.format(min_value, max_value))
         self.min_value = min_value
         self.max_value = max_value
 
