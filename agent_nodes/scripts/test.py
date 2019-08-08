@@ -1,11 +1,6 @@
 #! /usr/bin/env python
-import time
 import rospy
-import smach
-# import tf2_ros
-# import tf2_geometry_msgs
-from geometry_msgs.msg import PoseStamped
-
+import random
 
 # PARAMETER	SPECIFICATION
 # Number of UAVs per team	Maximum of 3
@@ -22,36 +17,43 @@ from geometry_msgs.msg import PoseStamped
 # Challenge duration	30 minutes
 # Communications	TBD
 
-class GoToTask(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
+class UavDataFeed(object):
+    def __init__(self, is_idle):
+        self.is_idle = is_idle
 
-    def execute(self, userdata):
-        print('going to: {}'.format(userdata.waypoint))
-        return 'succeeded'
-
-class PickAndPlaceTask(smach.StateMachine):
-    def __init__(self):
-        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['pile_pose', 'brick_in_wall_pose'])
-        self.register_input_keys(['above_pile_pose', 'above_brick_in_wall_pose'])
-
-        with self:
-
-            smach.StateMachine.add('GO_TO_PILE', GoToTask(),
-                                    remapping = {'waypoint': 'pile_pose'},
-                                    transitions = {'succeeded': 'GO_TO_WALL'})
-
-            smach.StateMachine.add('GO_TO_WALL', GoToTask(),
-                                    remapping = {'waypoint': 'brick_in_wall_pose'},
-                                    transitions = {'succeeded': 'succeeded'})
+uav_data_feeds = {}
+# def all_idle(available_uavs):
+#     for uav_id in available_uavs:
+#         if not uav_data_feeds[uav_id].is_idle:
+#             return False
+#     return True
 
 def main():
-    pick_and_place_task = PickAndPlaceTask()
-    userdata = smach.UserData()
-    userdata.pile_pose = PoseStamped()
-    userdata.brick_in_wall_pose = PoseStamped()
-    outcome = pick_and_place_task.execute(userdata)
-    print('pick_and_place_callback output: {}'.format(outcome))
+    available_uavs = ['1', '2']
+    uav_data_feeds['1'] = UavDataFeed(False)
+    uav_data_feeds['2'] = UavDataFeed(False)
+
+    finished_uavs = ['3']
+    while True:
+        if random.random() > 0.5:
+            uav_data_feeds['1'].is_idle = True
+            print('1 is idle!')
+
+        if random.random() > 0.8:
+            uav_data_feeds['2'].is_idle = True
+            print('2 is idle!')
+    
+        for uav_id in available_uavs:
+            if uav_data_feeds[uav_id].is_idle and (uav_id not in finished_uavs):
+                finished_uavs.append(uav_id)
+                print('waiting result of pick_and_place server [{}]'.format(uav_id))
+                # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
+                # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
+                print('send [{}] more to do!'.format(uav_id))
+        rospy.sleep(1.0)
+        if set(available_uavs).issubset(finished_uavs):
+            print('All done!')
+            break
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,8 @@
+#goal definition
+bool do_land
+---
+#result definition
+string message
+---
+#feedback
+# float32 current_height

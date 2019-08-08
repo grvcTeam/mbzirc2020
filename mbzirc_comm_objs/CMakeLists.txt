@@ -81,6 +81,7 @@ add_action_files(
   Pick.action
   FollowPath.action
   PickAndPlace.action
+  GoHome.action
 )
 
 ## Generate added messages and services with any dependencies listed here

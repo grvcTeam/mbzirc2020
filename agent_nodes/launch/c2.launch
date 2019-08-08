@@ -28,22 +28,22 @@
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
-      <arg name="flight_level" value="5.0"/>
+      <arg name="flight_level" value="10.0"/>
       <arg name="x" value="9"/>
       <arg name="y" value="5"/>
       <arg name="z" value="0"/>
       <arg name="yaw" value="1.570796327"/>
   </include>
 
-  <!-- <include file="$(find agent_nodes)/launch/uav_agent.launch">
+  <include file="$(find agent_nodes)/launch/uav_agent.launch">
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
-      <arg name="flight_level" value="10.0"/>
+      <arg name="flight_level" value="5.0"/>
       <arg name="x" value="11"/>
       <arg name="y" value="5"/>
       <arg name="z" value="0"/>
       <arg name="yaw" value="1.570796327"/>
-  </include> -->
+  </include>
 
 </launch>

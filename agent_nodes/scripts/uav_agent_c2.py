@@ -16,6 +16,7 @@ from mbzirc_comm_objs.msg import GoToAction, GoToGoal
 from mbzirc_comm_objs.msg import PickAction, PickGoal
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
+from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse, Magnetize, MagnetizeRequest
 
@@ -241,6 +242,10 @@ class Agent(object):
         self.pick_and_place_action_server = actionlib.SimpleActionServer('task/pick_and_place', PickAndPlaceAction, execute_cb = self.pick_and_place_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.pick_and_place_action_server.start()
 
+        # self.go_home_task = GoHomeTask()  # Reuse follow_path_task
+        self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
+        self.go_home_action_server.start()
+
         rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
 
         self.ual_pose = PoseStamped()
@@ -253,11 +258,14 @@ class Agent(object):
     def update_feed_callback(self, event):
         data_feed = AgentDataFeed()
         data_feed.is_idle = True
+        if self.take_off_task.is_running():
+            data_feed.is_idle = False
         if self.follow_path_task.is_running():
             data_feed.is_idle = False
         if self.pick_and_place_task.is_running():
             data_feed.is_idle = False
-        # TODO: Check all other tasks!
+        # go_home action server reuses follow_path_task
+        # TODO: Check all, make it automatic!
         self.feed_publisher.publish(data_feed)
 
     def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
@@ -266,6 +274,7 @@ class Agent(object):
     def take_off_callback(self, goal):
         userdata = smach.UserData()
         userdata.height = goal.height
+        self.home_pose = copy.deepcopy(self.ual_pose)  # Fetch home_pose!
         outcome = self.take_off_task.execute(userdata)
         print('take_off_callback output: {}'.format(outcome))
         self.take_off_action_server.set_succeeded()
@@ -290,6 +299,26 @@ class Agent(object):
         outcome = self.pick_and_place_task.execute(userdata)
         print('pick_and_place_callback output: {}'.format(outcome))
         self.pick_and_place_action_server.set_succeeded()
+
+    def go_home_callback(self, goal):
+        agent_id = rospy.get_param('~agent_id')
+        flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+        userdata = smach.UserData()
+        userdata.path = []  # TODO: Build path from here to home
+        up_here = copy.deepcopy(self.ual_pose)
+        up_here.pose.position.z = flight_level
+        userdata.path.append(up_here)
+        up_home = copy.deepcopy(self.home_pose)
+        up_home.pose.position.z = flight_level
+        userdata.path.append(up_home)
+        print('uav[{}].flight_level = {}'.format(agent_id, flight_level))
+        for point in userdata.path:
+            print('path point: {}'.format(point))
+        outcome = self.follow_path_task.execute(userdata)  # Reuse follow path!
+        print('follow_path_callback (go_home) output: {}'.format(outcome))
+        if goal.do_land:  # TODO: Land!
+            rospy.logwarn('Landing not implemented yet!')
+        self.go_home_action_server.set_succeeded()
 
     def get_cost_to_go_to(self, req):
         # TODO: these try/except inside a function?
