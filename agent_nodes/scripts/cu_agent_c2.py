@@ -23,6 +23,7 @@ from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
 from mbzirc_comm_objs.srv import GetCostToGoTo
 import math
 import json
+import copy
 
 # TODO: All these parameters from config!
 field_width = 20  # 60  # TODO: Field is 60 x 50
@@ -215,7 +216,7 @@ class Agent(object):
     # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
         rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
-        # print(piles)  # TODO: cache it? if not piles[r, g, b, o], repeat!!
+        piles = copy.deepcopy(self.piles)  # Cache piles
         build_wall_sequence = get_build_wall_sequence(wall_blueprint)
         for i, row in enumerate(build_wall_sequence):
             for brick in row:
@@ -224,13 +225,13 @@ class Agent(object):
                 while not costs:
                     for uav_id in self.available_uavs:
                         if self.uav_data_feeds[uav_id].is_idle:
-                            costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](self.piles[brick.color]).cost
+                            costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color]).cost
                         else:
                             rospy.sleep(0.5)
                 min_cost_uav_id = min(costs, key = costs.get)
                 print('costs: {}, min_cost_id: {}'.format(costs, min_cost_uav_id))
                 goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
-                goal.pile_pose = self.piles[brick.color]
+                goal.pile_pose = piles[brick.color]
                 goal.brick_in_wall_pose = brick.pose
                 self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
                 rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
@@ -265,7 +266,7 @@ def main():
     # rospy.sleep(3)
 
     central_agent.take_off()
-    central_agent.look_for_piles()
+    central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
 
 if __name__ == '__main__':
