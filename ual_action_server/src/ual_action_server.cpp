@@ -31,76 +31,7 @@
 #include <uav_abstraction_layer/State.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <handy_tools/pid_controller.h>
-/*
-class HistoryBuffer {  // TODO: template? utils?
-public:
-  void set_size(size_t _size) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    buffer_size_ = _size;
-    buffer_.clear();
-    current_ = 0;
-  }
-
-  void reset() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    buffer_.clear();
-    current_ = 0;
-  }
-
-  void update(double _value) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (buffer_.size() < buffer_size_) {
-      buffer_.push_back(_value);
-    } else {
-      buffer_[current_] = _value;
-      current_ = (current_ + 1) % buffer_size_;
-    }
-  }
-
-  bool get_stats(double& _min, double& _mean, double& _max) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (buffer_.size() >= buffer_size_) {
-      double min_value = +std::numeric_limits<double>::max();
-      double max_value = -std::numeric_limits<double>::max();
-      double sum = 0;
-      for (int i = 0; i < buffer_.size(); i++) {
-        if (buffer_[i] < min_value) { min_value = buffer_[i]; }
-        if (buffer_[i] > max_value) { max_value = buffer_[i]; }
-        sum += buffer_[i];
-      }
-      _min = min_value;
-      _max = max_value;
-      _mean = sum / buffer_.size();
-      return true;
-    }
-      return false;
-  }
-
-  bool get_variance(double& _var) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (buffer_.size() >= buffer_size_) {
-      double mean = 0;
-      double sum = 0;
-      _var = 0;
-      for (int i = 0; i < buffer_.size(); i++) {
-        sum += buffer_[i];
-      }
-      mean = sum / buffer_.size();
-      for (int i = 0; i < buffer_.size(); i++) {
-        _var += (buffer_[i]-mean)*(buffer_[i]-mean);
-      }
-      return true;
-    }
-    return false;
-  }
-
-protected:
-  size_t buffer_size_ = 0;
-  unsigned int current_ = 0;
-  std::vector<double> buffer_;
-  std::mutex mutex_;
-};
-*/
+#include <handy_tools/circular_buffer.h>
 
 class UalActionServer {
 protected:
@@ -258,7 +189,7 @@ public:
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    // TODO: Tune!
     #define Z_GIVE_UP_CATCHING 17.5  // TODO: From config file?
     #define Z_RETRY_CATCH 1.0
     #define CANDIDATE_TIMEOUT 1.5  // [s]
@@ -279,11 +210,10 @@ public:
       ROS_ERROR("Failed to call [magnetize] service");
     }
 
-    // TODO: Use HistoryBuffer instead
-    // HistoryBuffer history_xy_errors;
-    // history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
-    std::vector<double> history_xy_errors(AVG_XY_ERROR_WINDOW_SIZE, MAX_AVG_XY_ERROR);
-    unsigned tries_counter = 0;  // TODO: as feedback?
+    grvc::utils::CircularBuffer history_xy_errors;
+    history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
+    history_xy_errors.fill_with(MAX_AVG_XY_ERROR);
+    // unsigned tries_counter = 0;  // TODO: as feedback?
     ros::Duration timeout(CANDIDATE_TIMEOUT);
     ros::Rate loop_rate(CATCHING_LOOP_RATE);
     while (true) {
@@ -295,12 +225,10 @@ public:
         // x-y-control: in candidateCallback
         // z-control: descend
         double xy_error = sqrt(target_position.x*target_position.x + target_position.y*target_position.y);
-        history_xy_errors.push_back(xy_error);
-        if (history_xy_errors.size() > AVG_XY_ERROR_WINDOW_SIZE) {  // 666 TODO: Check window size for avg xy error!
-          history_xy_errors.erase(history_xy_errors.begin());
-        }
+        history_xy_errors.push(xy_error);
+        double min_xy_error, avg_xy_error, max_xy_error;
+        history_xy_errors.get_stats(min_xy_error, avg_xy_error, max_xy_error);
 
-        double avg_xy_error = std::accumulate(history_xy_errors.begin(), history_xy_errors.end(), 0.0) / static_cast<float>(history_xy_errors.size());
         if (avg_xy_error > MAX_AVG_XY_ERROR) {
           avg_xy_error = MAX_AVG_XY_ERROR;
         }
@@ -373,7 +301,7 @@ public:
         break;
       }
 
-      // If we're too high, give up
+      // If we're too high, give up TODO: use _goal.z?
       if (ual_->pose().pose.position.z > Z_GIVE_UP_CATCHING) {
 
         // TODO: Find equivalent            
