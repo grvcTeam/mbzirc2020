@@ -16,7 +16,6 @@
 # Communications	TBD
 
 import rospy
-# import smach
 import actionlib
 import mbzirc_comm_objs.msg
 from geometry_msgs.msg import PoseStamped, Point, Vector3
@@ -25,9 +24,24 @@ from mbzirc_comm_objs.srv import GetCostToGoTo
 import math
 import json
 
+# TODO: All these parameters from config!
+field_width = 20  # 60  # TODO: Field is 60 x 50
+field_height = 20  # 50  # TODO: Field is 60 x 50
+column_count = 4  # 6  # TODO: as a function of fov
+
+brick_scales = {}
+# TODO: use enums for colors instead of strings
+brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['green'] = Vector3(x = 0.6, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config file?
+brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
+
+# TODO: from especification, assume x-z layout
+wall_blueprint = [['red', 'green'], ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
+
+# TODO: move to path utils
 def generate_area_path(width, height, column_count, z = 3.0):
     spacing = 0.5 * width / column_count
-    # print('spacing = {}'.format(spacing))
     y_min = spacing
     y_max = height - spacing
 
@@ -43,16 +57,14 @@ def generate_area_path(width, height, column_count, z = 3.0):
 
     return path
 
+# TODO: move to path utils
 def print_path(path):
     print('path of lenght {}: ['.format(len(path)))
     for point in path:
         print('[{}, {}, {}]'.format(point.x, point.y, point.z))
     print(']')
 
-# TODO: All these parameters from config!
-field_width = 20  # 60  # TODO: Field is 60 x 50
-field_height = 20  # 50  # TODO: Field is 60 x 50
-column_count = 4  # 6  # TODO: as a function of fov
+# TODO: move to path utils
 def generate_uav_paths(uav_count):
     if uav_count <= 0:
         return []
@@ -60,8 +72,6 @@ def generate_uav_paths(uav_count):
     area_path = generate_area_path(field_width, field_height, column_count)
     point_count = len(area_path)
     delta = int(math.ceil(point_count / float(uav_count)))
-    # print('point_count = {}'.format(point_count))
-    # print('delta = {}'.format(delta))
     paths = []
     for i in range(uav_count):
         j_min = delta * i
@@ -69,30 +79,18 @@ def generate_uav_paths(uav_count):
         paths.append(area_path[j_min:j_max])
     return paths
 
+# TODO: move to path utils
 def set_z(path, z):
     for point in path:
         point.z = z
     return path
 
-
-# TODO: Unifying robot_model and ns might be an issue for non homogeneous teams, 
-# but it is somehow forced by the way sensor topics are named in gazebo simulation
-
-# TODO: use enums instead of strings
-brick_scales = {}
-brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['green'] = Vector3(x = 0.6, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
-
-# TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
-
+# TODO: move to wall utils?
 class BrickInWall(object):
     def __init__(self, color, position):
         self.color = color
         self.pose = PoseStamped()
-        self.pose.header.frame_id = 'wall'  # TODO: define this frame
+        self.pose.header.frame_id = 'wall'  # Defined by a static tf publisher
         self.pose.pose.position = position
         self.pose.pose.orientation.w = 1  # Assume wall is x-oriented
 
@@ -101,6 +99,7 @@ class BrickInWall(object):
                 self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, 
                 self.pose.pose.orientation.x, self.pose.pose.orientation.y, self.pose.pose.orientation.z, self.pose.pose.orientation.w)
 
+# TODO: move to wall utils?
 def get_build_wall_sequence(wall_blueprint):
     buid_wall_sequence = []
     current_z = 0.0
@@ -123,12 +122,13 @@ def get_build_wall_sequence(wall_blueprint):
 
 class Agent(object):
     def __init__(self):
-        agents_ns = 'mbzirc2020'  # TODO: As a parameter
         self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
+        # TODO: Unifying robot_model and namespace might be an issue for non homogeneous teams, 
+        # but it is somehow forced by the way sensor topics are named in gazebo simulation (mbzirc2020)
         uavs_ns = {}
         for uav_id in self.available_uavs:
-            uavs_ns[uav_id] = agents_ns + '_' + uav_id
+            uavs_ns[uav_id] = 'mbzirc2020' + '_' + uav_id
 
         self.uav_params = {}
         self.uav_clients = {}  # TODO: is this AgentInterface?
@@ -155,25 +155,14 @@ class Agent(object):
             self.uav_params[uav_id] = {}
             agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
             self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')  # TODO: Needed here or leave uav alone?
-        #     self.uav_params[uav_id]['home_pose'] = PoseStamped()  # TODO: uav should get it as a param before taking off
-        #     self.uav_params[uav_id]['home_pose'].header.frame_id = 'arena'
-
-        # self.uav_params['1']['home_pose'].pose.position.x = 9.0
-        # self.uav_params['1']['home_pose'].pose.position.y = 5.0
-        # self.uav_params['1']['home_pose'].pose.position.z = 0.5
-        # self.uav_params['2']['home_pose'].pose.position.x = 11.0
-        # self.uav_params['2']['home_pose'].pose.position.y = 5.0
-        # self.uav_params['3']['home_pose'].pose.position.z = 0.5
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", ObjectDetectionList, self.estimation_callback)
 
     def data_feed_callback(self, data, uav_id):
         self.uav_data_feeds[uav_id] = data
-        # print('uav_data_feeds[{}].is_idle = {}'.format(uav_id, data.is_idle))
 
     def estimation_callback(self, data):
-        # pile_list =  ObjectDetectionList()
         for pile in data.objects:
             # TODO: check type and scale?
             properties_dict = {}
@@ -186,7 +175,8 @@ class Agent(object):
                 pose.pose = pile.pose.pose
                 self.piles[color] = pose
 
-    def take_off(self):    
+    # TODO: Could be a smach.State (for all or for every single uav)
+    def take_off(self):
         for uav_id in self.available_uavs:
             print('sending goal to take_off server {}'.format(uav_id))
             self.uav_clients[uav_id]['take_off'].send_goal(mbzirc_comm_objs.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
@@ -196,6 +186,7 @@ class Agent(object):
             self.uav_clients[uav_id]['take_off'].wait_for_result()
             print(self.uav_clients[uav_id]['take_off'].get_result())
 
+    # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
         uav_paths = {}
         point_paths = generate_uav_paths(len(self.available_uavs))
@@ -203,19 +194,14 @@ class Agent(object):
             uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
             flight_level = self.uav_params[uav_id]['flight_level']
             point_path = set_z(point_paths[i], flight_level)
-            # print_path(point_path)
             for point in point_path:
                 waypoint = PoseStamped()
-                waypoint.header.frame_id = 'arena'  # TODO: other frame_id?
+                waypoint.header.frame_id = 'arena'
                 waypoint.pose.position = point
                 waypoint.pose.orientation.z = 0
                 waypoint.pose.orientation.w = 1  # TODO: other orientation?
                 uav_path.path.append(waypoint)
-                # print(waypoint)
             uav_paths[uav_id] = uav_path
-
-        # for uav_id in uav_paths:
-        #     print(uav_paths[uav_id])
 
         for uav_id in self.available_uavs:
             print('sending goal to follow_path server {}'.format(uav_id))
@@ -226,6 +212,7 @@ class Agent(object):
             self.uav_clients[uav_id]['follow_path'].wait_for_result()
             print(self.uav_clients[uav_id]['follow_path'].get_result())
 
+    # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
         rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         # print(piles)  # TODO: cache it? if not piles[r, g, b, o], repeat!!
@@ -246,7 +233,6 @@ class Agent(object):
                 goal.pile_pose = self.piles[brick.color]
                 goal.brick_in_wall_pose = brick.pose
                 self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
-                # TODO: Some sleep here?
                 rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         # Once arrived here, last pick_and_place task has been allocated
         print('All pick_and_place tasks allocated')
@@ -271,31 +257,6 @@ class Agent(object):
             print('waiting result of go_home server [{}]'.format(uav_id))
             self.uav_clients[uav_id]['go_home'].wait_for_result()
             print(self.uav_clients[uav_id]['go_home'].get_result())
-    
-    # def finish(self):
-    #     # TODO: proper finish function with landing and champagne!
-    #     uav_paths = {}
-    #     for uav_id in self.available_uavs:
-    #         uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
-    #         flight_level = self.uav_params[uav_id]['flight_level']
-    #         waypoint = PoseStamped()
-    #         waypoint.header.frame_id = 'arena'
-    #         waypoint.pose.position.x = 0
-    #         waypoint.pose.position.y = 0
-    #         waypoint.pose.position.z = flight_level
-    #         waypoint.pose.orientation.z = 0
-    #         waypoint.pose.orientation.w = 1  # TODO: other orientation?
-    #         uav_path.path.append(waypoint)
-    #         uav_paths[uav_id] = uav_path
-
-    #     for uav_id in self.available_uavs:
-    #         print('sending goal to follow_path server {}'.format(uav_id))
-    #         self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
-
-    #     for uav_id in self.available_uavs:
-    #         print('waiting result of follow_path server [{}]'.format(uav_id))
-    #         self.uav_clients[uav_id]['follow_path'].wait_for_result()
-    #         print(self.uav_clients[uav_id]['follow_path'].get_result())
 
 def main():
     rospy.init_node('cu_agent_c2')
@@ -304,53 +265,8 @@ def main():
     # rospy.sleep(3)
 
     central_agent.take_off()
-    # central_agent.look_for_piles()
+    central_agent.look_for_piles()
     central_agent.build_wall()
-    # central_agent.finish()
-
 
 if __name__ == '__main__':
     main()
-
-
-# import roslib
-# import rospy
-# import smach
-# import smach_ros
-
-# from utils.agent import *
-# import tasks.central_unit_tasks.Idle
-# import tasks.central_unit_tasks.SearchForBrickPiles
-# import tasks.central_unit_tasks.CatchBalloons
-# import tasks.central_unit_tasks.SearchAndCatch
-# import tasks.central_unit_tasks.SearchAndBuild
-
-# def main():
-
-#     rospy.init_node('uav_agent')
-
-#     # params.
-#     id = 'central_unit'#rospy.get_param('~agent_id')
-
-#     # instantiate agent structures
-#     fsm = AgentStateMachine()
-#     iface = AgentInterface(id,fsm,{'type':'central_unit'})
-
-#     # create tasks
-#     default_task = tasks.central_unit_tasks.Idle.Task('idle',iface)
-#     tasks_dic = {}
-#     add_task('search_env', tasks_dic, iface, tasks.central_unit_tasks.SearchForBrickPiles, [])
-#     add_task('catch_balloons', tasks_dic, iface, tasks.central_unit_tasks.CatchBalloons, [])
-#     add_task('search_and_build', tasks_dic, iface, tasks.central_unit_tasks.SearchAndBuild, [])
-#     add_task('search_and_catch', tasks_dic, iface, tasks.central_unit_tasks.SearchAndCatch, [])
-
-#     # initialize state machine
-#     d_dic = {'idle': default_task}
-#     fsm.initialize(id, d_dic, 'idle', tasks_dic)
-
-#     # execute state machine
-#     userdata = smach.UserData()
-#     fsm.execute(userdata)
-
-# if __name__ == '__main__':
-#     main()
