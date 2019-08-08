@@ -2649,5 +2649,7 @@
       <static>1</static>
     </model>
 
+    <plugin name="factory" filename="libdroplet_factory.so"/>
+
   </world>
 </sdf>
