@@ -86,7 +86,7 @@ brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config f
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green', 'green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
+wall_blueprint = [['red', 'green']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
 
 class BrickInWall(object):
     def __init__(self, color, position):
@@ -261,7 +261,7 @@ class Agent(object):
                     print(self.uav_clients[uav_id]['pick_and_place'].get_result())
                     print('now go home!')
                     goal = mbzirc_comm_objs.msg.GoHomeGoal()
-                    goal.do_land = False  # TODO: not implemented yet!
+                    goal.do_land = True
                     self.uav_clients[uav_id]['go_home'].send_goal(goal)
             if set(self.available_uavs).issubset(finished_uavs):
                 print('All done!')

@@ -19,6 +19,7 @@ from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse, Magnetize, MagnetizeRequest
+from uav_abstraction_layer.srv import Land, LandRequest
 
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
@@ -36,6 +37,8 @@ class TakeOffTask(smach.StateMachine):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['height'])  # TODO: Use rospy.get_param('~flight_level') instead?
 
         with self:
+
+            #TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
 
             def take_off_goal_callback(userdata, default_goal):
                 # TODO: Or from userdata.height?
@@ -224,6 +227,66 @@ class PickAndPlaceTask(smach.StateMachine):
                                     remapping = {'waypoint': 'above_wall_pose'},
                                     transitions = {'succeeded': 'succeeded'})
 
+class LandTask(smach.StateMachine):
+
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])
+
+        with self:
+
+            def ask_for_region_request_callback(userdata, request):
+                agent_id = rospy.get_param('~agent_id')
+                radius = 1.0  # TODO: Tune, assure uav is not going further while land!
+                request = AskForRegionRequest()
+                request.agent_id = agent_id
+                request.min_corner.header.frame_id = self.ual_pose.header.frame_id
+                request.min_corner.point.x = self.ual_pose.pose.position.x - radius
+                request.min_corner.point.y = self.ual_pose.pose.position.y - radius
+                request.min_corner.point.z = 0
+                request.max_corner.header.frame_id = self.ual_pose.header.frame_id
+                request.max_corner.point.x = self.ual_pose.pose.position.x + radius
+                request.max_corner.point.y = self.ual_pose.pose.position.y + radius
+                request.max_corner.point.z = self.ual_pose.pose.position.z + radius
+                return request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_LAND', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'LAND', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_LAND'})
+
+            # TODO: call directly to ual land service!?
+            def land_request_callback(userdata, request):
+                request = LandRequest()
+                request.blocking = True
+                return request
+
+            def land_response_callback(userdata, response):
+                return 'succeeded'
+
+            smach.StateMachine.add('LAND', smach_ros.ServiceState('ual/land', Land,
+                                    request_cb = land_request_callback,
+                                    response_cb = land_response_callback),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_LANDED'})
+
+            smach.StateMachine.add('ASK_FOR_REGION_LANDED', smach_ros.ServiceState('/ask_for_region', AskForRegion,
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+        # TODO: repeated code, AgentInterface?
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
+
+    # TODO: repeated code, AgentInterface?
+    def ual_pose_callback(self, data):
+        self.ual_pose = data
+                            
 class Agent(object):
 
     def __init__(self):
@@ -245,6 +308,8 @@ class Agent(object):
         # self.go_home_task = GoHomeTask()  # Reuse follow_path_task
         self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.go_home_action_server.start()
+
+        self.land_task = LandTask()
 
         rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
 
@@ -315,9 +380,11 @@ class Agent(object):
         for point in userdata.path:
             print('path point: {}'.format(point))
         outcome = self.follow_path_task.execute(userdata)  # Reuse follow path!
-        print('follow_path_callback (go_home) output: {}'.format(outcome))
-        if goal.do_land:  # TODO: Land!
-            rospy.logwarn('Landing not implemented yet!')
+        print('follow_path_task (go_home) output: {}'.format(outcome))
+        if goal.do_land:
+            userdata = smach.UserData()  # empty
+            outcome = self.land_task.execute(userdata)
+            print('follow_path_task (go_home) output: {}'.format(outcome))
         self.go_home_action_server.set_succeeded()
 
     def get_cost_to_go_to(self, req):
