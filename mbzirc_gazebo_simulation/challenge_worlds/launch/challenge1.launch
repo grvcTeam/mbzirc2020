@@ -37,41 +37,6 @@
   <arg name="paused"         default="true"/>
   <arg name="respawn_gazebo" default="false"/>
 
-  <!-- MAVROS configs -->
-  <arg name="fcu_url"        default="udp://:14540@localhost:14557"/>
-  <arg name="respawn_mavros" default="false"/>
-  <arg name="gcs_url"        default="" />
-	<arg name="tgt_system"     default="1" />
-	<arg name="tgt_component"  default="1" />
-	<arg name="log_output"     default="screen" />
-	<arg name="fcu_protocol"   default="v2.0" />
-
-  <!-- PX4 configs -->
-  <arg name="interactive"    default="true"/>
-  <arg name="ID" default="0"/>
-  <env name="PX4_SIM_MODEL" value="$(arg vehicle)" />
-  <env name="PX4_ESTIMATOR" value="$(arg est)" />
-  <arg unless="$(arg interactive)" name="px4_command_arg1" value=""/>
-  <arg     if="$(arg interactive)" name="px4_command_arg1" value="-d"/>
-
-
-	<include file="$(find mavros)/launch/node.launch">
-		<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
-		<arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
-
-		<arg name="fcu_url" value="$(arg fcu_url)" />
-		<arg name="gcs_url" value="$(arg gcs_url)" />
-		<arg name="tgt_system" value="$(arg tgt_system)" />
-		<arg name="tgt_component" value="$(arg tgt_component)" />
-		<arg name="log_output" value="$(arg log_output)" />
-		<arg name="fcu_protocol" value="$(arg fcu_protocol)" />
-		<arg name="respawn_mavros" default="$(arg respawn_mavros)" />
-	</include>
-
-  <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
-    args="$(find px4)/ROMFS/px4fmu_common -s etc/init.d-posix/rcS -i $(arg ID) $(arg px4_command_arg1)" >
-  </node>
-
   <include file="$(find challenge_worlds)/launch/arena.launch">
     <arg name="balloon_zone_x_size"   value="$( arg balloon_zone_x_size)"/>
     <arg name="balloon_zone_y_size"   value="$( arg balloon_zone_y_size)"/>
@@ -85,23 +50,33 @@
     <arg name="landing_zone_y"        value="$( arg landing_zone_y)"/>
   </include>
 
-
- <param command="$(find xacro)/xacro -i
-   $(find challenge_worlds)/urdf/iris_target_drone.xacro
-   bar_l:=$(arg bar_l) ball_r:=$(arg ball_r) ball_colour:=$(arg ball_colour)"
-   name="target_iris_drone" />
-
- <param command="$(find xacro)/xacro -i
+  <param command="$(find xacro)/xacro -i
     $(find challenge_worlds)/urdf/iris_support.xacro
     bar_l:=$(arg bar_l) ball_r:=$(arg ball_r) "
     name="target_iris_support" />
 
- <node name="support_spawn" pkg="gazebo_ros" type="spawn_model"
+  <node name="support_spawn" pkg="gazebo_ros" type="spawn_model"
    output="screen" args="-sdf -param target_iris_support -model support
    -x $(arg x) -y $(arg y) -z $(arg z) "/>
 
- <node name="$(anon vehicle_spawn)" pkg="gazebo_ros" type="spawn_model"
-   output="screen" args="-sdf -param target_iris_drone -model $(arg vehicle)
-   -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y) "/>
+  <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="target_drone">
+    <arg name="description_package" value="uavs_description"/>
+    <arg name="robot_model" value="iris_target_drone"/>
+    <arg name="material" default="DarkGrey"/>
+    <arg name="id" value="5"/>
+    <arg name="mode" default="sitl"/>
+    <arg name="x" value="1.0"/>
+    <arg name="y" value="1.0"/>
+    <arg name="z" value="2.0"/>
+    <arg name="yaw" value="0"/>
+  </include>
+
+  <node pkg="uav_abstraction_layer" type="server" name="ual" ns="target_drone" output="screen">
+    <param name="uav_id" value="5"/>
+  </node>
+
+  <!-- Use tf to define eight path, args = x y z yaw pitch roll frame_id child_frame_id period_in_ms -->
+  <node pkg="tf" type="static_transform_publisher" name="map_to_eight_tf" args="50 30 10 0.1 0.2 0 map eight_path 100"/>
+  <node pkg="challenge_worlds" type="follow_eight.py" name="follow" ns="target_drone" output="screen"/>
 
 </launch>

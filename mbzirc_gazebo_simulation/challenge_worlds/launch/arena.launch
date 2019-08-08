@@ -55,10 +55,12 @@
   # |  x
   # L-->
 
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find challenge_worlds)/worlds/world_base.world"/>
-  </include>
+<rosparam param="/use_sim_time">true</rosparam>
 
+<node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
+  args="-physics=ode -world=$(find challenge_worlds)/worlds/world_base.world -description_package=uavs_description">
+  <rosparam param="sim_origin">[37.558542, -5.931074, 7.89]</rosparam><!-- [lat,lon,alt] -->
+</node>
 
 <param command="$(find xacro)/xacro.py
    $(find challenge_worlds)/urdf/delimited_zone.xacro

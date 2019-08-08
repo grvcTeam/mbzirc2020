@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<robot name="iris" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="bar_l"           default="1.0"/>
+  <xacro:arg name="ball_r"          default="0.09"/>
+  <xacro:arg name="ball_colour"     default="Gazebo/Green"/>
+
+  <!-- Instantiate robots_description iris -->
+  <xacro:include filename="$(find robots_description)/models/iris/model.xacro" />
+
+  <!-- Bar-ball system -->
+  <link name="foo">
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.005"/>
+      <inertia ixx="1e-06" ixy="0" ixz="0" iyy="1e-06" iyz="0" izz="9e-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.0005" length="0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.0005" length="0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_link_to_foo_joint" type="continuous">
+    <origin xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <parent link="base_link"/>
+    <child link="foo"/>
+  </joint>
+
+  <link name="bar">
+    <inertial>
+      <origin xyz="0 0 -${$(arg bar_l)/2}"/>
+      <mass value="0.005"/>
+      <inertia ixx="1e-06" ixy="0" ixz="0" iyy="1e-06" iyz="0" izz="9e-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 -${$(arg bar_l)/2}"/>
+      <geometry>
+        <cylinder radius="0.0005" length="$(arg bar_l)"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -${$(arg bar_l)/2}"/>
+      <geometry>
+        <cylinder radius="0.0005" length="$(arg bar_l)"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="foo_to_bar_joint" type="continuous">
+    <origin xyz="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <parent link="foo"/>
+    <child link="bar"/>
+  </joint>
+
+  <link name="ball">
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.005"/>
+      <inertia ixx="1e-06" ixy="0" ixz="0" iyy="1e-06" iyz="0" izz="9e-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="$(arg ball_r)"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <sphere radius="$(arg ball_r)"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="ball_joint" type="fixed">
+    <origin xyz="0 0 -${$(arg bar_l) + $(arg ball_r)}"/>
+    <parent link="bar"/>
+    <child link="ball"/>
+  </joint>
+  <gazebo reference="ball">
+    <material>$(arg ball_colour)</material>
+  </gazebo>
+
+</robot>
