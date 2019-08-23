@@ -15,87 +15,67 @@ def state_callback(state):
     if state != current_state:
         current_state = state
 
-# Generate a lemniscate with 4n+1 points and lenght l
-def generate_lemniscate(n, l):
-    if n < 0:
-        raise ValueError('Parameter n (number of points, 4n+1) is negative')
-    if l < 0:
-        raise ValueError('Parameter l (length) is negative')
-    if n == 0:
-        return np.array([[0, 0]])
+def generate_lemniscate(eight_length, tolerance, step_size ):
 
-    dtheta = 0.25*np.pi / float(n)
-    a2 = 0.125*l*l
-    # print('dtheta = {}, a^2 = {}'.format(dtheta, a2))
+        # Generate lemniscate with small step size
+        a=eight_length/2
+        X=np.arange(-a,a,tolerance/10)
+        Y=X*np.cos(np.arcsin(X/a))
+        
+        i = 0
+        
+        x=[]
+        y=[]
+        
+        x.append(X[i])
+        y.append(Y[i])
 
-    # Calculate 1st quadrant
-    points_q1 = [[0, 0]]
-    for i in range(n):
-        theta = 0.25*np.pi - (i+1)*dtheta
-        r = math.sqrt(2*a2 * math.cos(2.0*theta))
-        # print('theta = {}, r = {}'.format(theta, r))
-        x = r * math.cos(theta)
-        y = r * math.sin(theta)
-        # print('x = {}, y = {}'.format(x, y))
-        points_q1.append([x, y])
+        while(True):
+    
+            inc = i + 1
+            if(inc>len(X)-1):
+                break
+                
+            d = np.sqrt((X[inc]-X[i])**2 + (Y[inc]-Y[i])**2)
+            
+            # Find points with the predefined step_size in between
+            while(not (d > step_size)):
+                inc = inc+1
+                if(inc>len(X)-1):
+                    inc = inc-1
+                    break
+                d = np.sqrt((X[inc]-X[i])**2 + (Y[inc]-Y[i])**2)
 
-    # Exploit x-symmetry for 4th quadrant
-    points_q4 = []
-    for p in reversed(points_q1):
-        x = +p[0]
-        y = -p[1]
-        points_q4.append([x,y])
-
-    # Exploit y-symmetry for 2nd+3rd quadrant
-    points_q14 = points_q1 + points_q4[1:]
-    points_q23 = []
-    for p in points_q14:
-        x = -p[0]
-        y = +p[1]
-        points_q23.append([x, y])
-
-    # Concatenate all quadrants
-    points = points_q14 + points_q23[1:]
-    return np.array(points)
-
-# Resample path with at least d-distant points
-def resample_required_distance(path, d):
-    new_path = []
-    for a, b in zip(path, path[1:]):
-        ab = b - a
-        delta = np.linalg.norm(ab)
-        if delta > d:
-            n = math.ceil(delta/d)
-            for i in range(int(n)):
-                new_point = a + i*(1.0/n)*ab
-                # print(new_point)
-                new_path.append(new_point)
-        else:
-            new_path.append(a)
-
-    new_path.append(path[-1])
-    return np.array(new_path)
+            i=inc
+            x.append(X[i])
+            y.append(Y[i])
+        
+        x.extend(x[::-1]) # X[::-1] returns a new list with X reversed 
+        y.extend(y)
+        rospy.loginfo( "There are {} points in the trajectory".format(len(x)) )
+        rospy.loginfo( "Distance between points {}".format(step_size) )
+        
+        return x, y
 
 # Follow an eight-shaped path
 def main():
 
     rospy.init_node('follow_eight')
 
-    eight_n      = 10   # []:    path will have at least 4n+1 points
+    
+    
+    pose_rate    = 15   # Pose topic desired rate
+    pose_t       = 1.0/pose_rate # [s] Time between publicatios
     eight_length = 75.0 # [m]:   longitudinal length of path
-    max_delta    = 0.1  # [m]:   max distance between path points
-    v_set        = 8.0  # [m/s]  set velocity for path following
+    v_set        = 4.0  # [m/s]  set velocity for path following
+
+    
+    step_size    = (1.0/pose_rate) * v_set 
+    tolerance    = step_size/10
     # TODO: rotation sense
 
-    lemniscate = generate_lemniscate(eight_n, eight_length)
-    points = resample_required_distance(lemniscate, max_delta)
+    X, Y = generate_lemniscate(eight_length, tolerance, step_size)
 
-    # Debug: visualize path
-    # x = [p[0] for p in points]
-    # y = [p[1] for p in points]
-    # plt.plot(x, y, 'ro')
-    # plt.axis('equal')
-    # plt.show()
 
     eight_frame_id = 'eight_path'
     take_off_url = 'ual/take_off'
@@ -116,8 +96,8 @@ def main():
 
     position = PointStamped()
     position.header.frame_id = eight_frame_id
-    position.point.x = points[0][0]
-    position.point.y = points[0][1]
+    position.point.x = X[0]
+    position.point.y = Y[0]
     position.point.z = 0
 
     waypoint = PoseStamped()
@@ -136,18 +116,17 @@ def main():
         loop_count += 1
         print('Loop: {}'.format(loop_count))
     
-        for a, b in zip(points, points[1:]):
+        for i in range(len(X)):
+
             if rospy.is_shutdown():
                 break
-            ab = b - a
-            delta = np.linalg.norm(ab)
-            dt = delta / v_set
-            position.point.x = b[0]
-            position.point.y = b[1]
+
+            position.point.x = X[i]
+            position.point.y = Y[i]
             waypoint.pose.position = tf_listener.transformPoint('map', position).point
             pose_pub.publish(waypoint)
-            # print(b)
-            time.sleep(dt)
+            
+            time.sleep(pose_t)
 
 if __name__ == "__main__":
     main()
