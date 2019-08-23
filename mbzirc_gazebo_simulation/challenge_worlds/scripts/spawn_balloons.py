@@ -23,7 +23,7 @@ size_x = 90
 size_y = 50
 
 
-colour_list = ['green', 'blue', 'orange', 'yellow', 'white', 'black', 'red']
+colour_list = ['white']
 ################################################################################
 
 # TODO: READ CORRECTLY PARAMETERS
@@ -134,7 +134,7 @@ def bound(balloon):
         print(colour_list)
         print("[{}]: Balloon with index {} has a wrong colour. Will be set to red").format(
             __file__, int(balloon[0]))
-        balloon[4] = 'red'
+        balloon[4] = 'white'
 
 
 def help():

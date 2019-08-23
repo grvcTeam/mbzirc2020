@@ -10,7 +10,6 @@
     <xacro:arg name="height"     default="2"/>
     <xacro:arg name="colour"      default="Gazebo/red"/>
 
-    <xacro:property name="mesh_balloon"                value="$(find challenge_worlds)/meshes/balloon.dae" />
     <xacro:property name="balloon_radio"               value="0.24"/>
     <xacro:property name="balloon_height"              value="0.36"/>
     <xacro:property name="balloon_model_scale_factor"  value="0.0025"/>
@@ -544,10 +543,9 @@
         <gravity>0</gravity>
         <visual name='visual'>
           <geometry>
-            <mesh>
-              <uri>${mesh_balloon}</uri>
-              <scale>${balloon_model_scale_factor*balloon_radio} ${balloon_model_scale_factor*balloon_radio} ${balloon_model_scale_factor*balloon_radio}</scale>
-            </mesh>
+            <sphere>
+              <radius>0.3</radius>
+            </sphere>
           </geometry>
           <material>
             <!-- <ambient>0 0 0 1</ambient>

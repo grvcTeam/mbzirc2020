@@ -58,7 +58,7 @@
 <rosparam param="/use_sim_time">true</rosparam>
 
 <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
-  args="-physics=ode -world=$(find challenge_worlds)/worlds/world_base.world -description_package=uavs_description">
+  args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge1.world -description_package=uavs_description">
   <rosparam param="sim_origin">[37.558542, -5.931074, 7.89]</rosparam><!-- [lat,lon,alt] -->
 </node>
 
@@ -69,34 +69,34 @@
    height:=$(arg max_balloons_height) colour:=Gazebo/GreyTransparent"
    name="zone_balloons_param" />
 
- <node if="$(arg show_balloon_zone)"
+<node if="$(arg show_balloon_zone)"
    args="-urdf -param zone_balloons_param -model zone_balloons"
    name="spawn_zone_balloons" output="screen" pkg="gazebo_ros"
    type="spawn_model" />
 
- <param command="$(find xacro)/xacro.py
+<param command="$(find xacro)/xacro.py
    $(find challenge_worlds)/urdf/delimited_zone.xacro
    x:=$(arg landing_zone_x) y:=$(arg landing_zone_y) z:=0.05
    width:=$(arg landing_zone_size) large:=$(arg landing_zone_size)
    height:=0.05 colour:=Land" name="zone_landing_param" />
 
- <node if="$(arg show_landing_zone)"
+<node if="$(arg show_landing_zone)"
    args="-urdf -param zone_landing_param -model zone_landing"
    name="spawn_zone_landing" output="screen" pkg="gazebo_ros"
    type="spawn_model" />
 
- <param command="$(find xacro)/xacro.py
+<param command="$(find xacro)/xacro.py
    $(find challenge_worlds)/urdf/delimited_zone.xacro
    x:=$(arg deploy_zone_x) y:=$(arg deploy_zone_y) z:=0.07
    width:=$(arg deploy_zone_size) large:=$(arg deploy_zone_size)
    height:=0.05 colour:=Deploy" name="zone_deploy_param" />
 
- <node if="$(arg show_deploy_zone)"
+<node if="$(arg show_deploy_zone)"
    args="-urdf -param zone_deploy_param -model zone_deploy"
    name="spawn_zone_deploy" output="screen" pkg="gazebo_ros"
    type="spawn_model" />
 
- <node pkg="challenge_worlds" type="spawn_balloons.py"
+<node pkg="challenge_worlds" type="spawn_balloons.py"
    name="spawn_balloons" args="-f $(arg csv_path)
    -x $(arg balloon_zone_x_size) -y $(arg balloon_zone_y_size) -z $(arg max_balloons_height) "/>
    

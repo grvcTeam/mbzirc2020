@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <launch>
   <!-- TARGET DRONE CONFIG  -->
-  <arg name="bar_l"           value="1.2"/>
-  <arg name="ball_r"          value="0.09"/>
-  <arg name="ball_colour"     value="Gazebo/green"/>
   <arg name="x"               value="1"/>
   <arg name="y"               value="1"/>
   <arg name="z"               value="0"/>
@@ -50,15 +47,6 @@
     <arg name="landing_zone_y"        value="$( arg landing_zone_y)"/>
   </include>
 
-  <param command="$(find xacro)/xacro -i
-    $(find challenge_worlds)/urdf/iris_support.xacro
-    bar_l:=$(arg bar_l) ball_r:=$(arg ball_r) "
-    name="target_iris_support" />
-
-  <node name="support_spawn" pkg="gazebo_ros" type="spawn_model"
-   output="screen" args="-sdf -param target_iris_support -model support
-   -x $(arg x) -y $(arg y) -z $(arg z) "/>
-
   <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="target_drone">
     <arg name="description_package" value="uavs_description"/>
     <arg name="robot_model" value="iris_target_drone"/>
@@ -67,7 +55,7 @@
     <arg name="mode" default="sitl"/>
     <arg name="x" value="1.0"/>
     <arg name="y" value="1.0"/>
-    <arg name="z" value="2.0"/>
+    <arg name="z" value="0.0"/>
     <arg name="yaw" value="0"/>
   </include>
 
