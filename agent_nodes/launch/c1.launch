@@ -7,8 +7,8 @@
    <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/>
 
 
-   <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
+   <include file="$(find agent_nodes)/launch/uav_agent_c1.launch">
+      <arg name="ns" value="dji_f550_c1"/>
       <arg name="uav_id" value="1"/>
       <arg name="color" value="Orange"/>
       <arg name="height" value="2.0"/>
@@ -17,8 +17,8 @@
       <arg name="z" value="0"/>
    </include>
 
-   <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
+   <include file="$(find agent_nodes)/launch/uav_agent_c1.launch">
+      <arg name="ns" value="dji_f550_c1"/>
       <arg name="uav_id" value="2"/>
       <arg name="color" value="Indigo"/>
       <arg name="height" value="3.0"/>
