@@ -1,0 +1,19 @@
+<launch>
+   <arg name="drones_number" default="2"/>
+   <arg name="balloons_number" default="6"/>
+   <arg name="drones_radio" default="0.4"/>
+   <arg name="balloon_radio" default="0.3"/>
+
+   <arg name="checker_rate" default="50.0"/>
+   <arg name="safety_factor" default="1.1"/>
+
+
+   <node pkg="ch1_score_manager" type="ch1_score_manager_node.py" name="ch1_score_manager" output="screen">
+      <param name="drones_number" type="int" value="$(arg drones_number)" />
+      <param name="balloons_number" type="int" value="$(arg balloons_number)" />
+      <param name="drones_radio" type="double" value="$(arg drones_radio)" />
+      <param name="balloon_radio" type="double" value="$(arg balloon_radio)" />
+      <param name="checker_rate" type="double" value="$(arg checker_rate)" />
+      <param name="safety_factor" type="double" value="$(arg safety_factor)" />
+   </node>
+</launch>
