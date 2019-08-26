@@ -5,7 +5,7 @@
   <xacro:property name="model_name" value="dji_f550" />
   <xacro:property name="description_package" value="uavs_description" />
   <xacro:property name="namespace" value="" />
-  <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
+  <xacro:property name="rotor_velocity_slowdown_sim" value="1" />
   <xacro:property name="mesh_file" value="visual.dae" />
   <xacro:property name="mesh_scale" value="1 1 1"/>
   <xacro:property name="mesh_scale_prop" value="1 1 1"/>
@@ -19,7 +19,7 @@
   <xacro:property name="moment_constant" value="0.12" /> <!-- [m] -->
   <xacro:property name="time_constant_up" value="0.0125" /> <!-- [s] -->
   <xacro:property name="time_constant_down" value="0.025" /> <!-- [s] -->
-  <xacro:property name="max_rot_velocity" value="1100" /> <!-- [rad/s] -->
+  <xacro:property name="max_rot_velocity" value="2100" /> <!-- [rad/s] -->
   <xacro:property name="sin30" value="0.5" />
   <xacro:property name="cos30" value="0.866025403784" />
   <xacro:property name="sqrt2" value="1.4142135623730951" />
@@ -32,12 +32,12 @@
     <inertia ixx="0.287" ixy="0.0" ixz="0.0" iyy="0.287" iyz="0.0" izz="0.468" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
   </xacro:property>
 
-  <!-- inertia of a single rotor, assuming it is a cuboid. Height=3mm, width=15mm -->
+  <!-- inertia of a single rotor, copied from iris drone blades -->
   <xacro:property name="rotor_inertia">
     <inertia
-    ixx="${1/12 * mass_rotor * (0.015 * 0.015 + 0.003 * 0.003) * rotor_velocity_slowdown_sim}"
-    iyy="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.003 * 0.003) * rotor_velocity_slowdown_sim}"
-    izz="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.015 * 0.015) * rotor_velocity_slowdown_sim}"
+    ixx="0.00000097"
+    iyy="0.00027310"
+    izz="0.00027310"
     ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
   </xacro:property>
 
