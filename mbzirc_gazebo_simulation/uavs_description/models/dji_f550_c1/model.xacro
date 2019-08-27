@@ -31,6 +31,25 @@
 		<origin xyz="0.5 0 -0.27" rpy="0 1.57 0" />
 </fake_camera-->
 
+  <xacro:camera_macro
+    namespace="dji_F550"
+    parent_link="base_link"
+    camera_suffix="$(arg robot_id)"
+    frame_rate="30"
+    horizontal_fov="1.57108"
+    focal_length="599.7654"
+    image_width="848"
+    image_height="480"
+    image_format="R8G8B8"
+    min_distance="0.01"
+    max_distance="100"
+    baseline="0.05"
+    noise_mean="0.1"
+    noise_stddev="0.001"
+    >  
+  <origin xyz="0.16 0 -0.04" rpy="0 0.41887902047863906 0" />
+</xacro:camera_macro>
+
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->
     <xacro:gps_plugin_macro namespace="${namespace}" gps_noise="$(arg gps_noise)">

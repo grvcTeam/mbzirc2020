@@ -61,27 +61,85 @@
     <xacro:insert_block name="body_inertia" />
   </xacro:multirotor_base_macro>
 
-  <!-- Visual camera -->
-  <xacro:camera_macro
-    namespace="${namespace}"
-    parent_link="base_link"
-    camera_suffix="rgb"
-    frame_rate="30"
-    horizontal_fov="1.57108"
-    image_width="848"
-    image_height="480"
-    image_format="R8G8B8"
-    min_distance="0.01"
-    max_distance="100"
-    noise_mean="0"
-    noise_stddev="0"
-    enable_visual="true"
-    >
-    <box size="0.01 0.01 0.01"/>
-    <origin xyz="0.16 0 -0.04" rpy="0 0.41887902047863906 0" />
-  </xacro:camera_macro>
   
+  
+<!-- Visual RGB-D camera -->
+<xacro:macro name="camera_macro"
+    params="namespace parent_link camera_suffix frame_rate
+      horizontal_fov focal_length image_width image_height image_format min_distance
+      max_distance baseline noise_mean noise_stddev *origin">
+<link name='camera_link'>
+    <xacro:insert_block name="origin" />
+    <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.01" length="0.05"/>
+        </geometry>
+    </collision>
+    <inertial>
+      <mass value="1e-5" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+    </inertial>
+</link>
+  <gazebo reference="camera_link">
+    <sensor name='camera' type='depth'>
+      <update_rate>${frame_rate}</update_rate>
+      <camera name='intel_d435'>
+        <horizontal_fov>${horizontal_fov}</horizontal_fov> <!--1.57108-->
+        <image>
+          <width>${image_width}</width>
+          <height>${image_height}</height>
+          <format>${image_format}</format>
+        </image>
+        <clip>
+          <near>${min_distance}</near>
+          <far>${max_distance}</far>
+        </clip>
+        <noise>
+            <type>gaussian</type>
+            <!-- Noise is sampled independently per pixel on each frame.
+                 That pixel's noise value is added to each of its color
+                 channels, which at that point lie in the range [0,1]. -->
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+      </camera>
+      <plugin name='intel_D435_plugin' filename='libgazebo_ros_openni_kinect.so'>
+        <baseline>${baseline}</baseline> <!--0.05-->
+        <alwaysOn>1</alwaysOn>
+        <updateRate>${frame_rate}</updateRate>
+        <cameraName>${namespace}_camera_${camera_suffix}</cameraName>
+        <imageTopicName>rgb/image_raw</imageTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageTopicName>depth/image_raw</depthImageTopicName>
+        <depthImageInfoTopicName>depth/camera_info</depthImageInfoTopicName>
+        <pointCloudTopicName>depth/points</pointCloudTopicName>
+        <frameName>camera_link</frameName>
+        <pointCloudCutoff>0.15</pointCloudCutoff>
+        <pointCloudCutoffMax>10</pointCloudCutoffMax>
+        <distortionK1>0</distortionK1>
+        <distortionK2>0</distortionK2>
+        <distortionK3>0</distortionK3>
+        <distortionT1>0</distortionT1>
+        <distortionT2>0</distortionT2>
+        <CxPrime>0</CxPrime>
+        <Cx>0</Cx>
+        <Cy>0</Cy>
+        <!-- <focalLength>1.93</focalLength> -->
+        <!-- <focalLength>420.22</focalLength> -->
+        <focalLength>${focal_length}</focalLength>  <!-- 599.7654 -->
+        <hackBaseline>0</hackBaseline>
+      </plugin>
+    </sensor>
+  </gazebo>
 
+  <joint name="${namespace}/camera_joint" type="fixed">
+      <origin xyz="0.16 0 -0.04" rpy="0 0.41887902047863906 0" />
+      <parent link="${parent_link}" />
+      <child link="camera_link" />
+  </joint>
+  </xacro:macro>
 
 
   <!-- Instantiate rotors -->
