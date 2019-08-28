@@ -14,6 +14,8 @@ class Ch1ScoreManager:
     def __init__(self):
         rospy.init_node('ch1_score_manager')
 
+        rospy.loginfo('[Ch1-Score-Manager] Starting ch1_score_manager...')
+
         self.drones_number = rospy.get_param('~drones_number', 2)
         self.balloons_number = rospy.get_param('~balloons_number', 6)
         self.drones_radio = rospy.get_param('~drones_radio', 0.4)
@@ -22,7 +24,7 @@ class Ch1ScoreManager:
         safety_factor = rospy.get_param('~safety_factor', 0.95)
 
         self.balloon_link_name_pattern = re.compile("^balloon_\d{1,}::balloon$")
-        self.drone_link_name_pattern = re.compile("^dji_f550_\d{1,}::base_link$")
+        self.drone_link_name_pattern = re.compile("^dji_f550_c1_\d{1,}::base_link$")
 
         self.balloons_model_names = list()
         self.balloons_link_index = list()
@@ -61,6 +63,7 @@ class Ch1ScoreManager:
                 elif self.drone_link_name_pattern.match(name):
                     self.drones_model_names.append(name.split('::')[0])
                     self.drones_link_index.append(index)
+                    rospy.logdebug('[Ch1-Score-Manager] Adding drone link name: ' + name)
                 index += 1
             if len(
                     self.balloons_model_names) == self.balloons_number and len(
