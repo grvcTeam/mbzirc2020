@@ -43,7 +43,6 @@ def main():
     # create tasks
     default_task = tasks.uav_tasks.Hovering.Task('hovering',iface,uav_ns,)
     tasks_dic = {}
-    add_task('search_region', tasks_dic, iface, tasks.uav_tasks.SearchForObjects, [uav_ns])
     add_task('go_waypoint', tasks_dic, iface, tasks.uav_tasks.GoToWaypoint, [uav_ns])
 
     # initialize state machine
