@@ -15,7 +15,7 @@
 
     <!-- <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/gripper_link 10"/> -->
 
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.16 0 -0.04 0 0.41887902047863906 0 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/camera_link 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.16 0 -0.04 0 0.41887902047863906 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/camera_link 10"/>
     <!-- TODO: Use robot_description + state_publihser? -->
 
     <node pkg="uav_abstraction_layer" type="server" name="ual" output="screen">
