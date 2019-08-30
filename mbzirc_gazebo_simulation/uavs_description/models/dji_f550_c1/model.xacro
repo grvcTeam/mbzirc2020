@@ -37,7 +37,7 @@
     camera_suffix="$(arg robot_id)"
     frame_rate="30"
     horizontal_fov="1.57108"
-    focal_length="599.7654"
+    focal_length="0"
     image_width="848"
     image_height="480"
     image_format="R8G8B8"
@@ -48,7 +48,7 @@
     noise_stddev="0.001"
     >  
   <origin xyz="0.16 0 -0.04" rpy="0 0.41887902047863906 0" />
-</xacro:rgbd_camera_macro>
+</xacro:rgbd_camera_macro> <!-- focal_length = 0 -> openni plugin computes focal lenght with horizontal field of view  -->
 
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->
