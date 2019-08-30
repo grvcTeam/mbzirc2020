@@ -15,6 +15,7 @@
     <xacro:property name="balloon_model_scale_factor"  value="0.0025"/>
 
     <xacro:property name="bar_length"                  value="$(arg height)"/>
+    <xacro:property name="bar_rad"                     value="0.001"/>
     <xacro:property name="sphere_rad"                  value="0.02"/>
 
     <xacro:property name="base_height"                 value="0.1"/>
@@ -240,7 +241,7 @@
         <visual name='visual'>
           <geometry>
             <cylinder>
-              <radius>0.006</radius>
+              <radius>${bar_rad}</radius>
               <length>${bar_length}</length>
             </cylinder>
           </geometry>
@@ -263,7 +264,7 @@
           <max_contacts>10</max_contacts>
           <geometry>
             <cylinder>
-              <radius>0.006</radius>
+              <radius>${bar_rad}</radius>
               <length>${bar_length}</length>
             </cylinder>
           </geometry>

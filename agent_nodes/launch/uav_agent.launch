@@ -11,9 +11,15 @@
   <group ns="$(arg ns)_$(arg uav_id)">
     <param name="tf_prefix" value="$(arg ns)_$(arg uav_id)" />
 
-    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel" output="screen" args="-description_package=uavs_description -model=dji_f550 -id=$(arg uav_id) -material=$(arg color) -backend=light -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/>
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/gripper_link 10"/>
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
+    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel" output="screen"
+          args="-description_package=uavs_description -model=dji_f550 -id=$(arg uav_id)
+                -material=$(arg color) -backend=light -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf"
+          args="0 0 0 0 0 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/gripper_link 10"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" 
+          args="0 0 -0.275 0 1.57079632679 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
 
     <node pkg="uav_abstraction_layer" type="server" name="ual" output="screen">
       <param name="uav_id" value="$(arg uav_id)"/>
