@@ -24,7 +24,7 @@
   <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
 
   <!-- TODO:  All params from rosparam? -->
-  <include file="$(find agent_nodes)/launch/uav_agent.launch">
+  <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
@@ -36,7 +36,7 @@
       <arg name="ual_backend" value="mavros"/>
   </include>
 
-  <include file="$(find agent_nodes)/launch/uav_agent.launch">
+  <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
       <arg name="robot_model" value="$(arg robot_model)"/>
       <arg name="agent_id" value="2"/>
       <arg name="color" value="Indigo"/>
