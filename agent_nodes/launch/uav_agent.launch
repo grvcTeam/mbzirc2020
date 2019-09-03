@@ -8,14 +8,19 @@
   <arg name="y" default="0" />
   <arg name="z" default="0" />
   <arg name="yaw" default="0" />
+  <arg name="ual_backend" default="mavros" />
   
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
 
+    <!-- TODO: all transforms needed? -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />  <!-- TODO: Use robot_description + state_publihser? -->
 
-    <include file="$(find px4_bringup)/launch/spawn_robot.launch">
+    <node if="$(eval ual_backend == 'light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
+    args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena"/>
+
+    <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
         <arg name="mode" value="sitl"/>
         <arg name="description_package" value="uavs_description"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -32,8 +37,8 @@
       <param name="uav_id" value="$(arg agent_id)"/>
       <param name="pose_frame_id" value="arena"/>
       <param name="home_pose_parent_frame" value="arena"/>
-      <!-- <param name="home_pose" value="[10, 10, 10]"/>       -->
-      <!-- <rosparam param="home_pose">[20, 20, 20]</rosparam> -->
+      <param name="backend" value="$(arg ual_backend)"/>
+      <param name="model_name" value="$(arg robot_model)_$(arg agent_id)"/>
       <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>
       <param name="position_th" value="1.00"/>
       <param name="orientation_th" value="0.75"/>
