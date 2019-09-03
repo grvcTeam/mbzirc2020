@@ -1,0 +1,56 @@
+<!-- 
+The MIT License (MIT)
+Copyright (c) 2016 GRVC University of Seville
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+-->
+<launch>
+
+    <!-- <arg name="pose_frame_id" default=""/> -->
+    <!-- <arg name="ual_server" default="on"/> -->
+    <!-- <arg name="ual_pub_rate" default="30.0"/> -->
+    <!-- <arg name="mavros_offboard_rate" default="30.0"/> -->
+    <arg name="robot_id" default="1"/>
+	<arg name="mode" default="sim"/>
+
+    <group if="$(eval mode == 'sim')">
+        <!-- Launch Gazebo simulation NOT HERE!-->
+        <rosparam param="/use_sim_time">true</rosparam>
+        <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
+        args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
+			  -add_model_path=$(find aeroarms_gazebo_simulation)/models
+			  -description_package=robots_description">
+            <rosparam param="sim_origin">[53.613221, 8.093331, 3.89]</rosparam>  <!-- [lat,lon,alt] -->
+        </node>
+    </group>
+
+	<!-- <include file="$(find px4_bringup)/launch/spawn_robot.launch">
+		<arg name="description_package" value="robots_description"/>
+		<arg name="robot_model" value="mbzirc"/>
+		<arg name="id" value="1"/>
+		<arg name="material" value="Orange"/>
+		<arg if="$(eval mode == 'real')" name="mode" value="custom"/>
+		<arg if="$(eval mode == 'real')" name="fcu_url" value="serial:///dev/pixhawk:921600"/>
+		<arg name="x" value="0.0"/>
+        <arg name="y" value="-3.0"/>
+        <arg name="z" value="0.0"/>
+        <arg name="yaw" value="1.570796327"/>
+	</include> -->
+
+
+    <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="uav_$(arg robot_id)">
+        <arg name="id" value="$(arg robot_id)"/>
+        <!-- <arg name="material" value="Orange"/>
+        <arg name="x" default="0"/>
+        <arg name="y" default="0"/>
+        <arg name="z" default="0"/>
+        <arg name="yaw" default="0"/> -->
+    </include>
+
+    <node pkg="ual_action_server" type="ual_action_server" name="server" ns="uav_$(arg robot_id)" output="screen"/>
+
+</launch>

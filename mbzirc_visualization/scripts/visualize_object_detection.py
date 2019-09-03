@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import copy
+import argparse
 import rospy
 from std_msgs.msg import ColorRGBA
 from mbzirc_comm_objs.msg import ObjectDetectionList
@@ -35,12 +36,12 @@ def get_color(properties_dict, alpha = 1.0):
             color_out.b = 0.0
     return color_out
 
-def sensed_objects_callback(data):
+def sensed_objects_callback(data, ns):
     marker_array = MarkerArray()
     for id, sensed in enumerate(data.objects):
         type_marker = Marker()
         type_marker.header = sensed.header
-        type_marker.ns = 'object_detection'
+        type_marker.ns = ns
         type_marker.lifetime = rospy.Duration(1.0)
         type_marker.id = 10 * id
         type_marker.type = Marker.TEXT_VIEW_FACING
@@ -57,7 +58,7 @@ def sensed_objects_callback(data):
 
         pose_marker = Marker()
         pose_marker.header = sensed.header
-        pose_marker.ns = 'object_detection'
+        pose_marker.ns = ns
         pose_marker.lifetime = rospy.Duration(1.0)
         pose_marker.id = 10 * id + 1
         pose_marker.type = Marker.SPHERE
@@ -78,7 +79,7 @@ def sensed_objects_callback(data):
 
         scale_marker = Marker()
         scale_marker.header = sensed.header
-        scale_marker.ns = 'object_detection'
+        scale_marker.ns = ns
         scale_marker.lifetime = rospy.Duration(1.0)
         scale_marker.id = 10 * id + 2
         scale_marker.type = Marker.CUBE
@@ -91,8 +92,16 @@ def sensed_objects_callback(data):
         marker_array_pub.publish(marker_array)
 
 def main():
+    # Parse arguments
+    parser = argparse.ArgumentParser(description = 'Visualize object detection, publishing visualization markers for rviz')
+    parser.add_argument('-topic', type = str, default = 'sensed_objects',
+                        help = 'name of the topic that publishes the ObjectDetectionList to visualize')
+    args, unknown = parser.parse_known_args()
+    # utils.check_unknown_args(unknown)
+
     rospy.init_node('visualize_object_detection', anonymous = True)
-    rospy.Subscriber('sensed_objects', ObjectDetectionList, sensed_objects_callback, queue_size = 1)
+
+    rospy.Subscriber(args.topic, ObjectDetectionList, sensed_objects_callback, queue_size = 1, callback_args = args.topic)
     rospy.spin()
 
 if __name__ == '__main__':

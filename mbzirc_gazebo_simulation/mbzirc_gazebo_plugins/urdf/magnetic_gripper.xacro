@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
-<robot>
-  <macro name="magnetic_gripper" params="parent *origin robot_name">
-    <joint name="gripper_attach_joint" type="fixed">
-      <insert_block name="origin" />
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="magnetic_gripper" params="parent *origin robot_name">
+    <joint name="gripper_attach_joint" type="revolute">
+      <xacro:insert_block name="origin" />
       <parent link="${parent}"/>
       <child link="gripper_link"/>
+      <limit effort="0" lower="0" upper="0" velocity="0"/>
     </joint>
     <link name="gripper_link">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -29,12 +30,8 @@
     <gazebo>
       <plugin name="ros_gripper" filename="libmagnetic_gripper_plugin.so">
             <robot_name>${robot_name}</robot_name>
-            <!-- We are forced to magnetize the parent link because of gazebo
-                 automatically lumping fixed joints. This can be prevented just from
-                 SDF 5.0 onwards:
-                 http://answers.gazebosim.org/question/21118/converting-urdf-to-sdf-preservefixedjoint-not-working -->
-            <gripper_link_name>${parent}</gripper_link_name>
+            <gripper_link_name>gripper_link</gripper_link_name>
           </plugin>
     </gazebo>
-  </macro>
+  </xacro:macro>
 </robot>

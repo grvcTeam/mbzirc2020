@@ -1,5 +1,0 @@
-string frame_id
-geometry_msgs/Polygon region
-geometry_msgs/Point[] waiting_points
----
-int32 region_id

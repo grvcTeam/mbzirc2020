@@ -1,46 +1,60 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="ns" default="dji_f550" />
-  <arg name="uav_id" default="1" />
+  <arg name="robot_model" default="mbzirc2020" />
+  <arg name="agent_id" default="1" />
   <arg name="color" default="Orange" />
-  <arg name="height" default="2.0" />
-  <arg name="x" default="0" />
+  <arg name="flight_level" default="2.0" />
+  <arg name="x" default="10" />
   <arg name="y" default="0" />
   <arg name="z" default="0" />
+  <arg name="yaw" default="0" />
+  <arg name="ual_backend" default="mavros" />
   
-  <group ns="$(arg ns)_$(arg uav_id)">
-    <param name="tf_prefix" value="$(arg ns)_$(arg uav_id)" />
+  <group ns="$(arg robot_model)_$(arg agent_id)">
+    <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
 
-    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel" output="screen"
-          args="-description_package=uavs_description -model=dji_f550 -id=$(arg uav_id)
-                -material=$(arg color) -backend=light -x $(arg x) -y $(arg y) -z $(arg z) -Y 0"/>
+    <!-- TODO: all transforms needed? -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />  <!-- TODO: Use robot_description + state_publihser? -->
 
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_gripper_tf"
-          args="0 0 0 0 0 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/gripper_link 10"/>
-    
-    <node pkg="tf" type="static_transform_publisher" name="uav_base_to_camera_tf" 
-          args="0 0 -0.275 0 1.57079632679 0 $(arg ns)_$(arg uav_id)/base_link $(arg ns)_$(arg uav_id)/camera_link 10"/> <!-- TODO: Use robot_description + state_publihser? -->
+    <node if="$(eval ual_backend == 'light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
+    args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena"/>
 
-    <node pkg="uav_abstraction_layer" type="server" name="ual" output="screen">
-      <param name="uav_id" value="$(arg uav_id)"/>
-      <param name="backend" value="light"/>
-      <param name="model_name" value="dji_f550_$(arg uav_id)"/>
-      <param name="pose_frame_id" value="map"/>
-      <param name="ual_server" value="on"/>
-      <param name="noise_var" value="0.0"/>
-      <param name="max_position_error" value="0.01"/>
-      <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), 0]</rosparam><!-- [x,y,z] -->
+    <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
+        <arg name="mode" value="sitl"/>
+        <arg name="description_package" value="uavs_description"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="id" value="$(arg agent_id)"/>
+        <arg name="material" value="$(arg color)"/>
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
+        <arg name="z" value="$(arg z)"/>
+        <arg name="yaw" value="$(arg yaw)"/>
+        <arg name="frame_id" value="arena"/>
+    </include>
+
+    <node pkg="ual_action_server" type="ual_action_server" name="server" output="screen">
+      <param name="uav_id" value="$(arg agent_id)"/>
+      <param name="pose_frame_id" value="arena"/>
+      <param name="home_pose_parent_frame" value="arena"/>
+      <param name="backend" value="$(arg ual_backend)"/>
+      <param name="model_name" value="$(arg robot_model)_$(arg agent_id)"/>
+      <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>
+      <param name="position_th" value="1.00"/>
+      <param name="orientation_th" value="0.75"/>
+      <param name="hold_pose_time" value="0"/>
     </node>
 
     <node name="agent_node" pkg="agent_nodes" type="uav_agent_c2.py" output="screen">
-      <param name="uav_ns" value="ual"/>
-      <param name="agent_id" value="$(arg ns)_$(arg uav_id)"/>
-      <param name="z_offset" value="0.5" type="double"/>
-      <param name="height" value="$(arg height)" type="double"/>
-      <param name="global_frame" value="map"/>
-      <param name="uav_frame" value="$(arg ns)_$(arg uav_id)/base_link"/>
-      <param name="gripper_frame" value="$(arg ns)_$(arg uav_id)/gripper_link"/>
-      <param name="aov" value="40"/> <!-- angle of view of the camera used to detect objects -->
+      <!-- <param name="uav_ns" value="ual"/> -->
+      <param name="agent_id" value="$(arg agent_id)"/>
+      <param name="flight_level" value="$(arg flight_level)"/>
+      <!-- <param name="z_offset" value="0.5" type="double"/> -->
+      <!-- <param name="height" value="$(arg height)" type="double"/> -->
+      <!-- <param name="global_frame" value="map"/> -->
+      <!-- <param name="uav_frame" value="$(arg robot_model)_$(arg agent_id)/base_link"/> -->
+      <!-- <param name="gripper_frame" value="$(arg robot_model)_$(arg agent_id)/gripper_link"/> -->
+      <!-- <param name="aov" value="40"/> -->
     </node>
 
     <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/>

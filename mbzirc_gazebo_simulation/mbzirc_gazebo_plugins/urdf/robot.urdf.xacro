@@ -6,7 +6,7 @@
     xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
     <!-- Included URDF Files -->
-  <include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+  <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
   <link name="robot_body">
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>

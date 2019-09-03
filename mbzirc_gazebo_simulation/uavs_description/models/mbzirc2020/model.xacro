@@ -4,6 +4,7 @@
   <!-- Properties that can be assigned at build time as arguments.
   Is there a reason not to make all properties arguments?
   -->
+  <xacro:arg name='robot_id' default='1' />  
   <xacro:arg name='mavlink_addr' default='INADDR_ANY' />
   <xacro:arg name='mavlink_udp_port' default='14560' />
   <xacro:arg name='visual_material' default='DarkGrey' />
@@ -14,10 +15,15 @@
   <xacro:arg name='enable_logging' default='false' />
 
   <!-- macros for gazebo plugins, sensors -->
-  <xacro:include filename="$(find uavs_description)/models/mbzirc2020/component_snippets.xacro" />
+  <xacro:include filename="$(find robots_description)/urdf/component_snippets.xacro" />
 
   <!-- Instantiate mbzirc "mechanics" -->
   <xacro:include filename="$(find uavs_description)/models/mbzirc2020/geometry.xacro" />
+
+  <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
+  <xacro:magnetic_gripper parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
+    <origin xyz="0 0 -0.275" rpy="0 0 0" />
+  </xacro:magnetic_gripper>
 
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->

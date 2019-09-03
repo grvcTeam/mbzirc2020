@@ -1,0 +1,10 @@
+#goal definition
+# string type
+# string color
+# geometry_msgs/Vector3 scale
+geometry_msgs/PoseStamped approximate_pose
+---
+#result definition
+string message
+---
+#feedback

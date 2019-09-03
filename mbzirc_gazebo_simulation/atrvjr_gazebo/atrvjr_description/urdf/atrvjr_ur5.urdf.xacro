@@ -21,13 +21,13 @@
     </joint>
 
     <!-- gripper -->
-    <include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
+    <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
     <magnetic_gripper parent="ur5_wrist_3_link" robot_name="">
     		<origin xyz="0 0.1 0" rpy="1.5708 0 0" />
     </magnetic_gripper>
 
     <!-- camera -->
-    <include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+    <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
     <fake_camera parent="center_link" robot_name="">
     		<origin xyz="0 0.3 0" rpy="0 0 1.57" />
     </fake_camera>

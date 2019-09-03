@@ -2,39 +2,48 @@
 <launch>
 
 	<arg name="mode" default="sim"/>
+    <arg name="robot_model" default="mbzirc2020"/>
+    <arg name="arena_yaw" default="0.01"/>
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
         <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
-        args="-physics=none -world=$(find challenge_worlds)/worlds/challenge2.world
-			  -add_model_path=$(find challenge_worlds)/urdf
+        args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
+			  -add_model_path=$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
 			  -description_package=uavs_description">
             <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
         </node>
     </group>
 
+    <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="-10 -10 0 $(arg arena_yaw) 0 0 map arena" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="10 10 0 0 0 0 arena wall" />
+
   <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
-  <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/>
+  <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
 
-  
   <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
-      <arg name="uav_id" value="1"/>
+      <!-- TODO:  Everything from rosparam? -->
+      <arg name="robot_model" value="$(arg robot_model)"/>
+      <arg name="agent_id" value="1"/>
       <arg name="color" value="Orange"/>
-      <arg name="height" value="2.0"/>
-      <arg name="x" value="5"/>
-      <arg name="y" value="0"/>
-      <arg name="z" value="0"/>
-  </include>
-
-  <include file="$(find agent_nodes)/launch/uav_agent.launch">
-      <arg name="ns" value="dji_f550"/>
-      <arg name="uav_id" value="2"/>
-      <arg name="color" value="Indigo"/>
-      <arg name="height" value="3.0"/>
-      <arg name="x" value="5"/>
+      <arg name="flight_level" value="10.0"/>
+      <arg name="x" value="9"/>
       <arg name="y" value="5"/>
       <arg name="z" value="0"/>
+      <arg name="yaw" value="1.570796327"/>
   </include>
+
+  <include file="$(find agent_nodes)/launch/uav_agent.launch">
+      <arg name="robot_model" value="$(arg robot_model)"/>
+      <arg name="agent_id" value="2"/>
+      <arg name="color" value="Indigo"/>
+      <arg name="flight_level" value="5.0"/>
+      <arg name="x" value="11"/>
+      <arg name="y" value="5"/>
+      <arg name="z" value="0"/>
+      <arg name="yaw" value="1.570796327"/>
+  </include>
+
 </launch>

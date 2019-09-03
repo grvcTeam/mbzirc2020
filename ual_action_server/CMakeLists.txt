@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mbzirc_comm_objs)
+project(ual_action_server)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry_msgs)
+find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  actionlib_msgs
+  roscpp
+  uav_abstraction_layer
+  mbzirc_comm_objs
+  handy_tools
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -43,54 +50,31 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   ObjectDetection.msg
-   ObjectDetectionList.msg
-   GripperAttached.msg
-   WallBluePrint.msg
-   RegionOwnerList.msg
-   AgentDataFeed.msg
- )
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
- add_service_files(
-   FILES
-   DetectTypes.srv
-   SearchForObject.srv
-   Magnetize.srv
-   AskForRegion.srv
-   BuildWall.srv
-   PickNPlace.srv
-   PFPNPlace.srv
-   AgentIdle.srv
-   GetJson.srv
-   GoToWaypoint.srv
-   SearchForBrickPiles.srv
-   SearchAndBuild.srv
-   SetAgentProp.srv
-   GetCostToGoTo.srv
- )
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  # UAL.action
-  TakeOff.action
-  GoTo.action
-  Pick.action
-  FollowPath.action
-  PickAndPlace.action
-  GoHome.action
-)
+# add_action_files(
+#   FILES
+#   Action1.action
+#   Action2.action
+# )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs
-   std_msgs
-   geometry_msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   actionlib_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -123,8 +107,8 @@ add_action_files(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES mbzirc_comm_objs
-#  CATKIN_DEPENDS other_catkin_pkg
+#  LIBRARIES ual_action_server
+#  CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer
 #  DEPENDS system_lib
 )
 
@@ -136,12 +120,12 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
 # include
- ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/mbzirc_comm_objs.cpp
+#   src/${PROJECT_NAME}/ual_action_server.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -152,7 +136,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/mbzirc_comm_objs_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/ual_action_server_node.cpp)
+add_executable(ual_action_server src/ual_action_server.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -163,11 +148,15 @@ include_directories(
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ual_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(ual_action_server
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -209,7 +198,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_mbzirc_comm_objs.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_ual_action_server.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

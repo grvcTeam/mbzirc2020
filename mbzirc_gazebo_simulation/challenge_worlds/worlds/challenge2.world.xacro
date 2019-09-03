@@ -7,13 +7,13 @@
 <xacro:include filename="$(find challenge_worlds)/urdf/green_pile.xacro" />
 
   <world name="default">
-    <include>
+    <xacro:include>
       <uri>model://ground_plane</uri>
-    </include>
+    </xacro:include>
 
-    <include>
+    <xacro:include>
       <uri>model://sun</uri>
-    </include>
+    </xacro:include>
  
    <orange_pile id="1" pose="10 0 0 0 0 0" />
    <blue_pile id="2" pose="-10 0 0 0 0 0" />
