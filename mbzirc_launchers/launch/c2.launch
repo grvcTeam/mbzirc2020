@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-	<arg name="mode" default="sim"/>
+    <arg name="mode" default="sim"/>
     <arg name="robot_model" default="mbzirc2020"/>
     <arg name="arena_yaw" default="0.01"/>
 
@@ -20,32 +20,33 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="-10 -10 0 $(arg arena_yaw) 0 0 map arena" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="10 10 0 0 0 0 arena wall" />
 
-  <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
-  <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
+    <node name="target_estimator" pkg="target_estimation" type="estimation_node"/>
+    <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
+    <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
 
-  <!-- TODO:  All params from rosparam? -->
-  <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
-      <arg name="robot_model" value="$(arg robot_model)"/>
-      <arg name="agent_id" value="1"/>
-      <arg name="color" value="Orange"/>
-      <arg name="flight_level" value="10.0"/>
-      <arg name="x" value="9"/>
-      <arg name="y" value="5"/>
-      <arg name="z" value="0"/>
-      <arg name="yaw" value="1.570796327"/>
-      <arg name="ual_backend" value="mavros"/>
-  </include>
+    <!-- TODO:  All params from rosparam? -->
+    <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="1"/>
+        <arg name="color" value="Orange"/>
+        <arg name="flight_level" value="10.0"/>
+        <arg name="x" value="9"/>
+        <arg name="y" value="5"/>
+        <arg name="z" value="0"/>
+        <arg name="yaw" value="1.570796327"/>
+        <arg name="ual_backend" value="light"/>
+    </include>
 
-  <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
-      <arg name="robot_model" value="$(arg robot_model)"/>
-      <arg name="agent_id" value="2"/>
-      <arg name="color" value="Indigo"/>
-      <arg name="flight_level" value="5.0"/>
-      <arg name="x" value="11"/>
-      <arg name="y" value="5"/>
-      <arg name="z" value="0"/>
-      <arg name="yaw" value="1.570796327"/>
-      <arg name="ual_backend" value="mavros"/>
-  </include>
+    <include file="$(find mbzirc_launchers)/launch/uav_agent.launch">
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="2"/>
+        <arg name="color" value="Indigo"/>
+        <arg name="flight_level" value="5.0"/>
+        <arg name="x" value="11"/>
+        <arg name="y" value="5"/>
+        <arg name="z" value="0"/>
+        <arg name="yaw" value="1.570796327"/>
+        <arg name="ual_backend" value="light"/>
+    </include>
 
 </launch>
