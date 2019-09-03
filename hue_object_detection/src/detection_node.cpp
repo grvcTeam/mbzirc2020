@@ -172,6 +172,18 @@ bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
   return true;
 }
 
+void draw_hud(cv_bridge::CvImagePtr _ptr) {
+  if (!_ptr || _ptr->image.empty()) {
+    return;
+  }
+  cv::Size image_size = _ptr->image.size();
+  int half_height = cvRound(image_size.height / 2);
+  int half_width = cvRound(image_size.width / 2);
+  cv::Scalar color = cvScalar(0, 255, 255);
+  cv::line(_ptr->image, cvPoint(0, half_height), cvPoint(image_size.width, half_height), color);
+  cv::line(_ptr->image, cvPoint(half_width, 0), cvPoint(half_width, image_size.height), color);
+}
+
 int main(int argc, char** argv) {
 
   ros::init(argc, argv, "detection_node");
@@ -217,6 +229,7 @@ int main(int argc, char** argv) {
       // for (int i = 0; i < detected.size(); i++) {
       //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
       // }
+      draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
 
       try {
