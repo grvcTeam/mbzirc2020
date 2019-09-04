@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node ns="target_drone" name="visualize_path" pkg="mbzirc_visualization" type="visualize_path.py" output="screen"/>
+
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find mbzirc_visualization)/config/c1.rviz"/>
+
+</launch>
