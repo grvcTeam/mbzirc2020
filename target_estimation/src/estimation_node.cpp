@@ -4,6 +4,28 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+class Estimator {
+public:
+    Estimator(double _frequency = 1.0) {
+        if (_frequency <= 0) {
+            ROS_ERROR("Estimator: Trying to set frequency to invalid value [%lf], using 1Hz instead", _frequency);
+            _frequency = 1.0;
+        }
+        ros::NodeHandle nh;
+        estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
+        estimation_timer_ = nh.createTimer(ros::Duration(1.0/_frequency), &Estimator::estimateCallback, this);
+    }
+
+protected:
+    void estimateCallback(const ros::TimerEvent& event) {
+        estimated_pub_.publish(targets_);
+    }
+
+    ros::Timer estimation_timer_;
+    ros::Publisher estimated_pub_;
+    mbzirc_comm_objs::ObjectDetectionList targets_;
+};
+
 float squared_distance(const geometry_msgs::Point& a, const geometry_msgs::Point& b) {
     float dx = b.x - a.x;
     float dy = b.y - a.y;
@@ -11,10 +33,10 @@ float squared_distance(const geometry_msgs::Point& a, const geometry_msgs::Point
     return dx*dx + dy*dy + dz*dz;
 }
 
-class SimpleClusteringEstimator {
+class SimpleClusteringEstimator: public Estimator {
 public:
 
-    SimpleClusteringEstimator(const std::string& _uav_ns) {
+    SimpleClusteringEstimator(double _frequency, const std::string& _uav_ns): Estimator(_frequency) {
         ros::NodeHandle nh;
 
         int max_uav_count = 3;  // Even if uavs does not exist, subscribing makes no harm
@@ -22,9 +44,6 @@ public:
             std::string sensed_topic = _uav_ns + "_" + std::to_string(i) + "/sensed_objects";
             sensed_sub_.push_back(nh.subscribe(sensed_topic, 1, &SimpleClusteringEstimator::updateCallback, this));
         }
-
-        estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
-        estimation_timer_ = nh.createTimer(ros::Duration(1), &SimpleClusteringEstimator::estimateCallback, this);  // TODO: frequency as a parameter
     }
 
 protected:
@@ -81,14 +100,7 @@ protected:
         }
     }
 
-    void estimateCallback(const ros::TimerEvent& event) {
-        estimated_pub_.publish(targets_);
-    }
-
-    ros::Timer estimation_timer_;
-    ros::Publisher estimated_pub_;
     std::vector<ros::Subscriber> sensed_sub_;
-    mbzirc_comm_objs::ObjectDetectionList targets_;
     float squared_distance_th_ = 25.0;  // TODO: tune, from params?
 };
 
@@ -122,16 +134,12 @@ void operator>>(const YAML::Node& in, PileData& pile_data) {
     pile_data.scale_z = in["scale_z"].as<float>();
 }
 
-class APrioriInfoEstimator {
+class APrioriInfoEstimator: public Estimator {
 public:
 
-    APrioriInfoEstimator(const std::string& _uav_ns) {
-        ros::NodeHandle nh;
-        estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
-        estimation_timer_ = nh.createTimer(ros::Duration(1), &APrioriInfoEstimator::estimateCallback, this);  // TODO: frequency as a parameter
-
+    APrioriInfoEstimator(double _frequency): Estimator(_frequency) {
         std::string config_folder = ros::package::getPath("target_estimation") + "/config/";
-        std::string config_filename = config_folder + "piles.yaml";  // TODO: from parameter
+        std::string config_filename = config_folder + "piles.yaml";  // TODO: from parameter?
 
         YAML::Node yaml_config = YAML::LoadFile(config_filename);
         for (std::size_t i = 0; i < yaml_config["piles"].size(); i++) {
@@ -158,29 +166,32 @@ public:
             object.scale.y = pile_data.scale_y;
             object.scale.z = pile_data.scale_z;
             object.properties = "{\"color\": \"" + pile_data.color + "\"}";  // TODO: could color be "unknown"?
-            detected_.objects.push_back(object);
+            targets_.objects.push_back(object);
         }
     }
-
-protected:
-
-    void estimateCallback(const ros::TimerEvent& event) {
-        estimated_pub_.publish(detected_);
-    }
-
-    ros::Timer estimation_timer_;
-    ros::Publisher estimated_pub_;
-    mbzirc_comm_objs::ObjectDetectionList detected_;
 };
 
 int main(int argc, char** argv) {
 
     ros::init(argc, argv, "estimation_node");
 
-    // TODO: parameters from rosparam
-    // TODO: select estimation type from params
-    // SimpleClusteringEstimator estimation("mbzirc2020");
-    APrioriInfoEstimator estimation("mbzirc2020");
+    double frequency;
+    std::string estimator_name;
+    std::string robot_ns;
+    ros::param::param<double>("~frequency", frequency, 1.0);
+    ros::param::param<std::string>("~estimator", estimator_name, "a_priori_info");
+    ros::param::param<std::string>("~robot_ns", robot_ns, "mbzirc2020");
+
+    Estimator* estimator = nullptr;
+    if (estimator_name == "simple_clustering") {
+        estimator = new SimpleClusteringEstimator(frequency, robot_ns);
+    } else if (estimator_name == "a_priori_info") {
+        estimator = new APrioriInfoEstimator(frequency);
+    } else {
+        ROS_WARN("Unexpected estimator name [%s], using default");
+        estimator = new APrioriInfoEstimator(frequency);
+    }
+
     ros::spin();
 
     return 0;
