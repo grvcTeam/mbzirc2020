@@ -1,0 +1,41 @@
+# TODO: could color be "unknown"?
+piles:
+  - color: "red"
+    frame_id: "map"
+    position_x: 0.0
+    position_y: -10
+    position_z: 0.1
+    orientation_yaw: 0.0
+    scale_x: 3.0
+    scale_y: 3.0
+    scale_z: 0.2
+
+  - color: "green"
+    frame_id: "map"
+    position_x: 0.0
+    position_y: 10
+    position_z: 0.1
+    orientation_yaw: 0.0
+    scale_x: 3.0
+    scale_y: 3.0
+    scale_z: 0.2
+
+  - color: "blue"
+    frame_id: "map"
+    position_x: -10
+    position_y: 0.0
+    position_z: 0.1
+    orientation_yaw: 0.0
+    scale_x: 5.0
+    scale_y: 5.0
+    scale_z: 0.2
+
+  - color: "orange"
+    frame_id: "map"
+    position_x: 10
+    position_y: 0.0
+    position_z: 0.1
+    orientation_yaw: 0.0
+    scale_x: 5.0
+    scale_y: 5.0
+    scale_z: 0.2

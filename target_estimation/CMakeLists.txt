@@ -9,6 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   mbzirc_comm_objs
 )
 
@@ -152,6 +153,7 @@ add_dependencies(estimation_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 # )
 target_link_libraries(estimation_node
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
 
 #############

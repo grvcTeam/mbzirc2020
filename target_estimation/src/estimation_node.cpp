@@ -1,4 +1,6 @@
 #include <ros/ros.h>
+#include <ros/package.h>
+#include <yaml-cpp/yaml.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
@@ -89,6 +91,36 @@ protected:
     float squared_distance_th_ = 25.0;  // TODO: tune, from params?
 };
 
+struct PileData {
+    std::string color;
+    std::string frame_id;
+    float position_x;
+    float position_y;
+    float position_z;
+    float orientation_yaw;
+    float scale_x;
+    float scale_y;
+    float scale_z;
+
+    void print() {
+        printf("color: %s, frame_id: %s, position_x: %f, position_y: %f, position_z: %f, orientation_yaw: %f, scale_x: %f, scale_y: %f, scale_z: %f \n", \
+                color.c_str(), frame_id.c_str(), position_x, position_y, position_z, orientation_yaw, scale_x, scale_y, scale_z);
+    }
+};
+
+void operator>>(const YAML::Node& in, PileData& pile_data) {
+    // TODO: Check that expected fields do exist
+    pile_data.color = in["color"].as<std::string>();
+    pile_data.frame_id = in["frame_id"].as<std::string>();
+    pile_data.position_x = in["position_x"].as<float>();
+    pile_data.position_y = in["position_y"].as<float>();
+    pile_data.position_z = in["position_z"].as<float>();
+    pile_data.orientation_yaw = in["orientation_yaw"].as<float>();
+    pile_data.scale_x = in["scale_x"].as<float>();
+    pile_data.scale_y = in["scale_y"].as<float>();
+    pile_data.scale_z = in["scale_z"].as<float>();
+}
+
 class StaticEstimator {
 public:
 
@@ -96,68 +128,48 @@ public:
         ros::NodeHandle nh;
         estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
         estimation_timer_ = nh.createTimer(ros::Duration(1), &StaticEstimator::estimateCallback, this);  // TODO: frequency as a parameter
+
+        std::string config_folder = ros::package::getPath("target_estimation") + "/config/";
+        std::string config_filename = config_folder + "piles.yaml";  // TODO: from parameter
+
+        YAML::Node yaml_config = YAML::LoadFile(config_filename);
+        for (std::size_t i = 0; i < yaml_config["piles"].size(); i++) {
+            PileData pile_data;
+            yaml_config["piles"][i] >> pile_data;
+            // pile_data.print();
+
+            mbzirc_comm_objs::ObjectDetection object;
+            object.header.stamp = ros::Time::now();
+            object.header.frame_id = pile_data.frame_id;
+            object.type = "brick";
+            // object.pose.covariance...  // TODO: needed?
+            // object.relative_position  // ignored here
+            // object.relative_yaw  // ignored here
+            object.pose.pose.position.x = pile_data.position_x;
+            object.pose.pose.position.y = pile_data.position_y;
+            object.pose.pose.position.z = pile_data.position_z;
+            float half_yaw = 0.5 * pile_data.orientation_yaw;
+            object.pose.pose.orientation.x = 0.0;
+            object.pose.pose.orientation.y = 0.0;
+            object.pose.pose.orientation.z = sin(half_yaw);
+            object.pose.pose.orientation.w = cos(half_yaw);
+            object.scale.x = pile_data.scale_x;
+            object.scale.y = pile_data.scale_y;
+            object.scale.z = pile_data.scale_z;
+            object.properties = "{\"color\": \"" + pile_data.color + "\"}";  // TODO: could color be "unknown"?
+            detected_.objects.push_back(object);
+        }
     }
 
 protected:
 
     void estimateCallback(const ros::TimerEvent& event) {
-        mbzirc_comm_objs::ObjectDetectionList detected;
-        mbzirc_comm_objs::ObjectDetection object;
-        // TODO: From file
-        object.header.stamp = ros::Time::now();
-        object.header.frame_id = "map";
-        object.type = "brick";
-        // object.pose.covariance...  // TODO: needed?
-        // object.relative_position  // ignored here
-        // object.relative_yaw  // ignored here
-        object.pose.pose.position.x = 0.0;
-        object.pose.pose.position.y = -10;
-        object.pose.pose.position.z = 0.1;
-        object.pose.pose.orientation.x = 0.0;
-        object.pose.pose.orientation.y = 0.0;
-        object.pose.pose.orientation.z = 0.0;
-        object.pose.pose.orientation.w = 1.0;
-        object.scale.x = 3.0;
-        object.scale.y = 3.0;
-        object.scale.z = 0.2;
-        object.properties = "{\"color\": \"red\"}";
-        detected.objects.push_back(object);
-
-        // Reuse some previous object info
-        object.pose.pose.position.x = 0.0;
-        object.pose.pose.position.y = 10;
-        object.pose.pose.position.z = 0.1;
-        object.scale.x = 3.0;
-        object.scale.y = 3.0;
-        object.scale.z = 0.2;
-        object.properties = "{\"color\": \"green\"}";
-        detected.objects.push_back(object);
-
-        // Reuse some previous object info
-        object.pose.pose.position.x = -10;
-        object.pose.pose.position.y = 0.0;
-        object.pose.pose.position.z = 0.1;
-        object.scale.x = 5.0;
-        object.scale.y = 5.0;
-        object.scale.z = 0.2;
-        object.properties = "{\"color\": \"blue\"}";
-        detected.objects.push_back(object);
-
-        // Reuse some previous object info
-        object.pose.pose.position.x = 10;
-        object.pose.pose.position.y = 0.0;
-        object.pose.pose.position.z = 0.1;
-        object.scale.x = 5.0;
-        object.scale.y = 5.0;
-        object.scale.z = 0.2;
-        object.properties = "{\"color\": \"orange\"}";
-        detected.objects.push_back(object);
-
-        estimated_pub_.publish(detected);
+        estimated_pub_.publish(detected_);
     }
 
     ros::Timer estimation_timer_;
     ros::Publisher estimated_pub_;
+    mbzirc_comm_objs::ObjectDetectionList detected_;
 };
 
 int main(int argc, char** argv) {
