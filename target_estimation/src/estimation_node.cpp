@@ -11,19 +11,20 @@ float squared_distance(const geometry_msgs::Point& a, const geometry_msgs::Point
     return dx*dx + dy*dy + dz*dz;
 }
 
-class DummyEstimator {
+class SimpleClusteringEstimator {
 public:
 
-    DummyEstimator(const std::string& _uav_ns, unsigned int _uav_count) {
+    SimpleClusteringEstimator(const std::string& _uav_ns) {
         ros::NodeHandle nh;
 
-        for (int i = 1; i < _uav_count + 1; i++) {
+        int max_uav_count = 3;  // Even if uavs does not exist, subscribing makes no harm
+        for (int i = 1; i < max_uav_count + 1; i++) {
             std::string sensed_topic = _uav_ns + "_" + std::to_string(i) + "/sensed_objects";
-            sensed_sub_.push_back(nh.subscribe(sensed_topic, 1, &DummyEstimator::updateCallback, this));
+            sensed_sub_.push_back(nh.subscribe(sensed_topic, 1, &SimpleClusteringEstimator::updateCallback, this));
         }
 
         estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
-        estimation_timer_ = nh.createTimer(ros::Duration(1), &DummyEstimator::estimateCallback, this);  // TODO: frequency as a parameter
+        estimation_timer_ = nh.createTimer(ros::Duration(1), &SimpleClusteringEstimator::estimateCallback, this);  // TODO: frequency as a parameter
     }
 
 protected:
@@ -121,13 +122,13 @@ void operator>>(const YAML::Node& in, PileData& pile_data) {
     pile_data.scale_z = in["scale_z"].as<float>();
 }
 
-class StaticEstimator {
+class APrioriInfoEstimator {
 public:
 
-    StaticEstimator(const std::string& _uav_ns) {
+    APrioriInfoEstimator(const std::string& _uav_ns) {
         ros::NodeHandle nh;
         estimated_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
-        estimation_timer_ = nh.createTimer(ros::Duration(1), &StaticEstimator::estimateCallback, this);  // TODO: frequency as a parameter
+        estimation_timer_ = nh.createTimer(ros::Duration(1), &APrioriInfoEstimator::estimateCallback, this);  // TODO: frequency as a parameter
 
         std::string config_folder = ros::package::getPath("target_estimation") + "/config/";
         std::string config_filename = config_folder + "piles.yaml";  // TODO: from parameter
@@ -178,8 +179,8 @@ int main(int argc, char** argv) {
 
     // TODO: parameters from rosparam
     // TODO: select estimation type from params
-    // DummyEstimator estimation("mbzirc2020", 2);
-    StaticEstimator estimation("mbzirc2020");
+    // SimpleClusteringEstimator estimation("mbzirc2020");
+    APrioriInfoEstimator estimation("mbzirc2020");
     ros::spin();
 
     return 0;
