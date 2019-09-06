@@ -14,6 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
   uav_abstraction_layer
   mbzirc_comm_objs
   handy_tools
+  message_generation
+  std_msgs
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -64,17 +67,20 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  TakeOff.action
+  GoTo.action
+  Pick.action
+)
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   actionlib_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   actionlib_msgs
+   std_msgs
+   geometry_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -108,7 +114,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ual_action_server
-#  CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer
+   CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer message_runtime mbzirc_comm_objs std_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 

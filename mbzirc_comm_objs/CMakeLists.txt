@@ -75,10 +75,6 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
 ## Generate actions in the 'action' folder
 add_action_files(
   FILES
-  # UAL.action
-  TakeOff.action
-  GoTo.action
-  Pick.action
   FollowPath.action
   PickAndPlace.action
   GoHome.action

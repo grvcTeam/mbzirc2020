@@ -18,6 +18,7 @@
 import rospy
 import actionlib
 import mbzirc_comm_objs.msg
+import ual_action_server.msg
 from geometry_msgs.msg import PoseStamped, Point, Vector3
 from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
 from mbzirc_comm_objs.srv import GetCostToGoTo
@@ -139,7 +140,7 @@ class Agent(object):
         for uav_id in self.available_uavs:
             self.uav_clients[uav_id] = {}
             self.uav_subscribers[uav_id] = {}
-            self.uav_clients[uav_id]['take_off'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/take_off', mbzirc_comm_objs.msg.TakeOffAction)
+            self.uav_clients[uav_id]['take_off'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/take_off', ual_action_server.msg.TakeOffAction)
             self.uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
             self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
             self.uav_clients[uav_id]['go_home'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/go_home', mbzirc_comm_objs.msg.GoHomeAction)
@@ -180,7 +181,7 @@ class Agent(object):
     def take_off(self):
         for uav_id in self.available_uavs:
             print('sending goal to take_off server {}'.format(uav_id))
-            self.uav_clients[uav_id]['take_off'].send_goal(mbzirc_comm_objs.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
+            self.uav_clients[uav_id]['take_off'].send_goal(ual_action_server.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
 
         for uav_id in self.available_uavs:
             print('waiting result of take_off server [{}]'.format(uav_id))

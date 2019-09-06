@@ -21,9 +21,9 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <uav_abstraction_layer/ual.h>
-#include <mbzirc_comm_objs/TakeOffAction.h>
-#include <mbzirc_comm_objs/GoToAction.h>
-#include <mbzirc_comm_objs/PickAction.h>
+#include <ual_action_server/TakeOffAction.h>
+#include <ual_action_server/GoToAction.h>
+#include <ual_action_server/PickAction.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
@@ -38,9 +38,9 @@ protected:
 
   ros::NodeHandle nh_;
   // NodeHandle instance must be created before this line. Otherwise strange error occurs
-  actionlib::SimpleActionServer<mbzirc_comm_objs::TakeOffAction> take_off_server_;
-  actionlib::SimpleActionServer<mbzirc_comm_objs::GoToAction> go_to_server_;
-  actionlib::SimpleActionServer<mbzirc_comm_objs::PickAction> pick_server_;
+  actionlib::SimpleActionServer<ual_action_server::TakeOffAction> take_off_server_;
+  actionlib::SimpleActionServer<ual_action_server::GoToAction> go_to_server_;
+  actionlib::SimpleActionServer<ual_action_server::PickAction> pick_server_;
   std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
@@ -67,10 +67,10 @@ public:
   }
 
   // TODO: Who should know about flight_level? ual_action_server, uav_agent, central_agent...
-  void takeOffCallback(const mbzirc_comm_objs::TakeOffGoalConstPtr &_goal) {
+  void takeOffCallback(const ual_action_server::TakeOffGoalConstPtr &_goal) {
     // ROS_INFO("Take off!");
-    // mbzirc_comm_objs::TakeOffFeedback feedback;
-    mbzirc_comm_objs::TakeOffResult result;
+    // ual_action_server::TakeOffFeedback feedback;
+    ual_action_server::TakeOffResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
       ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
@@ -112,10 +112,10 @@ public:
     }
   }
 
-  void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal) {
+  void goToCallback(const ual_action_server::GoToGoalConstPtr &_goal) {
     // ROS_INFO("Go to!");
-    // mbzirc_comm_objs::GoToFeedback feedback;
-    mbzirc_comm_objs::GoToResult result;
+    // ual_action_server::GoToFeedback feedback;
+    ual_action_server::GoToResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
       ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
@@ -171,10 +171,10 @@ public:
     gripper_attached_ = msg->attached;
   }
 
-  void pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal) {
+  void pickCallback(const ual_action_server::PickGoalConstPtr &_goal) {
     // ROS_INFO("Pick!");
-    // mbzirc_comm_objs::PickFeedback feedback;
-    mbzirc_comm_objs::PickResult result;
+    // ual_action_server::PickFeedback feedback;
+    ual_action_server::PickResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
       ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
