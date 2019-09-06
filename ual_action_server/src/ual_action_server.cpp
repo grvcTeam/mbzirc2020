@@ -375,11 +375,13 @@ public:
     // ual_action_server::LandFeedback feedback;
     ual_action_server::LandResult result;
 
-    // if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
-    //   ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
-    //   land_server_.setAborted(result);
-    //   return;
-    // }
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      land_server_.setAborted(result);
+      return;
+    }
+
+    ual_->land(true);
 
     land_server_.setSucceeded(result);
   }

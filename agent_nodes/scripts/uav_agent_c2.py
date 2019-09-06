@@ -14,14 +14,13 @@ from ual_action_server.msg import TakeOffAction, TakeOffGoal
 from ual_action_server.msg import GoToAction, GoToGoal
 from ual_action_server.msg import PickAction, PickGoal
 from ual_action_server.msg import PlaceAction, PlaceGoal
-# from ual_action_server.msg import LandAction, LandGoal
+from ual_action_server.msg import LandAction, LandGoal
 from mbzirc_comm_objs.msg import AgentDataFeed
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
-from uav_abstraction_layer.srv import Land, LandRequest
 
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
@@ -254,18 +253,14 @@ class LandTask(smach.StateMachine):
             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_LAND'})
 
-            # TODO: call directly to ual land service!?
-            def land_request_callback(userdata, request):
-                request = LandRequest()
-                request.blocking = True
-                return request
+            # TODO: is this callback needed?
+            def land_goal_callback(userdata, default_goal):
+                goal = LandGoal()
+                return goal
 
-            def land_response_callback(userdata, response):
-                return 'succeeded'
-
-            smach.StateMachine.add('LAND', smach_ros.ServiceState('ual/land', Land,
-                                    request_cb = land_request_callback,
-                                    response_cb = land_response_callback),
+            smach.StateMachine.add('LAND', smach_ros.SimpleActionState('land_action', LandAction,
+                                    # input_keys = ['go_home'],  # TODO: bool go_home?
+                                    goal_cb = land_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_LANDED'})
 
             smach.StateMachine.add('ASK_FOR_REGION_LANDED', smach_ros.ServiceState('/ask_for_region', AskForRegion,
