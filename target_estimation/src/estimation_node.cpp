@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
     } else if (estimator_name == "a_priori_info") {
         estimator = new APrioriInfoEstimator(frequency);
     } else {
-        ROS_WARN("Unexpected estimator name [%s], using default");
+        ROS_WARN("Unexpected estimator name [%s], using default", estimator_name.c_str());
         estimator = new APrioriInfoEstimator(frequency);
     }
 
