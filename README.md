@@ -2,6 +2,10 @@
 
 Catkin repository to store ROS packages in the MBZIRC2020 architecture
 
+## Dependencies
+* [grvc-ual](https://github.com/grvcTeam/grvc-ual)
+* [grvc-utils](https://github.com/grvcTeam/grvc-utils)
+
 ## Run instructions
 
 ### Challenge 1 [UNCOMPLETED]:
