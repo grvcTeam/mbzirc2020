@@ -72,6 +72,8 @@ add_action_files(
   TakeOff.action
   GoTo.action
   Pick.action
+  Place.action
+  Land.action
 )
 
 ## Generate added messages and services with any dependencies listed here

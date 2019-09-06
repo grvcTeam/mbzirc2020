@@ -24,6 +24,8 @@
 #include <ual_action_server/TakeOffAction.h>
 #include <ual_action_server/GoToAction.h>
 #include <ual_action_server/PickAction.h>
+#include <ual_action_server/PlaceAction.h>
+#include <ual_action_server/LandAction.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
@@ -41,6 +43,8 @@ protected:
   actionlib::SimpleActionServer<ual_action_server::TakeOffAction> take_off_server_;
   actionlib::SimpleActionServer<ual_action_server::GoToAction> go_to_server_;
   actionlib::SimpleActionServer<ual_action_server::PickAction> pick_server_;
+  actionlib::SimpleActionServer<ual_action_server::PlaceAction> place_server_;
+  actionlib::SimpleActionServer<ual_action_server::LandAction> land_server_;
   std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
@@ -52,6 +56,8 @@ public:
     take_off_server_(nh_, "take_off_action", boost::bind(&UalActionServer::takeOffCallback, this, _1), false),
     go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
+    place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
+    land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
     robot_id_(_robot_id) {
 
     // ros::param::set("~uav_id", _robot_id);
@@ -60,6 +66,8 @@ public:
     take_off_server_.start();
     go_to_server_.start();
     pick_server_.start();
+    place_server_.start();
+    land_server_.start();
   }
 
   ~UalActionServer() {
@@ -327,6 +335,21 @@ public:
     // ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
     sensed_sub_.shutdown();
   }
+
+  void placeCallback(const ual_action_server::PlaceGoalConstPtr &_goal) {
+    // ROS_INFO("Place!");
+    // ual_action_server::PlaceFeedback feedback;
+    ual_action_server::PlaceResult result;
+    place_server_.setSucceeded(result);
+  }
+
+  void landCallback(const ual_action_server::LandGoalConstPtr &_goal) {
+    // ROS_INFO("Land!");
+    // ual_action_server::LandFeedback feedback;
+    ual_action_server::LandResult result;
+    land_server_.setSucceeded(result);
+  }
+
 };
 
 

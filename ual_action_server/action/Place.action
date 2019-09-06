@@ -1,0 +1,7 @@
+#goal definition
+geometry_msgs/PoseStamped in_wall_pose
+---
+#result definition
+string message
+---
+#feedback
