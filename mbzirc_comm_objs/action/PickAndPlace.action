@@ -1,7 +1,7 @@
 #goal definition
 # TODO: color to double check pile?
 geometry_msgs/PoseStamped pile_pose
-geometry_msgs/PoseStamped brick_in_wall_pose
+geometry_msgs/PoseStamped in_wall_brick_pose
 ---
 #result definition
 string message

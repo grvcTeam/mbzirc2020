@@ -156,7 +156,7 @@ class FollowPathTask(smach.StateMachine):
 class PickAndPlaceTask(smach.StateMachine):
 
     def __init__(self):
-        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'brick_in_wall_pose'])
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'in_wall_brick_pose'])
 
         with self:
 
@@ -209,11 +209,11 @@ class PickAndPlaceTask(smach.StateMachine):
                                     transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
-                goal = PlaceGoal(in_wall_brick_pose = userdata.brick_in_wall_pose)
+                goal = PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
                 return goal
 
             smach.StateMachine.add('PLACE', smach_ros.SimpleActionState('place_action', PlaceAction,
-                                    input_keys = ['brick_in_wall_pose'],
+                                    input_keys = ['in_wall_brick_pose'],
                                     goal_cb = place_goal_callback),
                                     transitions = {'succeeded': 'GO_UP_AGAIN'})
 
@@ -350,9 +350,9 @@ class Agent(object):
         userdata = smach.UserData()
         userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
         userdata.above_pile_pose.pose.position.z = flight_level
-        userdata.above_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
+        userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
         userdata.above_wall_pose.pose.position.z = flight_level
-        userdata.brick_in_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
+        userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
         outcome = self.pick_and_place_task.execute(userdata)
         print('pick_and_place_callback output: {}'.format(outcome))
         self.pick_and_place_action_server.set_succeeded()

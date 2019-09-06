@@ -233,7 +233,7 @@ class Agent(object):
                 print('costs: {}, min_cost_id: {}'.format(costs, min_cost_uav_id))
                 goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
                 goal.pile_pose = piles[brick.color]
-                goal.brick_in_wall_pose = brick.pose
+                goal.in_wall_brick_pose = brick.pose
                 self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
                 rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         # Once arrived here, last pick_and_place task has been allocated
