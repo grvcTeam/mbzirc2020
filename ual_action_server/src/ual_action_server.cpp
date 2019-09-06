@@ -340,6 +340,33 @@ public:
     // ROS_INFO("Place!");
     // ual_action_server::PlaceFeedback feedback;
     ual_action_server::PlaceResult result;
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      place_server_.setAborted(result);
+      return;
+    }
+
+    ros::NodeHandle nh;
+    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");
+
+    float z_offset = 0.6;  // TODO: offset in meters between uav and attached brick frames
+    geometry_msgs::PoseStamped in_wall_uav_pose = _goal->in_wall_brick_pose;
+    in_wall_uav_pose.pose.position.z += z_offset;
+
+    ROS_INFO("in_wall_uav_pose = [%s][%lf, %lf, %lf][%lf, %lf, %lf, %lf]", in_wall_uav_pose.header.frame_id.c_str(), \
+              in_wall_uav_pose.pose.position.x, in_wall_uav_pose.pose.position.y, in_wall_uav_pose.pose.position.z, \
+              in_wall_uav_pose.pose.orientation.x, in_wall_uav_pose.pose.orientation.y, in_wall_uav_pose.pose.orientation.z, in_wall_uav_pose.pose.orientation.w);
+
+    ual_->goToWaypoint(in_wall_uav_pose, true);
+    ros::Duration(5.0).sleep();  // Give time to stabilize...
+
+    mbzirc_comm_objs::Magnetize magnetize_srv;
+    magnetize_srv.request.magnetize = false;
+    if (!magnetize_client.call(magnetize_srv)) {
+      ROS_ERROR("Failed to call [magnetize] service");  // TODO: retry?
+    }
+
     place_server_.setSucceeded(result);
   }
 
@@ -347,6 +374,13 @@ public:
     // ROS_INFO("Land!");
     // ual_action_server::LandFeedback feedback;
     ual_action_server::LandResult result;
+
+    // if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+    //   ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+    //   land_server_.setAborted(result);
+    //   return;
+    // }
+
     land_server_.setSucceeded(result);
   }
 

@@ -13,12 +13,14 @@ import tf2_geometry_msgs
 from ual_action_server.msg import TakeOffAction, TakeOffGoal
 from ual_action_server.msg import GoToAction, GoToGoal
 from ual_action_server.msg import PickAction, PickGoal
+from ual_action_server.msg import PlaceAction, PlaceGoal
+# from ual_action_server.msg import LandAction, LandGoal
 from mbzirc_comm_objs.msg import AgentDataFeed
 from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
 from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
 from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
 from geometry_msgs.msg import PoseStamped
-from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse, Magnetize, MagnetizeRequest
+from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
 from uav_abstraction_layer.srv import Land, LandRequest
 
 class Sleep(smach.State):
@@ -204,23 +206,15 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_ABOVE_WALL', GoToTask(),
                                     remapping = {'waypoint': 'above_wall_pose'},
-                                    transitions = {'succeeded': 'GO_TO_PLACE'})
-
-            smach.StateMachine.add('GO_TO_PLACE', GoToTask(),
-                                    remapping = {'waypoint': 'brick_in_wall_pose'},
                                     transitions = {'succeeded': 'PLACE'})
 
-            def place_request_callback(userdata, request):
-                request = MagnetizeRequest()
-                request.magnetize = False
-                return request
+            def place_goal_callback(userdata, default_goal):
+                goal = PlaceGoal(in_wall_brick_pose = userdata.brick_in_wall_pose)
+                return goal
 
-            def place_response_callback(userdata, response):
-                return 'succeeded' if response.success else 'aborted'
-
-            smach.StateMachine.add('PLACE', smach_ros.ServiceState('magnetize', Magnetize,
-                                    request_cb = place_request_callback,
-                                    response_cb = place_response_callback),
+            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState('place_action', PlaceAction,
+                                    input_keys = ['brick_in_wall_pose'],
+                                    goal_cb = place_goal_callback),
                                     transitions = {'succeeded': 'GO_UP_AGAIN'})
 
             smach.StateMachine.add('GO_UP_AGAIN', GoToTask(),
@@ -353,14 +347,12 @@ class Agent(object):
 
     def pick_and_place_callback(self, goal):
         flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-        z_offset = 0.4  # TODO: offset in meters between uav and attached brick frames
         userdata = smach.UserData()
         userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
         userdata.above_pile_pose.pose.position.z = flight_level
         userdata.above_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
         userdata.above_wall_pose.pose.position.z = flight_level
         userdata.brick_in_wall_pose = copy.deepcopy(goal.brick_in_wall_pose)
-        userdata.brick_in_wall_pose.pose.position.z += z_offset
         outcome = self.pick_and_place_task.execute(userdata)
         print('pick_and_place_callback output: {}'.format(outcome))
         self.pick_and_place_action_server.set_succeeded()
