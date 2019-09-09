@@ -45,24 +45,22 @@ protected:
   actionlib::SimpleActionServer<ual_action_server::PickAction> pick_server_;
   actionlib::SimpleActionServer<ual_action_server::PlaceAction> place_server_;
   actionlib::SimpleActionServer<ual_action_server::LandAction> land_server_;
-  std::string robot_id_;  // TODO: Used?
   grvc::ual::UAL *ual_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
   bool gripper_attached_ = false;
 
 public:
 
-  UalActionServer(std::string _robot_id):
+  UalActionServer():
     take_off_server_(nh_, "take_off_action", boost::bind(&UalActionServer::takeOffCallback, this, _1), false),
     go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
     place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
-    land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
-    robot_id_(_robot_id) {
+    land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false) {
 
-    // ros::param::set("~uav_id", _robot_id);
-    // ros::param::set("~pose_frame_id", "map");
     ual_ = new grvc::ual::UAL();
+    // TODO: start servers only when needed?
+    // TODO: make servers separated classes?
     take_off_server_.start();
     go_to_server_.start();
     pick_server_.start();
@@ -81,7 +79,7 @@ public:
     ual_action_server::TakeOffResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
-      ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
+      ROS_WARN("UAL is uninitialized!");
       sleep(1);
     }
     // TODO: Fill result
@@ -126,7 +124,7 @@ public:
     ual_action_server::GoToResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
-      ROS_WARN("UAL is uninitialized!");  // ROS_WARN("UAL %d is uninitialized!", uav_id);
+      ROS_WARN("UAL is uninitialized!");
       sleep(1);
     }
     // TODO: Fill result
@@ -185,7 +183,7 @@ public:
     ual_action_server::PickResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
-      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      ROS_WARN("UAL is not flying auto!");
       pick_server_.setAborted(result);
       return;
     }
@@ -342,7 +340,7 @@ public:
     ual_action_server::PlaceResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
-      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      ROS_WARN("UAL is not flying auto!");
       place_server_.setAborted(result);
       return;
     }
@@ -376,7 +374,7 @@ public:
     ual_action_server::LandResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
-      ROS_WARN("UAL is not flying auto!");  // ROS_WARN("UAL %d is not flying auto!", uav_id);
+      ROS_WARN("UAL is not flying auto!");
       land_server_.setAborted(result);
       return;
     }
@@ -393,7 +391,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ual_action_server");
 
-  UalActionServer ual_action_server("");  // Not needed?
+  UalActionServer ual_action_server;
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
 
