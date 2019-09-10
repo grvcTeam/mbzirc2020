@@ -15,16 +15,420 @@
 # Challenge duration	30 minutes
 # Communications	TBD
 
-import rospy
-import actionlib
-import mbzirc_comm_objs.msg
-import ual_action_server.msg
-from geometry_msgs.msg import PoseStamped, Point, Vector3
-from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
-from mbzirc_comm_objs.srv import GetCostToGoTo
 import math
+import random
 import json
 import copy
+import time
+import rospy
+import smach
+import smach_ros
+import actionlib
+import tf2_ros
+import tf2_geometry_msgs
+import mbzirc_comm_objs.msg
+import mbzirc_comm_objs.srv
+import ual_action_server.msg
+
+from geometry_msgs.msg import PoseStamped, Point, Vector3
+# from ual_action_server.msg import TakeOffAction, TakeOffGoal
+# from ual_action_server.msg import GoToAction, GoToGoal
+# from ual_action_server.msg import PickAction, PickGoal
+# from ual_action_server.msg import PlaceAction, PlaceGoal
+# from ual_action_server.msg import LandAction, LandGoal
+# from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
+# from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
+# from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
+# from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
+
+# from mbzirc_comm_objs.srv import GetCostToGoTo
+# from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
+
+# TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
+# TODO: Get Task out of naming (or invert it!), should all classes be State Machines?
+class Sleep(smach.State):
+    def __init__(self, duration = 3.0):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
+        self.duration = duration
+
+    def execute(self, userdata):
+        rospy.sleep(self.duration)
+        return 'succeeded'
+        # TODO: aborted?
+        # TODO: preempted? Sleep in shorter period chunks to allow preemption?
+
+#TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
+class TakeOffTask(smach.StateMachine):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['height'])
+        robot_url = robot_ns + '_' + str(robot_id) + '/'
+
+        with self:
+
+            def take_off_goal_callback(userdata, default_goal):
+                goal = ual_action_server.msg.TakeOffGoal(height = userdata.height)
+                return goal
+
+            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot_url + 'take_off_action', ual_action_server.msg.TakeOffAction,
+                                    input_keys = ['height'],
+                                    goal_cb = take_off_goal_callback),
+                                    transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY', Sleep(3.0),
+                                    transitions = {'succeeded': 'TAKE_OFF'})
+
+class GoToTask(smach.StateMachine):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
+        robot_url = robot_ns + '_' + str(robot_id) + '/'
+
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: repeated code, AgentInterface?
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber(robot_url + 'ual/pose', PoseStamped, self.ual_pose_callback)
+        time.sleep(3)  # TODO: allow messages to get in!
+
+        with self:
+
+            # TODO: decorators?
+            def ask_for_region_request_callback(userdata, request):
+                ask_for_region_request = self.build_ask_for_region_request(int(robot_id), self.ual_pose, userdata.waypoint)  # TODO: robot_id as a string issue!
+                return ask_for_region_request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    input_keys = ['waypoint'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
+
+            def go_to_goal_callback(userdata, default_goal):
+                goal = ual_action_server.msg.GoToGoal(waypoint = userdata.waypoint)
+                return goal
+
+            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState(robot_url + 'go_to_action', ual_action_server.msg.GoToAction,
+                                    input_keys = ['waypoint'],
+                                    goal_cb = go_to_goal_callback),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER'})
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_HOVER', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    input_keys = ['waypoint'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+    # TODO: repeated code?
+    def ual_pose_callback(self, data):
+        self.ual_pose = data
+
+    # TODO: almost repeated code
+    def build_ask_for_region_request(self, agent_id, initial_pose, final_pose, radius = 1.0):
+        try:
+            if initial_pose.header.frame_id != 'arena':
+                initial_pose = self.tf_buffer.transform(initial_pose, 'arena', rospy.Duration(1.0))
+            if final_pose.header.frame_id != 'arena':
+                final_pose = self.tf_buffer.transform(final_pose, 'arena', rospy.Duration(1.0))
+        except:
+            rospy.logerr('Failed to transform points to [{}], ignoring!'.format('arena'))
+
+        request = mbzirc_comm_objs.srv.AskForRegionRequest()
+        request.agent_id = agent_id
+        request.min_corner.header.frame_id = 'arena'
+        request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
+        request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
+        request.min_corner.point.z = min(initial_pose.pose.position.z - radius, final_pose.pose.position.z - radius)
+        request.max_corner.header.frame_id = 'arena'
+        request.max_corner.point.x = max(initial_pose.pose.position.x + radius, final_pose.pose.position.x + radius)
+        request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
+        request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
+
+        return request
+
+class WaypointDispatch(smach.State):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):  # TODO: pass a GoToTask object instead?
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
+        self.go_to_task = GoToTask(robot_id, robot_ns)
+
+    def execute(self, userdata):
+        for waypoint in userdata.path:
+            child_userdata = smach.UserData()
+            child_userdata.waypoint = waypoint
+            self.go_to_task.execute(child_userdata)
+        return 'succeeded'
+        # TODO: aborted?
+        # TODO: preempted?
+
+class FollowPathTask(smach.StateMachine):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
+
+        with self:
+
+            smach.StateMachine.add('DISPATCH', WaypointDispatch(robot_id, robot_ns),
+                                    remapping = {'path': 'path'},
+                                    transitions = {'succeeded': 'succeeded'})
+
+class PickAndPlaceTask(smach.StateMachine):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'in_wall_brick_pose'])
+        robot_url = robot_ns + '_' + str(robot_id) + '/'
+        # self.agent_id = robot_id
+
+        with self:
+
+            smach.StateMachine.add('GO_TO_PILE', GoToTask(robot_id, robot_ns),
+                                    remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+
+            def ask_for_region_request_callback(userdata, request):
+                radius = 5.0  # TODO: Tune, assure uav is not going further while pick!
+                request = mbzirc_comm_objs.srv.AskForRegionRequest()
+                request.agent_id = int(robot_id)
+                request.min_corner.header.frame_id = userdata.above_pile_pose.header.frame_id
+                request.min_corner.point.x = userdata.above_pile_pose.pose.position.x - radius
+                request.min_corner.point.y = userdata.above_pile_pose.pose.position.y - radius
+                request.min_corner.point.z = 0
+                request.max_corner.header.frame_id = userdata.above_pile_pose.header.frame_id
+                request.max_corner.point.x = userdata.above_pile_pose.pose.position.x + radius
+                request.max_corner.point.y = userdata.above_pile_pose.pose.position.y + radius
+                request.max_corner.point.z = userdata.above_pile_pose.pose.position.z + radius
+                return request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    input_keys = ['above_pile_pose'],
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+
+            def pick_goal_callback(userdata, default_goal):
+                goal = ual_action_server.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
+                return goal
+
+            smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot_url + 'pick_action', ual_action_server.msg.PickAction,
+                                    input_keys = ['above_pile_pose'],
+                                    goal_cb = pick_goal_callback),
+                                    transitions = {'succeeded': 'GO_UP'})
+
+            smach.StateMachine.add('GO_UP', GoToTask(robot_id, robot_ns),
+                                    remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'GO_ABOVE_WALL'})
+
+            smach.StateMachine.add('GO_ABOVE_WALL', GoToTask(robot_id, robot_ns),
+                                    remapping = {'waypoint': 'above_wall_pose'},
+                                    transitions = {'succeeded': 'PLACE'})
+
+            def place_goal_callback(userdata, default_goal):
+                goal = ual_action_server.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
+                return goal
+
+            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot_url + 'place_action', ual_action_server.msg.PlaceAction,
+                                    input_keys = ['in_wall_brick_pose'],
+                                    goal_cb = place_goal_callback),
+                                    transitions = {'succeeded': 'GO_UP_AGAIN'})
+
+            smach.StateMachine.add('GO_UP_AGAIN', GoToTask(robot_id, robot_ns),
+                                    remapping = {'waypoint': 'above_wall_pose'},
+                                    transitions = {'succeeded': 'succeeded'})
+
+class LandTask(smach.StateMachine):
+    def __init__(self, robot_id, robot_ns='mbzirc2020'):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])
+        robot_url = robot_ns + '_' + str(robot_id) + '/'
+        # self.agent_id = robot_id
+
+        # TODO: repeated code, AgentInterface?
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber(robot_url + 'ual/pose', PoseStamped, self.ual_pose_callback)
+        time.sleep(3)  # TODO: allow messages to get in!
+
+        with self:
+
+            def ask_for_region_request_callback(userdata, request):
+                radius = 1.0  # TODO: Tune, assure uav is not going further while land!
+                request = mbzirc_comm_objs.srv.AskForRegionRequest()
+                request.agent_id = robot_id
+                request.min_corner.header.frame_id = self.ual_pose.header.frame_id
+                request.min_corner.point.x = self.ual_pose.pose.position.x - radius
+                request.min_corner.point.y = self.ual_pose.pose.position.y - radius
+                request.min_corner.point.z = 0
+                request.max_corner.header.frame_id = self.ual_pose.header.frame_id
+                request.max_corner.point.x = self.ual_pose.pose.position.x + radius
+                request.max_corner.point.y = self.ual_pose.pose.position.y + radius
+                request.max_corner.point.z = self.ual_pose.pose.position.z + radius
+                return request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_LAND', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'LAND', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_LAND'})
+
+            # TODO: is this callback needed?
+            def land_goal_callback(userdata, default_goal):
+                goal = ual_action_server.msg.LandGoal()
+                return goal
+
+            smach.StateMachine.add('LAND', smach_ros.SimpleActionState(robot_url + 'land_action', ual_action_server.msg.LandAction,
+                                    # input_keys = ['go_home'],  # TODO: bool go_home?
+                                    goal_cb = land_goal_callback),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_LANDED'})
+
+            smach.StateMachine.add('ASK_FOR_REGION_LANDED', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    request_cb = ask_for_region_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+    # TODO: repeated code, AgentInterface?
+    def ual_pose_callback(self, data):
+        self.ual_pose = data
+                            
+class Agent(object):
+
+    def __init__(self):
+        # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
+        # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
+        # self.take_off_task = TakeOffTask()
+        # self.take_off_action_server = actionlib.SimpleActionServer('task/take_off', TakeOffAction, execute_cb = self.take_off_callback, auto_start = False)  # TODO: change naming from task to agent?
+        # self.take_off_action_server.start()
+
+        # self.follow_path_task = FollowPathTask()
+        # self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
+        # self.follow_path_action_server.start()
+
+        # self.pick_and_place_task = PickAndPlaceTask()
+        # self.pick_and_place_action_server = actionlib.SimpleActionServer('task/pick_and_place', PickAndPlaceAction, execute_cb = self.pick_and_place_callback, auto_start = False)  # TODO: change naming from task to agent?
+        # self.pick_and_place_action_server.start()
+
+        # self.go_home_task = GoHomeTask()  # Reuse follow_path_task
+        self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
+        self.go_home_action_server.start()
+
+        self.land_task = LandTask()
+
+        rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
+
+        self.ual_pose = PoseStamped()
+        rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
+
+        # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
+        self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
+        rospy.Timer(rospy.Duration(0.2), self.update_feed_callback)  # TODO: duration?
+
+    def update_feed_callback(self, event):
+        data_feed = AgentDataFeed()
+        data_feed.is_idle = True
+        if self.take_off_task.is_running():
+            data_feed.is_idle = False
+        if self.follow_path_task.is_running():
+            data_feed.is_idle = False
+        if self.pick_and_place_task.is_running():
+            data_feed.is_idle = False
+        # go_home action server reuses follow_path_task
+        # TODO: Check all, make it automatic!
+        self.feed_publisher.publish(data_feed)
+
+    def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
+        self.ual_pose = data
+
+    # def take_off_callback(self, goal):
+    #     userdata = smach.UserData()
+    #     userdata.height = goal.height
+    #     self.home_pose = copy.deepcopy(self.ual_pose)  # Fetch home_pose!
+    #     outcome = self.take_off_task.execute(userdata)
+    #     print('take_off_callback output: {}'.format(outcome))
+    #     self.take_off_action_server.set_succeeded()
+
+    # def follow_path_callback(self, goal):
+    #     userdata = smach.UserData()
+    #     userdata.path = goal.path
+    #     outcome = self.follow_path_task.execute(userdata)
+    #     print('follow_path_callback output: {}'.format(outcome))
+    #     self.follow_path_action_server.set_succeeded()
+
+    # def pick_and_place_callback(self, goal):
+    #     flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+    #     userdata = smach.UserData()
+    #     userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
+    #     userdata.above_pile_pose.pose.position.z = flight_level
+    #     userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
+    #     userdata.above_wall_pose.pose.position.z = flight_level
+    #     userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
+    #     outcome = self.pick_and_place_task.execute(userdata)
+    #     print('pick_and_place_callback output: {}'.format(outcome))
+    #     self.pick_and_place_action_server.set_succeeded()
+
+    def go_home_callback(self, goal):
+        agent_id = rospy.get_param('~agent_id')
+        flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+        userdata = smach.UserData()
+        userdata.path = []  # TODO: Build path from here to home
+        up_here = copy.deepcopy(self.ual_pose)
+        up_here.pose.position.z = flight_level
+        userdata.path.append(up_here)
+        up_home = copy.deepcopy(self.home_pose)
+        up_home.pose.position.z = flight_level
+        userdata.path.append(up_home)
+        print('uav[{}].flight_level = {}'.format(agent_id, flight_level))
+        for point in userdata.path:
+            print('path point: {}'.format(point))
+        outcome = self.follow_path_task.execute(userdata)  # Reuse follow path!
+        print('follow_path_task (go_home) output: {}'.format(outcome))
+        if goal.do_land:
+            userdata = smach.UserData()  # empty
+            outcome = self.land_task.execute(userdata)
+            print('follow_path_task (go_home) output: {}'.format(outcome))
+        self.go_home_action_server.set_succeeded()
+
+    # def get_cost_to_go_to(self, req):
+    #     # TODO: these try/except inside a function?
+    #     waypoint = PoseStamped()
+    #     try:
+    #        waypoint = self.tf_buffer.transform(req.waypoint, self.ual_pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
+    #     except:
+    #         rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(req.waypoint.header.frame_id, self.ual_pose.header.frame_id))
+
+    #     delta_x = waypoint.pose.position.x - self.ual_pose.pose.position.x
+    #     delta_y = waypoint.pose.position.y - self.ual_pose.pose.position.y
+    #     delta_z = waypoint.pose.position.z - self.ual_pose.pose.position.z
+    #     manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
+    #     return GetCostToGoToResponse(cost = manhattan_distance)
+
+# def agent_unused_main():
+#     rospy.init_node('uav_agent')
+
+#     while rospy.get_rostime() == rospy.Time():
+#         rospy.logwarn("Waiting for (sim) time to begin!")
+#         time.sleep(1)
+
+#     agent = Agent()
+    # agent_id = rospy.get_param('~agent_id')
+    # flight_level = rospy.get_param('~flight_level')
+
+    # TODO(performance): Make it optional, use only in develop stage
+    # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
+    # viewer.start()
+    # rospy.spin()
+    # viewer.stop()
+
+# if __name__ == '__main__':
+#     main()
 
 # TODO: All these parameters from config!
 field_width = 20  # 60  # TODO: Field is 60 x 50
@@ -39,7 +443,7 @@ brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config f
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green'], ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
+wall_blueprint = [['red', 'green']]  #, ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
 
 # TODO: move to path utils
 def generate_area_path(width, height, column_count, z = 3.0):
@@ -122,9 +526,13 @@ def get_build_wall_sequence(wall_blueprint):
         current_z += brick_scales['red'].z  # As all bricks (should) have the same height
     return buid_wall_sequence
 
-class Agent(object):
+# First sequential model works, TODO: concurrency in uav_id!
+class CentralAgent(object):
     def __init__(self):
         self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+
+        self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         # TODO: Unifying robot_model and namespace might be an issue for non homogeneous teams, 
         # but it is somehow forced by the way sensor topics are named in gazebo simulation (mbzirc2020)
@@ -136,6 +544,7 @@ class Agent(object):
         self.uav_clients = {}  # TODO: is this AgentInterface?
         self.uav_subscribers = {}  # TODO: is this AgentInterface?
         self.uav_data_feeds = {}   # TODO: is this AgentInterface?
+        self.pose = {}  # TODO: is this AgentInterface?
 
         for uav_id in self.available_uavs:
             self.uav_clients[uav_id] = {}
@@ -144,25 +553,45 @@ class Agent(object):
             self.uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
             self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
             self.uav_clients[uav_id]['go_home'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/go_home', mbzirc_comm_objs.msg.GoHomeAction)
-            self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
-            self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
+            # self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
+            # self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
+            self.uav_subscribers[uav_id]['pose'] = rospy.Subscriber(uavs_ns[uav_id] + '/ual/pose', PoseStamped, self.pose_callback, callback_args = uav_id)
 
-            print('waiting for servers of agent [{}]'.format(uav_id))
-            self.uav_clients[uav_id]['take_off'].wait_for_server()  # TODO: Timeout!
-            self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
-            self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
-            self.uav_clients[uav_id]['go_home'].wait_for_server()  # TODO: Timeout!
-            rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
+            # print('waiting for servers of agent [{}]'.format(uav_id))
+            # self.uav_clients[uav_id]['take_off'].wait_for_server()  # TODO: Timeout!
+            # self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
+            # self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
+            # self.uav_clients[uav_id]['go_home'].wait_for_server()  # TODO: Timeout!
+            # rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
 
             self.uav_params[uav_id] = {}
-            agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
+            # agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
+            agent_node_ns = uavs_ns[uav_id] + '/'
             self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')  # TODO: Needed here or leave uav alone?
 
         self.piles = {}
-        rospy.Subscriber("estimated_objects", ObjectDetectionList, self.estimation_callback)
+        rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
+
+    # TODO: as a service inside the robot agent? Force raw points with no frame_id?
+    def get_cost_to_go_to(self, robot_pose, requested_waypoint):
+        # TODO: these try/except inside a function?
+        waypoint = PoseStamped()
+        try:
+            waypoint = self.tf_buffer.transform(requested_waypoint, robot_pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
+        except:
+            rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(requested_waypoint.header.frame_id, robot_pose.header.frame_id))
+
+        delta_x = waypoint.pose.position.x - robot_pose.pose.position.x
+        delta_y = waypoint.pose.position.y - robot_pose.pose.position.y
+        delta_z = waypoint.pose.position.z - robot_pose.pose.position.z
+        manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
+        return manhattan_distance
 
     def data_feed_callback(self, data, uav_id):
         self.uav_data_feeds[uav_id] = data
+
+    def pose_callback(self, data, uav_id):
+        self.pose[uav_id] = data
 
     def estimation_callback(self, data):
         for pile in data.objects:
@@ -181,19 +610,28 @@ class Agent(object):
     def take_off(self):
         for uav_id in self.available_uavs:
             print('sending goal to take_off server {}'.format(uav_id))
-            self.uav_clients[uav_id]['take_off'].send_goal(ual_action_server.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
 
-        for uav_id in self.available_uavs:
-            print('waiting result of take_off server [{}]'.format(uav_id))
-            self.uav_clients[uav_id]['take_off'].wait_for_result()
-            print(self.uav_clients[uav_id]['take_off'].get_result())
+            userdata = smach.UserData()
+            userdata.height = self.uav_params[uav_id]['flight_level']
+            # self.home_pose = copy.deepcopy(self.ual_pose)  # TODO: Fetch home_pose!
+            take_off_task = TakeOffTask(uav_id)
+            outcome = take_off_task.execute(userdata)  # TODO: Now it's blocking!
+            print('take_off output: {}'.format(outcome))
+            # self.take_off_action_server.set_succeeded()
+
+            # self.uav_clients[uav_id]['take_off'].send_goal(ual_action_server.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
+
+        # for uav_id in self.available_uavs:
+        #     print('waiting result of take_off server [{}]'.format(uav_id))
+        #     self.uav_clients[uav_id]['take_off'].wait_for_result()
+        #     print(self.uav_clients[uav_id]['take_off'].get_result())
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
         uav_paths = {}
         point_paths = generate_uav_paths(len(self.available_uavs))
         for i, uav_id in enumerate(self.available_uavs):
-            uav_path = mbzirc_comm_objs.msg.FollowPathGoal()
+            uav_path = []
             flight_level = self.uav_params[uav_id]['flight_level']
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
@@ -202,20 +640,31 @@ class Agent(object):
                 waypoint.pose.position = point
                 waypoint.pose.orientation.z = 0
                 waypoint.pose.orientation.w = 1  # TODO: other orientation?
-                uav_path.path.append(waypoint)
+                uav_path.append(waypoint)
             uav_paths[uav_id] = uav_path
 
         for uav_id in self.available_uavs:
             print('sending goal to follow_path server {}'.format(uav_id))
-            self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
 
-        for uav_id in self.available_uavs:
-            print('waiting result of follow_path server [{}]'.format(uav_id))
-            self.uav_clients[uav_id]['follow_path'].wait_for_result()
-            print(self.uav_clients[uav_id]['follow_path'].get_result())
+            userdata = smach.UserData()
+            userdata.path = uav_paths[uav_id]
+            follow_path_task = FollowPathTask(int(uav_id))  # TODO: Assume uav_id is ALWAYS a string (AskForRegion!)
+            outcome = follow_path_task.execute(userdata)
+            print('follow_path_callback output: {}'.format(outcome))
+            # self.follow_path_action_server.set_succeeded()
+
+            # self.uav_clients[uav_id]['follow_path'].send_goal(uav_paths[uav_id])
+
+        # for uav_id in self.available_uavs:
+        #     print('waiting result of follow_path server [{}]'.format(uav_id))
+        #     self.uav_clients[uav_id]['follow_path'].wait_for_result()
+        #     print(self.uav_clients[uav_id]['follow_path'].get_result())
 
     # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
+        is_idle = {}
+        for uav_id in self.available_uavs:
+            is_idle[uav_id] = True
         rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         piles = copy.deepcopy(self.piles)  # Cache piles
         build_wall_sequence = get_build_wall_sequence(wall_blueprint)
@@ -225,8 +674,9 @@ class Agent(object):
                 costs = {}
                 while not costs:
                     for uav_id in self.available_uavs:
-                        if self.uav_data_feeds[uav_id].is_idle:
-                            costs[uav_id] = self.uav_clients[uav_id]['get_cost_to_go_to'](piles[brick.color]).cost
+                        # if self.uav_data_feeds[uav_id].is_idle:
+                        if is_idle[uav_id]:  # TODO: Make it a data feed from agent? Sequential execution does not need it!
+                            costs[uav_id] = self.get_cost_to_go_to(self.pose[uav_id], piles[brick.color])
                         else:
                             rospy.sleep(0.5)
                 min_cost_uav_id = min(costs, key = costs.get)
@@ -234,40 +684,61 @@ class Agent(object):
                 goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
                 goal.pile_pose = piles[brick.color]
                 goal.in_wall_brick_pose = brick.pose
-                self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
+
+                # flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
+                flight_level = self.uav_params[min_cost_uav_id]['flight_level']
+                userdata = smach.UserData()
+                userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
+                userdata.above_pile_pose.pose.position.z = flight_level
+                userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
+                userdata.above_wall_pose.pose.position.z = flight_level
+                userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
+                pick_and_place_task = PickAndPlaceTask(min_cost_uav_id)
+                outcome = pick_and_place_task.execute(userdata)
+                print('pick_and_place_callback output: {}'.format(outcome))
+                # self.pick_and_place_action_server.set_succeeded()
+
+                # self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
                 rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         # Once arrived here, last pick_and_place task has been allocated
+        # TODO: Sequencial implementation may never arrive here (uav blocked at wall)!!!
+
         print('All pick_and_place tasks allocated')
         finished_uavs = []
         while True:
             rospy.sleep(0.5)  # TODO: some sleep here?
             for uav_id in self.available_uavs:
-                if self.uav_data_feeds[uav_id].is_idle and (uav_id not in finished_uavs):
+                if is_idle[uav_id] and (uav_id not in finished_uavs):
                     finished_uavs.append(uav_id)
-                    print('waiting result of pick_and_place server [{}]'.format(uav_id))
-                    self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
-                    print(self.uav_clients[uav_id]['pick_and_place'].get_result())
+
+                    # print('waiting result of pick_and_place server [{}]'.format(uav_id))
+                    # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
+                    # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
                     print('now go home!')
                     goal = mbzirc_comm_objs.msg.GoHomeGoal()
                     goal.do_land = True
-                    self.uav_clients[uav_id]['go_home'].send_goal(goal)
+                    # self.uav_clients[uav_id]['go_home'].send_goal(goal)
             if set(self.available_uavs).issubset(finished_uavs):
                 print('All done!')
                 break
 
-        for uav_id in self.available_uavs:
-            print('waiting result of go_home server [{}]'.format(uav_id))
-            self.uav_clients[uav_id]['go_home'].wait_for_result()
-            print(self.uav_clients[uav_id]['go_home'].get_result())
+        # for uav_id in self.available_uavs:
+        #     print('waiting result of go_home server [{}]'.format(uav_id))
+        #     self.uav_clients[uav_id]['go_home'].wait_for_result()
+        #     print(self.uav_clients[uav_id]['go_home'].get_result())
 
 def main():
     rospy.init_node('cu_agent_c2')
 
-    central_agent = Agent()
+    while rospy.get_rostime() == rospy.Time():
+        rospy.logwarn("Waiting for (sim) time to begin!")
+        time.sleep(1)
+
+    central_agent = CentralAgent()
     # rospy.sleep(3)
 
     central_agent.take_off()
-    central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
+    # central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
 
 if __name__ == '__main__':

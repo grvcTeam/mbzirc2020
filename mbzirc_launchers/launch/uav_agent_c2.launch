@@ -12,6 +12,7 @@
   
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
+    <param name="flight_level" value="$(arg flight_level)"/>  <!-- TODO: Makes no sense here! -->
 
     <!-- TODO: all transforms needed? -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
@@ -45,17 +46,10 @@
       <param name="hold_pose_time" value="0"/>
     </node>
 
-    <node name="agent_node" pkg="agent_nodes" type="uav_agent_c2.py" output="screen">
-      <!-- <param name="uav_ns" value="ual"/> -->
+    <!-- <node name="agent_node" pkg="agent_nodes" type="uav_agent_c2.py" output="screen">
       <param name="agent_id" value="$(arg agent_id)"/>
       <param name="flight_level" value="$(arg flight_level)"/>
-      <!-- <param name="z_offset" value="0.5" type="double"/> -->
-      <!-- <param name="height" value="$(arg height)" type="double"/> -->
-      <!-- <param name="global_frame" value="map"/> -->
-      <!-- <param name="uav_frame" value="$(arg robot_model)_$(arg agent_id)/base_link"/> -->
-      <!-- <param name="gripper_frame" value="$(arg robot_model)_$(arg agent_id)/gripper_link"/> -->
-      <!-- <param name="aov" value="40"/> -->
-    </node>
+    </node> -->
 
     <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/>
 

@@ -22,6 +22,8 @@ from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
 
+# TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
+
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
