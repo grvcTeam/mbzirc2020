@@ -31,26 +31,15 @@ import mbzirc_comm_objs.srv
 import ual_action_server.msg
 
 from geometry_msgs.msg import PoseStamped, Point, Vector3
-# from ual_action_server.msg import TakeOffAction, TakeOffGoal
-# from ual_action_server.msg import GoToAction, GoToGoal
-# from ual_action_server.msg import PickAction, PickGoal
-# from ual_action_server.msg import PlaceAction, PlaceGoal
-# from ual_action_server.msg import LandAction, LandGoal
-# from mbzirc_comm_objs.msg import FollowPathAction, FollowPathGoal
-# from mbzirc_comm_objs.msg import PickAndPlaceAction, PickAndPlaceGoal
-# from mbzirc_comm_objs.msg import GoHomeAction, GoHomeGoal
-# from mbzirc_comm_objs.msg import ObjectDetectionList, AgentDataFeed
-
-# from mbzirc_comm_objs.srv import GetCostToGoTo
-# from mbzirc_comm_objs.srv import AskForRegion, AskForRegionRequest, GetCostToGoTo, GetCostToGoToResponse
 
 # TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
-# TODO: Get Task out of naming (or invert it!), should all classes be State Machines?
-
 class RobotInterface(object):
     def __init__(self, robot_id):
         self.id = robot_id
         self.url = 'mbzirc2020_' + self.id + '/'  # TODO: Impose ns: mbzirc2020!?
+        # TODO: Unifying robot_model and namespace might be an issue for non homogeneous teams, 
+        # but it is somehow forced by the way sensor topics are named in gazebo simulation (mbzirc2020)
+
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.pose = PoseStamped()
@@ -106,6 +95,7 @@ class RobotInterface(object):
         manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
         return manhattan_distance
 
+# TODO: Get Task out of naming (or invert it!), should all classes be State Machines?
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
@@ -294,24 +284,9 @@ class LandTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
-class Agent(object):
+class Agent(object):  # TODO: Delete!
 
     def __init__(self):
-        # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
-        # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-
-        # self.take_off_task = TakeOffTask()
-        # self.take_off_action_server = actionlib.SimpleActionServer('task/take_off', TakeOffAction, execute_cb = self.take_off_callback, auto_start = False)  # TODO: change naming from task to agent?
-        # self.take_off_action_server.start()
-
-        # self.follow_path_task = FollowPathTask()
-        # self.follow_path_action_server = actionlib.SimpleActionServer('task/follow_path', FollowPathAction, execute_cb = self.follow_path_callback, auto_start = False)  # TODO: change naming from task to agent?
-        # self.follow_path_action_server.start()
-
-        # self.pick_and_place_task = PickAndPlaceTask()
-        # self.pick_and_place_action_server = actionlib.SimpleActionServer('task/pick_and_place', PickAndPlaceAction, execute_cb = self.pick_and_place_callback, auto_start = False)  # TODO: change naming from task to agent?
-        # self.pick_and_place_action_server.start()
-
         # self.go_home_task = GoHomeTask()  # Reuse follow_path_task
         self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.go_home_action_server.start()
@@ -343,33 +318,6 @@ class Agent(object):
     def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
         self.ual_pose = data
 
-    # def take_off_callback(self, goal):
-    #     userdata = smach.UserData()
-    #     userdata.height = goal.height
-    #     self.home_pose = copy.deepcopy(self.ual_pose)  # Fetch home_pose!
-    #     outcome = self.take_off_task.execute(userdata)
-    #     print('take_off_callback output: {}'.format(outcome))
-    #     self.take_off_action_server.set_succeeded()
-
-    # def follow_path_callback(self, goal):
-    #     userdata = smach.UserData()
-    #     userdata.path = goal.path
-    #     outcome = self.follow_path_task.execute(userdata)
-    #     print('follow_path_callback output: {}'.format(outcome))
-    #     self.follow_path_action_server.set_succeeded()
-
-    # def pick_and_place_callback(self, goal):
-    #     flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-    #     userdata = smach.UserData()
-    #     userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
-    #     userdata.above_pile_pose.pose.position.z = flight_level
-    #     userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
-    #     userdata.above_wall_pose.pose.position.z = flight_level
-    #     userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
-    #     outcome = self.pick_and_place_task.execute(userdata)
-    #     print('pick_and_place_callback output: {}'.format(outcome))
-    #     self.pick_and_place_action_server.set_succeeded()
-
     def go_home_callback(self, goal):
         agent_id = rospy.get_param('~agent_id')
         flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
@@ -391,40 +339,6 @@ class Agent(object):
             outcome = self.land_task.execute(userdata)
             print('follow_path_task (go_home) output: {}'.format(outcome))
         self.go_home_action_server.set_succeeded()
-
-    # def get_cost_to_go_to(self, req):
-    #     # TODO: these try/except inside a function?
-    #     waypoint = PoseStamped()
-    #     try:
-    #        waypoint = self.tf_buffer.transform(req.waypoint, self.ual_pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
-    #     except:
-    #         rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(req.waypoint.header.frame_id, self.ual_pose.header.frame_id))
-
-    #     delta_x = waypoint.pose.position.x - self.ual_pose.pose.position.x
-    #     delta_y = waypoint.pose.position.y - self.ual_pose.pose.position.y
-    #     delta_z = waypoint.pose.position.z - self.ual_pose.pose.position.z
-    #     manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
-    #     return GetCostToGoToResponse(cost = manhattan_distance)
-
-# def agent_unused_main():
-#     rospy.init_node('uav_agent')
-
-#     while rospy.get_rostime() == rospy.Time():
-#         rospy.logwarn("Waiting for (sim) time to begin!")
-#         time.sleep(1)
-
-#     agent = Agent()
-    # agent_id = rospy.get_param('~agent_id')
-    # flight_level = rospy.get_param('~flight_level')
-
-    # TODO(performance): Make it optional, use only in develop stage
-    # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
-    # viewer.start()
-    # rospy.spin()
-    # viewer.stop()
-
-# if __name__ == '__main__':
-#     main()
 
 # TODO: All these parameters from config!
 field_width = 20  # 60  # TODO: Field is 60 x 50
@@ -530,66 +444,12 @@ class CentralAgent(object):
         self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        # TODO: Unifying robot_model and namespace might be an issue for non homogeneous teams, 
-        # but it is somehow forced by the way sensor topics are named in gazebo simulation (mbzirc2020)
-        # uavs_ns = {}
         self.robot = {}
         for uav_id in self.available_uavs:
             self.robot[uav_id] = RobotInterface(uav_id)
-            # uavs_ns[uav_id] = 'mbzirc2020' + '_' + uav_id
-
-        # self.uav_params = {}
-        # self.uav_clients = {}  # TODO: is this AgentInterface?
-        # self.uav_subscribers = {}  # TODO: is this AgentInterface?
-        # self.uav_data_feeds = {}   # TODO: is this AgentInterface?
-        # self.pose = {}  # TODO: is this AgentInterface?
-
-        # for uav_id in self.available_uavs:
-            # self.uav_clients[uav_id] = {}
-            # self.uav_subscribers[uav_id] = {}
-            # self.uav_clients[uav_id]['take_off'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/take_off', ual_action_server.msg.TakeOffAction)
-            # self.uav_clients[uav_id]['follow_path'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/follow_path', mbzirc_comm_objs.msg.FollowPathAction)
-            # self.uav_clients[uav_id]['pick_and_place'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/pick_and_place', mbzirc_comm_objs.msg.PickAndPlaceAction)
-            # self.uav_clients[uav_id]['go_home'] = actionlib.SimpleActionClient(uavs_ns[uav_id] + '/task/go_home', mbzirc_comm_objs.msg.GoHomeAction)
-            # self.uav_clients[uav_id]['get_cost_to_go_to'] = rospy.ServiceProxy(uavs_ns[uav_id] + '/get_cost_to_go_to', GetCostToGoTo)
-            # self.uav_subscribers[uav_id]['data_feed'] = rospy.Subscriber(uavs_ns[uav_id] + '/data_feed', AgentDataFeed, self.data_feed_callback, callback_args = uav_id)
-            # self.uav_subscribers[uav_id]['pose'] = rospy.Subscriber(uavs_ns[uav_id] + '/ual/pose', PoseStamped, self.pose_callback, callback_args = uav_id)
-
-            # print('waiting for servers of agent [{}]'.format(uav_id))
-            # self.uav_clients[uav_id]['take_off'].wait_for_server()  # TODO: Timeout!
-            # self.uav_clients[uav_id]['follow_path'].wait_for_server()  # TODO: Timeout!
-            # self.uav_clients[uav_id]['pick_and_place'].wait_for_server()  # TODO: Timeout!
-            # self.uav_clients[uav_id]['go_home'].wait_for_server()  # TODO: Timeout!
-            # rospy.wait_for_service(uavs_ns[uav_id] + '/get_cost_to_go_to')  # TODO: Timeout!
-
-            # self.uav_params[uav_id] = {}
-            # agent_node_ns = uavs_ns[uav_id] + '/agent_node/'
-            # agent_node_ns = uavs_ns[uav_id] + '/'
-            # self.uav_params[uav_id]['flight_level'] = rospy.get_param(agent_node_ns + 'flight_level')  # TODO: Needed here or leave uav alone?
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
-
-    # # TODO: as a service inside the robot agent? Force raw points with no frame_id?
-    # def get_cost_to_go_to(self, robot_pose, requested_waypoint):
-    #     # TODO: these try/except inside a function?
-    #     waypoint = PoseStamped()
-    #     try:
-    #         waypoint = self.tf_buffer.transform(requested_waypoint, robot_pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
-    #     except:
-    #         rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(requested_waypoint.header.frame_id, robot_pose.header.frame_id))
-
-    #     delta_x = waypoint.pose.position.x - robot_pose.pose.position.x
-    #     delta_y = waypoint.pose.position.y - robot_pose.pose.position.y
-    #     delta_z = waypoint.pose.position.z - robot_pose.pose.position.z
-    #     manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
-    #     return manhattan_distance
-
-    # def data_feed_callback(self, data, uav_id):  # TODO: data_feed?
-    #     self.uav_data_feeds[uav_id] = data
-
-    # def pose_callback(self, data, uav_id):
-    #     self.pose[uav_id] = data
 
     def estimation_callback(self, data):
         for pile in data.objects:
@@ -738,6 +598,12 @@ def main():
     central_agent.take_off()
     # central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
+
+    # TODO(performance): Make it optional, use only in develop stage
+    # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
+    # viewer.start()
+    # rospy.spin()
+    # viewer.stop()
 
 if __name__ == '__main__':
     main()
