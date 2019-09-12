@@ -49,6 +49,11 @@ class RobotInterface(object):
         self.params = {}
         self.params['flight_level'] = rospy.get_param(self.url + 'flight_level')  # TODO: Needed here or leave uav alone?
 
+        self.home = PoseStamped()
+
+    def set_home(self):
+        self.home = copy.deepcopy(self.pose)
+
     def pose_callback(self, data):
         self.pose = data
 
@@ -115,6 +120,7 @@ class TakeOffTask(smach.StateMachine):
         with self:
 
             def take_off_goal_callback(userdata, default_goal):
+                robot.set_home()  # TODO: better do it explicitly BEFORE take off?
                 goal = ual_action_server.msg.TakeOffGoal(height = userdata.height)
                 return goal
 
@@ -284,10 +290,15 @@ class LandTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
-class Agent(object):  # TODO: Delete!
+class Agent(object):
+    def __init__(self, robot):
+        self.robot = robot
+        self.tasks = {}
+        self.tasks['take_off'] = TakeOffTask(robot)
+        self.tasks['follow_path'] = FollowPathTask(robot)
+        self.tasks['pick_and_place'] = PickAndPlaceTask(robot)
 
-    def __init__(self):
-        # self.go_home_task = GoHomeTask()  # Reuse follow_path_task
+        
         self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
         self.go_home_action_server.start()
 
@@ -314,9 +325,6 @@ class Agent(object):  # TODO: Delete!
         # go_home action server reuses follow_path_task
         # TODO: Check all, make it automatic!
         self.feed_publisher.publish(data_feed)
-
-    def ual_pose_callback(self, data):  # TODO: this is repeated code, use AgentInterface?
-        self.ual_pose = data
 
     def go_home_callback(self, goal):
         agent_id = rospy.get_param('~agent_id')
@@ -573,9 +581,21 @@ class CentralAgent(object):
                     # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
                     # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
                     print('now go home!')
-                    goal = mbzirc_comm_objs.msg.GoHomeGoal()
-                    goal.do_land = True
-                    # self.uav_clients[uav_id]['go_home'].send_goal(goal)
+                    flight_level = self.robot[uav_id].params['flight_level']
+                    go_home_path = []
+                    current_at_flight_level = copy.deepcopy(self.robot[uav_id].pose)
+                    current_at_flight_level.pose.position.z = flight_level
+                    home_at_flight_level = copy.deepcopy(self.robot[uav_id].home)
+                    home_at_flight_level.pose.position.z = flight_level
+                    go_home_path.append(current_at_flight_level)
+                    go_home_path.append(home_at_flight_level)
+
+                    userdata = smach.UserData()
+                    userdata.path = go_home_path
+                    follow_path_task = FollowPathTask(self.robot[uav_id])
+                    outcome = follow_path_task.execute(userdata)
+                    print('follow_path_callback output: {}'.format(outcome))
+
             if set(self.available_uavs).issubset(finished_uavs):
                 print('All done!')
                 break
