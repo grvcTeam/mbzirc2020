@@ -46,12 +46,9 @@ class RobotInterface(object):
         rospy.Subscriber(self.url + 'ual/pose', PoseStamped, self.pose_callback)  # TODO: valid for uav (move to robot_(data)_feed?)
         # time.sleep(3)  # TODO: allow messages to get in? wait for pose?
 
-        self.params = {}
-        self.params['flight_level'] = rospy.get_param(self.url + 'flight_level')  # TODO: Needed here or leave uav alone?
-
         self.home = PoseStamped()
 
-    def set_home(self):
+    def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
 
     def pose_callback(self, data):
@@ -204,7 +201,7 @@ class PickAndPlaceTask(smach.StateMachine):
                                     remapping = {'waypoint': 'above_pile_pose'},
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
-            def ask_for_region_request_callback(userdata, request):
+            def ask_for_region_to_pick_request_callback(userdata, request):
                 radius = 5.0  # TODO: Tune, assure uav is not going further while pick!
                 in_floor_pile_pose = copy.deepcopy(userdata.above_pile_pose)
                 in_floor_pile_pose.pose.position.z = 0
@@ -216,11 +213,11 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
                                     input_keys = ['above_pile_pose'],
-                                    request_cb = ask_for_region_request_callback,
+                                    request_cb = ask_for_region_to_pick_request_callback,
                                     response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+                                    transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', Sleep(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             def pick_goal_callback(userdata, default_goal):
@@ -238,7 +235,23 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_ABOVE_WALL', GoToTask(robot),
                                     remapping = {'waypoint': 'above_wall_pose'},
-                                    transitions = {'succeeded': 'PLACE'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
+
+            def ask_for_region_to_place_request_callback(userdata, request):
+                radius = 3.0  # TODO: Tune, assure uav is not going further while place!
+                in_floor_wall_pose = copy.deepcopy(userdata.above_wall_pose)
+                in_floor_wall_pose.pose.position.z = 0
+                request = robot.build_ask_for_region_request(in_floor_wall_pose, radius)
+                return request
+
+            smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+                                    input_keys = ['above_wall_pose'],
+                                    request_cb = ask_for_region_to_place_request_callback,
+                                    response_cb = ask_for_region_response_callback),
+                                    transitions = {'succeeded': 'PLACE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
+
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', Sleep(1.0),
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             def place_goal_callback(userdata, default_goal):
                 goal = ual_action_server.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
@@ -290,13 +303,16 @@ class LandTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
-class Agent(object):
+class AgentInterface(object):
     def __init__(self, robot_id):
         self.robot = RobotInterface(robot_id)
         self.tasks = {}
         self.tasks['take_off'] = TakeOffTask(self.robot)
         self.tasks['follow_path'] = FollowPathTask(self.robot)
         self.tasks['pick_and_place'] = PickAndPlaceTask(self.robot)
+
+        self.params = {}
+        self.params['flight_level'] = rospy.get_param(self.robot.url + 'flight_level')  # TODO: Needed here or leave uav alone?
 
     #     # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
     #     self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
@@ -424,7 +440,7 @@ class CentralAgent(object):
         for uav_id in self.available_uavs:
             # self.robot[uav_id] = RobotInterface(uav_id)
             # self.agent[uav_id] = Agent(self.robot[uav_id])
-            self.agent[uav_id] = Agent(uav_id)
+            self.agent[uav_id] = AgentInterface(uav_id)
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
@@ -448,7 +464,7 @@ class CentralAgent(object):
             print('sending goal to take_off server {}'.format(uav_id))
 
             userdata = smach.UserData()
-            userdata.height = self.agent[uav_id].robot.params['flight_level']
+            userdata.height = self.agent[uav_id].params['flight_level']
             # take_off_task = TakeOffTask(self.agent[uav_id].robot[uav_id])
             outcome = self.agent[uav_id].tasks['take_off'].execute(userdata)  # TODO: Now it's blocking!
             print('take_off output: {}'.format(outcome))
@@ -467,7 +483,7 @@ class CentralAgent(object):
         point_paths = generate_uav_paths(len(self.available_uavs))
         for i, uav_id in enumerate(self.available_uavs):
             uav_path = []
-            flight_level = self.agent[uav_id].robot.params['flight_level']
+            flight_level = self.agent[uav_id].params['flight_level']
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
@@ -521,7 +537,7 @@ class CentralAgent(object):
                 goal.in_wall_brick_pose = brick.pose
 
                 # flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-                flight_level = self.agent[min_cost_uav_id].robot.params['flight_level']
+                flight_level = self.agent[min_cost_uav_id].params['flight_level']
                 userdata = smach.UserData()
                 userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
                 userdata.above_pile_pose.pose.position.z = flight_level
@@ -550,7 +566,7 @@ class CentralAgent(object):
                     # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
                     # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
                     print('now go home!')
-                    flight_level = self.agent[uav_id].robot.params['flight_level']
+                    flight_level = self.agent[uav_id].params['flight_level']
                     go_home_path = []
                     current_at_flight_level = copy.deepcopy(self.agent[uav_id].robot.pose)
                     current_at_flight_level.pose.position.z = flight_level
