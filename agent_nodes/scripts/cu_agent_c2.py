@@ -291,62 +291,29 @@ class LandTask(smach.StateMachine):
                                     transitions = {'succeeded': 'succeeded'})
 
 class Agent(object):
-    def __init__(self, robot):
-        self.robot = robot
+    def __init__(self, robot_id):
+        self.robot = RobotInterface(robot_id)
         self.tasks = {}
-        self.tasks['take_off'] = TakeOffTask(robot)
-        self.tasks['follow_path'] = FollowPathTask(robot)
-        self.tasks['pick_and_place'] = PickAndPlaceTask(robot)
+        self.tasks['take_off'] = TakeOffTask(self.robot)
+        self.tasks['follow_path'] = FollowPathTask(self.robot)
+        self.tasks['pick_and_place'] = PickAndPlaceTask(self.robot)
 
-        
-        self.go_home_action_server = actionlib.SimpleActionServer('task/go_home', GoHomeAction, execute_cb = self.go_home_callback, auto_start = False)  # TODO: change naming from task to agent?
-        self.go_home_action_server.start()
+    #     # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
+    #     self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
+    #     rospy.Timer(rospy.Duration(0.2), self.update_feed_callback)  # TODO: duration?
 
-        self.land_task = LandTask()
-
-        rospy.Service('get_cost_to_go_to', GetCostToGoTo, self.get_cost_to_go_to)
-
-        self.ual_pose = PoseStamped()
-        rospy.Subscriber("ual/pose", PoseStamped, self.ual_pose_callback)
-
-        # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
-        self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
-        rospy.Timer(rospy.Duration(0.2), self.update_feed_callback)  # TODO: duration?
-
-    def update_feed_callback(self, event):
-        data_feed = AgentDataFeed()
-        data_feed.is_idle = True
-        if self.take_off_task.is_running():
-            data_feed.is_idle = False
-        if self.follow_path_task.is_running():
-            data_feed.is_idle = False
-        if self.pick_and_place_task.is_running():
-            data_feed.is_idle = False
-        # go_home action server reuses follow_path_task
-        # TODO: Check all, make it automatic!
-        self.feed_publisher.publish(data_feed)
-
-    def go_home_callback(self, goal):
-        agent_id = rospy.get_param('~agent_id')
-        flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-        userdata = smach.UserData()
-        userdata.path = []  # TODO: Build path from here to home
-        up_here = copy.deepcopy(self.ual_pose)
-        up_here.pose.position.z = flight_level
-        userdata.path.append(up_here)
-        up_home = copy.deepcopy(self.home_pose)
-        up_home.pose.position.z = flight_level
-        userdata.path.append(up_home)
-        print('uav[{}].flight_level = {}'.format(agent_id, flight_level))
-        for point in userdata.path:
-            print('path point: {}'.format(point))
-        outcome = self.follow_path_task.execute(userdata)  # Reuse follow path!
-        print('follow_path_task (go_home) output: {}'.format(outcome))
-        if goal.do_land:
-            userdata = smach.UserData()  # empty
-            outcome = self.land_task.execute(userdata)
-            print('follow_path_task (go_home) output: {}'.format(outcome))
-        self.go_home_action_server.set_succeeded()
+    # def update_feed_callback(self, event):
+    #     data_feed = AgentDataFeed()
+    #     data_feed.is_idle = True
+    #     if self.take_off_task.is_running():
+    #         data_feed.is_idle = False
+    #     if self.follow_path_task.is_running():
+    #         data_feed.is_idle = False
+    #     if self.pick_and_place_task.is_running():
+    #         data_feed.is_idle = False
+    #     # go_home action server reuses follow_path_task
+    #     # TODO: Check all, make it automatic!
+    #     self.feed_publisher.publish(data_feed)
 
 # TODO: All these parameters from config!
 field_width = 20  # 60  # TODO: Field is 60 x 50
@@ -449,12 +416,15 @@ class CentralAgent(object):
     def __init__(self):
         self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
-        self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
+        # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        self.robot = {}
+        # self.robot = {}
+        self.agent = {}
         for uav_id in self.available_uavs:
-            self.robot[uav_id] = RobotInterface(uav_id)
+            # self.robot[uav_id] = RobotInterface(uav_id)
+            # self.agent[uav_id] = Agent(self.robot[uav_id])
+            self.agent[uav_id] = Agent(uav_id)
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
@@ -478,10 +448,9 @@ class CentralAgent(object):
             print('sending goal to take_off server {}'.format(uav_id))
 
             userdata = smach.UserData()
-            userdata.height = self.robot[uav_id].params['flight_level']
-            # self.home_pose = copy.deepcopy(self.ual_pose)  # TODO: Fetch home_pose!
-            take_off_task = TakeOffTask(self.robot[uav_id])
-            outcome = take_off_task.execute(userdata)  # TODO: Now it's blocking!
+            userdata.height = self.agent[uav_id].robot.params['flight_level']
+            # take_off_task = TakeOffTask(self.agent[uav_id].robot[uav_id])
+            outcome = self.agent[uav_id].tasks['take_off'].execute(userdata)  # TODO: Now it's blocking!
             print('take_off output: {}'.format(outcome))
             # self.take_off_action_server.set_succeeded()
 
@@ -498,7 +467,7 @@ class CentralAgent(object):
         point_paths = generate_uav_paths(len(self.available_uavs))
         for i, uav_id in enumerate(self.available_uavs):
             uav_path = []
-            flight_level = self.robot[uav_id].params['flight_level']
+            flight_level = self.agent[uav_id].robot.params['flight_level']
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
@@ -514,8 +483,8 @@ class CentralAgent(object):
 
             userdata = smach.UserData()
             userdata.path = uav_paths[uav_id]
-            follow_path_task = FollowPathTask(self.robot[uav_id])
-            outcome = follow_path_task.execute(userdata)
+            # follow_path_task = FollowPathTask(self.robot[uav_id])
+            outcome = self.agent[uav_id].tasks['follow_path'].execute(userdata)
             print('follow_path_callback output: {}'.format(outcome))
             # self.follow_path_action_server.set_succeeded()
 
@@ -542,7 +511,7 @@ class CentralAgent(object):
                     for uav_id in self.available_uavs:
                         # if self.uav_data_feeds[uav_id].is_idle:
                         if is_idle[uav_id]:  # TODO: Make it a data feed from agent? Sequential execution does not need it!
-                            costs[uav_id] = self.robot[uav_id].get_cost_to_go_to(piles[brick.color])
+                            costs[uav_id] = self.agent[uav_id].robot.get_cost_to_go_to(piles[brick.color])
                         else:
                             rospy.sleep(0.5)
                 min_cost_uav_id = min(costs, key = costs.get)
@@ -552,15 +521,15 @@ class CentralAgent(object):
                 goal.in_wall_brick_pose = brick.pose
 
                 # flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-                flight_level = self.robot[min_cost_uav_id].params['flight_level']
+                flight_level = self.agent[min_cost_uav_id].robot.params['flight_level']
                 userdata = smach.UserData()
                 userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
                 userdata.above_pile_pose.pose.position.z = flight_level
                 userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
                 userdata.above_wall_pose.pose.position.z = flight_level
                 userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
-                pick_and_place_task = PickAndPlaceTask(self.robot[min_cost_uav_id])
-                outcome = pick_and_place_task.execute(userdata)
+                # pick_and_place_task = PickAndPlaceTask(self.robot[min_cost_uav_id])
+                outcome = self.agent[uav_id].tasks['pick_and_place'].execute(userdata)
                 print('pick_and_place_callback output: {}'.format(outcome))
                 # self.pick_and_place_action_server.set_succeeded()
 
@@ -581,19 +550,19 @@ class CentralAgent(object):
                     # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
                     # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
                     print('now go home!')
-                    flight_level = self.robot[uav_id].params['flight_level']
+                    flight_level = self.agent[uav_id].robot.params['flight_level']
                     go_home_path = []
-                    current_at_flight_level = copy.deepcopy(self.robot[uav_id].pose)
+                    current_at_flight_level = copy.deepcopy(self.agent[uav_id].robot.pose)
                     current_at_flight_level.pose.position.z = flight_level
-                    home_at_flight_level = copy.deepcopy(self.robot[uav_id].home)
+                    home_at_flight_level = copy.deepcopy(self.agent[uav_id].robot.home)
                     home_at_flight_level.pose.position.z = flight_level
                     go_home_path.append(current_at_flight_level)
                     go_home_path.append(home_at_flight_level)
 
                     userdata = smach.UserData()
                     userdata.path = go_home_path
-                    follow_path_task = FollowPathTask(self.robot[uav_id])
-                    outcome = follow_path_task.execute(userdata)
+                    # follow_path_task = FollowPathTask(self.robot[uav_id])
+                    outcome = self.agent[uav_id].tasks['follow_path'].execute(userdata)
                     print('follow_path_callback output: {}'.format(outcome))
 
             if set(self.available_uavs).issubset(finished_uavs):
