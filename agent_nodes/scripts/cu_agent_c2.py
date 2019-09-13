@@ -20,6 +20,7 @@ import random
 import json
 import copy
 import time
+import threading
 import rospy
 import smach
 import smach_ros
@@ -31,6 +32,20 @@ import mbzirc_comm_objs.srv
 import ual_action_server.msg
 
 from geometry_msgs.msg import PoseStamped, Point, Vector3
+
+class ThreadWithReturnValue(threading.Thread):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
+        threading.Thread.__init__(self, group, target, name, args, kwargs, Verbose)
+        self._return = None
+
+    def run(self):
+        if self._Thread__target is not None:
+            self._return = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
+
+    # TODO: ONLY __init__() y run() should be overriden
+    def join(self):
+        threading.Thread.join(self)
+        return self._return
 
 # TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
 class RobotInterface(object):
@@ -47,6 +62,7 @@ class RobotInterface(object):
         # time.sleep(3)  # TODO: allow messages to get in? wait for pose?
 
         self.home = PoseStamped()
+        # self.is_idle = True
 
     def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
@@ -97,6 +113,14 @@ class RobotInterface(object):
         manhattan_distance = abs(delta_x) + abs(delta_y) + abs(delta_z)
         return manhattan_distance
 
+# class Task(smach.StateMachine):
+#     def __init__(self, input_keys = [], output_keys = []):
+#         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = input_keys, output_keys = output_keys)
+#         self.robot = None
+
+#     def set_robot(self, robot):
+#         self.robot = robot
+
 # TODO: Get Task out of naming (or invert it!), should all classes be State Machines?
 class Sleep(smach.State):
     def __init__(self, duration = 3.0):
@@ -111,23 +135,31 @@ class Sleep(smach.State):
 
 #TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
 class TakeOffTask(smach.StateMachine):
-    def __init__(self, robot):
+    def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['height'])
+
+    def define(self, robot):
+        self.robot = robot
 
         with self:
 
             def take_off_goal_callback(userdata, default_goal):
-                robot.set_home()  # TODO: better do it explicitly BEFORE take off?
+                self.robot.set_home()  # TODO: better do it explicitly BEFORE take off?
                 goal = ual_action_server.msg.TakeOffGoal(height = userdata.height)
                 return goal
 
-            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot.url + 'take_off_action', ual_action_server.msg.TakeOffAction,
+            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(self.robot.url + 'take_off_action', ual_action_server.msg.TakeOffAction,
                                     input_keys = ['height'],
                                     goal_cb = take_off_goal_callback),
                                     transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY'})
 
             smach.StateMachine.add('SLEEP_AND_RETRY', Sleep(3.0),
                                     transitions = {'succeeded': 'TAKE_OFF'})
+
+    # def execute(self, userdata):
+    #     self.robot.is_idle = False
+    #     smach.StateMachine.execute()
+    #     self.robot.is_idle = True
 
 class GoToTask(smach.StateMachine):
     def __init__(self, robot):
@@ -303,16 +335,88 @@ class LandTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
+class Hub(object):
+    def __init__(self, available_uavs):
+        self.robot = {}
+        self.threads = {}
+        self.take_off_task = {}
+
+        for uav_id in available_uavs:
+            self.robot[uav_id] = RobotInterface(uav_id)
+            self.take_off_task[uav_id] = TakeOffTask()
+            self.take_off_task[uav_id].define(self.robot[uav_id])
+
+    def take_off(self, uav_id, userdata):
+        self.threads[uav_id] = ThreadWithReturnValue(target=self.take_off_task[uav_id].execute, args=(userdata,))  # TODO: Now it's non-blocking!
+        self.threads[uav_id].start()
+
+# class TaskManager(object):
+#     def __init__(self, available_uavs):
+#         self.robot = {}
+#         self.threads = {}
+#         self.tasks = {}
+#         self.finished_tasks = []
+#         # self.take_off_task = {}
+
+#         # for uav_id in available_uavs:
+#         #     self.robot[uav_id] = RobotInterface(uav_id)
+#         #     self.take_off_task[uav_id] = TakeOffTask(self.robot[uav_id])
+
+#     def start_task(self, task_id, task, userdata):
+#         # TODO: Don't trust user, get name, generate id!
+#         self.tasks[task_id] = task
+#         self.threads[task_id] = ThreadWithReturnValue(target=task.execute, args=(userdata,))  # TODO: Now it's non-blocking!
+#         self.threads[task_id].start()
+
+#     def is_running(self, task_id):
+#         return task_id not in self.finished_tasks
+#         # return self.tasks[task_id].is_running()
+
+#     def manage(self):
+#         rate = rospy.Rate(10)  # [Hz]
+#         while not rospy.is_shutdown():
+#             for task_id, task in self.tasks:
+#                 if not self.tasks[task_id].is_running():
+#                     outcome = self.threads[task_id].join()
+#                     print('output: {}'.format(outcome))
+#                     self.finished_tasks.append(task_id)
+#                     # del d[key]
+
+#             if set(self.available_uavs).issubset(finished_uavs):
+#                 print('All done!')
+#                 break
+
+#             for uav_id in self.available_uavs:
+#                 if uav_id in finished_uavs:
+#                     continue
+
+#                 print('waiting result of take_off server [{}]'.format(uav_id))
+#                 # outcome = self.threads[uav_id].join()
+#                 if not self.hub.take_off_task[uav_id].is_running():
+#                     outcome = self.hub.threads[uav_id].join()
+#                     print('take_off output: {}'.format(outcome))
+#                     finished_uavs.append(uav_id)
+#                 else:
+#                     print('uav[{}] is not idle!'.format(uav_id))
+#                     time.sleep(0.1) 
+#         rate.sleep()
+
 class AgentInterface(object):
     def __init__(self, robot_id):
         self.robot = RobotInterface(robot_id)
         self.tasks = {}
-        self.tasks['take_off'] = TakeOffTask(self.robot)
+        self.tasks['take_off'] = TakeOffTask()
+        self.tasks['take_off'].define(self.robot)
         self.tasks['follow_path'] = FollowPathTask(self.robot)
         self.tasks['pick_and_place'] = PickAndPlaceTask(self.robot)
 
+        # self.threads = {}
+        # self.threads['take_off'] = threading.Thread(target=self.tasks['take_off'].execute())
+        # self.threads['follow_path'] = threading.Thread(target=self.tasks['follow_path'].execute())
+        # self.threads['pick_and_place'] = threading.Thread(target=self.tasks['pick_and_place'].execute())
+
         self.params = {}
-        self.params['flight_level'] = rospy.get_param(self.robot.url + 'flight_level')  # TODO: Needed here or leave uav alone?
+        self.params['flight_level'] = rospy.get_param(self.robot.url + 'flight_level')  # TODO: here or at RobotInterface?
 
     #     # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
     #     self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
@@ -435,15 +539,15 @@ class CentralAgent(object):
         # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        # self.robot = {}
         self.agent = {}
         for uav_id in self.available_uavs:
-            # self.robot[uav_id] = RobotInterface(uav_id)
-            # self.agent[uav_id] = Agent(self.robot[uav_id])
             self.agent[uav_id] = AgentInterface(uav_id)
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
+
+        # self.threads = {}
+        self.hub = Hub(self.available_uavs)
 
     def estimation_callback(self, data):
         for pile in data.objects:
@@ -465,17 +569,30 @@ class CentralAgent(object):
 
             userdata = smach.UserData()
             userdata.height = self.agent[uav_id].params['flight_level']
-            # take_off_task = TakeOffTask(self.agent[uav_id].robot[uav_id])
-            outcome = self.agent[uav_id].tasks['take_off'].execute(userdata)  # TODO: Now it's blocking!
-            print('take_off output: {}'.format(outcome))
-            # self.take_off_action_server.set_succeeded()
+            # outcome = self.agent[uav_id].tasks['take_off'].execute(userdata)  # TODO: Now it's blocking!
+            # self.threads[uav_id] = ThreadWithReturnValue(target=self.agent[uav_id].tasks['take_off'].execute, args=(userdata,))  # TODO: Now it's non-blocking!
+            # self.threads[uav_id].start()
+            self.hub.take_off(uav_id, userdata)
 
-            # self.uav_clients[uav_id]['take_off'].send_goal(ual_action_server.msg.TakeOffGoal(height = self.uav_params[uav_id]['flight_level']))
+        finished_uavs = []
+        while (True):
+            if set(self.available_uavs).issubset(finished_uavs):
+                print('All done!')
+                break
 
-        # for uav_id in self.available_uavs:
-        #     print('waiting result of take_off server [{}]'.format(uav_id))
-        #     self.uav_clients[uav_id]['take_off'].wait_for_result()
-        #     print(self.uav_clients[uav_id]['take_off'].get_result())
+            for uav_id in self.available_uavs:
+                if uav_id in finished_uavs:
+                    continue
+
+                print('waiting result of take_off server [{}]'.format(uav_id))
+                # outcome = self.threads[uav_id].join()
+                if not self.hub.take_off_task[uav_id].is_running():
+                    outcome = self.hub.threads[uav_id].join()
+                    print('take_off output: {}'.format(outcome))
+                    finished_uavs.append(uav_id)
+                else:
+                    print('uav[{}] is not idle!'.format(uav_id))
+                    time.sleep(0.1)
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
