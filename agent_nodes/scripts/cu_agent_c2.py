@@ -48,7 +48,7 @@ class ThreadWithReturnValue(threading.Thread):
         return self._return
 
 # TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
-class RobotInterface(object):
+class RobotInterface(object):  # TODO: RobotProxy?
     def __init__(self, robot_id):
         self.id = robot_id
         self.url = 'mbzirc2020_' + self.id + '/'  # TODO: Impose ns: mbzirc2020!?
@@ -114,15 +114,22 @@ class RobotInterface(object):
         return manhattan_distance
 
 # TODO: Get Task out of naming (or invert it!), should all classes be State Machines?
-class Sleep(smach.State):
-    def __init__(self, duration = 3.0):
-        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])  # TODO: duration as an input_key?
+class SleepAndRetry(smach.State):
+    def __init__(self, duration = 3.0, max_retries = None):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])
         self.duration = duration
+        self.max_retries = max_retries
+        self.retry_count = 0
 
     def execute(self, userdata):
         rospy.sleep(self.duration)
-        return 'succeeded'
-        # TODO: aborted?
+        if not self.max_retries:
+            return 'succeeded'
+        elif self.retry_count < self.max_retries:
+            self.retry_count += 1
+            return 'succeeded'
+        else:
+            return 'aborted'
         # TODO: preempted? Sleep in shorter period chunks to allow preemption?
 
 #TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
@@ -143,8 +150,8 @@ class TakeOffTask(smach.StateMachine):
                                     goal_cb = take_off_goal_callback),
                                     transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY', Sleep(3.0),
-                                    transitions = {'succeeded': 'TAKE_OFF'})
+            smach.StateMachine.add('SLEEP_AND_RETRY', SleepAndRetry(3.0, 5),
+                                    transitions = {'succeeded': 'TAKE_OFF', 'aborted': 'aborted'})
         return self
 
 class GoToTask(smach.StateMachine):
@@ -168,7 +175,7 @@ class GoToTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'GO_TO', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
 
             def go_to_goal_callback(userdata, default_goal):
@@ -187,7 +194,7 @@ class GoToTask(smach.StateMachine):
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
-class WaypointDispatch(smach.State):
+class DispatchWaypoints(smach.State):
     def __init__(self, go_to_task):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
         self.go_to_task = go_to_task
@@ -208,7 +215,7 @@ class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch objec
     def define_for(self, robot):
         with self:
 
-            smach.StateMachine.add('DISPATCH', WaypointDispatch(GoToTask().define_for(robot)),
+            smach.StateMachine.add('DISPATCH', DispatchWaypoints(GoToTask().define_for(robot)),
                                     remapping = {'path': 'path'},
                                     transitions = {'succeeded': 'succeeded'})
         return self
@@ -240,7 +247,7 @@ class PickAndPlaceTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             def pick_goal_callback(userdata, default_goal):
@@ -273,7 +280,7 @@ class PickAndPlaceTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'PLACE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             def place_goal_callback(userdata, default_goal):
@@ -310,7 +317,7 @@ class LandTask(smach.StateMachine):
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'LAND', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', Sleep(1.0),
+            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_LAND'})
 
             # TODO: is this callback needed?
