@@ -64,6 +64,10 @@ class RobotInterface(object):
         self.home = PoseStamped()
         # self.is_idle = True
 
+    def get_param(self, param_name):  # TODO: Move to cu instead?
+        # TODO: Default value in case param_name is not found?
+        return rospy.get_param(self.url + param_name)
+
     def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
 
@@ -349,15 +353,15 @@ class LandTask(smach.StateMachine):
         return 0
 
 class TaskManager(object):
-    def __init__(self, available_robots):
+    def __init__(self, robot_interfaces):
+        self.robots = robot_interfaces
         self.is_idle = {}  # TODO: Use Events?
-        self.robots = {}
         self.locks = {}
         self.tasks = {}
         self.threads = {}
 
-        for robot_id in available_robots:
-            self.robots[robot_id] = RobotInterface(robot_id)  # TODO: pass these as parameters in construction?
+        for robot_id in self.robots:
+            # self.robots[robot_id] = RobotInterface(robot_id)  # TODO: pass these as parameters in construction?
             self.locks[robot_id] = threading.Lock()
             self.is_idle[robot_id] = True
 
@@ -414,9 +418,9 @@ class TaskManager(object):
                 return False
         return True
 
-class AgentInterface(object):
-    def __init__(self, robot_id):
-        self.robot = RobotInterface(robot_id)
+# class AgentInterface(object):
+#     def __init__(self, robot_id):
+#         self.robot = RobotInterface(robot_id)
         # self.tasks = {}
         # self.tasks['take_off'] = TakeOffTask()
         # self.tasks['take_off'].define_for(self.robot)
@@ -428,8 +432,8 @@ class AgentInterface(object):
         # self.threads['follow_path'] = threading.Thread(target=self.tasks['follow_path'].execute())
         # self.threads['pick_and_place'] = threading.Thread(target=self.tasks['pick_and_place'].execute())
 
-        self.params = {}
-        self.params['flight_level'] = rospy.get_param(self.robot.url + 'flight_level')  # TODO: at RobotInterface? def param(self, param_name): return rospy.get_param(self.robot.url + param_name)
+        # self.params = {}
+        # self.params['flight_level'] = rospy.get_param(self.robot.url + 'flight_level')
 
     #     # TODO: Force these lines to be the lasts in construction to avoid ill data_feed?
     #     self.feed_publisher = rospy.Publisher('data_feed', AgentDataFeed, queue_size = 1)
@@ -547,19 +551,19 @@ def get_build_wall_sequence(wall_blueprint):
 # First sequential model works, TODO: concurrency in uav_id!
 class CentralAgent(object):
     def __init__(self):
-        self.available_uavs = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+        self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
         # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
         # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        self.agent = {}
-        for uav_id in self.available_uavs:
-            self.agent[uav_id] = AgentInterface(uav_id)
+        self.robots = {}
+        for robot_id in self.available_robots:
+            self.robots[robot_id] = RobotInterface(robot_id)
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
 
-        self.task_manager = TaskManager(self.available_uavs)
+        self.task_manager = TaskManager(self.robots)
 
     def estimation_callback(self, data):
         for pile in data.objects:
@@ -576,15 +580,15 @@ class CentralAgent(object):
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):
-        for uav_id in self.available_uavs:
-            print('sending goal to take_off server {}'.format(uav_id))
+        for robot_id in self.available_robots:
+            print('sending goal to take_off server {}'.format(robot_id))
 
             userdata = smach.UserData()
-            userdata.height = self.agent[uav_id].params['flight_level']  # TODO: Why not directly rosparam?
-            self.task_manager.start_task(uav_id, TakeOffTask(), userdata)
+            userdata.height = self.robots[robot_id].get_param('flight_level')  # TODO: Why not directly inside tasks?
+            self.task_manager.start_task(robot_id, TakeOffTask(), userdata)
 
         while not rospy.is_shutdown():
-            if self.task_manager.are_idle(self.available_uavs):
+            if self.task_manager.are_idle(self.available_robots):
                 print('All done!')
                 break
             else:
@@ -593,11 +597,11 @@ class CentralAgent(object):
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
-        uav_paths = {}
-        point_paths = generate_uav_paths(len(self.available_uavs))
-        for i, uav_id in enumerate(self.available_uavs):
-            uav_path = []
-            flight_level = self.agent[uav_id].params['flight_level']
+        robot_paths = {}
+        point_paths = generate_uav_paths(len(self.available_robots))
+        for i, robot_id in enumerate(self.available_robots):
+            robot_path = []
+            flight_level = self.robots[robot_id].get_param('flight_level')
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
@@ -605,15 +609,15 @@ class CentralAgent(object):
                 waypoint.pose.position = point
                 waypoint.pose.orientation.z = 0
                 waypoint.pose.orientation.w = 1  # TODO: other orientation?
-                uav_path.append(waypoint)
-            uav_paths[uav_id] = uav_path
+                robot_path.append(waypoint)
+            robot_paths[robot_id] = robot_path
 
-        for uav_id in self.available_uavs:
-            print('sending goal to follow_path server {}'.format(uav_id))
+        for robot_id in self.available_robots:
+            print('sending goal to follow_path server {}'.format(robot_id))
 
             userdata = smach.UserData()
-            userdata.path = uav_paths[uav_id]
-            self.task_manager.start_task(uav_id, FollowPathTask(), userdata)
+            userdata.path = robot_paths[robot_id]
+            self.task_manager.start_task(robot_id, FollowPathTask(), userdata)
             # follow_path_task = FollowPathTask(self.robot[uav_id])
             # outcome = self.agent[uav_id].tasks['follow_path'].execute(userdata)
             # print('follow_path_callback output: {}'.format(outcome))
