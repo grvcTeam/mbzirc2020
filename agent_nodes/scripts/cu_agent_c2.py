@@ -64,9 +64,9 @@ class RobotInterface(object):
         self.home = PoseStamped()
         # self.is_idle = True
 
-    def get_param(self, param_name):  # TODO: Move to cu instead?
-        # TODO: Default value in case param_name is not found?
-        return rospy.get_param(self.url + param_name)
+    # def get_param(self, param_name):  # TODO: Move to cu instead?
+    #     # TODO: Default value in case param_name is not found?
+    #     return rospy.get_param(self.url + param_name)
 
     def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
@@ -152,8 +152,8 @@ class TakeOffTask(smach.StateMachine):
                                     transitions = {'succeeded': 'TAKE_OFF'})
         return self
 
-    def get_cost(self, robot, userdata):
-        return 1.0 / userdata.height  # As it is safer to takeoff high altitude uavs, make it cheaper
+    # def get_cost(self, robot, userdata):
+    #     return 1.0 / userdata.height  # As it is safer to takeoff high altitude uavs, make it cheaper
 
 class GoToTask(smach.StateMachine):
     def __init__(self):
@@ -195,9 +195,9 @@ class GoToTask(smach.StateMachine):
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
-    def get_cost(self, robot, userdata):
-        waypoint = copy.deepcopy(userdata.waypoint)  # TODO: Better copy at get_cost_to_go_to?
-        return robot.get_cost_to_go_to(waypoint)
+    # def get_cost(self, robot, userdata):
+    #     waypoint = copy.deepcopy(userdata.waypoint)  # TODO: Better copy at get_cost_to_go_to?
+    #     return robot.get_cost_to_go_to(waypoint)
 
 class WaypointDispatch(smach.State):
     def __init__(self, go_to_task):
@@ -225,9 +225,9 @@ class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch objec
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
-    def get_cost(self, robot, userdata):
-        first_waypoint = copy.deepcopy(userdata.path[0])  # TODO: Better copy at get_cost_to_go_to?
-        return robot.get_cost_to_go_to(first_waypoint)  # TODO: Add path lenght?
+    # def get_cost(self, robot, userdata):
+    #     first_waypoint = copy.deepcopy(userdata.path[0])  # TODO: Better copy at get_cost_to_go_to?
+    #     return robot.get_cost_to_go_to(first_waypoint)  # TODO: Add path lenght?
 
 class PickAndPlaceTask(smach.StateMachine):
     def __init__(self):
@@ -306,9 +306,9 @@ class PickAndPlaceTask(smach.StateMachine):
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
-    def get_cost(self, robot, userdata):
-        first_waypoint = copy.deepcopy(userdata.above_pile_pose)  # TODO: Better copy at get_cost_to_go_to?
-        return robot.get_cost_to_go_to(first_waypoint)
+    # def get_cost(self, robot, userdata):
+    #     first_waypoint = copy.deepcopy(userdata.above_pile_pose)  # TODO: Better copy at get_cost_to_go_to?
+    #     return robot.get_cost_to_go_to(first_waypoint)
 
 class LandTask(smach.StateMachine):
     def __init__(self):
@@ -349,8 +349,8 @@ class LandTask(smach.StateMachine):
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
-    def get_cost(self, robot, userdata):
-        return 0
+    # def get_cost(self, robot, userdata):
+    #     return 0
 
 class TaskManager(object):
     def __init__(self, robot_interfaces):
@@ -395,26 +395,27 @@ class TaskManager(object):
             self.threads[robot_id].start()
             return True
 
-    def start_task_at_min_cost(self, task, userdata):
-        costs = {}
-        for robot_id, robot in self.robots:
-            self.locks[robot_id].acquire()
-            if self.is_idle[robot_id]:
-                costs[robot_id] = task.get_cost(robot, userdata)
-            self.locks[robot_id].release()
+    # def start_task_at_min_cost(self, task, userdata):
+    #     costs = {}
+    #     for robot_id, robot in self.robots:
+    #         self.locks[robot_id].acquire()
+    #         if self.is_idle[robot_id]:
+    #             costs[robot_id] = task.get_cost(robot, userdata)
+    #         self.locks[robot_id].release()
 
-        if not costs:
-            return False
+    #     if not costs:
+    #         return False
 
-        min_cost_robot_id = min(costs, key = costs.get)
-        print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
-        return self.start_task(min_cost_robot_id, task, userdata)
+    #     min_cost_robot_id = min(costs, key = costs.get)
+    #     print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
+    #     return self.start_task(min_cost_robot_id, task, userdata)
 
     # def start_min_cost_task(self, robot_id_list, task_list, userdata_list):
 
     def are_idle(self, id_list):
         for robot_id in id_list:
             if not self.is_idle[robot_id]:
+                # rospy.logwarn('[{}] not idle!'.format(robot_id))
                 return False
         return True
 
@@ -565,6 +566,10 @@ class CentralAgent(object):
 
         self.task_manager = TaskManager(self.robots)
 
+    def get_param(self, robot_id, param_name):
+        # TODO: Default value in case param_name is not found?
+        return rospy.get_param(self.robots[robot_id].url + param_name)
+
     def estimation_callback(self, data):
         for pile in data.objects:
             # TODO: check type and scale?
@@ -584,7 +589,7 @@ class CentralAgent(object):
             print('sending goal to take_off server {}'.format(robot_id))
 
             userdata = smach.UserData()
-            userdata.height = self.robots[robot_id].get_param('flight_level')  # TODO: Why not directly inside tasks?
+            userdata.height = self.get_param(robot_id, 'flight_level')  # TODO: Why not directly inside tasks?
             self.task_manager.start_task(robot_id, TakeOffTask(), userdata)
 
         while not rospy.is_shutdown():
@@ -601,7 +606,7 @@ class CentralAgent(object):
         point_paths = generate_uav_paths(len(self.available_robots))
         for i, robot_id in enumerate(self.available_robots):
             robot_path = []
-            flight_level = self.robots[robot_id].get_param('flight_level')
+            flight_level = self.get_param(robot_id, 'flight_level')
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
@@ -643,53 +648,53 @@ class CentralAgent(object):
                 print('row[{}] brick = {}'.format(i, brick))
                 costs = {}
                 while not costs:
-                    for uav_id in self.available_uavs:
+                    for robot_id in self.available_robots:
                         # if self.uav_data_feeds[uav_id].is_idle:
-                        if is_idle[uav_id]:  # TODO: Make it a data feed from agent? Sequential execution does not need it!
-                            costs[uav_id] = self.agent[uav_id].robot.get_cost_to_go_to(piles[brick.color])
+                        if self.task_manager.are_idle([robot_id]):
+                            costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
                         else:
                             rospy.sleep(0.5)
-                min_cost_uav_id = min(costs, key = costs.get)
-                print('costs: {}, min_cost_id: {}'.format(costs, min_cost_uav_id))
+                min_cost_robot_id = min(costs, key = costs.get)
+                print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
                 goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
                 goal.pile_pose = piles[brick.color]
                 goal.in_wall_brick_pose = brick.pose
 
-                # flight_level = rospy.get_param('~flight_level')  # TODO: Taking it every callback allows parameter changes...
-                flight_level = self.agent[min_cost_uav_id].params['flight_level']
+                flight_level = self.get_param(min_cost_robot_id,'flight_level')
                 userdata = smach.UserData()
                 userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
                 userdata.above_pile_pose.pose.position.z = flight_level
                 userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
                 userdata.above_wall_pose.pose.position.z = flight_level
                 userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
+                self.task_manager.start_task(min_cost_robot_id, PickAndPlaceTask(), userdata)
                 # pick_and_place_task = PickAndPlaceTask(self.robot[min_cost_uav_id])
-                outcome = self.agent[uav_id].tasks['pick_and_place'].execute(userdata)
-                print('pick_and_place_callback output: {}'.format(outcome))
+                # outcome = self.agent[uav_id].tasks['pick_and_place'].execute(userdata)
+                # print('pick_and_place_callback output: {}'.format(outcome))
                 # self.pick_and_place_action_server.set_succeeded()
 
                 # self.uav_clients[min_cost_uav_id]['pick_and_place'].send_goal(goal)
-                rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
+                # rospy.sleep(0.5)  # TODO: some sleep to allow data_feed update
         # Once arrived here, last pick_and_place task has been allocated
         # TODO: Sequencial implementation may never arrive here (uav blocked at wall)!!!
 
         print('All pick_and_place tasks allocated')
-        finished_uavs = []
-        while True:
+        finished_robots = []
+        while not rospy.is_shutdown():
             rospy.sleep(0.5)  # TODO: some sleep here?
-            for uav_id in self.available_uavs:
-                if is_idle[uav_id] and (uav_id not in finished_uavs):
-                    finished_uavs.append(uav_id)
+            for robot_id in self.available_robots:
+                if self.task_manager.are_idle([robot_id]) and (robot_id not in finished_robots):
+                    finished_robots.append(robot_id)
 
                     # print('waiting result of pick_and_place server [{}]'.format(uav_id))
                     # self.uav_clients[uav_id]['pick_and_place'].wait_for_result()
                     # print(self.uav_clients[uav_id]['pick_and_place'].get_result())
-                    print('now go home!')
-                    flight_level = self.agent[uav_id].params['flight_level']
+                    print('now go home, robot [{}]!'.format(robot_id))
+                    flight_level = self.get_param(robot_id, 'flight_level')
                     go_home_path = []
-                    current_at_flight_level = copy.deepcopy(self.agent[uav_id].robot.pose)
+                    current_at_flight_level = copy.deepcopy(self.robots[robot_id].pose)
                     current_at_flight_level.pose.position.z = flight_level
-                    home_at_flight_level = copy.deepcopy(self.agent[uav_id].robot.home)
+                    home_at_flight_level = copy.deepcopy(self.robots[robot_id].home)
                     home_at_flight_level.pose.position.z = flight_level
                     go_home_path.append(current_at_flight_level)
                     go_home_path.append(home_at_flight_level)
@@ -697,10 +702,10 @@ class CentralAgent(object):
                     userdata = smach.UserData()
                     userdata.path = go_home_path
                     # follow_path_task = FollowPathTask(self.robot[uav_id])
-                    outcome = self.agent[uav_id].tasks['follow_path'].execute(userdata)
-                    print('follow_path_callback output: {}'.format(outcome))
+                    self.task_manager.start_task(robot_id, FollowPathTask(), userdata)
+                    # print('follow_path_callback output: {}'.format(outcome))
 
-            if set(self.available_uavs).issubset(finished_uavs):
+            if set(self.available_robots).issubset(finished_robots):
                 print('All done!')
                 break
 
@@ -720,8 +725,8 @@ def main():
     # rospy.sleep(3)
 
     central_agent.take_off()
-    central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
-    # central_agent.build_wall()
+    # central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
+    central_agent.build_wall()
 
     # TODO(performance): Make it optional, use only in develop stage
     # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
