@@ -1,5 +1,5 @@
 string agent_id
-bool hold_previous  # TODO: free_previous?
+string label
 geometry_msgs/PointStamped min_corner
 geometry_msgs/PointStamped max_corner
 ---

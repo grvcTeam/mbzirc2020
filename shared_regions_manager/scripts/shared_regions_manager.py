@@ -24,8 +24,9 @@ class Interval(object):
         return abs(self.max_value - self.min_value)
 
 class Region(object):
-    def __init__(self, owner, min_corner, max_corner, tf_buffer):
+    def __init__(self, owner, label, min_corner, max_corner, tf_buffer):
         self.owner = owner
+        self.label = label
         self.frame_id = 'arena'
         try:
             if min_corner.header.frame_id != self.frame_id:
@@ -70,22 +71,19 @@ class SharedRegionsManager():
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
     def ask_for_region_callback(self, req):
-        proposed_region = Region(req.agent_id, req.min_corner, req.max_corner, self.tf_buffer)
+        proposed_region = Region(req.agent_id, req.label, req.min_corner, req.max_corner, self.tf_buffer)
         for region in self.regions:
             if region.overlaps_with(proposed_region) and region.owner != req.agent_id:
                 rospy.logwarn("Proposed region by agent {} overlaps with agent {}".format(req.agent_id, region.owner))
                 return AskForRegionResponse(success = False)
-        if not req.hold_previous:
-            self.regions = [region for region in self.regions if region.owner != req.agent_id]
         self.regions.append(proposed_region)
         return AskForRegionResponse(success = True)
 
     def free_regions_callback(self, req):
-        agent_region_indices = [index for index, region in enumerate(self.regions) if region.owner != req.agent_id]
-        for index in reversed(agent_region_indices):
-            del self.regions[index]
-            if req.free_only_last:
-                break
+        if req.free_all:
+            self.regions = []
+        else:
+            self.regions = [region for region in self.regions if region.owner != req.agent_id or region.label != req.label]
         return FreeRegionsResponse(success = True)
 
     # TODO: Make publication optional in order to minimize communications
@@ -106,7 +104,7 @@ class SharedRegionsManager():
             id_marker.color.g = 1.0
             id_marker.color.b = 1.0
             id_marker.color.a = 1.0
-            id_marker.text = region.owner
+            id_marker.text = '{}: [{}]'.format(region.owner, region.label)
             marker_array.markers.append(id_marker)
 
             region_marker = Marker()
