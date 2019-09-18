@@ -42,10 +42,13 @@ class ThreadWithReturnValue(threading.Thread):
         if self._Thread__target is not None:
             self._return = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
 
-    # TODO: ONLY __init__() y run() should be overriden
-    def join(self):
-        threading.Thread.join(self)
+    def get_return_value(self):
         return self._return
+
+    # TODO: ONLY __init__() y run() should be overriden
+    # def join(self):
+    #     threading.Thread.join(self)
+    #     return self._return
 
 # TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
 class RobotInterface(object):  # TODO: RobotProxy?
@@ -325,8 +328,9 @@ class PickAndPlaceTask(smach.StateMachine):
         with self:
 
             def ask_for_region_to_pick_request_callback(userdata, request):
-                radius = 3.0  # TODO: Tune, assure uav is not going further while pick!
-                request = robot.build_request_for_vertical_region(userdata.above_pile_pose, 'pick', radius)
+                radius = 2.5  # TODO: Tune, assure uav is not going further while pick!
+                z_max = userdata.above_pile_pose.pose.position.z
+                request = robot.build_request_for_vertical_region(userdata.above_pile_pose, 'pick', radius, z_max = z_max)
                 return request
 
             def ask_for_region_response_callback(userdata, response):
@@ -356,11 +360,15 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_UP', GoToTask().define_for(robot),
                                     remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
+
+            smach.StateMachine.add('FREE_REGION_TO_PICK', FreeRegionsTask().define_for(robot, label = 'pick'),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             def ask_for_region_to_place_request_callback(userdata, request):
                 radius = 3.0  # TODO: Tune, assure uav is not going further while place!
-                request = robot.build_request_for_vertical_region(userdata.above_wall_pose, 'place', radius)
+                z_max = userdata.above_wall_pose.pose.position.z
+                request = robot.build_request_for_vertical_region(userdata.above_wall_pose, 'place', radius, z_max = z_max)
                 return request
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
@@ -387,7 +395,11 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_UP_AGAIN', GoToTask().define_for(robot),
                                     remapping = {'waypoint': 'above_wall_pose'},
-                                    transitions = {'succeeded': 'succeeded'})
+                                    transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
+            
+            smach.StateMachine.add('FREE_REGION_TO_PLACE', FreeRegionsTask().define_for(robot, label = 'place'),
+                        transitions = {'succeeded': 'succeeded'})
+
         return self
 
 class LandTask(smach.StateMachine):
@@ -432,63 +444,53 @@ class LandTask(smach.StateMachine):
 class TaskManager(object):
     def __init__(self, robot_interfaces):
         self.robots = robot_interfaces
-        self.is_idle = {}  # TODO: Use Events?
+        self.idle = {}
         self.locks = {}
         self.tasks = {}
         self.threads = {}
 
         for robot_id in self.robots:
             self.locks[robot_id] = threading.Lock()
-            self.is_idle[robot_id] = True
+            self.idle[robot_id] = threading.Event()
+            self.idle[robot_id].set()
 
         self.manage_thread = threading.Thread(target=self.manage_tasks)
         self.manage_thread.start()
 
     def manage_tasks(self):
-        rate = rospy.Rate(10)  # [Hz]
+        rate = rospy.Rate(1)  # [Hz]
         while not rospy.is_shutdown():
             for robot_id, thread in self.threads.items():
                 self.locks[robot_id].acquire()
-                if not self.is_idle[robot_id] and not thread.is_alive():  # TODO: Use Event() and task.is_running()?
-                    outcome = self.threads[robot_id].join()
+                if not self.idle[robot_id].is_set() and not thread.is_alive():
+                    self.threads[robot_id].join()
+                    outcome = self.threads[robot_id].get_return_value()
                     print('output: {}'.format(outcome))
                     # del self.threads[robot_id]  # TODO: needed?
                     # del self.tasks[robot_id]  # TODO: needed?
-                    self.is_idle[robot_id] = True
+                    self.idle[robot_id].set()
                 self.locks[robot_id].release()
             rate.sleep()
 
     def start_task(self, robot_id, task, userdata):
         with self.locks[robot_id]:
-            if not self.is_idle[robot_id]:
+            if not self.idle[robot_id].is_set():
                 rospy.logerr('robot {} is not idle!'.format(robot_id))
                 return False
 
-            self.is_idle[robot_id] = False
+            self.idle[robot_id].clear()
             self.tasks[robot_id] = task
             self.tasks[robot_id].define_for(self.robots[robot_id])
             self.threads[robot_id] = ThreadWithReturnValue(target=task.execute, args=(userdata,))  # TODO: Now it's non-blocking!
             self.threads[robot_id].start()
             return True
 
-    # def start_task_at_min_cost(self, task, userdata):
-    #     costs = {}
-    #     for robot_id, robot in self.robots:
-    #         self.locks[robot_id].acquire()
-    #         if self.is_idle[robot_id]:
-    #             costs[robot_id] = task.get_cost(robot, userdata)
-    #         self.locks[robot_id].release()
-
-    #     if not costs:
-    #         return False
-
-    #     min_cost_robot_id = min(costs, key = costs.get)
-    #     print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
-    #     return self.start_task(min_cost_robot_id, task, userdata)
+    def is_idle(self, robot_id):
+        return self.idle[robot_id].is_set()
 
     def are_idle(self, id_list):
         for robot_id in id_list:
-            if not self.is_idle[robot_id]:
+            if not self.idle[robot_id].is_set():
                 # rospy.logwarn('[{}] not idle!'.format(robot_id))
                 return False
         return True
@@ -674,9 +676,10 @@ class CentralAgent(object):
                 costs = {}
                 while not costs:
                     for robot_id in self.available_robots:
-                        if self.task_manager.are_idle([robot_id]):
+                        if self.task_manager.is_idle(robot_id):
                             costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
                         else:
+                            # print('waiting for an idle robot...')
                             rospy.sleep(0.5)
                 min_cost_robot_id = min(costs, key = costs.get)
                 print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
@@ -699,7 +702,7 @@ class CentralAgent(object):
         while not rospy.is_shutdown():
             rospy.sleep(0.5)  # TODO: some sleep here?
             for robot_id in self.available_robots:
-                if self.task_manager.are_idle([robot_id]) and (robot_id not in finished_robots):
+                if self.task_manager.is_idle(robot_id) and (robot_id not in finished_robots):
                     finished_robots.append(robot_id)
                     print('now go home, robot [{}]!'.format(robot_id))
                     flight_level = self.get_param(robot_id, 'flight_level')
@@ -733,11 +736,7 @@ def main():
     central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
 
-    # TODO(performance): Make it optional, use only in develop stage
-    # viewer = smach_ros.IntrospectionServer('viewer', agent.follow_path_task, 'UAV_' + str(agent_id))
-    # viewer.start()
     rospy.spin()
-    # viewer.stop()
 
 if __name__ == '__main__':
     main()
