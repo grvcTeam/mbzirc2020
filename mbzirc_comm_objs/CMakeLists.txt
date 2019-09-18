@@ -60,6 +60,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    SearchForObject.srv
    Magnetize.srv
    AskForRegion.srv
+   FreeRegions.srv
    BuildWall.srv
    PickNPlace.srv
    PFPNPlace.srv

@@ -3,6 +3,7 @@ import rospy
 import tf2_ros
 import tf2_geometry_msgs
 from mbzirc_comm_objs.srv import AskForRegion, AskForRegionResponse
+from mbzirc_comm_objs.srv import FreeRegions, FreeRegionsResponse
 from geometry_msgs.msg import PointStamped, Pose, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -62,6 +63,7 @@ class SharedRegionsManager():
         self.regions = []
         self.marker_duration = rospy.Duration(1.0)
         rospy.Service('ask_for_region', AskForRegion, self.ask_for_region_callback)
+        rospy.Service('free_regions', FreeRegions, self.free_regions_callback)
         self.marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)  # TODO: namespacing?
         rospy.Timer(self.marker_duration, self.publish_marker_callback)
         self.tf_buffer = tf2_ros.Buffer()  # TODO: repeatd code, AgentInterface?
@@ -77,6 +79,14 @@ class SharedRegionsManager():
             self.regions = [region for region in self.regions if region.owner != req.agent_id]
         self.regions.append(proposed_region)
         return AskForRegionResponse(success = True)
+
+    def free_regions_callback(self, req):
+        agent_region_indices = [index for index, region in enumerate(self.regions) if region.owner != req.agent_id]
+        for index in reversed(agent_region_indices):
+            del self.regions[index]
+            if req.free_only_last:
+                break
+        return FreeRegionsResponse(success = True)
 
     # TODO: Make publication optional in order to minimize communications
     def publish_marker_callback(self, event):
