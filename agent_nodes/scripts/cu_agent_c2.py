@@ -80,7 +80,7 @@ class RobotInterface(object):  # TODO: RobotProxy?
             rospy.logerr('Failed to transform points to [{}], ignoring!'.format('arena'))
 
         request = mbzirc_comm_objs.srv.AskForRegionRequest()
-        request.agent_id = int(self.id)  # TODO: Make id ALWAYS a string (modify AskForRegion)
+        request.agent_id = self.id
         request.min_corner.header.frame_id = 'arena'
         request.min_corner.point.x = min(initial_pose.pose.position.x - radius, final_pose.pose.position.x - radius)
         request.min_corner.point.y = min(initial_pose.pose.position.y - radius, final_pose.pose.position.y - radius)
@@ -90,6 +90,7 @@ class RobotInterface(object):  # TODO: RobotProxy?
         request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
         request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
 
+        request.hold_previous = True
         return request
 
     # TODO: Not here?
@@ -413,7 +414,7 @@ brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config f
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green']]  #, ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
+wall_blueprint = [['red', 'red']]  #, ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
 
 # TODO: move to path utils
 def generate_area_path(width, height, column_count, z = 3.0):

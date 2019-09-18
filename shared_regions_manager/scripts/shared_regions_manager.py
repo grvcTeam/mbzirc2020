@@ -23,7 +23,8 @@ class Interval(object):
         return abs(self.max_value - self.min_value)
 
 class Region(object):
-    def __init__(self, min_corner, max_corner, tf_buffer):
+    def __init__(self, owner, min_corner, max_corner, tf_buffer):
+        self.owner = owner
         self.frame_id = 'arena'
         try:
             if min_corner.header.frame_id != self.frame_id:
@@ -58,7 +59,7 @@ class Region(object):
 class SharedRegionsManager():
 
     def __init__(self):
-        self.regions = {}
+        self.regions = []
         self.marker_duration = rospy.Duration(1.0)
         rospy.Service('ask_for_region', AskForRegion, self.ask_for_region_callback)
         self.marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)  # TODO: namespacing?
@@ -67,23 +68,26 @@ class SharedRegionsManager():
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
     def ask_for_region_callback(self, req):
-        proposed_region = Region(req.min_corner, req.max_corner, self.tf_buffer)
-        for owner_id, region in self.regions.items():
-            if region.overlaps_with(proposed_region) and owner_id != req.agent_id:
-                rospy.logwarn("Proposed region by agent {} overlaps with agent {}".format(req.agent_id, owner_id))
+        proposed_region = Region(req.agent_id, req.min_corner, req.max_corner, self.tf_buffer)
+        for region in self.regions:
+            if region.overlaps_with(proposed_region) and region.owner != req.agent_id:
+                rospy.logwarn("Proposed region by agent {} overlaps with agent {}".format(req.agent_id, region.owner))
                 return AskForRegionResponse(success = False)
-        self.regions[req.agent_id] = proposed_region
+        if not req.hold_previous:
+            self.regions = [region for region in self.regions if region.owner != req.agent_id]
+        self.regions.append(proposed_region)
         return AskForRegionResponse(success = True)
 
+    # TODO: Make publication optional in order to minimize communications
     def publish_marker_callback(self, event):
         marker_array = MarkerArray()
-        for owner_id, region in self.regions.items():
+        for i, region in enumerate(self.regions):
             id_marker = Marker()
             id_marker.header.frame_id = region.frame_id
             id_marker.header.stamp = rospy.Time.now()
             id_marker.ns = 'region_owner'
             id_marker.lifetime = self.marker_duration
-            id_marker.id = owner_id
+            id_marker.id = i
             id_marker.type = Marker.TEXT_VIEW_FACING
             id_marker.action = Marker.ADD
             id_marker.pose = region.get_pose()
@@ -92,7 +96,7 @@ class SharedRegionsManager():
             id_marker.color.g = 1.0
             id_marker.color.b = 1.0
             id_marker.color.a = 1.0
-            id_marker.text = str(owner_id)
+            id_marker.text = region.owner
             marker_array.markers.append(id_marker)
 
             region_marker = Marker()
@@ -100,7 +104,7 @@ class SharedRegionsManager():
             region_marker.header.stamp = rospy.Time.now()
             region_marker.ns = 'region_dimensions'
             region_marker.lifetime = self.marker_duration
-            region_marker.id = owner_id
+            region_marker.id = i
             region_marker.type = Marker.CUBE
             region_marker.action = Marker.ADD
             region_marker.pose = region.get_pose()
