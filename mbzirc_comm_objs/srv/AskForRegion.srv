@@ -1,6 +1,8 @@
 string agent_id
 string label
+# geometry_msgs/PoseStamped agent_pose  # TODO!
 geometry_msgs/PointStamped min_corner
 geometry_msgs/PointStamped max_corner
 ---
+# geometry_msgs/PointStamped waiting_point  # TODO!
 bool success

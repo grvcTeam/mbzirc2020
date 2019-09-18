@@ -26,6 +26,7 @@
 #include <ual_action_server/PickAction.h>
 #include <ual_action_server/PlaceAction.h>
 #include <ual_action_server/LandAction.h>
+#include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
@@ -46,6 +47,8 @@ protected:
   actionlib::SimpleActionServer<ual_action_server::PlaceAction> place_server_;
   actionlib::SimpleActionServer<ual_action_server::LandAction> land_server_;
   grvc::ual::UAL *ual_;
+  ros::Timer data_feed_timer_;
+  ros::Publisher data_feed_pub_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
   bool gripper_attached_ = false;
 
@@ -59,6 +62,8 @@ public:
     land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false) {
 
     ual_ = new grvc::ual::UAL();
+    data_feed_timer_ = nh_.createTimer(ros::Duration(0.1), &UalActionServer::publishDataFeed, this);  // TODO: frequency?
+    data_feed_pub_ = nh_.advertise<mbzirc_comm_objs::RobotDataFeed>("data_feed", 1);  // TODO: namespacing?
     // TODO: start servers only when needed?
     // TODO: make servers separated classes?
     take_off_server_.start();
@@ -70,6 +75,12 @@ public:
 
   ~UalActionServer() {
     delete ual_;
+  }
+
+  void publishDataFeed(const ros::TimerEvent&) {
+    mbzirc_comm_objs::RobotDataFeed data_feed;
+    data_feed.pose = ual_->pose();
+    data_feed_pub_.publish(data_feed);
   }
 
   // TODO: Who should know about flight_level? ual_action_server, uav_agent, central_agent...

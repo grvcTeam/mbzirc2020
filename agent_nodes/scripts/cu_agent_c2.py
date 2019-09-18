@@ -42,16 +42,12 @@ class ThreadWithReturnValue(threading.Thread):
         if self._Thread__target is not None:
             self._return = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
 
+    # As ONLY __init__() y run() should be overriden
     def get_return_value(self):
         return self._return
 
-    # TODO: ONLY __init__() y run() should be overriden
-    # def join(self):
-    #     threading.Thread.join(self)
-    #     return self._return
-
-# TODO: uav_agent should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
-class RobotInterface(object):  # TODO: RobotProxy?
+# TODO: robot should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
+class RobotProxy(object):
     def __init__(self, robot_id):
         self.id = robot_id
         self.url = 'mbzirc2020_' + self.id + '/'  # TODO: Impose ns: mbzirc2020!?
@@ -61,16 +57,15 @@ class RobotInterface(object):  # TODO: RobotProxy?
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.pose = PoseStamped()
-        rospy.Subscriber(self.url + 'ual/pose', PoseStamped, self.pose_callback)  # TODO: valid for uav (move to robot_(data)_feed?)
+        rospy.Subscriber(self.url + 'data_feed', mbzirc_comm_objs.msg.RobotDataFeed, self.data_feed_callback)
         # time.sleep(3)  # TODO: allow messages to get in? wait for pose?
         self.home = PoseStamped()
-        # self.hold_previous_region = False  # TODO: Here?
 
     def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
 
-    def pose_callback(self, data):
-        self.pose = data
+    def data_feed_callback(self, data):
+        self.pose = data.pose
 
     # TODO: auto update with changes in self.pose? Not here?
     def build_request_for_go_to_region(self, final_pose, label = 'go_to', radius = 1.0):
@@ -600,7 +595,7 @@ class CentralAgent(object):
 
         self.robots = {}
         for robot_id in self.available_robots:
-            self.robots[robot_id] = RobotInterface(robot_id)
+            self.robots[robot_id] = RobotProxy(robot_id)
 
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)

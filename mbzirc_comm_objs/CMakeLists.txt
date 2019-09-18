@@ -50,7 +50,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    GripperAttached.msg
    WallBluePrint.msg
    RegionOwnerList.msg
-   AgentDataFeed.msg
+   RobotDataFeed.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -121,7 +121,7 @@ add_action_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES mbzirc_comm_objs
-#  CATKIN_DEPENDS other_catkin_pkg
+   CATKIN_DEPENDS message_runtime actionlib_msgs std_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 
