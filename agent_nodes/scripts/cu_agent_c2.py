@@ -61,6 +61,7 @@ class RobotInterface(object):  # TODO: RobotProxy?
         rospy.Subscriber(self.url + 'ual/pose', PoseStamped, self.pose_callback)  # TODO: valid for uav (move to robot_(data)_feed?)
         # time.sleep(3)  # TODO: allow messages to get in? wait for pose?
         self.home = PoseStamped()
+        # self.hold_previous_region = False  # TODO: Here?
 
     def set_home(self):  # TODO: Here or at agent?
         self.home = copy.deepcopy(self.pose)
@@ -69,7 +70,7 @@ class RobotInterface(object):  # TODO: RobotProxy?
         self.pose = data
 
     # TODO: auto update with changes in self.pose? Not here?
-    def build_ask_for_region_request(self, final_pose, radius = 1.0):
+    def build_ask_for_region_request(self, final_pose, radius = 1.0, hold_previous = False):
         initial_pose = copy.deepcopy(self.pose)
         try:
             if initial_pose.header.frame_id != 'arena':
@@ -90,7 +91,30 @@ class RobotInterface(object):  # TODO: RobotProxy?
         request.max_corner.point.y = max(initial_pose.pose.position.y + radius, final_pose.pose.position.y + radius)
         request.max_corner.point.z = max(initial_pose.pose.position.z + radius, final_pose.pose.position.z + radius)
 
-        request.hold_previous = True
+        request.hold_previous = hold_previous
+        return request
+
+    # TODO: Not a robot interface anymore? Proxy?
+    def build_request_for_vertical_region(self, center, radius = 1.0, hold_previous = False, z_min = 0, z_max = 25):  # TODO: max_z parameter?
+        center_pose = copy.deepcopy(center)
+        try:
+            if center_pose.header.frame_id != 'arena':
+                center_pose = self.tf_buffer.transform(center_pose, 'arena', rospy.Duration(1.0))
+        except:
+            rospy.logerr('Failed to transform points to [{}], ignoring!'.format('arena'))
+
+        request = mbzirc_comm_objs.srv.AskForRegionRequest()
+        request.agent_id = self.id
+        request.min_corner.header.frame_id = 'arena'
+        request.min_corner.point.x = center_pose.pose.position.x - radius
+        request.min_corner.point.y = center_pose.pose.position.y - radius
+        request.min_corner.point.z = z_min
+        request.max_corner.header.frame_id = 'arena'
+        request.max_corner.point.x = center_pose.pose.position.x + radius
+        request.max_corner.point.y = center_pose.pose.position.y + radius
+        request.max_corner.point.z = z_max
+
+        request.hold_previous = hold_previous
         return request
 
     # TODO: Not here?
@@ -155,16 +179,40 @@ class TakeOffTask(smach.StateMachine):
                                     transitions = {'succeeded': 'TAKE_OFF', 'aborted': 'aborted'})
         return self
 
+# class AskForRegionToMoveTask(smach.StateMachine):
+#     def __init__(self):
+#         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
+
+#     def define_for(self, robot, hold_previous_region = False):
+#         with self:
+
+#             # TODO: decorators?
+#             def ask_for_region_request_callback(userdata, request):
+#                 ask_for_region_request = robot.build_ask_for_region_request(userdata.waypoint, 1.0, hold_previous_region)
+#                 return ask_for_region_request
+
+#             def ask_for_region_response_callback(userdata, response):
+#                 return 'succeeded' if response.success else 'aborted'
+
+#             smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+#                                     input_keys = ['waypoint'],
+#                                     request_cb = ask_for_region_request_callback,
+#                                     response_cb = ask_for_region_response_callback),
+#                                     transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
+
+#             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', SleepAndRetry(1.0),
+#                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
+
 class GoToTask(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint'])
 
-    def define_for(self, robot):
+    def define_for(self, robot, hold_previous_region = False):
         with self:
 
             # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
-                ask_for_region_request = robot.build_ask_for_region_request(userdata.waypoint)
+                ask_for_region_request = robot.build_ask_for_region_request(userdata.waypoint, 1.0, hold_previous_region)
                 return ask_for_region_request
 
             def ask_for_region_response_callback(userdata, response):
@@ -221,6 +269,8 @@ class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch objec
                                     transitions = {'succeeded': 'succeeded'})
         return self
 
+# class GoHomeTask(smach.StateMachine):
+
 class PickAndPlaceTask(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'in_wall_brick_pose'])
@@ -228,15 +278,9 @@ class PickAndPlaceTask(smach.StateMachine):
     def define_for(self, robot):
         with self:
 
-            smach.StateMachine.add('GO_TO_PILE', GoToTask().define_for(robot),
-                                    remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
-
             def ask_for_region_to_pick_request_callback(userdata, request):
-                radius = 5.0  # TODO: Tune, assure uav is not going further while pick!
-                in_floor_pile_pose = copy.deepcopy(userdata.above_pile_pose)
-                in_floor_pile_pose.pose.position.z = 0
-                request = robot.build_ask_for_region_request(in_floor_pile_pose, radius)
+                radius = 3.0  # TODO: Tune, assure uav is not going further while pick!
+                request = robot.build_request_for_vertical_region(userdata.above_pile_pose, radius)
                 return request
 
             def ask_for_region_response_callback(userdata, response):
@@ -246,10 +290,14 @@ class PickAndPlaceTask(smach.StateMachine):
                                     input_keys = ['above_pile_pose'],
                                     request_cb = ask_for_region_to_pick_request_callback,
                                     response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'PICK', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
+                                    transitions = {'succeeded': 'GO_TO_PILE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
 
             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+
+            smach.StateMachine.add('GO_TO_PILE', GoToTask().define_for(robot, True),
+                                    remapping = {'waypoint': 'above_pile_pose'},
+                                    transitions = {'succeeded': 'PICK'})
 
             def pick_goal_callback(userdata, default_goal):
                 goal = ual_action_server.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
@@ -262,27 +310,25 @@ class PickAndPlaceTask(smach.StateMachine):
 
             smach.StateMachine.add('GO_UP', GoToTask().define_for(robot),
                                     remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'GO_ABOVE_WALL'})
-
-            smach.StateMachine.add('GO_ABOVE_WALL', GoToTask().define_for(robot),
-                                    remapping = {'waypoint': 'above_wall_pose'},
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             def ask_for_region_to_place_request_callback(userdata, request):
                 radius = 3.0  # TODO: Tune, assure uav is not going further while place!
-                in_floor_wall_pose = copy.deepcopy(userdata.above_wall_pose)
-                in_floor_wall_pose.pose.position.z = 0
-                request = robot.build_ask_for_region_request(in_floor_wall_pose, radius)
+                request = robot.build_request_for_vertical_region(userdata.above_wall_pose, radius)
                 return request
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
                                     input_keys = ['above_wall_pose'],
                                     request_cb = ask_for_region_to_place_request_callback,
                                     response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'PLACE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
+                                    transitions = {'succeeded': 'GO_ABOVE_WALL', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
 
             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', SleepAndRetry(1.0),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
+
+            smach.StateMachine.add('GO_ABOVE_WALL', GoToTask().define_for(robot, True),
+                                    remapping = {'waypoint': 'above_wall_pose'},
+                                    transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
                 goal = ual_action_server.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
