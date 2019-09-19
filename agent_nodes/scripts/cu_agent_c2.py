@@ -173,13 +173,13 @@ class AskForRegionToHoverTask(smach.StateMachine):
             def ask_for_region_response_callback(userdata, response):
                 return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_HOVER', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+            smach.StateMachine.add('ASK_FOR_REGION', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
 
             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', SleepAndRetry(1.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION'})
         return self
 
 class AskForRegionToMoveTask(smach.StateMachine):
@@ -290,10 +290,14 @@ class GoToTask(smach.StateMachine):
 
         return self
 
-class DispatchWaypoints(smach.State):
-    def __init__(self, go_to_task):
+class FollowPathTask(smach.State):
+    def __init__(self):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
-        self.go_to_task = go_to_task
+        self.go_to_task = None
+
+    def define_for(self, robot):
+        self.go_to_task = GoToTask().define_for(robot)
+        return self
 
     def execute(self, userdata):
         for waypoint in userdata.path:
@@ -306,23 +310,57 @@ class DispatchWaypoints(smach.State):
         return 'succeeded'
         # TODO: aborted?
 
-class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch object instead?
-    def __init__(self):
-        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
-
-    def define_for(self, robot):
-        with self:
-
-            smach.StateMachine.add('DISPATCH', DispatchWaypoints(GoToTask().define_for(robot)),
-                                    remapping = {'path': 'path'},
-                                    transitions = {'succeeded': 'succeeded'})
-        return self
-
-# class Search(smach.State):  # TODO: From Dispatch!
+# class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch object instead?
 #     def __init__(self):
-#         smach.State.__init__(self, )
+#         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
 
-# class GoHomeTask(smach.StateMachine):
+#     def define_for(self, robot):
+#         with self:
+
+#             smach.StateMachine.add('DISPATCH', DispatchWaypoints(GoToTask().define_for(robot)),
+#                                     remapping = {'path': 'path'},
+#                                     transitions = {'succeeded': 'succeeded'})
+#         return self
+
+class SearchPilesTask(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'], output_keys = ['piles'])
+        self.go_to_task = None
+        self.piles = {}
+        rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
+
+    def estimation_callback(self, data):
+        for pile in data.objects:
+            # TODO: check type and scale?
+            properties_dict = {}
+            if pile.properties:
+                properties_dict = json.loads(pile.properties)
+            if 'color' in properties_dict:
+                color = properties_dict['color']  # TODO: reused code!
+                pose = PoseStamped()
+                pose.header = pile.header
+                pose.pose = pile.pose.pose
+                self.piles[color] = pose
+
+    # TODO: Not necessarily a member function (piles as param)
+    def all_piles_are_found(self):
+        # TODO: Check not only count, but also size of piles
+        return len(self.piles) >= 4
+
+    def execute(self, userdata):
+        userdata.piles = self.piles
+        for waypoint in userdata.path:
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
+            if self.all_piles_are_found():
+                return 'succeeded'
+            child_userdata = smach.UserData()
+            child_userdata.waypoint = waypoint
+            self.go_to_task.execute(child_userdata)
+        return 'succeeded' if self.all_piles_are_found() else 'aborted'
+
+# class GoHomeTask(smach.StateMachine):  # TODO?
 
 class PickAndPlaceTask(smach.StateMachine):
     def __init__(self):
