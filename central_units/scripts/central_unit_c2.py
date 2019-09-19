@@ -29,7 +29,7 @@ import tf2_ros
 import tf2_geometry_msgs
 import mbzirc_comm_objs.msg
 import mbzirc_comm_objs.srv
-import ual_action_server.msg
+import robot_action_servers.msg
 
 from geometry_msgs.msg import PoseStamped, Point, Vector3
 
@@ -207,10 +207,10 @@ class TakeOffTask(smach.StateMachine):
 
             def take_off_goal_callback(userdata, default_goal):
                 robot.set_home()  # TODO: better do it explicitly BEFORE take off?
-                goal = ual_action_server.msg.TakeOffGoal(height = userdata.height)
+                goal = robot_action_servers.msg.TakeOffGoal(height = userdata.height)
                 return goal
 
-            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot.url + 'take_off_action', ual_action_server.msg.TakeOffAction,
+            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot.url + 'take_off_action', robot_action_servers.msg.TakeOffAction,
                                     input_keys = ['height'],
                                     goal_cb = take_off_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER', 'aborted': 'SLEEP_AND_RETRY'})
@@ -263,10 +263,10 @@ class GoToTask(smach.StateMachine):
                                     transitions = {'succeeded': 'GO_TO'})
 
             def go_to_goal_callback(userdata, default_goal):
-                goal = ual_action_server.msg.GoToGoal(waypoint = userdata.waypoint)
+                goal = robot_action_servers.msg.GoToGoal(waypoint = userdata.waypoint)
                 return goal
 
-            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState(robot.url + 'go_to_action', ual_action_server.msg.GoToAction,
+            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState(robot.url + 'go_to_action', robot_action_servers.msg.GoToAction,
                                     input_keys = ['waypoint'],
                                     goal_cb = go_to_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER'})
@@ -365,10 +365,10 @@ class PickAndPlaceTask(smach.StateMachine):
                                     transitions = {'succeeded': 'PICK'})
 
             def pick_goal_callback(userdata, default_goal):
-                goal = ual_action_server.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
+                goal = robot_action_servers.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
                 return goal
 
-            smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot.url + 'pick_action', ual_action_server.msg.PickAction,
+            smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot.url + 'pick_action', robot_action_servers.msg.PickAction,
                                     input_keys = ['above_pile_pose'],
                                     goal_cb = pick_goal_callback),
                                     transitions = {'succeeded': 'GO_UP'})
@@ -400,10 +400,10 @@ class PickAndPlaceTask(smach.StateMachine):
                                     transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
-                goal = ual_action_server.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
+                goal = robot_action_servers.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
                 return goal
 
-            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', ual_action_server.msg.PlaceAction,
+            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', robot_action_servers.msg.PlaceAction,
                                     input_keys = ['in_wall_brick_pose'],
                                     goal_cb = place_goal_callback),
                                     transitions = {'succeeded': 'GO_UP_AGAIN'})
@@ -443,10 +443,10 @@ class LandTask(smach.StateMachine):
 
             # TODO: is this callback needed?
             def land_goal_callback(userdata, default_goal):
-                goal = ual_action_server.msg.LandGoal()
+                goal = robot_action_servers.msg.LandGoal()
                 return goal
 
-            smach.StateMachine.add('LAND', smach_ros.SimpleActionState(robot.url + 'land_action', ual_action_server.msg.LandAction,
+            smach.StateMachine.add('LAND', smach_ros.SimpleActionState(robot.url + 'land_action', robot_action_servers.msg.LandAction,
                                     # input_keys = ['go_home'],  # TODO: bool go_home?
                                     goal_cb = land_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_LANDED'})

@@ -21,11 +21,11 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <uav_abstraction_layer/ual.h>
-#include <ual_action_server/TakeOffAction.h>
-#include <ual_action_server/GoToAction.h>
-#include <ual_action_server/PickAction.h>
-#include <ual_action_server/PlaceAction.h>
-#include <ual_action_server/LandAction.h>
+#include <robot_action_servers/TakeOffAction.h>
+#include <robot_action_servers/GoToAction.h>
+#include <robot_action_servers/PickAction.h>
+#include <robot_action_servers/PlaceAction.h>
+#include <robot_action_servers/LandAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -41,11 +41,11 @@ protected:
 
   ros::NodeHandle nh_;
   // NodeHandle instance must be created before this line. Otherwise strange error occurs
-  actionlib::SimpleActionServer<ual_action_server::TakeOffAction> take_off_server_;
-  actionlib::SimpleActionServer<ual_action_server::GoToAction> go_to_server_;
-  actionlib::SimpleActionServer<ual_action_server::PickAction> pick_server_;
-  actionlib::SimpleActionServer<ual_action_server::PlaceAction> place_server_;
-  actionlib::SimpleActionServer<ual_action_server::LandAction> land_server_;
+  actionlib::SimpleActionServer<robot_action_servers::TakeOffAction> take_off_server_;
+  actionlib::SimpleActionServer<robot_action_servers::GoToAction> go_to_server_;
+  actionlib::SimpleActionServer<robot_action_servers::PickAction> pick_server_;
+  actionlib::SimpleActionServer<robot_action_servers::PlaceAction> place_server_;
+  actionlib::SimpleActionServer<robot_action_servers::LandAction> land_server_;
   grvc::ual::UAL *ual_;
   ros::Timer data_feed_timer_;
   ros::Publisher data_feed_pub_;
@@ -83,11 +83,11 @@ public:
     data_feed_pub_.publish(data_feed);
   }
 
-  // TODO: Who should know about flight_level? ual_action_server, uav_agent, central_agent...
-  void takeOffCallback(const ual_action_server::TakeOffGoalConstPtr &_goal) {
+  // TODO: Who should know about flight_level? robot_action_servers, uav_agent, central_agent...
+  void takeOffCallback(const robot_action_servers::TakeOffGoalConstPtr &_goal) {
     // ROS_INFO("Take off!");
-    // ual_action_server::TakeOffFeedback feedback;
-    ual_action_server::TakeOffResult result;
+    // robot_action_servers::TakeOffFeedback feedback;
+    robot_action_servers::TakeOffResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
       ROS_WARN("UAL is uninitialized!");
@@ -129,10 +129,10 @@ public:
     }
   }
 
-  void goToCallback(const ual_action_server::GoToGoalConstPtr &_goal) {
+  void goToCallback(const robot_action_servers::GoToGoalConstPtr &_goal) {
     // ROS_INFO("Go to!");
-    // ual_action_server::GoToFeedback feedback;
-    ual_action_server::GoToResult result;
+    // robot_action_servers::GoToFeedback feedback;
+    robot_action_servers::GoToResult result;
 
     while ((ual_->state().state == uav_abstraction_layer::State::UNINITIALIZED) && ros::ok()) {
       ROS_WARN("UAL is uninitialized!");
@@ -188,10 +188,10 @@ public:
     gripper_attached_ = msg->attached;
   }
 
-  void pickCallback(const ual_action_server::PickGoalConstPtr &_goal) {
+  void pickCallback(const robot_action_servers::PickGoalConstPtr &_goal) {
     // ROS_INFO("Pick!");
-    // ual_action_server::PickFeedback feedback;
-    ual_action_server::PickResult result;
+    // robot_action_servers::PickFeedback feedback;
+    robot_action_servers::PickResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
       ROS_WARN("UAL is not flying auto!");
@@ -345,10 +345,10 @@ public:
     sensed_sub_.shutdown();
   }
 
-  void placeCallback(const ual_action_server::PlaceGoalConstPtr &_goal) {
+  void placeCallback(const robot_action_servers::PlaceGoalConstPtr &_goal) {
     // ROS_INFO("Place!");
-    // ual_action_server::PlaceFeedback feedback;
-    ual_action_server::PlaceResult result;
+    // robot_action_servers::PlaceFeedback feedback;
+    robot_action_servers::PlaceResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
       ROS_WARN("UAL is not flying auto!");
@@ -379,10 +379,10 @@ public:
     place_server_.setSucceeded(result);
   }
 
-  void landCallback(const ual_action_server::LandGoalConstPtr &_goal) {
+  void landCallback(const robot_action_servers::LandGoalConstPtr &_goal) {
     // ROS_INFO("Land!");
-    // ual_action_server::LandFeedback feedback;
-    ual_action_server::LandResult result;
+    // robot_action_servers::LandFeedback feedback;
+    robot_action_servers::LandResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
       ROS_WARN("UAL is not flying auto!");
@@ -400,9 +400,9 @@ public:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "ual_action_server");
+  ros::init(argc, argv, "uav_action_server");
 
-  UalActionServer ual_action_server;
+  UalActionServer uav_action_server;
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
 

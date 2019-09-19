@@ -34,7 +34,7 @@
         <arg name="frame_id" value="arena"/>
     </include>
 
-    <node pkg="ual_action_server" type="ual_action_server" name="server" output="screen">
+    <node pkg="robot_action_servers" type="uav_action_server" name="server" output="screen">
       <param name="uav_id" value="$(arg agent_id)"/>
       <param name="pose_frame_id" value="arena"/>
       <param name="home_pose_parent_frame" value="arena"/>

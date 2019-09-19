@@ -51,6 +51,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         <arg name="yaw" default="0"/> -->
     </include>
 
-    <node pkg="ual_action_server" type="ual_action_server" name="server" ns="uav_$(arg robot_id)" output="screen"/>
+    <node pkg="robot_action_servers" type="robot_action_servers" name="server" ns="uav_$(arg robot_id)" output="screen"/>
 
 </launch>
