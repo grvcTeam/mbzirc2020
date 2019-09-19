@@ -61,7 +61,7 @@ class RobotProxy(object):
         # time.sleep(3)  # TODO: allow messages to get in? wait for pose?
         self.home = PoseStamped()
 
-    def set_home(self):  # TODO: Here or at agent?
+    def set_home(self):
         self.home = copy.deepcopy(self.pose)
 
     def data_feed_callback(self, data):
@@ -639,12 +639,9 @@ def all_piles_are_found(piles):
     # TODO: Check not only count, but also size of piles
     return len(piles) >= 4
 
-class CentralAgent(object):
+class CentralUnit(object):
     def __init__(self):
         self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
-
-        # self.tf_buffer = tf2_ros.Buffer()  # TODO: this will be repated... AgentInterface?
-        # self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         self.robots = {}
         for robot_id in self.available_robots:
@@ -683,10 +680,10 @@ class CentralAgent(object):
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
-        # TODO: Check this better outside!
-        # if self.all_piles_are_found():
-        #     rospy.logwarn('All piles are found!')
-        #     return
+        # TODO: Check this better outside!?
+        if all_piles_are_found(self.piles):
+            rospy.logwarn('All piles are found!')
+            return
         robot_paths = {}
         point_paths = generate_uav_paths(len(self.available_robots))
         for i, robot_id in enumerate(self.available_robots):
@@ -774,18 +771,18 @@ class CentralAgent(object):
                 break
 
 def main():
-    rospy.init_node('cu_agent_c2')
+    rospy.init_node('central_unit_c2')
 
     while rospy.get_rostime() == rospy.Time():
         rospy.logwarn("Waiting for (sim) time to begin!")
         time.sleep(1)
 
-    central_agent = CentralAgent()
+    central_unit = CentralUnit()
     # rospy.sleep(3)
 
-    central_agent.take_off()
-    central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
-    central_agent.build_wall()
+    central_unit.take_off()
+    central_unit.look_for_piles() # TODO: if not piles[r, g, b, o], repeat!?
+    central_unit.build_wall()
 
     rospy.spin()
 
