@@ -155,16 +155,7 @@ public:
         go_to_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::FLYING_AUTO:
-        ual_->goToWaypoint(_goal->waypoint, false);  // TODO: timeout? preempt?
-        do {
-          ros::Duration(0.5).sleep();  // Needed!
-          if (go_to_server_.isPreemptRequested() || !ros::ok()) {
-            ROS_ERROR("GoTo preempted!");
-            go_to_server_.setPreempted();
-            break;
-          }
-        } while (!ual_->isIdle());
-        ROS_ERROR("GoTo succeded!");
+        ual_->goToWaypoint(_goal->waypoint, true);  // TODO: timeout?
         go_to_server_.setSucceeded(result);
         break;
       case uav_abstraction_layer::State::FLYING_MANUAL:
