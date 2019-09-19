@@ -48,8 +48,6 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    ObjectDetection.msg
    ObjectDetectionList.msg
    GripperAttached.msg
-   WallBluePrint.msg
-   RegionOwnerList.msg
    RobotDataFeed.msg
  )
 
@@ -57,29 +55,18 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
  add_service_files(
    FILES
    DetectTypes.srv
-   SearchForObject.srv
    Magnetize.srv
    AskForRegion.srv
    FreeRegions.srv
-   BuildWall.srv
-   PickNPlace.srv
-   PFPNPlace.srv
-   AgentIdle.srv
-   GetJson.srv
-   GoToWaypoint.srv
-   SearchForBrickPiles.srv
-   SearchAndBuild.srv
-   SetAgentProp.srv
-   GetCostToGoTo.srv
  )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  FollowPath.action
-  PickAndPlace.action
-  GoHome.action
-)
+# add_action_files(
+#   FILES
+#   FollowPath.action
+#   PickAndPlace.action
+#   GoHome.action
+# )
 
 ## Generate added messages and services with any dependencies listed here
  generate_messages(

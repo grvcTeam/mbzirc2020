@@ -728,17 +728,14 @@ class CentralUnit(object):
                             rospy.sleep(0.5)
                 min_cost_robot_id = min(costs, key = costs.get)
                 print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
-                goal = mbzirc_comm_objs.msg.PickAndPlaceGoal()
-                goal.pile_pose = piles[brick.color]
-                goal.in_wall_brick_pose = brick.pose
 
                 flight_level = self.get_param(min_cost_robot_id,'flight_level')
                 userdata = smach.UserData()
-                userdata.above_pile_pose = copy.deepcopy(goal.pile_pose)
+                userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
                 userdata.above_pile_pose.pose.position.z = flight_level
-                userdata.above_wall_pose = copy.deepcopy(goal.in_wall_brick_pose)
+                userdata.above_wall_pose = copy.deepcopy(brick.pose)
                 userdata.above_wall_pose.pose.position.z = flight_level
-                userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
+                userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
                 self.task_manager.start_task(min_cost_robot_id, PickAndPlaceTask(), userdata)
 
         # Once arrived here, last pick_and_place task has been allocated

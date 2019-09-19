@@ -1,1 +1,0 @@
-string[] region_owners
