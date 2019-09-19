@@ -46,7 +46,6 @@ class ThreadWithReturnValue(threading.Thread):
     def get_return_value(self):
         return self._return
 
-# TODO: robot should not use any implicit centralized information? (params!, region_management!, costs?) as communication is not granted!
 class RobotProxy(object):
     def __init__(self, robot_id):
         self.id = robot_id
@@ -92,7 +91,6 @@ class RobotProxy(object):
 
         return request
 
-    # TODO: Not a robot interface anymore? Proxy?
     def build_request_for_vertical_region(self, center, label = 'vertical', radius = 1.0, z_min = 0, z_max = 25):  # TODO: max_z parameter?
         center_pose = copy.deepcopy(center)
         try:
@@ -115,15 +113,9 @@ class RobotProxy(object):
 
         return request
 
-    # TODO: Not here? vertical_region?
-    def build_request_for_land_region(self, radius = 1.0):
-        final_pose = copy.deepcopy(self.pose)
-        final_pose.pose.position.z = 0
-        return self.build_request_for_go_to_region(final_pose, 'go_to', radius)  # TODO: use 'land' label?
-
     # TODO: Force raw points with no frame_id?
-    def get_cost_to_go_to(self, waypoint):
-        # TODO: copy waypoint here, before possible transform?
+    def get_cost_to_go_to(self, waypoint_in):
+        waypoint = copy.deepcopy(waypoint_in)
         # TODO: these try/except inside a function?
         try:
             waypoint = self.tf_buffer.transform(waypoint, self.pose.header.frame_id, rospy.Duration(1.0))  # TODO: check from/to equality
@@ -189,7 +181,6 @@ class AskForRegionToMoveTask(smach.StateMachine):
     def define_for(self, robot):
         with self:
 
-            # TODO: decorators?
             def ask_for_region_request_callback(userdata, request):
                 ask_for_region_request = robot.build_request_for_go_to_region(userdata.waypoint, 'go_to', 1.0)
                 return ask_for_region_request
@@ -207,7 +198,6 @@ class AskForRegionToMoveTask(smach.StateMachine):
                                     transitions = {'succeeded': 'ASK_FOR_REGION'})
         return self
 
-#TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
 class TakeOffTask(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['height'])
@@ -240,7 +230,6 @@ class FreeRegionsTask(smach.StateMachine):
     def define_for(self, robot, label, free_all = False):
         with self:
 
-            # TODO: decorators?
             def free_regions_request_callback(userdata, request):
                 free_regions_request = mbzirc_comm_objs.srv.FreeRegionsRequest()
                 free_regions_request.agent_id = robot.id
@@ -437,7 +426,8 @@ class LandTask(smach.StateMachine):
 
             def ask_for_region_request_callback(userdata, request):
                 radius = 1.0  # TODO: Tune, assure uav is not going further while land!
-                request = robot.build_request_for_land_region(radius)
+                z_max = robot.pose.pose.position.z
+                request = robot.build_request_for_vertical_region(robot.pose, 'land', radius, z_max = z_max)
                 return request
 
             def ask_for_region_response_callback(userdata, response):
@@ -750,8 +740,8 @@ class CentralUnit(object):
                 userdata.above_wall_pose.pose.position.z = flight_level
                 userdata.in_wall_brick_pose = copy.deepcopy(goal.in_wall_brick_pose)
                 self.task_manager.start_task(min_cost_robot_id, PickAndPlaceTask(), userdata)
-        # Once arrived here, last pick_and_place task has been allocated
 
+        # Once arrived here, last pick_and_place task has been allocated
         print('All pick_and_place tasks allocated')
         finished_robots = []
         while not rospy.is_shutdown():
