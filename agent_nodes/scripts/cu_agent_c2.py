@@ -115,7 +115,7 @@ class RobotProxy(object):
 
         return request
 
-    # TODO: Not here?
+    # TODO: Not here? vertical_region?
     def build_request_for_land_region(self, radius = 1.0):
         final_pose = copy.deepcopy(self.pose)
         final_pose.pose.position.z = 0
@@ -146,6 +146,10 @@ class SleepAndRetry(smach.State):
 
     def execute(self, userdata):
         rospy.sleep(self.duration)
+        # TODO: Sleep in shorter period chunks to allow faster preemption?
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
         if not self.max_retries:
             return 'succeeded'
         elif self.retry_count < self.max_retries:
@@ -153,7 +157,6 @@ class SleepAndRetry(smach.State):
             return 'succeeded'
         else:
             return 'aborted'
-        # TODO: preempted? Sleep in shorter period chunks to allow preemption?
 
 class AskForRegionToHoverTask(smach.StateMachine):
     def __init__(self):
@@ -194,14 +197,14 @@ class AskForRegionToMoveTask(smach.StateMachine):
             def ask_for_region_response_callback(userdata, response):
                 return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_MOVE', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
+            smach.StateMachine.add('ASK_FOR_REGION', smach_ros.ServiceState('ask_for_region', mbzirc_comm_objs.srv.AskForRegion,
                                     input_keys = ['waypoint'],
                                     request_cb = ask_for_region_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'succeeded', 'aborted': 'SLEEP_AND_RETRY_ASKING'})
 
             smach.StateMachine.add('SLEEP_AND_RETRY_ASKING', SleepAndRetry(1.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_MOVE'})
+                                    transitions = {'succeeded': 'ASK_FOR_REGION'})
         return self
 
 #TODO: ask for region first? May block others from taking off... Better define a fixed take off sequnce?
@@ -294,12 +297,14 @@ class DispatchWaypoints(smach.State):
 
     def execute(self, userdata):
         for waypoint in userdata.path:
+            if self.preempt_requested():
+                self.service_preempt()
+                return 'preempted'
             child_userdata = smach.UserData()
             child_userdata.waypoint = waypoint
             self.go_to_task.execute(child_userdata)
         return 'succeeded'
         # TODO: aborted?
-        # TODO: preempted?
 
 class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch object instead?
     def __init__(self):
@@ -312,6 +317,10 @@ class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch objec
                                     remapping = {'path': 'path'},
                                     transitions = {'succeeded': 'succeeded'})
         return self
+
+# class Search(smach.State):  # TODO: From Dispatch!
+#     def __init__(self):
+#         smach.State.__init__(self, )
 
 # class GoHomeTask(smach.StateMachine):
 
@@ -440,6 +449,7 @@ class TaskManager(object):
     def __init__(self, robot_interfaces):
         self.robots = robot_interfaces
         self.idle = {}
+        # self.preempt = {}
         self.locks = {}
         self.tasks = {}
         self.threads = {}
@@ -447,27 +457,34 @@ class TaskManager(object):
         for robot_id in self.robots:
             self.locks[robot_id] = threading.Lock()
             self.idle[robot_id] = threading.Event()
+            # self.preempt[robot_id] = threading.Event()
             self.idle[robot_id].set()
+            # self.preempt[robot_id].clear()
 
         self.manage_thread = threading.Thread(target=self.manage_tasks)
         self.manage_thread.start()
 
     def manage_tasks(self):
-        rate = rospy.Rate(1)  # [Hz]
+        rate = rospy.Rate(100)  # [Hz]
         while not rospy.is_shutdown():
             for robot_id, thread in self.threads.items():
                 self.locks[robot_id].acquire()
-                if not self.idle[robot_id].is_set() and not thread.is_alive():
-                    self.threads[robot_id].join()
-                    outcome = self.threads[robot_id].get_return_value()
-                    print('output: {}'.format(outcome))
-                    # del self.threads[robot_id]  # TODO: needed?
-                    # del self.tasks[robot_id]  # TODO: needed?
+                # if self.preempt[robot_id].is_set():
+                #     rospy.logwarn('Trying to preempt current task on robot[{}]'.format(robot_id))
+                #     self.tasks[robot_id].request_preempt()
+                if not self.idle[robot_id].is_set() and not thread.is_alive():  # TODO: better use task.is_running()?
+                    thread.join()
+                    outcome = thread.get_return_value()
+                    rospy.logwarn('task on robot[{}] finished with output: {}'.format(robot_id, outcome))
+                    del self.threads[robot_id]  # TODO: needed?
+                    del self.tasks[robot_id]  # TODO: needed?
                     self.idle[robot_id].set()
+                    # self.preempt[robot_id].clear()
                 self.locks[robot_id].release()
             rate.sleep()
 
     def start_task(self, robot_id, task, userdata):
+        # TODO: Force robot_id field inside task instead?
         with self.locks[robot_id]:
             if not self.idle[robot_id].is_set():
                 rospy.logerr('robot {} is not idle!'.format(robot_id))
@@ -478,7 +495,18 @@ class TaskManager(object):
             self.tasks[robot_id].define_for(self.robots[robot_id])
             self.threads[robot_id] = ThreadWithReturnValue(target=task.execute, args=(userdata,))  # TODO: Now it's non-blocking!
             self.threads[robot_id].start()
-            return True
+        return True
+
+    def preempt_task(self, robot_id):
+        if robot_id not in self.tasks:
+            rospy.logerr('Invalid robot_id [{}]'.format(robot_id))
+            return False
+        rospy.logwarn('Trying to preempt current task on robot[{}]'.format(robot_id))
+        self.tasks[robot_id].request_preempt()
+        # rospy.logwarn('Setting preempt flag on robot[{}]'.format(robot_id))
+        # with self.locks[robot_id]:
+        #     self.preempt[robot_id].set()
+        return True
 
     def is_idle(self, robot_id):
         return self.idle[robot_id].is_set()
@@ -631,14 +659,23 @@ class CentralAgent(object):
 
         while not rospy.is_shutdown():
             if self.task_manager.are_idle(self.available_robots):
-                print('All done!')
+                rospy.logwarn('All robots ready!')
                 break
             else:
                 print('some sleep!')
                 time.sleep(1)
 
+    # TODO: Not necessarily a member function (piles as param)
+    def all_piles_are_found(self):
+        # TODO: Check not only count, but also size of piles
+        return len(self.piles) >= 4
+
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
+        # TODO: Check this hbetter outside!
+        # if self.all_piles_are_found():
+        #     rospy.logwarn('All piles are found!')
+        #     return
         robot_paths = {}
         point_paths = generate_uav_paths(len(self.available_robots))
         for i, robot_id in enumerate(self.available_robots):
@@ -660,6 +697,15 @@ class CentralAgent(object):
             userdata = smach.UserData()
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPathTask(), userdata)
+
+        while not self.all_piles_are_found():
+            # TODO: What happens if all piles are NEVER found?
+            rospy.logerr('len(self.piles) = {}'.format(len(self.piles)))
+            rospy.sleep(1.0)
+
+        for robot_id in self.available_robots:
+            rospy.logerr('preempting {}'.format(robot_id))
+            self.task_manager.preempt_task(robot_id)
 
     # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
