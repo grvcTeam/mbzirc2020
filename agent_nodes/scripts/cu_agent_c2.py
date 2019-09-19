@@ -491,7 +491,8 @@ class TaskManager(object):
             self.idle[robot_id].set()
             # self.preempt[robot_id].clear()
 
-        self.manage_thread = threading.Thread(target=self.manage_tasks)  # TODO: daemon!
+        self.manage_thread = threading.Thread(target = self.manage_tasks)
+        self.manage_thread.daemon = True
         self.manage_thread.start()
 
     def manage_tasks(self):
@@ -523,7 +524,8 @@ class TaskManager(object):
             self.idle[robot_id].clear()
             self.tasks[robot_id] = task
             self.tasks[robot_id].define_for(self.robots[robot_id])
-            self.threads[robot_id] = ThreadWithReturnValue(target=task.execute, args=(userdata,))  # TODO: Now it's non-blocking!
+            self.threads[robot_id] = ThreadWithReturnValue(target = task.execute, args = (userdata,))
+            self.threads[robot_id].daemon = True
             self.threads[robot_id].start()
         return True
 
