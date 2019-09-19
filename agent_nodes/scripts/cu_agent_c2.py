@@ -334,23 +334,18 @@ class SearchPilesTask(smach.State):
                 pose.pose = pile.pose.pose
                 self.piles[color] = pose
 
-    # TODO: Not necessarily a member function (piles as param)
-    def all_piles_are_found(self):
-        # TODO: Check not only count, but also size of piles
-        return len(self.piles) >= 4
-
     def execute(self, userdata):
         userdata.piles = self.piles
         for waypoint in userdata.path:
             if self.preempt_requested():
                 self.service_preempt()
                 return 'preempted'
-            if self.all_piles_are_found():
+            if all_piles_are_found(self.piles):
                 return 'succeeded'
             child_userdata = smach.UserData()
             child_userdata.waypoint = waypoint
             self.go_to_task.execute(child_userdata)
-        return 'succeeded' if self.all_piles_are_found() else 'aborted'
+        return 'succeeded' if all_piles_are_found(self.piles) else 'aborted'
 
 # class GoHomeTask(smach.StateMachine):  # TODO?
 
@@ -479,7 +474,6 @@ class TaskManager(object):
     def __init__(self, robot_interfaces):
         self.robots = robot_interfaces
         self.idle = {}
-        # self.preempt = {}
         self.locks = {}
         self.tasks = {}
         self.threads = {}
@@ -487,9 +481,7 @@ class TaskManager(object):
         for robot_id in self.robots:
             self.locks[robot_id] = threading.Lock()
             self.idle[robot_id] = threading.Event()
-            # self.preempt[robot_id] = threading.Event()
             self.idle[robot_id].set()
-            # self.preempt[robot_id].clear()
 
         self.manage_thread = threading.Thread(target = self.manage_tasks)
         self.manage_thread.daemon = True
@@ -642,6 +634,11 @@ def get_build_wall_sequence(wall_blueprint):
         current_z += brick_scales['red'].z  # As all bricks (should) have the same height
     return buid_wall_sequence
 
+# TODO: move to wall utils?
+def all_piles_are_found(piles):
+    # TODO: Check not only count, but also size of piles
+    return len(piles) >= 4
+
 class CentralAgent(object):
     def __init__(self):
         self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
@@ -684,11 +681,6 @@ class CentralAgent(object):
             self.task_manager.start_task(robot_id, TakeOffTask(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff
 
-    # TODO: Not necessarily a member function (piles as param)
-    def all_piles_are_found(self):
-        # TODO: Check not only count, but also size of piles
-        return len(self.piles) >= 4
-
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
         # TODO: Check this better outside!
@@ -717,7 +709,7 @@ class CentralAgent(object):
             search_ud[robot_id].path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, SearchPilesTask(), search_ud[robot_id])
 
-        while not self.all_piles_are_found() and not rospy.is_shutdown():
+        while not all_piles_are_found(self.piles) and not rospy.is_shutdown():
             # TODO: What happens if all piles are NEVER found?
             rospy.logerr('len(self.piles) = {}'.format(len(self.piles)))
             rospy.sleep(1.0)
