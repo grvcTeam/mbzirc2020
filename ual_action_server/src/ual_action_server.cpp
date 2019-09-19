@@ -145,9 +145,9 @@ public:
         go_to_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::LANDED_ARMED:
-        ual_->takeOff(_goal->waypoint.pose.position.z - ual_->pose().pose.position.z, true);  // TODO: timeout? preempt?
-        ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
-        go_to_server_.setSucceeded(result);
+        // We could take_off, then go_to, but may be confusing
+        ROS_WARN("UAL is landed!");
+        go_to_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::TAKING_OFF:
         ROS_WARN("UAL is taking off!");
@@ -155,7 +155,16 @@ public:
         go_to_server_.setAborted(result);
         break;
       case uav_abstraction_layer::State::FLYING_AUTO:
-        ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
+        ual_->goToWaypoint(_goal->waypoint, false);  // TODO: timeout? preempt?
+        do {
+          ros::Duration(0.5).sleep();  // Needed!
+          if (go_to_server_.isPreemptRequested() || !ros::ok()) {
+            ROS_ERROR("GoTo preempted!");
+            go_to_server_.setPreempted();
+            break;
+          }
+        } while (!ual_->isIdle());
+        ROS_ERROR("GoTo succeded!");
         go_to_server_.setSucceeded(result);
         break;
       case uav_abstraction_layer::State::FLYING_MANUAL:
@@ -253,7 +262,7 @@ public:
         // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
       } else {  // No fresh candidates (timeout)
-        ROS_WARN("Timeout!");
+        ROS_WARN("Candidates timeout!");
 
         // TODO: Push MAX_AVG_XY_ERROR into history_xy_errors
         target_position.x = 0.0;
