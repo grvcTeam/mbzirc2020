@@ -496,21 +496,17 @@ class TaskManager(object):
         self.manage_thread.start()
 
     def manage_tasks(self):
-        rate = rospy.Rate(100)  # [Hz]
+        rate = rospy.Rate(1)  # [Hz]
         while not rospy.is_shutdown():
             for robot_id, thread in self.threads.items():
                 self.locks[robot_id].acquire()
-                # if self.preempt[robot_id].is_set():
-                #     rospy.logwarn('Trying to preempt current task on robot[{}]'.format(robot_id))
-                #     self.tasks[robot_id].request_preempt()
-                if not self.idle[robot_id].is_set() and not thread.is_alive():  # TODO: better use task.is_running()?
+                if not self.idle[robot_id].is_set() and not thread.is_alive():
                     thread.join()
                     outcome = thread.get_return_value()
                     rospy.logwarn('task on robot[{}] finished with output: {}'.format(robot_id, outcome))
                     del self.threads[robot_id]  # TODO: needed?
-                    del self.tasks[robot_id]  # TODO: needed?
+                    del self.tasks[robot_id]    # TODO: needed?
                     self.idle[robot_id].set()
-                    # self.preempt[robot_id].clear()
                 self.locks[robot_id].release()
             rate.sleep()
 
@@ -520,7 +516,6 @@ class TaskManager(object):
             if not self.idle[robot_id].is_set():
                 rospy.logerr('robot {} is not idle!'.format(robot_id))
                 return False
-
             self.idle[robot_id].clear()
             self.tasks[robot_id] = task
             self.tasks[robot_id].define_for(self.robots[robot_id])
@@ -535,9 +530,6 @@ class TaskManager(object):
             return False
         rospy.logwarn('Trying to preempt current task on robot[{}]'.format(robot_id))
         self.tasks[robot_id].request_preempt()
-        # rospy.logwarn('Setting preempt flag on robot[{}]'.format(robot_id))
-        # with self.locks[robot_id]:
-        #     self.preempt[robot_id].set()
         return True
 
     def is_idle(self, robot_id):
@@ -546,9 +538,13 @@ class TaskManager(object):
     def are_idle(self, id_list):
         for robot_id in id_list:
             if not self.idle[robot_id].is_set():
-                # rospy.logwarn('[{}] not idle!'.format(robot_id))
                 return False
         return True
+
+    def wait_for(self, id_list):
+        # TODO: Add timeout?
+        while not self.are_idle(id_list):
+            rospy.sleep(0.2)  # TODO: tune
 
 # TODO: All these parameters from config!
 field_width = 20  # 60  # TODO: Field is 60 x 50
@@ -682,20 +678,11 @@ class CentralAgent(object):
     # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):
         for robot_id in self.available_robots:
-            print('sending goal to take_off server {}'.format(robot_id))
-
             # TODO: clear all regions?
             userdata = smach.UserData()
             userdata.height = self.get_param(robot_id, 'flight_level')  # TODO: Why not directly inside tasks?
             self.task_manager.start_task(robot_id, TakeOffTask(), userdata)
-
-        while not rospy.is_shutdown():
-            if self.task_manager.are_idle(self.available_robots):
-                rospy.logwarn('All robots ready!')
-                break
-            else:
-                print('some sleep!')
-                time.sleep(1)
+            self.task_manager.wait_for([robot_id])  # Sequential takeoff
 
     # TODO: Not necessarily a member function (piles as param)
     def all_piles_are_found(self):
@@ -704,7 +691,7 @@ class CentralAgent(object):
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
-        # TODO: Check this hbetter outside!
+        # TODO: Check this better outside!
         # if self.all_piles_are_found():
         #     rospy.logwarn('All piles are found!')
         #     return
