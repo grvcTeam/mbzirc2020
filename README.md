@@ -15,7 +15,7 @@ roslaunch mbzirc_launchers c1.launch
 
 For visualization:
 ```
-roslaunch mbzirc_visualization visualize_c1.launch
+roslaunch mbzirc_visualization c1.launch
 ```
 
 ---
@@ -27,5 +27,5 @@ rosrun agent_nodes cu_agent_c2.py
 
 For visualization:
 ```
-roslaunch mbzirc_visualization visualize_c2.launch
+roslaunch mbzirc_visualization c2.launch
 ```
