@@ -310,24 +310,16 @@ class FollowPathTask(smach.State):
         return 'succeeded'
         # TODO: aborted?
 
-# class FollowPathTask(smach.StateMachine):  # TODO: pass a WaypointDispatch object instead?
-#     def __init__(self):
-#         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'])
-
-#     def define_for(self, robot):
-#         with self:
-
-#             smach.StateMachine.add('DISPATCH', DispatchWaypoints(GoToTask().define_for(robot)),
-#                                     remapping = {'path': 'path'},
-#                                     transitions = {'succeeded': 'succeeded'})
-#         return self
-
 class SearchPilesTask(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['path'], output_keys = ['piles'])
         self.go_to_task = None
         self.piles = {}
         rospy.Subscriber("estimated_objects", mbzirc_comm_objs.msg.ObjectDetectionList, self.estimation_callback)
+
+    def define_for(self, robot):
+        self.go_to_task = GoToTask().define_for(robot)
+        return self
 
     def estimation_callback(self, data):
         for pile in data.objects:
@@ -499,7 +491,7 @@ class TaskManager(object):
             self.idle[robot_id].set()
             # self.preempt[robot_id].clear()
 
-        self.manage_thread = threading.Thread(target=self.manage_tasks)
+        self.manage_thread = threading.Thread(target=self.manage_tasks)  # TODO: daemon!
         self.manage_thread.start()
 
     def manage_tasks(self):
@@ -729,21 +721,24 @@ class CentralAgent(object):
                 robot_path.append(waypoint)
             robot_paths[robot_id] = robot_path
 
+        search_ud = {}
         for robot_id in self.available_robots:
-            print('sending goal to follow_path server {}'.format(robot_id))
+            print('sending goal to search_piles server {}'.format(robot_id))
+            search_ud[robot_id] = smach.UserData()
+            search_ud[robot_id].path = robot_paths[robot_id]
+            self.task_manager.start_task(robot_id, SearchPilesTask(), search_ud[robot_id])
 
-            userdata = smach.UserData()
-            userdata.path = robot_paths[robot_id]
-            self.task_manager.start_task(robot_id, FollowPathTask(), userdata)
-
-        while not self.all_piles_are_found():
+        while not self.all_piles_are_found() and not rospy.is_shutdown():
             # TODO: What happens if all piles are NEVER found?
             rospy.logerr('len(self.piles) = {}'.format(len(self.piles)))
             rospy.sleep(1.0)
 
-        for robot_id in self.available_robots:
-            rospy.logerr('preempting {}'.format(robot_id))
-            self.task_manager.preempt_task(robot_id)
+        rospy.sleep(1.0)
+        rospy.logerr('output_1 = {}'.format(search_ud['1'].piles))
+
+        # for robot_id in self.available_robots:
+        #     rospy.logerr('preempting {}'.format(robot_id))
+        #     self.task_manager.preempt_task(robot_id)
 
     # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
@@ -753,7 +748,7 @@ class CentralAgent(object):
             for brick in row:
                 print('row[{}] brick = {}'.format(i, brick))
                 costs = {}
-                while not costs:
+                while not costs and not rospy.is_shutdown():
                     for robot_id in self.available_robots:
                         if self.task_manager.is_idle(robot_id):
                             costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
@@ -815,7 +810,7 @@ def main():
     central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
 
-    rospy.spin()
+    # rospy.spin()
 
 if __name__ == '__main__':
     main()
