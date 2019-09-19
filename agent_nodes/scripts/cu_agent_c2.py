@@ -702,24 +702,20 @@ class CentralAgent(object):
                 robot_path.append(waypoint)
             robot_paths[robot_id] = robot_path
 
-        search_ud = {}
         for robot_id in self.available_robots:
             print('sending goal to search_piles server {}'.format(robot_id))
-            search_ud[robot_id] = smach.UserData()
-            search_ud[robot_id].path = robot_paths[robot_id]
-            self.task_manager.start_task(robot_id, SearchPilesTask(), search_ud[robot_id])
+            userdata = smach.UserData()
+            userdata.path = robot_paths[robot_id]
+            self.task_manager.start_task(robot_id, FollowPathTask(), userdata)
 
         while not all_piles_are_found(self.piles) and not rospy.is_shutdown():
             # TODO: What happens if all piles are NEVER found?
-            rospy.logerr('len(self.piles) = {}'.format(len(self.piles)))
+            rospy.logwarn('len(self.piles) = {}'.format(len(self.piles)))
             rospy.sleep(1.0)
 
-        rospy.sleep(1.0)
-        rospy.logerr('output_1 = {}'.format(search_ud['1'].piles))
-
-        # for robot_id in self.available_robots:
-        #     rospy.logerr('preempting {}'.format(robot_id))
-        #     self.task_manager.preempt_task(robot_id)
+        for robot_id in self.available_robots:
+            rospy.logwarn('preempting {}'.format(robot_id))
+            self.task_manager.preempt_task(robot_id)
 
     # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
@@ -791,7 +787,7 @@ def main():
     central_agent.look_for_piles() # TODO: if not piles[r, g, b, o], repeat! if all found, stop searching?
     central_agent.build_wall()
 
-    # rospy.spin()
+    rospy.spin()
 
 if __name__ == '__main__':
     main()
