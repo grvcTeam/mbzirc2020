@@ -12,6 +12,33 @@
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/DetectTypes.h>
 
+// TODO: Move to some kind of utils lib, as it is repeated
+int color_from_string(const std::string& color) {
+    int out_color;
+    switch(color[0]) {
+        case 'R':
+        case 'r':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_RED;
+            break;
+        case 'G':
+        case 'g':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;
+            break;
+        case 'B':
+        case 'b':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_BLUE;
+            break;
+        case 'O':
+        case 'o':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
+            break;
+        default:
+        ROS_ERROR("Unknown color %s", color.c_str());
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
+    }
+    return out_color;
+}
+
 class ImageConverter {
 public:
 
@@ -157,7 +184,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
     object.scale.x = pixel_to_metric_x * (item.perimeter + aux) / 4.0;
     object.scale.y = pixel_to_metric_y * (item.perimeter - aux) / 4.0;
     object.scale.z = estimated_z;
-    object.properties = "{\"color\": \"" + item.detector_id + "\"}";
+    object.color = color_from_string(item.detector_id);
     object_list.objects.push_back(object);
     // std::cout << object << '\n';
   }

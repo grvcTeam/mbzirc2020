@@ -321,18 +321,15 @@ class SearchPilesTask(smach.State):
         self.go_to_task = GoToTask().define_for(robot)
         return self
 
+    # TODO: This is repeated in central unit
     def estimation_callback(self, data):
         for pile in data.objects:
             # TODO: check type and scale?
-            properties_dict = {}
-            if pile.properties:
-                properties_dict = json.loads(pile.properties)
-            if 'color' in properties_dict:
-                color = properties_dict['color']  # TODO: reused code!
-                pose = PoseStamped()
-                pose.header = pile.header
-                pose.pose = pile.pose.pose
-                self.piles[color] = pose
+            color = color_from_int(pile.color)
+            pose = PoseStamped()
+            pose.header = pile.header
+            pose.pose = pile.pose.pose
+            self.piles[color] = pose
 
     def execute(self, userdata):
         userdata.piles = self.piles
@@ -639,6 +636,19 @@ def all_piles_are_found(piles):
     # TODO: Check not only count, but also size of piles
     return len(piles) >= 4
 
+# TODO: move to object_detection utils?
+def color_from_int(color):
+    if color == mbzirc_comm_objs.msg.ObjectDetection.COLOR_RED:
+        return 'red'
+    elif color == mbzirc_comm_objs.msg.ObjectDetection.COLOR_GREEN:
+        return 'green'
+    elif color == mbzirc_comm_objs.msg.ObjectDetection.COLOR_BLUE:
+        return 'blue'
+    elif color == mbzirc_comm_objs.msg.ObjectDetection.COLOR_ORANGE:
+        return 'orange'
+    else:
+        return 'unknown'
+
 class CentralUnit(object):
     def __init__(self):
         self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
@@ -656,18 +666,15 @@ class CentralUnit(object):
         # TODO: Default value in case param_name is not found?
         return rospy.get_param(self.robots[robot_id].url + param_name)
 
+    # TODO: This is repeated in SearchPilesTask
     def estimation_callback(self, data):
         for pile in data.objects:
             # TODO: check type and scale?
-            properties_dict = {}
-            if pile.properties:
-                properties_dict = json.loads(pile.properties)
-            if 'color' in properties_dict:
-                color = properties_dict['color']  # TODO: reused code!
-                pose = PoseStamped()
-                pose.header = pile.header
-                pose.pose = pile.pose.pose
-                self.piles[color] = pose
+            color = color_from_int(pile.color)
+            pose = PoseStamped()
+            pose.header = pile.header
+            pose.pose = pile.pose.pose
+            self.piles[color] = pose
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):

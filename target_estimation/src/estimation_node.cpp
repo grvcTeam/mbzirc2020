@@ -94,7 +94,7 @@ protected:
                 new_estimated.scale.x = xy_scale;
                 new_estimated.scale.y = xy_scale;  // ...and make scale.x = scale.y
                 new_estimated.scale.z = sensed.scale.z;
-                new_estimated.properties = sensed.properties;
+                new_estimated.color = sensed.color;
                 targets_.objects.push_back(new_estimated);
             }
         }
@@ -134,6 +134,33 @@ void operator>>(const YAML::Node& in, PileData& pile_data) {
     pile_data.scale_z = in["scale_z"].as<float>();
 }
 
+// TODO: Move to some kind of utils lib, as it is repeated
+int color_from_string(const std::string& color) {
+    int out_color;
+    switch(color[0]) {
+        case 'R':
+        case 'r':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_RED;
+            break;
+        case 'G':
+        case 'g':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;
+            break;
+        case 'B':
+        case 'b':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_BLUE;
+            break;
+        case 'O':
+        case 'o':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
+            break;
+        default:
+        ROS_ERROR("Unknown color %s", color.c_str());
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
+    }
+    return out_color;
+}
+
 class APrioriInfoEstimator: public Estimator {
 public:
 
@@ -165,7 +192,7 @@ public:
             object.scale.x = pile_data.scale_x;
             object.scale.y = pile_data.scale_y;
             object.scale.z = pile_data.scale_z;
-            object.properties = "{\"color\": \"" + pile_data.color + "\"}";  // TODO: could color be "unknown"?
+            object.color = color_from_string(pile_data.color);
             targets_.objects.push_back(object);
         }
     }

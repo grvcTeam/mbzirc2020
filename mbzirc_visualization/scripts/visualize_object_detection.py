@@ -4,36 +4,34 @@ import copy
 import argparse
 import rospy
 from std_msgs.msg import ColorRGBA
-from mbzirc_comm_objs.msg import ObjectDetectionList
+from mbzirc_comm_objs.msg import ObjectDetection, ObjectDetectionList
 from visualization_msgs.msg import Marker, MarkerArray
 
 # TODO: namespacing?
 marker_array_pub = rospy.Publisher('visualization_marker_array', MarkerArray, queue_size = 1)
 
-def get_color(properties_dict, alpha = 1.0):
+def get_color(color_in, alpha = 1.0):
     color_out = ColorRGBA()
     color_out.a = alpha
     color_out.r = 0.5  # Default is gray
     color_out.g = 0.5
     color_out.b = 0.5
-    if 'color' in properties_dict:
-        color_in = properties_dict['color']
-        if color_in == 'red':
-            color_out.r = 1.0
-            color_out.g = 0.0
-            color_out.b = 0.0
-        elif color_in == 'green':
-            color_out.r = 0.0
-            color_out.g = 1.0
-            color_out.b = 0.0
-        elif color_in == 'blue':
-            color_out.r = 0.0
-            color_out.g = 0.0
-            color_out.b = 1.0
-        elif color_in == 'orange':
-            color_out.r = 1.0
-            color_out.g = 0.65
-            color_out.b = 0.0
+    if color_in == ObjectDetection.COLOR_RED:
+        color_out.r = 1.0
+        color_out.g = 0.0
+        color_out.b = 0.0
+    elif color_in == ObjectDetection.COLOR_GREEN:
+        color_out.r = 0.0
+        color_out.g = 1.0
+        color_out.b = 0.0
+    elif color_in == ObjectDetection.COLOR_BLUE:
+        color_out.r = 0.0
+        color_out.g = 0.0
+        color_out.b = 1.0
+    elif color_in == ObjectDetection.COLOR_ORANGE:
+        color_out.r = 1.0
+        color_out.g = 0.65
+        color_out.b = 0.0
     return color_out
 
 def sensed_objects_callback(data, ns):
@@ -73,10 +71,6 @@ def sensed_objects_callback(data, ns):
         pose_marker.color.a = 1.0
         marker_array.markers.append(pose_marker)
 
-        properties_dict = {}
-        if sensed.properties:
-            properties_dict = json.loads(sensed.properties)
-
         scale_marker = Marker()
         scale_marker.header = sensed.header
         scale_marker.ns = ns
@@ -86,7 +80,7 @@ def sensed_objects_callback(data, ns):
         scale_marker.action = Marker.ADD
         scale_marker.pose = sensed.pose.pose
         scale_marker.scale = sensed.scale
-        scale_marker.color = get_color(properties_dict, 0.5)
+        scale_marker.color = get_color(sensed.color, 0.5)
         marker_array.markers.append(scale_marker)
 
         marker_array_pub.publish(marker_array)
