@@ -45,17 +45,6 @@
       <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), 0]</rosparam>      <!-- [x,y,z] -->
     </node>
 
-    <!-- <node name="agent_node" pkg="agent_nodes" type="uav_agent_c1.py" output="screen">
-      <param name="uav_ns" value="ual"/>
-      <param name="agent_id" value="dji_f550_$(arg uav_id)"/>
-      <param name="z_offset" value="0.5" type="double"/>
-      <param name="height" value="$(arg height)" type="double"/>
-      <param name="global_frame" value="map"/>
-      <param name="uav_frame" value="$(arg ns)_$(arg uav_id)/base_link"/>
-      <param name="camera_frame" value="$(arg ns)_$(arg uav_id)/camera_link"/>
-      <param name="aov" value="40"/>
-    </node> -->
-
     <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node"/> -->
 
   </group>

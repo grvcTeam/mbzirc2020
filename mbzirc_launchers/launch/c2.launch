@@ -27,7 +27,6 @@
     </node>
 
     <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
-    <!-- <node name="connected_agents_info" pkg="connected_agents_info" type="connected_agents_info.py"/> -->
 
     <!-- TODO:  All params from rosparam? -->
     <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
