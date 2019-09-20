@@ -1,8 +1,9 @@
 # mbzirc2020
 
-Catkin repository to store ROS packages in the MBZIRC2020 architecture
+Catkin repository to store ROS packages for the MBZIRC2020
 
 ## Dependencies
+Be sure of having an updated **master**-branch clone of:
 * [grvc-ual](https://github.com/grvcTeam/grvc-ual)
 * [grvc-utils](https://github.com/grvcTeam/grvc-utils)
 
@@ -22,7 +23,7 @@ roslaunch mbzirc_visualization c1.launch
 ### Challenge 2
 ```
 roslaunch mbzirc_launchers c2.launch
-rosrun agent_nodes cu_agent_c2.py
+rosrun central_units c2.py
 ```  
 
 For visualization:
