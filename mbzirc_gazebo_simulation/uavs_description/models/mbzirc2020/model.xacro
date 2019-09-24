@@ -13,6 +13,7 @@
   <xacro:arg name='gps_noise' default='true' />
   <xacro:arg name='enable_ground_truth' default='false' />
   <xacro:arg name='enable_logging' default='false' />
+  <xacro:arg name='challenge' default='2' />
 
   <!-- macros for gazebo plugins, sensors -->
   <xacro:include filename="$(find robots_description)/urdf/component_snippets.xacro" />
@@ -20,10 +21,68 @@
   <!-- Instantiate mbzirc "mechanics" -->
   <xacro:include filename="$(find uavs_description)/models/mbzirc2020/geometry.xacro" />
 
-  <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
-  <xacro:magnetic_gripper parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
-    <origin xyz="0 0 -0.275" rpy="0 0 0" />
-  </xacro:magnetic_gripper>
+  <xacro:if value="${$(arg challenge) == 2}">
+    <!-- Installing magnetic gripper -->
+    <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
+    <xacro:magnetic_gripper parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
+      <origin xyz="0 0 -0.275" rpy="0 0 0" />
+    </xacro:magnetic_gripper>
+    <!-- Installing Camera 0 -->
+    <xacro:camera_macro 
+      namespace="${namespace}"
+      parent_link="base_link"
+      camera_suffix="0"
+      frame_rate="10"
+      horizontal_fov="1.07079633"
+      image_width="800"
+      image_height="600"
+      image_format="R8G8B8"
+      min_distance="0.01"
+      max_distance="100"
+      noise_mean="0"
+      noise_stddev="0"
+      enable_visual="true"
+      >
+      <box size="0.01 0.01 0.01"/>
+      <origin xyz="0 0 -0.295" rpy="0 1.57079632679 0" />
+    </xacro:camera_macro>
+  </xacro:if>
+
+<!-- Installing Camera 1 -->
+  <!-- <xacro:camera_macro
+    namespace="${namespace}"
+    parent_link="base_link"
+    camera_suffix="1"
+    frame_rate="10"
+    horizontal_fov="1.07079633"
+    image_width="800"
+    image_height="600"
+    image_format="R8G8B8"
+    min_distance="0.01"
+    max_distance="100"
+    noise_mean="0"
+    noise_stddev="0"
+    enable_visual="true"
+    >
+    <xacro:insert_block name="camera_cylinder"/>
+    <origin xyz="0 0.24 -0.24" rpy="0 0 0" />
+  </xacro:camera_macro> -->
+  
+<!-- Installing Teraranger Evo frontal-->
+
+  <!-- <xacro:teraranger_macro
+    namespace="${model_name}"
+    parent_link="base_link"
+    teraranger_suffix="0"
+  >
+  </xacro:teraranger_macro> -->
+
+  <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+  <xacro:if value="${$(arg challenge) == 3}">
+    <xacro:fake_camera parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
+      <origin xyz="0.5 0 -0.27" rpy="0 1.57 0" />
+    </xacro:fake_camera>
+  </xacro:if>
 
   <xacro:if value="$(arg enable_gps_plugin)">
     <!-- Instantiate gps plugin. -->

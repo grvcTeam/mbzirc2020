@@ -43,7 +43,6 @@
 
   <!-- Included URDF Files -->
   <xacro:include filename="$(find robots_description)/urdf/multirotor_base.xacro" />
-  <xacro:include filename="$(find robots_description)/urdf/component_snippets.xacro" />
 
   <!-- Instantiate multirotor_base_macro once -->
   <xacro:multirotor_base_macro
@@ -59,55 +58,6 @@
     >
     <xacro:insert_block name="body_inertia" />
   </xacro:multirotor_base_macro>
-
-<!-- Installing Camera 0 -->
-  <xacro:camera_macro 
-    namespace="${namespace}"
-    parent_link="base_link"
-    camera_suffix="0"
-    frame_rate="10"
-    horizontal_fov="1.07079633"
-    image_width="800"
-    image_height="600"
-    image_format="R8G8B8"
-    min_distance="0.01"
-    max_distance="100"
-    noise_mean="0"
-    noise_stddev="0"
-    enable_visual="true"
-    >
-    <box size="0.01 0.01 0.01"/>
-    <origin xyz="0 0 -0.295" rpy="0 1.57079632679 0" />
-  </xacro:camera_macro>
-
-<!-- Installing Camera 1 -->
-  <!-- <xacro:camera_macro
-    namespace="${namespace}"
-    parent_link="base_link"
-    camera_suffix="1"
-    frame_rate="10"
-    horizontal_fov="1.07079633"
-    image_width="800"
-    image_height="600"
-    image_format="R8G8B8"
-    min_distance="0.01"
-    max_distance="100"
-    noise_mean="0"
-    noise_stddev="0"
-    enable_visual="true"
-    >
-    <xacro:insert_block name="camera_cylinder"/>
-    <origin xyz="0 0.24 -0.24" rpy="0 0 0" />
-  </xacro:camera_macro> -->
-  
-<!-- Installing Teraranger Evo frontal-->
-
-  <!-- <xacro:teraranger_macro
-    namespace="${model_name}"
-    parent_link="base_link"
-    teraranger_suffix="0"
-  >
-  </xacro:teraranger_macro> -->
 
   <!-- Instantiate rotors -->
   <xacro:vertical_rotor
