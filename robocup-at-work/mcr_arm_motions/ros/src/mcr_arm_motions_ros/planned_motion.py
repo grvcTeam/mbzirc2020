@@ -54,6 +54,8 @@ class PlannedMotion(object):
         # Set up MoveIt!
         self.arm = moveit_commander.MoveGroupCommander(arm)
 
+        self.scene = moveit_commander.PlanningSceneInterface()
+
         # Whether MoveIt! should wait for the arm to be stopped.
         self.wait_for_motion = rospy.get_param('~wait_for_motion', True)
 
@@ -152,6 +154,33 @@ class PlannedMotion(object):
             return 'INIT'
         else:
             move_status = self.move_arm(self.target_configuration, self.wait_for_motion)
+
+            rospy.sleep(1)
+
+
+
+            box_pose = geometry_msgs.msg.PoseStamped()
+            box_pose.header.frame_id = "ee_link"
+            box_pose.pose.position.y = 0.1
+            box_pose.pose.orientation.w = 1.0
+            box_name = "box"
+            eef_link = "ee_link"
+            self.scene.add_box(box_name, box_pose, size=(0.4, 0.2, 0.6))
+
+            rospy.sleep(2)
+
+
+            self.scene.attach_box(eef_link, box_name)    #falta acrescentar os touching links que servem para que o Moveit ignore collisions entre
+                                                         # o attached object e estes links
+
+
+
+            rospy.sleep(5)
+            self.scene.remove_attached_object(eef_link, name=box_name)
+            rospy.sleep(1)
+            self.scene.remove_world_object(box_name)
+
+            
 
             if move_status:
                 self.event_out.publish('e_success')

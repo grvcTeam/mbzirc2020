@@ -17,7 +17,7 @@
   <xacro:ur5e_robot parent="arm_base_frame" prefix="" joint_limited="true"/>
 
 
-  <sensor_d435 parent="arm_base_link">
+  <sensor_d435 parent="wrist_2_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </sensor_d435>
 

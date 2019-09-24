@@ -37,8 +37,10 @@
 
     <arg name="model" default="$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro" />
     <arg name="rvizconfig" default="$(find atrvjr_description)/launch/new_rviz_config.rviz" />
-    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />        
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />   
     <param name="use_gui" value="false"/>
+    <arg name="kinematics_config" default="$(find ur_e_description)/config/ur5e_default.yaml"/>
+
 
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />

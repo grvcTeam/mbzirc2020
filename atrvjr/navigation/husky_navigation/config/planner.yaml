@@ -1,9 +1,17 @@
 controller_frequency: 5.0
-recovery_behaviour_enabled: true
+recovery_behaviour_enabled: false
+
+
+#######################  GLOBAL  ######################################
 
 NavfnROS:
   allow_unknown: true # Specifies whether or not to allow navfn to create plans that traverse unknown space.
-  default_tolerance: 0.1 # A tolerance on the goal point for the planner.
+  default_tolerance: 0.2 # A tolerance on the goal point for the planner.
+
+
+
+
+####################  LOCAL  #############################################
 
 TrajectoryPlannerROS:
   # Robot Configuration Parameters
@@ -71,7 +79,7 @@ DWAPlannerROS:
 
   # Goal Tolerance Parameters
   yaw_goal_tolerance: 0.2
-  xy_goal_tolerance: 0.1
+  xy_goal_tolerance: 0.2
   latch_xy_goal_tolerance: false
 
   # # Forward Simulation Parameters
