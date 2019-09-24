@@ -1,0 +1,5 @@
+---
+string robotMode
+string safetyMode
+string loadedProgram
+string programState
