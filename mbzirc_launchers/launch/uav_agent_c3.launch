@@ -15,7 +15,8 @@
     <param name="flight_level" value="$(arg flight_level)"/>  <!-- TODO: Makes no sense here! -->
 
     <!-- TODO: all transforms needed? -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_extinguisher_tf" args="0 0 -0.1 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/extinguisher_link" />
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" /> -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />  <!-- TODO: Use robot_description + state_publihser? -->
 
     <node if="$(eval ual_backend == 'light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
@@ -47,6 +48,7 @@
       <param name="hold_pose_time" value="0"/>
     </node>
 
+    <node name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
     <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/> -->
 
   </group>
