@@ -4,14 +4,14 @@ import tf2_ros
 import tf2_geometry_msgs
 from std_srvs.srv import SetBool, SetBoolResponse
 from mbzirc_gazebo_plugins.msg import SimDroplet
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Vector3Stamped
 
 class FireExtiguisher(object):
 
     def __init__(self):
         self.enabled = False
         self.droplets_left = 10  # TODO: from param
-        self.droplets_velocity = 0.2  # TODO: from params?
+        self.droplets_velocity = 10.0  # TODO: from params?
         rospy.Service('enable_fire_extiguisher', SetBool, self.enable_callback)
         self.droplet_pub = rospy.Publisher('/spawn_droplet', SimDroplet, queue_size=1)
         self.update_duration = rospy.Duration(1.0)
@@ -28,18 +28,24 @@ class FireExtiguisher(object):
         if not self.enabled or self.droplets_left <= 0:
             return
         # else, it is enabled and there are droplets left:
+        extinguisher_frame_id = self.ns[1:] + 'extinguisher_link'  # remove first '/' from ns
         sim_droplet = SimDroplet()
         extinguisher_origin = PoseStamped()
-        extinguisher_origin.header.frame_id = self.ns[1:] + 'extinguisher_link'  # remove first '/' from ns
+        extinguisher_origin.header.frame_id = extinguisher_frame_id
         extinguisher_origin.header.stamp = rospy.Time.now()  # WATCHOUT!
+        droplet_velocity = Vector3Stamped()
+        droplet_velocity.header.frame_id = extinguisher_frame_id
+        droplet_velocity.header.stamp = rospy.Time.now()  # WATCHOUT!
+        droplet_velocity.vector.x = self.droplets_velocity
         try:
             extinguisher_origin = self.tf_buffer.transform(extinguisher_origin, 'map', rospy.Duration(1.0))
+            droplet_velocity = self.tf_buffer.transform(droplet_velocity, 'map', rospy.Duration(1.0))
             # print(extinguisher_origin)
         except:
             rospy.logerr('Failed to transform waypoint from [{}] to [{}]'.format(extinguisher_origin.header.frame_id, 'map'))
 
         sim_droplet.position = extinguisher_origin.pose.position
-        # sim_droplet.velocity.x = self.droplets_velocity  # TODO: velocity also needs to be transformed
+        sim_droplet.velocity = droplet_velocity.vector
         self.droplets_left -= 1
         self.droplets_velocity *= 0.99  # Some kind of decay law
         self.droplet_pub.publish(sim_droplet)
