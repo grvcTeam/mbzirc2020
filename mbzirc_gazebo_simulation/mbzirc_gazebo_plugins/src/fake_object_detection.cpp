@@ -295,6 +295,8 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
           rec_object.type = type_from_name(collision_name);
           if(this->type_list.size() && std::find(this->type_list.begin(), this->type_list.end(), rec_object.type) == this->type_list.end())
             continue;
+          if (rec_object.type == "unknown")
+            continue;
 
           //Pose
           #if GAZEBO_MAJOR_VERSION >= 8
