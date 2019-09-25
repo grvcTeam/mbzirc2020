@@ -54,12 +54,12 @@ class DropletFactory: public WorldPlugin {
           <link name ='link'>\
             <collision name ='collision'>\
               <geometry>\
-                <sphere><radius>0.01</radius></sphere>\
+                <sphere><radius>0.05</radius></sphere>\
               </geometry>\
             </collision>\
             <visual name ='visual'>\
               <geometry>\
-                <sphere><radius>0.01</radius></sphere>\
+                <sphere><radius>0.05</radius></sphere>\
               </geometry>\
               <material>\
                 <ambient>0 0 1 0.5</ambient>\
@@ -71,12 +71,12 @@ class DropletFactory: public WorldPlugin {
             <inertial>\
               <mass>0.005</mass>\
               <inertia>\
-                <ixx>2e-7</ixx>\
+                <ixx>2e-6</ixx>\
                 <ixy>0</ixy>\
                 <ixz>0</ixz>\
-                <iyy>2e-7</iyy>\
+                <iyy>2e-6</iyy>\
                 <iyz>0</iyz>\
-                <izz>2e-7</izz>\
+                <izz>2e-6</izz>\
               </inertia>\
             </inertial>\
           </link>\
