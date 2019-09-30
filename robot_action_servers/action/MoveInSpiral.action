@@ -1,0 +1,15 @@
+#goal definition
+geometry_msgs/PoseStamped origin
+float32 vertical_distance
+float32 min_horizontal_distance
+float32 max_horizontal_distance
+float32 inc_horizontal_distance
+float32 period
+# bool move_cw  # TODO!
+---
+#result definition
+string message
+---
+#feedback
+float32 rho
+geometry_msgs/PoseStamped current_target

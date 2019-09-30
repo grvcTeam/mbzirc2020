@@ -20,19 +20,22 @@
 //----------------------------------------------------------------------------------------------------------------------
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <uav_abstraction_layer/ual.h>
 #include <robot_action_servers/TakeOffAction.h>
 #include <robot_action_servers/GoToAction.h>
 #include <robot_action_servers/PickAction.h>
 #include <robot_action_servers/PlaceAction.h>
 #include <robot_action_servers/LandAction.h>
+#include <robot_action_servers/MoveInSpiralAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
 #include <mbzirc_comm_objs/Magnetize.h>
-#include <uav_abstraction_layer/State.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <uav_abstraction_layer/ual.h>
+#include <uav_abstraction_layer/State.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
 
@@ -46,6 +49,11 @@ protected:
   actionlib::SimpleActionServer<robot_action_servers::PickAction> pick_server_;
   actionlib::SimpleActionServer<robot_action_servers::PlaceAction> place_server_;
   actionlib::SimpleActionServer<robot_action_servers::LandAction> land_server_;
+  actionlib::SimpleActionServer<robot_action_servers::MoveInSpiralAction> move_in_spiral_server_;
+
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener *tf_listener_;
+
   grvc::ual::UAL *ual_;
   ros::Timer data_feed_timer_;
   ros::Publisher data_feed_pub_;
@@ -59,7 +67,10 @@ public:
     go_to_server_(nh_, "go_to_action", boost::bind(&UalActionServer::goToCallback, this, _1), false),
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
     place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
-    land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false) {
+    land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
+    move_in_spiral_server_(nh_, "move_in_spiral_action", boost::bind(&UalActionServer::moveInSpiralCallback, this, _1), false) {
+
+    tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
 
     ual_ = new grvc::ual::UAL();
     data_feed_timer_ = nh_.createTimer(ros::Duration(0.1), &UalActionServer::publishDataFeed, this);  // TODO: frequency?
@@ -71,6 +82,7 @@ public:
     pick_server_.start();
     place_server_.start();
     land_server_.start();
+    move_in_spiral_server_.start();
   }
 
   ~UalActionServer() {
@@ -393,6 +405,68 @@ public:
     ual_->land(true);
 
     land_server_.setSucceeded(result);
+  }
+
+  void moveInSpiralCallback(const robot_action_servers::MoveInSpiralGoalConstPtr &_goal) {
+    // ROS_INFO("MoveInSpiral!");
+    robot_action_servers::MoveInSpiralFeedback feedback;
+    robot_action_servers::MoveInSpiralResult result;
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      result.message = "UAL is not flying auto!";
+      move_in_spiral_server_.setAborted(result);
+      return;
+    }
+
+    geometry_msgs::TransformStamped robot_transform;
+    std::string robot_frame_id = ual_->transform().child_frame_id;
+    try {
+      robot_transform = tf_buffer_.lookupTransform(_goal->origin.header.frame_id, robot_frame_id, ros::Time(0));
+    } catch (tf2::TransformException &ex) {
+      // ROS_WARN("%s", ex.what());
+      result.message = ex.what();
+      move_in_spiral_server_.setAborted(result);
+      return;
+    }
+    float delta_x = robot_transform.transform.translation.x - _goal->origin.pose.position.x;
+    float delta_y = robot_transform.transform.translation.y - _goal->origin.pose.position.y;
+    float theta_init = atan2(delta_y, delta_x);
+    float theta = theta_init;
+    float theta_gain = _goal->inc_horizontal_distance / (2 * M_PI);
+
+    float frequency = 10;
+    float theta_step = 2 * M_PI / (frequency * _goal->period);
+    ros::Rate loop_rate(frequency);  // [Hz]
+    bool first_loop = true;
+    while (ros::ok()) {
+      float rho = _goal->min_horizontal_distance + theta_gain * (theta - theta_init);
+      if (rho > _goal->max_horizontal_distance) { break; }
+      if (move_in_spiral_server_.isPreemptRequested()  || !ros::ok()) {
+        move_in_spiral_server_.setPreempted();
+        return;
+      }
+      geometry_msgs::PoseStamped spiral_reference = _goal->origin;
+      spiral_reference.pose.position.x += rho * cos(theta);
+      spiral_reference.pose.position.y += rho * sin(theta);
+      spiral_reference.pose.position.z += _goal->vertical_distance;
+      float half_yaw = 0.5 * (theta + M_PI);
+      spiral_reference.pose.orientation.x = 0;
+      spiral_reference.pose.orientation.y = 0;
+      spiral_reference.pose.orientation.z = sin(half_yaw);
+      spiral_reference.pose.orientation.w = cos(half_yaw);
+      if (first_loop) {
+        ual_->goToWaypoint(spiral_reference, true);
+        first_loop = false;
+      } else {
+        ual_->setPose(spiral_reference);
+        theta += theta_step;
+        loop_rate.sleep();
+      }
+      feedback.rho = rho;
+      feedback.current_target = spiral_reference;
+      move_in_spiral_server_.publishFeedback(feedback);
+    }
+    move_in_spiral_server_.setSucceeded(result);
   }
 
 };

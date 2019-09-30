@@ -74,6 +74,7 @@ add_action_files(
   Pick.action
   Place.action
   Land.action
+  MoveInSpiral.action
 )
 
 ## Generate added messages and services with any dependencies listed here
