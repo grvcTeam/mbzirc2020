@@ -434,8 +434,13 @@ public:
     float theta = theta_init;
     float theta_gain = _goal->inc_horizontal_distance / (2 * M_PI);
 
+    float horizontal_velocity = _goal->horizontal_velocity;
+    if (fabs(horizontal_velocity) < 1e-3) {
+      ROS_WARN("MoveInSpiralGoal::horizontal_velocity = [%lf]. Absolute value too low, imposing minimum!", horizontal_velocity);
+      horizontal_velocity = std::copysign(1e-3, horizontal_velocity);
+    }
+
     float frequency = 10;
-    float theta_step = 2 * M_PI / (frequency * _goal->period);
     ros::Rate loop_rate(frequency);  // [Hz]
     bool first_loop = true;
     while (ros::ok()) {
@@ -459,7 +464,7 @@ public:
         first_loop = false;
       } else {
         ual_->setPose(spiral_reference);
-        theta += theta_step;
+        theta += horizontal_velocity / (rho * frequency);
         loop_rate.sleep();
       }
       feedback.rho = rho;

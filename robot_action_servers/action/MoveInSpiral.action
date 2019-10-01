@@ -4,8 +4,7 @@ float32 vertical_distance
 float32 min_horizontal_distance
 float32 max_horizontal_distance
 float32 inc_horizontal_distance
-float32 period
-# bool move_cw  # TODO!
+float32 horizontal_velocity  # positive values indicates ccw, negative cw
 ---
 #result definition
 string message
