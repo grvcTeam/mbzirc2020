@@ -423,7 +423,6 @@ public:
     try {
       robot_transform = tf_buffer_.lookupTransform(_goal->origin.header.frame_id, robot_frame_id, ros::Time(0));
     } catch (tf2::TransformException &ex) {
-      // ROS_WARN("%s", ex.what());
       result.message = ex.what();
       move_in_spiral_server_.setAborted(result);
       return;
@@ -434,18 +433,41 @@ public:
     float theta = theta_init;
     float theta_gain = _goal->inc_horizontal_distance / (2 * M_PI);
 
-    float horizontal_velocity = _goal->horizontal_velocity;
-    if (fabs(horizontal_velocity) < 1e-3) {
-      ROS_WARN("MoveInSpiralGoal::horizontal_velocity = [%lf]. Absolute value too low, imposing minimum!", horizontal_velocity);
-      horizontal_velocity = std::copysign(1e-3, horizontal_velocity);
+    if ((_goal->min_horizontal_distance < 1e-3) || (_goal->max_horizontal_distance < 1e-3)) {
+      result.message = "min_horizontal_distance and max_horizontal_distance must be greater than 1mm!";
+      move_in_spiral_server_.setAborted(result);
+      return;
+    }
+
+    if (_goal->min_horizontal_distance > _goal->max_horizontal_distance) {
+      result.message = "min_horizontal_distance cannot be greater than max_horizontal_distance!";
+      move_in_spiral_server_.setAborted(result);
+      return;
+    }
+
+    if (fabs(_goal->horizontal_velocity) < 1e-3) {
+      result.message = "horizontal_velocity absolute must be grater than 1mm/s!";
+      move_in_spiral_server_.setAborted(result);
+      return;
+    }
+
+    float initial_rho, final_rho;
+    bool move_inwards = (theta_gain < 0);
+    if (move_inwards) {
+      initial_rho = _goal->max_horizontal_distance;
+      final_rho = _goal->min_horizontal_distance;
+    } else {
+      initial_rho = _goal->min_horizontal_distance;
+      final_rho = _goal->max_horizontal_distance;
     }
 
     float frequency = 10;
     ros::Rate loop_rate(frequency);  // [Hz]
     bool first_loop = true;
     while (ros::ok()) {
-      float rho = _goal->min_horizontal_distance + theta_gain * (theta - theta_init);
-      if (rho > _goal->max_horizontal_distance) { break; }
+      float rho = initial_rho + theta_gain * (theta - theta_init);
+      if ( move_inwards && rho < final_rho) { break; }
+      if (!move_inwards && rho > final_rho) { break; }
       if (move_in_spiral_server_.isPreemptRequested()  || !ros::ok()) {
         move_in_spiral_server_.setPreempted();
         return;
@@ -464,7 +486,7 @@ public:
         first_loop = false;
       } else {
         ual_->setPose(spiral_reference);
-        theta += horizontal_velocity / (rho * frequency);
+        theta += _goal->horizontal_velocity / (rho * frequency);
         loop_rate.sleep();
       }
       feedback.rho = rho;
