@@ -14,8 +14,8 @@ struct LineModel {
 struct RansacOutput {
     float score;
     LineModel model;
-    std::vector<int> inliers;
-    std::vector<int> outliers;
+    std::vector<geometry_msgs::Point> inliers;
+    std::vector<geometry_msgs::Point> outliers;
     geometry_msgs::Point p;
     geometry_msgs::Point q;
 };
@@ -42,16 +42,16 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
         float current_error_denominator = sqrt(current_model.a*current_model.a + current_model.b*current_model.b);
 
         float current_score = 0;
-        std::vector<int> current_inliers;
-        std::vector<int> current_outliers;
+        std::vector<geometry_msgs::Point> current_inliers;
+        std::vector<geometry_msgs::Point> current_outliers;
         for (int j = 0; j < _points.size(); j++) {
             float current_error = fabs(current_model.a*_points[j].x + current_model.b*_points[j].y + current_model.c) / current_error_denominator;
             if (current_error < error_th) {
                 current_score += current_error;
-                current_inliers.push_back(j);
+                current_inliers.push_back(_points[j]);
             } else {
                 current_score += error_th;
-                current_outliers.push_back(j);
+                current_outliers.push_back(_points[j]);
             }
         }
 
@@ -172,18 +172,15 @@ public:
         visualization_msgs::MarkerArray marker_array;
         size_t max_line_count = 4;  // TODO: from parameter!
         size_t min_points_size = 3;  // TODO: from parameter!
-        std::vector<RansacOutput> lines(max_line_count);
-        std::vector<geometry_msgs::Point> remaining_points = points;
         for (int i = 0; i < max_line_count; i++) {
-            lines[i] = ransac(remaining_points, &random_);
+            RansacOutput line = ransac(points, &random_);
             std_msgs::ColorRGBA color = colorFromIndex(i);
-            marker_array.markers.push_back(getPointsMarker(remaining_points, _msg->header.frame_id, color, i));
-            marker_array.markers.push_back(getLineMarker(lines[i], _msg->header.frame_id, color, i));
-            remaining_points.clear();
-            for (auto j: lines[i].outliers) {
-                remaining_points.push_back(points[j]);
-            }
-            if (remaining_points.size() < min_points_size) { break; }
+            marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
+            marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
+            // TODO: detect passage here!
+            // ...
+            points = line.outliers;
+            if (points.size() < min_points_size) { break; }
         }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
     }
