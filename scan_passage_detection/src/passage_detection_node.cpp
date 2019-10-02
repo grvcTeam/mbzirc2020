@@ -28,10 +28,8 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
     
     for (int i = 0; i < max_iterations; i++) {
         int random_1 = _random->uniformInteger(0, _points.size());
-        int random_2;
-        do {
-            random_2 = _random->uniformInteger(0, _points.size());
-        } while (random_1 == random_2);
+        int random_2 = _random->uniformInteger(0, _points.size() - 1);  // Sample from smaller interval...
+        if (random_2 >= random_1) { random_2 += 1; }  // ...now correct and assure random_2 != random_1
         // ROS_INFO("[%d, %d]", random_1, random_2);
         geometry_msgs::Point p_1 = _points[random_1];
         geometry_msgs::Point p_2 = _points[random_2];
