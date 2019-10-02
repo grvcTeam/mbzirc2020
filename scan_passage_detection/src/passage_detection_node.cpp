@@ -110,20 +110,8 @@ visualization_msgs::Marker getLineMarker(const RansacOutput& _result, const std:
     line_marker.scale.x = 0.1;
     line_marker.scale.y = 0.1;
     //line_marker.scale.z = 0.1;
-    float v_x = _result.q.x - _result.p.x;
-    float v_y = _result.q.y - _result.p.y;
-    float l = 10.0/sqrt(v_x*v_x + v_y*v_y);
-    float angle = atan2(v_y, v_x);
-    // ROS_INFO("angle = %f", angle);
-    geometry_msgs::Point p_a, p_b;
-    p_a.x = _result.p.x + (0.5 + l) * v_x;
-    p_b.x = _result.p.x + (0.5 - l) * v_x;
-    p_a.y = _result.p.y + (0.5 + l) * v_y;
-    p_b.y = _result.p.y + (0.5 - l) * v_y;
-    p_a.z = 0.5 * (_result.p.z + _result.q.z);
-    p_b.z = 0.5 * (_result.p.z + _result.q.z);
-    line_marker.points.push_back(p_a);
-    line_marker.points.push_back(p_b);
+    line_marker.points.push_back(_result.p);
+    line_marker.points.push_back(_result.q);
     line_marker.color = _color;
     line_marker.lifetime = ros::Duration();
 
