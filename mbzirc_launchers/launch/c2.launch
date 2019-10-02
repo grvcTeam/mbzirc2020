@@ -8,12 +8,7 @@
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
-        <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
-        args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
-			  -add_model_path=$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
-			  -description_package=uavs_description">
-            <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
-        </node>
+        <include file="$(find challenge_worlds)/launch/challenge2.launch"/>
     </group>
 
     <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
@@ -23,6 +18,7 @@
     <node name="target_estimator" pkg="target_estimation" type="estimation_node" output="screen">
         <param name="frequency" value="1.0"/>
         <param name="estimator" value="a_priori_info"/>
+        <!-- <param name="estimator" value="simple_clustering"/> -->
         <param name="robot_ns" value="$(arg robot_model)"/>
     </node>
 
