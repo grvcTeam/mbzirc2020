@@ -15,6 +15,7 @@ struct RansacOutput {
     float score;
     LineModel model;
     std::vector<int> inliers;
+    std::vector<int> outliers;
     geometry_msgs::Point p;
     geometry_msgs::Point q;
 };
@@ -42,6 +43,7 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
 
         float current_score = 0;
         std::vector<int> current_inliers;
+        std::vector<int> current_outliers;
         for (int j = 0; j < _points.size(); j++) {
             float current_error = fabs(current_model.a*_points[j].x + current_model.b*_points[j].y + current_model.c) / current_error_denominator;
             if (current_error < error_th) {
@@ -49,6 +51,7 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
                 current_inliers.push_back(j);
             } else {
                 current_score += error_th;
+                current_outliers.push_back(j);
             }
         }
 
@@ -56,6 +59,7 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
             best.score = current_score;
             best.model = current_model;
             best.inliers = current_inliers;
+            best.outliers = current_outliers;
             best.p = p_1;
             best.q = p_2;
         }    
@@ -86,7 +90,7 @@ visualization_msgs::Marker getPointsMarker(const std::vector<geometry_msgs::Poin
         points_marker.points.push_back(p);
     }
     points_marker.color = _color;
-    points_marker.lifetime = ros::Duration();
+    points_marker.lifetime = ros::Duration(0.1);
 
     return points_marker;
 }
@@ -113,9 +117,28 @@ visualization_msgs::Marker getLineMarker(const RansacOutput& _result, const std:
     line_marker.points.push_back(_result.p);
     line_marker.points.push_back(_result.q);
     line_marker.color = _color;
-    line_marker.lifetime = ros::Duration();
+    line_marker.lifetime = ros::Duration(0.1);
 
     return line_marker;
+}
+
+// TODO: More colors than just r/g/b
+std_msgs::ColorRGBA colorFromIndex(int _index) {
+    std_msgs::ColorRGBA color;
+    switch (_index % 3) {
+        case 0:
+            color.r = 1.0;
+            break;
+        case 1:
+            color.g = 1.0;
+            break;
+        case 2:
+            color.b = 1.0;
+            break;        
+    }
+    color.a = 0.5;
+
+    return color;
 }
 
 class PassageDetectionNode {
@@ -146,18 +169,23 @@ public:
             points.push_back(point);
         }
 
-        RansacOutput line = ransac(points, &random_);
-
         visualization_msgs::MarkerArray marker_array;
-        std_msgs::ColorRGBA color;
-        color.r = 1.0;
-        color.g = 0.0;
-        color.b = 0.0;
-        color.a = 0.5;
-        marker_array.markers.push_back(getPointsMarker(points, _msg->header.frame_id, color));
-        marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color));
-
-        marker_pub_.publish(marker_array);
+        size_t max_line_count = 4;  // TODO: from parameter!
+        size_t min_points_size = 3;  // TODO: from parameter!
+        std::vector<RansacOutput> lines(max_line_count);
+        std::vector<geometry_msgs::Point> remaining_points = points;
+        for (int i = 0; i < max_line_count; i++) {
+            lines[i] = ransac(remaining_points, &random_);
+            std_msgs::ColorRGBA color = colorFromIndex(i);
+            marker_array.markers.push_back(getPointsMarker(remaining_points, _msg->header.frame_id, color, i));
+            marker_array.markers.push_back(getLineMarker(lines[i], _msg->header.frame_id, color, i));
+            remaining_points.clear();
+            for (auto j: lines[i].outliers) {
+                remaining_points.push_back(points[j]);
+            }
+            if (remaining_points.size() < min_points_size) { break; }
+        }
+        marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
     }
 
 protected:
