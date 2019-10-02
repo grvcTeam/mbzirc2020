@@ -1,7 +1,7 @@
 import rospy
 import smach
 import smach_ros
-import robot_action_servers.msg
+import mbzirc_comm_objs.msg
 import mbzirc_comm_objs.srv as srv
 
 from timing import SleepAndRetry
@@ -17,10 +17,10 @@ class TakeOff(smach.StateMachine):
 
             def take_off_goal_callback(userdata, default_goal):
                 robot.set_home()  # TODO: better do it explicitly BEFORE take off?
-                goal = robot_action_servers.msg.TakeOffGoal(height = userdata.height)
+                goal = mbzirc_comm_objs.msg.TakeOffGoal(height = userdata.height)
                 return goal
 
-            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot.url + 'take_off_action', robot_action_servers.msg.TakeOffAction,
+            smach.StateMachine.add('TAKE_OFF', smach_ros.SimpleActionState(robot.url + 'take_off_action', mbzirc_comm_objs.msg.TakeOffAction,
                                     input_keys = ['height'],
                                     goal_cb = take_off_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER', 'aborted': 'SLEEP_AND_RETRY'})
@@ -48,10 +48,10 @@ class GoTo(smach.StateMachine):
                                     transitions = {'succeeded': 'GO_TO'})
 
             def go_to_goal_callback(userdata, default_goal):
-                goal = robot_action_servers.msg.GoToGoal(waypoint = userdata.waypoint)
+                goal = mbzirc_comm_objs.msg.GoToGoal(waypoint = userdata.waypoint)
                 return goal
 
-            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState(robot.url + 'go_to_action', robot_action_servers.msg.GoToAction,
+            smach.StateMachine.add('GO_TO', smach_ros.SimpleActionState(robot.url + 'go_to_action', mbzirc_comm_objs.msg.GoToAction,
                                     input_keys = ['waypoint'],
                                     goal_cb = go_to_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_HOVER'})
@@ -112,10 +112,10 @@ class Land(smach.StateMachine):
 
             # TODO: is this callback needed?
             def land_goal_callback(userdata, default_goal):
-                goal = robot_action_servers.msg.LandGoal()
+                goal = mbzirc_comm_objs.msg.LandGoal()
                 return goal
 
-            smach.StateMachine.add('LAND', smach_ros.SimpleActionState(robot.url + 'land_action', robot_action_servers.msg.LandAction,
+            smach.StateMachine.add('LAND', smach_ros.SimpleActionState(robot.url + 'land_action', mbzirc_comm_objs.msg.LandAction,
                                     # input_keys = ['go_home'],  # TODO: bool go_home?
                                     goal_cb = land_goal_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_LANDED'})

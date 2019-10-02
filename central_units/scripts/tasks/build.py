@@ -1,7 +1,7 @@
 import rospy
 import smach
 import smach_ros
-import robot_action_servers.msg
+import mbzirc_comm_objs.msg
 import mbzirc_comm_objs.srv as srv
 
 from timing import SleepAndRetry
@@ -39,10 +39,10 @@ class PickAndPlace(smach.StateMachine):
                                     transitions = {'succeeded': 'PICK'})
 
             def pick_goal_callback(userdata, default_goal):
-                goal = robot_action_servers.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
+                goal = mbzirc_comm_objs.msg.PickGoal(approximate_pose = userdata.above_pile_pose)
                 return goal
 
-            smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot.url + 'pick_action', robot_action_servers.msg.PickAction,
+            smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot.url + 'pick_action', mbzirc_comm_objs.msg.PickAction,
                                     input_keys = ['above_pile_pose'],
                                     goal_cb = pick_goal_callback),
                                     transitions = {'succeeded': 'GO_UP'})
@@ -74,10 +74,10 @@ class PickAndPlace(smach.StateMachine):
                                     transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
-                goal = robot_action_servers.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
+                goal = mbzirc_comm_objs.msg.PlaceGoal(in_wall_brick_pose = userdata.in_wall_brick_pose)
                 return goal
 
-            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', robot_action_servers.msg.PlaceAction,
+            smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', mbzirc_comm_objs.msg.PlaceAction,
                                     input_keys = ['in_wall_brick_pose'],
                                     goal_cb = place_goal_callback),
                                     transitions = {'succeeded': 'GO_UP_AGAIN'})

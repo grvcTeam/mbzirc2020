@@ -61,12 +61,15 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
  )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   FollowPath.action
-#   PickAndPlace.action
-#   GoHome.action
-# )
+add_action_files(
+  FILES
+  TakeOff.action
+  GoTo.action
+  Pick.action
+  Place.action
+  Land.action
+  MoveInCircles.action
+)
 
 ## Generate added messages and services with any dependencies listed here
  generate_messages(
