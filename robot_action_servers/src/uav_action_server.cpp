@@ -25,7 +25,7 @@
 #include <robot_action_servers/PickAction.h>
 #include <robot_action_servers/PlaceAction.h>
 #include <robot_action_servers/LandAction.h>
-#include <robot_action_servers/MoveInSpiralAction.h>
+#include <robot_action_servers/MoveInCirclesAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -49,7 +49,7 @@ protected:
   actionlib::SimpleActionServer<robot_action_servers::PickAction> pick_server_;
   actionlib::SimpleActionServer<robot_action_servers::PlaceAction> place_server_;
   actionlib::SimpleActionServer<robot_action_servers::LandAction> land_server_;
-  actionlib::SimpleActionServer<robot_action_servers::MoveInSpiralAction> move_in_spiral_server_;
+  actionlib::SimpleActionServer<robot_action_servers::MoveInCirclesAction> move_in_circles_server_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener *tf_listener_;
@@ -68,7 +68,7 @@ public:
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
     place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
     land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
-    move_in_spiral_server_(nh_, "move_in_spiral_action", boost::bind(&UalActionServer::moveInSpiralCallback, this, _1), false) {
+    move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false) {
 
     tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
 
@@ -82,7 +82,7 @@ public:
     pick_server_.start();
     place_server_.start();
     land_server_.start();
-    move_in_spiral_server_.start();
+    move_in_circles_server_.start();
   }
 
   ~UalActionServer() {
@@ -407,14 +407,25 @@ public:
     land_server_.setSucceeded(result);
   }
 
-  void moveInSpiralCallback(const robot_action_servers::MoveInSpiralGoalConstPtr &_goal) {
-    // ROS_INFO("MoveInSpiral!");
-    robot_action_servers::MoveInSpiralFeedback feedback;
-    robot_action_servers::MoveInSpiralResult result;
+  void moveInCirclesCallback(const robot_action_servers::MoveInCirclesGoalConstPtr &_goal) {
+    robot_action_servers::MoveInCirclesFeedback feedback;
+    robot_action_servers::MoveInCirclesResult result;
 
     if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
       result.message = "UAL is not flying auto!";
-      move_in_spiral_server_.setAborted(result);
+      move_in_circles_server_.setAborted(result);
+      return;
+    }
+
+    if (_goal->horizontal_distance < 1e-2) {
+      result.message = "horizontal_distance must be greater than 1cm!";
+      move_in_circles_server_.setAborted(result);
+      return;
+    }
+
+    if (fabs(_goal->horizontal_velocity) < 1e-2) {
+      result.message = "horizontal_velocity absolute value must be grater than 1cm/s!";
+      move_in_circles_server_.setAborted(result);
       return;
     }
 
@@ -424,76 +435,45 @@ public:
       robot_transform = tf_buffer_.lookupTransform(_goal->origin.header.frame_id, robot_frame_id, ros::Time(0));
     } catch (tf2::TransformException &ex) {
       result.message = ex.what();
-      move_in_spiral_server_.setAborted(result);
+      move_in_circles_server_.setAborted(result);
       return;
     }
     float delta_x = robot_transform.transform.translation.x - _goal->origin.pose.position.x;
     float delta_y = robot_transform.transform.translation.y - _goal->origin.pose.position.y;
-    float theta_init = atan2(delta_y, delta_x);
-    float theta = theta_init;
-    float theta_gain = _goal->inc_horizontal_distance / (2 * M_PI);
+    float theta = atan2(delta_y, delta_x);
 
-    if ((_goal->min_horizontal_distance < 1e-3) || (_goal->max_horizontal_distance < 1e-3)) {
-      result.message = "min_horizontal_distance and max_horizontal_distance must be greater than 1mm!";
-      move_in_spiral_server_.setAborted(result);
-      return;
-    }
+    float frequency = 10;  // [Hz]
+    ros::Rate loop_rate(frequency);
+    float delta_theta = _goal->horizontal_velocity / (_goal->horizontal_distance * frequency);
+    int max_iteration_count = _goal->revolutions_count * ceil(2*M_PI / fabs(delta_theta));
+    int iteration_count = 0;
 
-    if (_goal->min_horizontal_distance > _goal->max_horizontal_distance) {
-      result.message = "min_horizontal_distance cannot be greater than max_horizontal_distance!";
-      move_in_spiral_server_.setAborted(result);
-      return;
-    }
-
-    if (fabs(_goal->horizontal_velocity) < 1e-3) {
-      result.message = "horizontal_velocity absolute must be grater than 1mm/s!";
-      move_in_spiral_server_.setAborted(result);
-      return;
-    }
-
-    float initial_rho, final_rho;
-    bool move_inwards = (theta_gain < 0);
-    if (move_inwards) {
-      initial_rho = _goal->max_horizontal_distance;
-      final_rho = _goal->min_horizontal_distance;
-    } else {
-      initial_rho = _goal->min_horizontal_distance;
-      final_rho = _goal->max_horizontal_distance;
-    }
-
-    float frequency = 10;
-    ros::Rate loop_rate(frequency);  // [Hz]
-    bool first_loop = true;
     while (ros::ok()) {
-      float rho = initial_rho + theta_gain * (theta - theta_init);
-      if ( move_inwards && rho < final_rho) { break; }
-      if (!move_inwards && rho > final_rho) { break; }
-      if (move_in_spiral_server_.isPreemptRequested()  || !ros::ok()) {
-        move_in_spiral_server_.setPreempted();
+      if (move_in_circles_server_.isPreemptRequested()  || !ros::ok()) {
+        move_in_circles_server_.setPreempted();
         return;
       }
-      geometry_msgs::PoseStamped spiral_reference = _goal->origin;
-      spiral_reference.pose.position.x += rho * cos(theta);
-      spiral_reference.pose.position.y += rho * sin(theta);
-      spiral_reference.pose.position.z += _goal->vertical_distance;
+      geometry_msgs::PoseStamped circle_reference = _goal->origin;
+      circle_reference.pose.position.x += _goal->horizontal_distance * cos(theta);
+      circle_reference.pose.position.y += _goal->horizontal_distance * sin(theta);
+      circle_reference.pose.position.z += _goal->vertical_distance;
       float half_yaw = 0.5 * (theta + M_PI);
-      spiral_reference.pose.orientation.x = 0;
-      spiral_reference.pose.orientation.y = 0;
-      spiral_reference.pose.orientation.z = sin(half_yaw);
-      spiral_reference.pose.orientation.w = cos(half_yaw);
-      if (first_loop) {
-        ual_->goToWaypoint(spiral_reference, true);
-        first_loop = false;
+      circle_reference.pose.orientation.x = 0;
+      circle_reference.pose.orientation.y = 0;
+      circle_reference.pose.orientation.z = sin(half_yaw);
+      circle_reference.pose.orientation.w = cos(half_yaw);
+      if (iteration_count == 0) {
+        ual_->goToWaypoint(circle_reference, true);
       } else {
-        ual_->setPose(spiral_reference);
-        theta += _goal->horizontal_velocity / (rho * frequency);
-        loop_rate.sleep();
+        ual_->setPose(circle_reference);
       }
-      feedback.rho = rho;
-      feedback.current_target = spiral_reference;
-      move_in_spiral_server_.publishFeedback(feedback);
+      feedback.current_target = circle_reference;
+      move_in_circles_server_.publishFeedback(feedback);
+      if (iteration_count++ >= max_iteration_count) { break; }
+      theta += delta_theta;
+      loop_rate.sleep();
     }
-    move_in_spiral_server_.setSucceeded(result);
+    move_in_circles_server_.setSucceeded(result);
   }
 
 };
