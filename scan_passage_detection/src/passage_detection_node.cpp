@@ -38,11 +38,12 @@ RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_num
         current_model.a = p_2.y - p_1.y;
         current_model.b = p_1.x - p_2.x;
         current_model.c = p_2.x*p_1.y - p_1.x*p_2.y;
+        float current_error_denominator = sqrt(current_model.a*current_model.a + current_model.b*current_model.b);
 
         float current_score = 0;
         std::vector<int> current_inliers;
         for (int j = 0; j < _points.size(); j++) {
-            float current_error = fabs(current_model.a*_points[j].x + current_model.b*_points[j].y + current_model.c) / sqrt(current_model.a*current_model.a + current_model.b*current_model.b);
+            float current_error = fabs(current_model.a*_points[j].x + current_model.b*_points[j].y + current_model.c) / current_error_denominator;
             if (current_error < error_th) {
                 current_score += current_error;
                 current_inliers.push_back(j);
