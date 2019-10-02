@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   visualization_msgs
+  mbzirc_comm_objs
   random_numbers
 )
 

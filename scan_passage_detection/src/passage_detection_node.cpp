@@ -2,6 +2,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/Point.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
+// #include <mbzirc_comm_objs/DetectTypes.h>
 #include <random_numbers/random_numbers.h>
 
 struct LineModel {
@@ -21,6 +23,11 @@ struct RansacOutput {
 };
 
 RansacOutput ransac(const std::vector<geometry_msgs::Point>& _points, random_numbers::RandomNumberGenerator *_random) {
+    if (_points.size() < 2) {
+        // ROS_ERROR("ransac: _points.size() < 2");
+        return RansacOutput();
+    }
+
     int max_iterations = 100;  // TODO: as a function of _points.size()?
     float error_th = 0.1;
     
@@ -145,10 +152,15 @@ class PassageDetectionNode {
 public:
     PassageDetectionNode() {
         marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+        sensed_pub_ = n_.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 3);
         scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
     }
 
     void scanCallback(const sensor_msgs::LaserScan::ConstPtr& _msg) {
+        size_t max_line_count = 4;  // TODO: from parameter!
+        size_t min_points_size = 9;  // TODO: from parameter!
+        float sq_passage_th = 1.0;  // TODO: from parameter!
+
         // ros::Time ransac_start = ros::Time::now();
         // RansacOutput result = ransac(points, &random);
         // ros::Duration ransac_elapsed = ros::Time::now() - ransac_start;
@@ -168,26 +180,71 @@ public:
             point.y = _msg->ranges[i] * sin(angle);
             points.push_back(point);
         }
+        if (points.size() < min_points_size) {
+            // ROS_ERROR("scanCallback: points.size() < %d", min_points_size);
+            return;
+        }
 
+        mbzirc_comm_objs::ObjectDetectionList object_list;
         visualization_msgs::MarkerArray marker_array;
-        size_t max_line_count = 4;  // TODO: from parameter!
-        size_t min_points_size = 3;  // TODO: from parameter!
         for (int i = 0; i < max_line_count; i++) {
             RansacOutput line = ransac(points, &random_);
+            if (line.inliers.size() < 2) {
+                // ROS_ERROR("scanCallback: line.inliers.size() < 2");
+                continue;
+            }
             std_msgs::ColorRGBA color = colorFromIndex(i);
             marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
             marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
-            // TODO: detect passage here!
-            // ...
+            for (int j = 0; j < line.inliers.size()-1; j++) {
+                float delta_x = line.inliers[j+1].x - line.inliers[j].x;
+                float delta_y = line.inliers[j+1].y - line.inliers[j].y;
+                float delta_z = line.inliers[j+1].z - line.inliers[j].z;
+                float sq_distance = delta_x*delta_x + delta_y*delta_y + delta_z*delta_z;
+                // ROS_INFO("sq_distance = % f", sq_distance);
+                if (sq_distance > sq_passage_th) {
+                    float distance = sqrt(sq_distance);
+                    mbzirc_comm_objs::ObjectDetection object;
+                    object.header.frame_id = _msg->header.frame_id;
+                    object.header.stamp = ros::Time::now();
+                    object.type = "passage";
+
+                    // TODO: relative_position has sense?
+                    // object.relative_position.x = 
+                    // object.relative_position.y = 
+                    // object.relative_position.z = 
+                    object.pose.pose.position.x = line.inliers[j].x + 0.5 * delta_x;
+                    object.pose.pose.position.y = line.inliers[j].y + 0.5 * delta_y;
+                    object.pose.pose.position.z = line.inliers[j].z + 0.5 * delta_z;
+
+                    float theta = atan2(line.model.b, line.model.a);
+                    object.relative_yaw = theta;
+                    object.pose.pose.orientation.x = 0;
+                    object.pose.pose.orientation.y = 0;
+                    object.pose.pose.orientation.z = sin(0.5*theta);
+                    object.pose.pose.orientation.w = cos(0.5*theta);
+                    object.pose.covariance[0] = 0.01;  // TODO: Covariance?
+                    object.pose.covariance[7] = 0.01;
+                    object.pose.covariance[14] = 0.01;
+
+                    object.scale.x = 0.1;
+                    object.scale.y = distance;
+                    object.scale.z = 0.1;
+                    object.color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;  // TODO!
+                    object_list.objects.push_back(object);
+                }
+            }
             points = line.outliers;
             if (points.size() < min_points_size) { break; }
         }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
+        sensed_pub_.publish(object_list);
     }
 
 protected:
     ros::NodeHandle n_;
     ros::Publisher marker_pub_;
+    ros::Publisher sensed_pub_;
     ros::Subscriber scan_sub_;
     random_numbers::RandomNumberGenerator random_;
 };
