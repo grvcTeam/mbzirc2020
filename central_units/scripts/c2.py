@@ -71,7 +71,6 @@ class CentralUnit(object):
             pose.pose = pile.pose.pose
             self.piles[color] = pose
 
-    # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):
         for robot_id in self.available_robots:
             # TODO: clear all regions?
@@ -80,12 +79,7 @@ class CentralUnit(object):
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
-    # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
-        # TODO: Check this better outside!?
-        if all_piles_are_found(self.piles):
-            rospy.logwarn('All piles are found!')
-            return
         robot_paths = {}
         point_paths = generate_uav_paths(len(self.available_robots), field_width, field_height, column_count)
         for i, robot_id in enumerate(self.available_robots):
@@ -116,7 +110,6 @@ class CentralUnit(object):
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
 
-    # TODO: Could be a smach.State (for all or for every single uav, not so easy!)
     def build_wall(self):
         piles = copy.deepcopy(self.piles)  # Cache piles
         build_wall_sequence = get_build_wall_sequence(wall_blueprint, brick_scales)
@@ -180,7 +173,8 @@ def main():
     # rospy.sleep(3)
 
     central_unit.take_off()
-    central_unit.look_for_piles() # TODO: if not piles[r, g, b, o], repeat!?
+    if not all_piles_are_found(central_unit.piles):  # TODO: make it a while-loop?
+        central_unit.look_for_piles()
     central_unit.build_wall()
 
     rospy.spin()
