@@ -121,5 +121,4 @@
     >
     </xacro:bag_plugin_macro>
   </xacro:if>
-
 </robot>

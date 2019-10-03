@@ -730,13 +730,14 @@
             <baseline>0.2</baseline>
             <alwaysOn>1</alwaysOn>
             <updateRate>0.0</updateRate>
+            <robotNamespace>${namespace}</robotNamespace>
             <cameraName>camera_kinect</cameraName>
-            <imageTopicName>/camera_kinect/depth/image_raw</imageTopicName>
-            <cameraInfoTopicName>/camera_kinect/depth/camera_info</cameraInfoTopicName>
-            <depthImageTopicName>/camera_kinect/depth/image_raw</depthImageTopicName>
-            <depthImageInfoTopicName>/camera_kinect/depth/camera_info</depthImageInfoTopicName>
-            <pointCloudTopicName>/camera_kinect/depth/points</pointCloudTopicName>
-            <frameName>uav_1</frameName>
+            <imageTopicName>camera_kinect/depth/image_raw</imageTopicName>
+            <cameraInfoTopicName>camera_kinect/depth/camera_info</cameraInfoTopicName>
+            <depthImageTopicName>camera_kinect/depth/depth_image_raw</depthImageTopicName>
+            <depthImageInfoTopicName>camera_kinect/depth/camera_info_depth</depthImageInfoTopicName>
+            <pointCloudTopicName>camera_kinect/depth/pointsCloud</pointCloudTopicName>
+            <frameName>/uav_1</frameName>
             <!-- <frameName>${namespace}/kinect_${camera_suffix}_link</frameName> -->
             <pointCloudCutoff>0.05</pointCloudCutoff>
             <distortionK1>0</distortionK1>
@@ -877,7 +878,7 @@
         <baseline>0.1</baseline>
         <alwaysOn>true</alwaysOn>
         <updateRate>20</updateRate>
-        <robotNamespace>/</robotNamespace> 
+        <robotNamespace>${namespace}</robotNamespace>
         <imageTopicName>/camera/image_raw</imageTopicName>
         <pointCloudTopicName>/camera/depth/points</pointCloudTopicName>
         <cameraInfoTopicName>/camera/camera_info</cameraInfoTopicName>
@@ -892,5 +893,65 @@
   </gazebo>
   
 </xacro:macro>
+
+<!-- Installing Hokuyo-->
+
+<!-- Macro to add a laser Hokuyo. -->
+
+ <xacro:macro name="hokuyo" params="name namespace parent *origin ros_topic update_rate ray_count min_angle max_angle">
+   <link name="${namespace}_hokuyo_link">
+     <collision>
+       <origin xyz="0 0 0" rpy="0 0 0" />
+       <geometry>
+         <cylinder length="0.03" radius="0.015"/>
+       </geometry>
+     </collision>
+     <visual>
+       <origin xyz="0 0 0" rpy="0 0 0" />
+       <geometry>
+         <cylinder length="0.03" radius="0.015"/>
+         <!--mesh filename="package://home/agugrvc/catkin_ws/src/grvc-ual/ball_description/models/bola/meshes/hokuyo_utm_30lx.dae"/-->
+       </geometry>
+     </visual>
+     <inertial>
+       <mass value="1e-5" />
+       <origin xyz="0 0 0" rpy="0 0 0" />
+       <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+     </inertial>
+   </link>
+   <joint name="${namespace}_hokuyo_joint" type="fixed">
+     <xacro:insert_block name="origin" />
+     <parent link="${parent}" />
+     <child link="${namespace}_hokuyo_link" />
+   </joint>
+   <gazebo reference="${namespace}_hokuyo_link">
+     <sensor type="ray" name="laser">
+       <pose>0 0 0 0 0 0</pose>
+       <ray>
+         <scan>
+           <horizontal>
+             <samples>${ray_count}</samples>
+             <resolution>1</resolution>
+             <min_angle>${min_angle}</min_angle>
+             <max_angle>${max_angle}</max_angle>
+           </horizontal>
+         </scan>
+         <range>
+           <min>0.08</min>
+           <max>40</max>
+           <resolution>0.01</resolution>
+         </range>
+       </ray>
+           <plugin name="laser" filename="libgazebo_ros_laser.so">
+             <frameName>/hokuyo_frame</frameName>
+             <robotNamespace>${namespace}</robotNamespace>
+             <topicName>${ros_topic}</topicName>
+             <always_on>1</always_on>
+           <update_rate>${update_rate}</update_rate>
+           <visualize>true</visualize>
+       </plugin>
+     </sensor>
+   </gazebo>
+ </xacro:macro>
 
 </robot>
