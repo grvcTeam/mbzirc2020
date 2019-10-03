@@ -53,14 +53,17 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend>mbzirc_comm_objs</build_depend>
   <build_depend>random_numbers</build_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
+  <build_export_depend>mbzirc_comm_objs</build_export_depend>
   <build_export_depend>random_numbers</build_export_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>mbzirc_comm_objs</exec_depend>
   <exec_depend>random_numbers</exec_depend>
 
 
