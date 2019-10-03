@@ -1,6 +1,10 @@
 from geometry_msgs.msg import PoseStamped, Point
 
 
+def all_piles_are_found(piles):
+    # TODO: Check not only count, but also size of piles
+    return len(piles) >= 4
+
 class BrickInWall(object):
     def __init__(self, color, position):
         self.color = color

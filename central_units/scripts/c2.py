@@ -5,7 +5,7 @@
 # Number of UGVs per team	1
 # Arena size	50mx60mx20m
 # Brick shapes and material	Rectangular cube, Styrofoam material
-# Bricks size (Red, Green, Blue)	Approximately 0.30mx0.20mx0.20m, 0.60mx0.20mx0.20m and1.20x0.20x0.20m
+# Bricks size (Red, Green, Blue)	Approximately 0.30mx0.20mx0.20m, 0.60mx0.20mx0.20m and 1.20x0.20x0.20m
 # Bricks size (Orange)	1.80x0.20x0.20 m
 # Weight of bricks	O <= 2.0kg , B <= 1.5kg , G <= 1kg , R <= 1kg,
 # Brick gripping mechanism	Primarily magnetic, but other gripping mechanisms could be used
@@ -23,28 +23,26 @@ import mbzirc_comm_objs.msg as msg
 from geometry_msgs.msg import PoseStamped, Vector3
 from tasks.move import TakeOff, FollowPath
 from tasks.build import PickAndPlace
-from tasks.search import all_piles_are_found
 from utils.translate import color_from_int
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import get_build_wall_sequence
+from utils.wall import all_piles_are_found, get_build_wall_sequence
 
 
-# TODO: All these parameters from config!
-field_width = 20  # 60  # TODO: Field is 60 x 50
-field_height = 20  # 50  # TODO: Field is 60 x 50
+field_width  = 20  # TODO: should be 60
+field_height = 20  # TODO: should be 50
 column_count = 4  # 6  # TODO: as a function of fov
 
 brick_scales = {}
-# TODO: use enums for colors instead of strings?
-brick_scales['red'] = Vector3(x = 0.3, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['green'] = Vector3(x = 0.6, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['blue'] = Vector3(x = 1.2, y = 0.2, z = 0.2)  # TODO: from config file?
-brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)  # TODO: from config file?
+# TODO: use enums (or just r/g/b/o) for colors instead of long strings?
+brick_scales['red']    = Vector3(x = 0.3, y = 0.2, z = 0.2)
+brick_scales['green']  = Vector3(x = 0.6, y = 0.2, z = 0.2)
+brick_scales['blue']   = Vector3(x = 1.2, y = 0.2, z = 0.2)
+brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green']]  #, ['green', 'red']]  # , 'blue', 'orange']]  #, ['orange', 'blue', 'green', 'red']]
+wall_blueprint = [['red', 'green'], ['green', 'red']]
 
 
 class CentralUnit(object):
@@ -64,7 +62,6 @@ class CentralUnit(object):
         # TODO: Default value in case param_name is not found?
         return rospy.get_param(self.robots[robot_id].url + param_name)
 
-    # TODO: This is repeated in SearchPiles task
     def estimation_callback(self, data):
         for pile in data.objects:
             # TODO: check type and scale?
@@ -81,7 +78,7 @@ class CentralUnit(object):
             userdata = smach.UserData()
             userdata.height = self.get_param(robot_id, 'flight_level')  # TODO: Why not directly inside tasks?
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
-            self.task_manager.wait_for([robot_id])  # Sequential takeoff
+            self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def look_for_piles(self):
