@@ -1,0 +1,31 @@
+material fire
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture fire.png
+        scale 1 1
+        
+      }
+    }
+  }
+}
+material quemador
+{
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 0.5
+      diffuse 0.5 0.5 0.5 0.5
+      specular 0.1 0.1 0.1 1 5.0
+    }
+  }
+}

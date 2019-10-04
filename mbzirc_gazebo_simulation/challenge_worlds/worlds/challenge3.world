@@ -15,6 +15,10 @@
       <direction>-0.5 0.5 -1</direction>
     </light>
 
+<model name="cube_1">
+      <include>
+      <uri>model://cubewithflames</uri>
+      </include>
     <model name="fire_1">
       <include>
       <uri>model://fire</uri>
@@ -265,6 +269,9 @@
         <pose frame=''>26.19 30.85 0 0 0 0</pose>
       </model><model name='fire_5'>
         <pose frame=''>25.09 30.92 15 0 0 0</pose>
+      </model>
+      <model name='cube_1'>
+        <pose frame=''>10 10 0 0 0 0</pose>
       </model>
 
     </state>
