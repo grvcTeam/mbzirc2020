@@ -23,7 +23,7 @@ roslaunch mbzirc_visualization c1.launch
 ### Challenge 2
 ```
 roslaunch mbzirc_launchers c2.launch
-rosrun central_units c2.py
+rosrun robot_tasks c2_dispatcher_coop.py
 ```  
 
 For visualization:
