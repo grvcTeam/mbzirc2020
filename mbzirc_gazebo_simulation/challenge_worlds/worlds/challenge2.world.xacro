@@ -1,25 +1,30 @@
 <?xml version="1.0" ?>
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
-
 <xacro:include filename="$(find challenge_worlds)/urdf/orange_pile.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/blue_pile.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/red_pile.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/green_pile.xacro" />
-
+<!-- Global yaw: to change the global position of all the objects in the world -->
+<xacro:property name="yaw" value="0.86"/>
+<!-- Properties for every object in the world -->
+ <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
+<xacro:property name="orange" value="${[10,0,0,0]}"/> 
+<xacro:property name="blue" value="${[-10,0,0,0]}"/>  
+<xacro:property name="green" value="${[0,10,0,0]}"/>  
+<xacro:property name="red" value="${[0,-10,0,0]}"/> 
   <world name="default">
-    <xacro:include>
+    <include>
       <uri>model://ground_plane</uri>
-    </xacro:include>
-
-    <xacro:include>
+    </include>
+    <include>
       <uri>model://sun</uri>
-    </xacro:include>
- 
-   <orange_pile id="1" pose="10 0 0 0 0 0" />
-   <blue_pile id="2" pose="-10 0 0 0 0 0" />
-   <green_pile id="3" pose="0 10 0 0 0 0" /> <!-- for getting a cluttered pile just change initial pose height and orientation -->
-   <red_pile id="4" pose="0 -10 0 0 0 0" />
-     
+    </include>
+   <!-- The following is the geometric expresion for an axis rotation -->
+   <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
+   <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
+   <orange_pile id="1" pose="${orange[0]*cos(yaw)-orange[1]*sin(yaw)} ${orange[0]*sin(yaw)+orange[1]*cos(yaw)} ${orange[2]} 0 0 ${orange[3]+yaw}" />
+   <blue_pile id="2" pose="${blue[0]*cos(yaw)-blue[1]*sin(yaw)} ${blue[0]*sin(yaw)+blue[1]*cos(yaw)} ${blue[2]} 0 0 ${yaw+blue[3]}" />
+   <green_pile id="3" pose="${green[0]*cos(yaw)-green[1]*sin(yaw)} ${green[0]*sin(yaw)+green[1]*cos(yaw)} ${green[2]} 0 0 ${yaw+green[3]}" />
+   <red_pile id="4" pose="${red[0]*cos(yaw)-red[1]*sin(yaw)} ${red[0]*sin(yaw)+red[1]*cos(yaw)} ${red[2]} 0 0 ${yaw+red[3]}" />
   </world>
 </sdf>
- 
