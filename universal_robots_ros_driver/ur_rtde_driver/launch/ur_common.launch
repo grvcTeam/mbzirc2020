@@ -20,14 +20,15 @@
   <arg name="tool_tcp_port" default="54321"/>
 
   <!-- robot model -->
-  <include file="$(arg robot_description_file)">
+<!--   <include file="$(arg robot_description_file)">
     <arg name="limited" value="$(arg limited)"/>
     <arg name="kinematics_config" value="$(arg kinematics_config)"/>
-  </include>
+  </include> -->
 
   <!-- Convert joint states to /tf tranforms -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-
+<!--   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+ -->
+ 
   <include file="$(find ur_rtde_driver)/launch/ur_control.launch">
     <arg name="debug" value="$(arg debug)"/>
     <arg name="use_tool_communication" value="$(arg use_tool_communication)"/>

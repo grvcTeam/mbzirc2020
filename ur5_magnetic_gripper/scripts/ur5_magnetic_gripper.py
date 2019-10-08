@@ -23,33 +23,35 @@ class node():
         rospy.Service('magnetize', Magnetize, self.magnetize_cb)
 
         self.pub = rospy.Publisher('attached', GripperAttached, queue_size=1)
-        self.pub2 = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
+        self.pub2 = rospy.Publisher('/ur_hardware_interface/script_command', String, queue_size=1)
         self.sub = rospy.Subscriber('/wrench', WrenchStamped, self.wrench_cb)
 
         self.attached = False
-        self.threshold = 20  #N
+        self.threshold = 25  #N
 
 
 
     def magnetize_cb(self,req):
 
         if not req.magnetize:
-            v = 24
-            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
+            
+            self.pub2.publish(data='sec voltageProgram():\nset_tool_voltage(24)\nend ')
+
+
             rospy.sleep(1)
 
-            while self.force<0:
-                rospy.sleep(1)
-                self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
+            # while self.force<0:
+            #     rospy.sleep(1)
+            #     self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
                 
-            else:
-                return MagnetizeResponse(success=True)   
+            # else:
+            return MagnetizeResponse(success=True)   
 
         if req.magnetize:
-            v = 0
-            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))
-            rospy.sleep(3)
-            self.pub2.publish(data='set_tool_voltage({v}) '.format(v=v))  #SOLUTION NOT ROBUST AT ALL
+            
+            self.pub2.publish(data='sec voltageProgram():\nset_tool_voltage(0)\nend ')
+
+            rospy.sleep(1)
 
             return MagnetizeResponse(success=True)
 
@@ -65,7 +67,7 @@ class node():
 
         #print norm(msg.wrench.force) - 15
 
-        if self.force > self.threshold and not self.attached:
+        if self.force < -self.threshold and not self.attached:
             print self.force
             self.attached = True
             self.pub.publish(attached=True)

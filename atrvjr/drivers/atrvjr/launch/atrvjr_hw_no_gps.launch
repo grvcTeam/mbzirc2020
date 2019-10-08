@@ -20,7 +20,7 @@
 
     <!-- HOKUYO -->
     <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
-        <param name="serial_port" value="/dev/ttyACM1"/>
+        <param name="serial_port" value="/dev/ttyACM2"/>
         <param name="frame_id" value="hokuyo"/>
         <param name="angle_min" value="-1.5"/>
         <param name="angle_max" value="1.5"/>
@@ -43,8 +43,8 @@
 
 
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
-
+<!--     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+ -->
 
     <!-- ROBOT LOCALIZATION -->
 

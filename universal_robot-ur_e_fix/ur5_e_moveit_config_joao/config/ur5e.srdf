@@ -71,10 +71,10 @@
     </group_state>
     <group_state name="front" group="manipulator">
         <joint name="elbow_joint" value="1.3416" />
-        <joint name="shoulder_lift_joint" value="-0.99356" />
+        <joint name="shoulder_lift_joint" value="-0.7356" />
         <joint name="shoulder_pan_joint" value="-1.7761" />
         <joint name="wrist_1_joint" value="-1.902" />
-        <joint name="wrist_2_joint" value="-1.55" />
+        <joint name="wrist_2_joint" value="-2.65" />
         <joint name="wrist_3_joint" value="-1.949" />
     </group_state>
     <group_state name="home2" group="manipulator">

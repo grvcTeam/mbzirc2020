@@ -17,6 +17,9 @@ import tasks.ugv_tasks.GoToGripPose as GoToGripPose
 
 from std_msgs.msg import String
 
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+
+
 
 # required message definitions
 from mbzirc_comm_objs.msg import GripperAttached
@@ -91,24 +94,49 @@ class Task(smach.State):
         self.group = moveit_commander.MoveGroupCommander("manipulator") #TODO: param
         self.robot = moveit_commander.RobotCommander()
 
+
+        self.mb_client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
+        self.mb_client.wait_for_server()
+
         #sub tasks
-        add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns])
+        #add_sub_task('go_task', self, GoToGripPose, task_args = [ugv_ns])
 
 
     #main function
     def execute(self, userdata):
         self.gripper_attached = False
 
+
+        goal = MoveBaseGoal()
+        goal.target_pose.header = Header(frame_id='base_link',stamp=rospy.Time.now())
+
+        pose=Pose()
+
+        pose.position.x = -1
+        pose.position.y = 2
+        pose.position.z = 0
+        pose.orientation.x =0
+        pose.orientation.y =0
+        pose.orientation.z =0.707
+        pose.orientation.w =0.707
+
+        goal.target_pose.pose = pose
+
+        rospy.loginfo('POSE: {p}'.format(p=pose))
+
+        self.mb_client.send_goal(goal)
+        wait = self.mb_client.wait_for_result()
+
         #TODO: match requested object pose with object detection information
 
         #move base to a pose where object can be reached
-        userdata.obj_pose = userdata.goal_pose
-        self.call_task('go_task',userdata)
+        #userdata.obj_pose = userdata.goal_pose
+        #self.call_task('go_task',userdata)
 
         #compute gripper pose before dropping
-        trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.goal_pose)
-        trans_global2object.p += PyKDL.Vector(0,0,userdata.scale.z/2 + self.z_offset)
-        trans_global2gripper = trans_global2object * from_geom_msgs_Transform_to_KDL_Frame(userdata.trans_gripper2object).Inverse()
+        # trans_global2object = from_geom_msgs_Pose_to_KDL_Frame(userdata.goal_pose)
+        # trans_global2object.p += PyKDL.Vector(0,0,userdata.scale.z/2 + self.z_offset)
+        # trans_global2gripper = trans_global2object * from_geom_msgs_Transform_to_KDL_Frame(userdata.trans_gripper2object).Inverse()
 
         #move gripper to drop pose
         #print self.group.get_pose_reference_frame()
@@ -123,15 +151,18 @@ class Task(smach.State):
         grip_pose = [-1.7760866324054163,-0.3856819433024903, 1.4052107969867151,  -2.578330179254049, -1.5498421827899378, -1.9483378569232386]
         self.go_to_joint_pose(grip_pose)
 
-        rospy.sleep(3) #NEEDS SLEEP TO WAIT FOR ARM TO FINISH MOVEMENT
+        rospy.sleep(2) #NEEDS SLEEP TO WAIT FOR ARM TO FINISH MOVEMENT
         
         # drop the object
         self.iface['cli_magnetize'](MagnetizeRequest(magnetize=False ))
-        rospy.sleep(2) #wait for stabilization
+        rospy.sleep(3) #wait for stabilization
 
-        self.pubURscript.publish(data='set_payload(1.6)')   # back to the installation payload
+        #self.pubURscript.publish(data='set_payload(1.6)')   # back to the installation payload
 
+        self.iface['cli_magnetize'](MagnetizeRequest(magnetize=True ))
 
+        hold_pose = [-1.9231649399288942, -1.7708555307344, 2.020241543371168, -1.792100532449426, -1.54328856236556, -2.102485936227004]
+        self.go_to_joint_pose(hold_pose)
         # move away cause move_base gets stuck in gazebo
         '''rate = rospy.Rate(10.0)
         ctr = 0

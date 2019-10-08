@@ -78,6 +78,9 @@ class Task(smach.State):
 
     # sends a list of waypoints
     def follow_trajectory(self, waypoints, final_orientation):
+
+        print waypoints
+
         for i in range(len(waypoints)):
             pose = Pose()
             p = waypoints[i]
@@ -97,8 +100,18 @@ class Task(smach.State):
 
                 pose.orientation = Quaternion(0,0,sin(alpha/2),cos(alpha/2))
 
+
             goal = MoveBaseGoal()
-            goal.target_pose.header = Header(frame_id=self.props['global_frame'],stamp=rospy.Time.now())
+            goal.target_pose.header = Header(frame_id='base_link',stamp=rospy.Time.now())
+
+            pose.position.x = 3
+            pose.position.y = 0
+            pose.position.z = 0
+            pose.orientation.x =0
+            pose.orientation.y =0
+            pose.orientation.z =0
+            pose.orientation.w =1
+
             goal.target_pose.pose = pose
 
             rospy.loginfo('POSE: {p}'.format(p=pose))
@@ -193,6 +206,7 @@ class Task(smach.State):
             return 'error'
 
         uav_point = from_geom_msgs_Transform_to_Shapely_Point(trans_global2ugv.transform)
+        print "anttes do execute safe trajectoryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
         self.execute_safe_trajectory(uav_point, goal_point, userdata.way_pose.orientation, userdata.shared_regions, exclude_r)
 
         return 'success' #TODO: assuming navigation action succeed

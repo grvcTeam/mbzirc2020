@@ -72,9 +72,9 @@ def compute_robot_poses(rb2obj, obj_pose, scale, rb_aabb):
         rb_p_t = transform_Shapely_Polygon_with_KDL_Frame(trans_global2rb,rb_p)
         rb_aabb_t = rb_p_t.bounds
 
-        print theta
-        print trans_global2rb
-        print rb_aabb_t
+        #print theta
+        #print trans_global2rb
+        #print rb_aabb_t
 
         return (trans_global2rb, rb_aabb_t)
 
@@ -147,14 +147,15 @@ class Task(smach.State):
                 r_pose = poses[i][0]
                 break
 
-        print userdata.obj_pose
-        print r_pose
+        #print userdata.obj_pose
+        #print r_pose
 
         if r_pose == None:
             print self.name + ' Task could not be executed: no valid pose found'
             return 'error'
 
         userdata.way_pose = from_KDL_Frame_to_geom_msgs_Pose(r_pose)
+        print "ahbdfjasbdfoiwqbogibweofrhbwesfohbweofghbasodfghbsasdfgasdfga"
         self.call_task('go_task',userdata)
 
         #fine tune pose because of movebase goal tolerance

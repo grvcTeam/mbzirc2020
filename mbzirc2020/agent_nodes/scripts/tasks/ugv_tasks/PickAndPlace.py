@@ -39,8 +39,8 @@ def gen_userdata(req):
 
 #pick pose
     pose = Pose()
-    pose.orientation = Quaternion(0,0,0.707106781186547,0.707106781186547)
-    pose.position = Point(3.3,0,0)
+    pose.orientation = Quaternion(0,0,0,1)
+    pose.position = Point(4,0,0)
     userdata.obj_pose = pose
     userdata.type = 'brick'
     userdata.scale = Vector3(0.6,0.2,0.2)
@@ -49,7 +49,7 @@ def gen_userdata(req):
 #drop pose
     pose = Pose()
     pose.orientation = Quaternion(0,0,0,1)
-    pose.position = Point(1,1,0)
+    pose.position = Point(5,0,0)
     userdata.shared_regions = []
     userdata.goal_pose = pose
 

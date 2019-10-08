@@ -9,7 +9,6 @@ Panels:
         - /RobotModel1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
-        - /TF1
         - /TF1/Frames1
         - /PointCloud21
         - /Map1
@@ -341,8 +340,6 @@ Visualization Manager:
           Value: false
         arm_base_link:
           Value: false
-        base:
-          Value: false
         base_link:
           Value: false
         camera_bottom_screw_frame:
@@ -371,8 +368,6 @@ Visualization Manager:
           Value: false
         ee_link:
           Value: true
-        forearm_link:
-          Value: false
         front_left_static:
           Value: false
         front_right_static:
@@ -389,15 +384,7 @@ Visualization Manager:
           Value: false
         rear_right_static:
           Value: false
-        shoulder_link:
-          Value: false
         tool0:
-          Value: false
-        tool0_controller:
-          Value: false
-        upper_arm_link:
-          Value: false
-        wrist_1_link:
           Value: false
         wrist_2_link:
           Value: false
@@ -413,30 +400,7 @@ Visualization Manager:
           base_link:
             arm_base_frame:
               arm_base_link:
-                camera_bottom_screw_frame:
-                  camera_link:
-                    camera_depth_frame:
-                      camera_color_frame:
-                        camera_color_optical_frame:
-                          {}
-                      camera_depth_optical_frame:
-                        {}
-                      camera_left_ir_frame:
-                        camera_left_ir_optical_frame:
-                          {}
-                      camera_right_ir_frame:
-                        camera_right_ir_optical_frame:
-                          {}
-                shoulder_link:
-                  upper_arm_link:
-                    forearm_link:
-                      wrist_1_link:
-                        wrist_2_link:
-                          wrist_3_link:
-                            ee_link:
-                              {}
-                            tool0:
-                              {}
+                {}
             cbimu_frame:
               {}
             center_link:
@@ -640,25 +604,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.46357918
+      Distance: 10.7841368
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.685602963
-        Y: -1.52664506
-        Z: -0.231740475
+        X: -0.95586288
+        Y: 1.84957552
+        Z: -0.179987565
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.40979743
+      Pitch: 1.36979651
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.4831953
+      Yaw: 5.31138134
     Saved: ~
 Window Geometry:
   Displays:
