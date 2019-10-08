@@ -1,4 +1,4 @@
-material fire
+material fire_tongue
 {
   receive_shadows on
 
@@ -11,7 +11,7 @@ material fire
       texture_unit
       {
         texture fire.png
-        scale 1 1
+        scale 0.08 0.08
         
       }
     }
@@ -23,7 +23,7 @@ material quemador
   {
     pass
     {
-      ambient 0.5 0.5 0.5 0.5
+      ambient 0.1 0.8 0.1 0.5
       diffuse 0.5 0.5 0.5 0.5
       specular 0.1 0.1 0.1 1 5.0
     }

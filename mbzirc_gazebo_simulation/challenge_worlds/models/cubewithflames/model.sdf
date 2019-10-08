@@ -31,7 +31,7 @@
           <script>
             <uri>model://cubewithflames/materials/scripts</uri>
             <uri>model://cubewithflames/materials/textures</uri>
-            <name>quemador</name>
+            <name>fire</name>
           </script>
           <ambient>0.3 0.3 0.3 1</ambient>
           <diffuse>0.7 0.7 0.7 1</diffuse>
@@ -131,7 +131,7 @@
           <script>
             <uri>model://cubewithflames/materials/scripts</uri>
             <uri>model://cubewithflames/materials/textures</uri>
-            <name>fire</name>
+            <name>fire_tongue</name>
           </script>
 
           <shader type='vertex'>
