@@ -5,9 +5,12 @@
 <!-- =================================================================================== -->
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <world name="default">
-    <include>
-      <uri>model://ground_plane</uri>
-    </include>
+    <model name="ground_plane_asfalt">
+      <include>
+        <uri>model://ground_plane_asfalt</uri>
+      </include>
+      <pose frame="">0.0 0.0 0 0 0 0.86 </pose>
+    </model>
     <include>
       <uri>model://sun</uri>
     </include>
@@ -601,3 +604,4 @@
     </model>
   </world>
 </sdf>
+

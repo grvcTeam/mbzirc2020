@@ -12,10 +12,15 @@
 <xacro:property name="blue" value="${[-10,0,0,0]}"/>  
 <xacro:property name="green" value="${[0,10,0,0]}"/>  
 <xacro:property name="red" value="${[0,-10,0,0]}"/> 
+<xacro:property name="g" value="${[0,0,0,0]}"/>
+
   <world name="default">
-    <include>
-      <uri>model://ground_plane</uri>
-    </include>
+    <model name="ground_plane_asfalt">
+      <include>
+        <uri>model://ground_plane_asfalt</uri>
+      </include>
+      <pose frame=''>${g[0]*cos(yaw)-g[1]*sin(yaw)} ${g[0]*sin(yaw)+g[1]*cos(yaw)} ${g[2]} 0 0 ${g[3]+yaw} </pose>
+    </model>
     <include>
       <uri>model://sun</uri>
     </include>
