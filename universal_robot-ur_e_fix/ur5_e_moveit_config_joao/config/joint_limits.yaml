@@ -13,6 +13,8 @@ joint_limits:
     has_acceleration_limits: false
     max_acceleration: 0
   shoulder_pan_joint:
+    min_position: -3
+    max_position: 0.1
     has_velocity_limits: true
     max_velocity: 2
     has_acceleration_limits: false

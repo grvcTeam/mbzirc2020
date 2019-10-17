@@ -214,6 +214,9 @@ target_link_libraries(convert_pointcloud_to_image ${Boost_LIBRARIES} ${catkin_LI
 add_executable(brick_segmentation src/pcl_ros/segmentation/brick_segmentation.cpp)
 target_link_libraries(brick_segmentation ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
+add_executable(full_segmentation src/pcl_ros/segmentation/full_segmentation.cpp)
+target_link_libraries(full_segmentation ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 add_executable(pose_estimation src/pcl_ros/segmentation/pose_estimation.cpp)
 target_link_libraries(pose_estimation ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 

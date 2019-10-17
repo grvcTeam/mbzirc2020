@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node pkg="ur5_magnetic_gripper" type="ur5_magnetic_gripper.py" name="magnetic_gripper" output="screen">
+  </node>
+</launch>

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+<include file = "$(find atrvjr)/launch/atrvjr_hw_no_gps.launch"/>
+<include file = "$(find ur_rtde_driver)/launch/ur5e_bringup.launch"/>
+<include file = "$(find realsense2_camera)/launch/rs_rgbd.launch"/>
+<include file = "$(find husky_navigation)/launch/move_base_mapless_demo.launch"/>
+<include file = "$(find mbot_pregrasp_planning)/ros/launch/pregrasp_planner.launch"/>
+<include file = "$(find ur5_e_moveit_config_joao)/launch/move_group.launch"/>
+<include file = "$(find pcl_ros)/samples/pcl_ros/segmentation/mbzirc_pose_estimation.launch"/>
+<include file = "$(find ur5_magnetic_gripper)/launch/magnetic_gripper.launch"/>
+<include file = "$(find laser_line_extraction)/launch/example.launch"/>
+<include file = "$(find agent_nodes)/launch/c2_atrv.launch"/>
+</launch>

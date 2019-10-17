@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 
 <launch>
-  <node pkg="pcl_ros" type="brick_segmentation" name="brick_segmentation" output="screen">
-  </node>
-  <node pkg="pcl_ros" type="pose_estimation" name="pose_estimation" output="screen">
+  <node pkg="pcl_ros" type="full_segmentation" name="full_segmentation" output="screen">
   </node>
 </launch>

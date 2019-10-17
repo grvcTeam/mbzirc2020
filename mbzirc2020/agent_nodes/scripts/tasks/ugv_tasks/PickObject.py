@@ -57,7 +57,7 @@ class Task(smach.State):
         #members
         self.gripper_attached = False
         self.name = name
-        self.z_offset = z_offset
+        self.z_offset = 0
 
         #interface elements
         interface.add_client('cli_magnetize','/'+'magnetize',Magnetize)
@@ -65,6 +65,7 @@ class Task(smach.State):
                                 self.attached_cb)
 
         self.pubURscript = rospy.Publisher('/ur_driver/URScript', String, queue_size=1)
+        self.pubBrickPose = rospy.Publisher('/color2detect', String, queue_size=1)
         self.pub_start_pregrasp = rospy.Publisher('/mir_manipulation/pregrasp_planner_pipeline/event_in', String, queue_size=1)
 
 
@@ -130,18 +131,18 @@ class Task(smach.State):
         pose.position.z = 0
         pose.orientation.x =0
         pose.orientation.y =0
-        pose.orientation.z =0
+        pose.orientation.z =0 
         pose.orientation.w =1
 
         goal.target_pose.pose = pose
 
         rospy.loginfo('POSE: {p}'.format(p=pose))
 
-        #self.mb_client.send_goal(goal)
-        #wait = self.mb_client.wait_for_result()
+        # self.mb_client.send_goal(goal)
+        # wait = self.mb_client.wait_for_result()
 
-
-        print "depois do go e antes to go to joint pose"
+        self.pubBrickPose.publish(data='red') # TODO:change this acording to the state machine. available inputs are "red", "orange", "blue", "green"
+       # print "depois do go e antes to go to joint pose"
 
         # comecar o pregrasp sabendo que ele ja esta a receber para o seu /target_pose a pose do brick
         self.pub_start_pregrasp.publish('e_start')
@@ -197,7 +198,7 @@ class Task(smach.State):
         #move gripper vertically until contact
         
         while not self.gripper_attached:
-            self.arm_vertical(-0.02)
+            self.arm_vertical(-0.01)
             rospy.loginfo('down!!')
             #rate.sleep()
 

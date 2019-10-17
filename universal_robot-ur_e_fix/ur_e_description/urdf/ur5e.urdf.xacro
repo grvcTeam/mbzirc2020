@@ -116,12 +116,13 @@
       <origin xyz="0.0 0.0 ${shoulder_height}" rpy="0.0 0.0 0.0" />
       <axis xyz="0 0 1" />
       <xacro:unless value="${joint_limited}">
-        <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="150.0" velocity="3.14"/>
+        <limit lower="-3" upper="0.1" effort="150.0" velocity="3.14"/>
       </xacro:unless>
       <xacro:if value="${joint_limited}">
-        <limit lower="${shoulder_pan_lower_limit}" upper="${shoulder_pan_upper_limit}" effort="150.0" velocity="3.14"/>
+        <limit lower="-3" upper="0.1" effort="150.0" velocity="3.14"/>
       </xacro:if>
       <dynamics damping="0.0" friction="0.0"/>
+      <safety_controller k_position="100" k_velocity="1.5" soft_lower_limit="-3" soft_upper_limit="0.1"/>    <!-- check what are these k_position and k_velocity -->
     </joint>
 
     <link name="${prefix}shoulder_link">
