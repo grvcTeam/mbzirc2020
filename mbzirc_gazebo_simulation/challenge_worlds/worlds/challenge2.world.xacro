@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" />
 <xacro:include filename="$(find challenge_worlds)/urdf/orange_pile.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/blue_pile.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/red_pile.xacro" />
@@ -12,6 +13,8 @@
 <xacro:property name="blue" value="${[-10,0,0,0]}"/>  
 <xacro:property name="green" value="${[0,10,0,0]}"/>  
 <xacro:property name="red" value="${[0,-10,0,0]}"/> 
+<xacro:property name="g" value="${[0,0,0,0]}"/>
+
   <world name="default">
     <include>
       <uri>model://ground_plane</uri>
@@ -19,6 +22,7 @@
     <include>
       <uri>model://sun</uri>
     </include>
+    
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
    <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
@@ -26,5 +30,11 @@
    <blue_pile id="2" pose="${blue[0]*cos(yaw)-blue[1]*sin(yaw)} ${blue[0]*sin(yaw)+blue[1]*cos(yaw)} ${blue[2]} 0 0 ${yaw+blue[3]}" />
    <green_pile id="3" pose="${green[0]*cos(yaw)-green[1]*sin(yaw)} ${green[0]*sin(yaw)+green[1]*cos(yaw)} ${green[2]} 0 0 ${yaw+green[3]}" />
    <red_pile id="4" pose="${red[0]*cos(yaw)-red[1]*sin(yaw)} ${red[0]*sin(yaw)+red[1]*cos(yaw)} ${red[2]} 0 0 ${yaw+red[3]}" />
+  <model name="ground_plane_asfalt">
+     <include>
+       <uri>model://ground_plane_asfalt</uri>
+     </include>
+     <pose frame=''>${g[0]*cos(yaw)-g[1]*sin(yaw)} ${g[0]*sin(yaw)+g[1]*cos(yaw)} ${g[2]} 0 0 ${g[3]+yaw} </pose>
+  </model>   
   </world>
 </sdf>
