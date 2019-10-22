@@ -1,0 +1,21 @@
+<launch>
+
+<!--     <include file="$(find indoor)/launch/display.launch" />
+ -->
+    <node name="world_odom_transf" pkg="indoor" type="world_odom_transf" output="screen"/>
+
+    <node name="world_odom_rl_transf" pkg="indoor" type="world_odom_rl_transf" output="screen"/>
+
+    <include file="$(find odom_calibration)/launch/calib.launch" >
+        <arg name="parameters" value="$(find indoor)/params/odom_calibration.yaml"/>
+    </include>
+
+    <include file="$(find atrvjr)/launch/r_l_ekf.launch" >
+        <!--params-->
+        <arg name="config" value="$(find outdoor)/params/rl_ekf_odom_mpu_xbow.yaml"/>
+        <!--  subscribes -->
+<!--        <remap from="/cmd_vel" to="/rflex/atrvjr_node/cmd_vel"/> -->
+        <!--publishes-->
+<!--         <remap from="accel/filtered" to=accel/filtered"/> -->
+    </include>
+</launch>

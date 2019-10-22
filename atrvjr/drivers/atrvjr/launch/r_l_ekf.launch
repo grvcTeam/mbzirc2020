@@ -1,0 +1,9 @@
+<launch>
+    <arg name="config" default="$(find indoor)/params/rl_ekf_odom_mpu.yaml" />
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se_odom" clear_params="true">
+        <rosparam command="load" file="$(arg config)" />
+        <!--subscriptions-->
+        <remap from="set_pose" to="set_pose_ekf_se_odom"/>
+    </node>
+</launch>
