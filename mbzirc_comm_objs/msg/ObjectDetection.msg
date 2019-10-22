@@ -1,10 +1,10 @@
 std_msgs/Header header
-geometry_msgs/PoseWithCovariance pose
-geometry_msgs/Point relative_position
-float32 relative_yaw
-geometry_msgs/Vector3 scale
-int8 type
-int8 color
+geometry_msgs/PoseWithCovariance pose  # Detected object pose (in header.frame_id coordinates)
+geometry_msgs/Point relative_position  # Detected object relative position (w.r.t detector device, e.g: camera)
+float32 relative_yaw                   # Detected object relative yaw (w.r.t detector device, e.g: camera)
+geometry_msgs/Vector3 scale            # Detected object size
+int8 type                              # Detected object type (see TYPE_* constants below)
+int8 color                             # Detected object color (see COLOR_* constats below)
 
 int8 TYPE_UNKNOWN = -1
 int8 TYPE_BALL    =  0
