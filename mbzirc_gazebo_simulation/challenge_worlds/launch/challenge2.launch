@@ -10,7 +10,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 -->
 <launch>
 
-    <!-- <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" /> -->
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" />
+
+    <node name="xacro" pkg="xacro" type="xacro"
+       args="--inorder -o $(find challenge_worlds)/worlds/challenge2.world $(find challenge_worlds)/worlds/challenge2.world.xacro" />
 
     <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
         args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
@@ -20,4 +23,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     </node>
 
 </launch>
-
