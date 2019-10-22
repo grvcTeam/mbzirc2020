@@ -177,7 +177,7 @@ public:
             mbzirc_comm_objs::ObjectDetection object;
             object.header.stamp = ros::Time::now();
             object.header.frame_id = pile_data.frame_id;
-            object.type = "brick";
+            object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
             // object.pose.covariance...  // TODO: needed?
             // object.relative_position  // ignored here
             // object.relative_yaw  // ignored here

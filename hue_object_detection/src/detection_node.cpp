@@ -150,7 +150,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
     mbzirc_comm_objs::ObjectDetection object;
     object.header.frame_id = "map";  // TODO: arena? NO, it would affect relative measures too
     object.header.stamp = ros::Time::now();
-    object.type = "brick";
+    object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
 
     // The line equation is X = lambda * ray_world - T_world
     // lambda can be set because the z is known (estimated)
@@ -226,6 +226,12 @@ int main(int argc, char** argv) {
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
   HueDetection detection;
+  HueDetectionConfig detection_config;
+	detection_config.saturation_threshold = 128.0;
+	detection_config.likelihood_threshold = 96.0;
+	detection_config.min_area = 2.0;
+	detection_config.poly_epsilon = 3.0;
+  detection.setConfig(detection_config);
   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
   detection.addDetector("red", histogram_folder + "red.yaml", cvScalar(255, 255, 0));
   detection.addDetector("green", histogram_folder + "green.yaml", cvScalar(255, 0, 255));

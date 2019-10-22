@@ -34,6 +34,18 @@ def get_color(color_in, alpha = 1.0):
         color_out.b = 0.0
     return color_out
 
+def get_type(type_as_int):
+    if type_as_int == ObjectDetection.TYPE_BALL:
+        return "ball"
+    elif type_as_int == ObjectDetection.TYPE_BRICK:
+        return "brick"
+    elif type_as_int == ObjectDetection.TYPE_FIRE:
+        return "fire"
+    elif type_as_int == ObjectDetection.TYPE_PASSAGE:
+        return "passage"
+    else:
+        return "unknown"
+
 def sensed_objects_callback(data, ns):
     marker_array = MarkerArray()
     for id, sensed in enumerate(data.objects):
@@ -51,7 +63,7 @@ def sensed_objects_callback(data, ns):
         type_marker.color.g = 1.0
         type_marker.color.b = 1.0
         type_marker.color.a = 1.0
-        type_marker.text = sensed.type  # TODO: Add id?
+        type_marker.text = get_type(sensed.type)  # TODO: Add id?
         marker_array.markers.append(type_marker)
 
         pose_marker = Marker()

@@ -12,7 +12,7 @@ namespace gazebo
 
 GZ_REGISTER_SENSOR_PLUGIN(FakeObjectDetection)
 
-std::string type_from_name(const std::string &link_name);
+int8_t type_from_name(const std::string &link_name);
 
 #if GAZEBO_MAJOR_VERSION >= 8
   ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr);
@@ -293,9 +293,9 @@ void FakeObjectDetection::PutRecData(common::Time &_updateTime)
       {
           //Type
           rec_object.type = type_from_name(collision_name);
-          if(this->type_list.size() && std::find(this->type_list.begin(), this->type_list.end(), rec_object.type) == this->type_list.end())
+          if(this->type_list.size() && std::find(this->type_list.begin(), this->type_list.end(), collision_name) == this->type_list.end())
             continue;
-          if (rec_object.type == "unknown")
+          if (rec_object.type == mbzirc_comm_objs::ObjectDetection::TYPE_UNKNOWN)
             continue;
 
           //Pose
@@ -392,15 +392,15 @@ void FakeObjectDetection::LaserQueueThread()
 }
 
 // Infer an object type from a link name
-std::string type_from_name(const std::string &link_name)
+int8_t type_from_name(const std::string &link_name)
 {
   if (link_name.find("brick") != std::string::npos)
-    return "brick";
+    return mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
 
   if (link_name.find("fire") != std::string::npos)
-    return "fire";
+    return mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
 
-  return "unknown";
+  return mbzirc_comm_objs::ObjectDetection::TYPE_UNKNOWN;
 }
 
 //

@@ -207,7 +207,7 @@ public:
                     mbzirc_comm_objs::ObjectDetection object;
                     object.header.frame_id = _msg->header.frame_id;
                     object.header.stamp = ros::Time::now();
-                    object.type = "passage";
+                    object.type = mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE;
 
                     // TODO: relative_position has sense?
                     // object.relative_position.x = 
