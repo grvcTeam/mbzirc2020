@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>mbot_pregrasp_planning</name>
+  <version>0.1.0</version>
+  <description>
+    Contains mbot configuration of the mir_pregrasp_planning pkg.
+    mir_pregrasp_planning package contains components to compute a *pre-grasp* pose, based on a target pose,
+    for the end effector of a robot's manipulator.
+  </description>
+  <license>GPLv3</license>
+
+  <author email="olima@isr.tecnico.ulisboa.pt">Oscar Lima</author>
+  <maintainer email="olima@isr.tecnico.ulisboa.pt">Oscar Lima</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <run_depend>mir_pregrasp_planning</run_depend>
+
+</package>
