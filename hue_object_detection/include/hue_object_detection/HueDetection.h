@@ -13,9 +13,17 @@ struct HueItem {
 	double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
 };
 
+struct HueDetectionConfig {
+	double saturation_threshold = 128.0;
+	double likelihood_threshold = 96.0;
+	double min_area = 2.0;
+	double poly_epsilon = 3.0;
+};
+
 class HueDetection {
 public:
 	HueDetection();
+	void setConfig(const HueDetectionConfig& _config);
 	void addDetector(const std::string _id, const std::string _histogram_file, cv::Scalar _contour_colour);
 	void setFrame(cv::Mat& _frame);
 	std::vector<HueItem> detect(const std::string _id, bool _draw = false);
@@ -29,6 +37,8 @@ private:
 	cv::Mat frame_, hls_, hue_, sat_, satmask_;
 	cv::Mat likelihood_, smoothed_, segmented_;
 	cv::Size capture_size_;
+
+	HueDetectionConfig config_;
 };
 
 inline void HueDetection::setImageSize(const cv::Size& _size) {
