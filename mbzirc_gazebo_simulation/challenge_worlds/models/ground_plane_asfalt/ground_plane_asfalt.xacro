@@ -41,9 +41,10 @@
           </geometry>
           <material>
             <script>
-              <uri>model://ground_plane_asfalt/materials/scripts</uri>
-              <uri>model://ground_plane_asfalt/materials/textures</uri>
-		      <name>${material}</name>
+              <uri>file://materials/mbzirc.material</uri>
+              <!-- <uri>model://ground_plane_asfalt/materials/scripts</uri>
+              <uri>model://ground_plane_asfalt/materials/textures</uri> -->
+		          <name>${material}</name>
             </script>
           </material>
         </visual>
