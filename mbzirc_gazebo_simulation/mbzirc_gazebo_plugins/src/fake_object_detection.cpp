@@ -12,7 +12,7 @@ namespace gazebo
 
 GZ_REGISTER_SENSOR_PLUGIN(FakeObjectDetection)
 
-int8_t type_from_name(const std::string &link_name);
+uint8_t type_from_name(const std::string &link_name);
 
 #if GAZEBO_MAJOR_VERSION >= 8
   ignition::math::Vector3d scaleFromShape(physics::ShapePtr shape_ptr);
@@ -392,7 +392,7 @@ void FakeObjectDetection::LaserQueueThread()
 }
 
 // Infer an object type from a link name
-int8_t type_from_name(const std::string &link_name)
+uint8_t type_from_name(const std::string &link_name)
 {
   if (link_name.find("brick") != std::string::npos)
     return mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
