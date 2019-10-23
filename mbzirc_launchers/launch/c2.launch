@@ -49,4 +49,7 @@
         <arg name="ual_backend" value="light"/>
     </include>
 
+
+    <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/>
+
 </launch>
