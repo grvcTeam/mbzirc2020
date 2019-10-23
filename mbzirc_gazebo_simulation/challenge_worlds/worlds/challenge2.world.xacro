@@ -7,30 +7,31 @@
 <xacro:include filename="$(find challenge_worlds)/models/ground_plane_asfalt/ground_plane_asfalt.xacro" />
 <xacro:include filename="$(find challenge_worlds)/urdf/single_colored_brick.xacro" />
 <!-- Global yaw: to change the global position of all the objects in the world -->
-<xacro:property name="yaw" value="0"/>
+<xacro:arg name="arena_yaw" default="0"/>
+<xacro:property name="yaw" value="$(arg arena_yaw)"/>
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
 <!-- <xacro:property name="orange" value="${[10,0,0,0]}"/> 
 <xacro:property name="blue" value="${[-10,0,0,0]}"/>  
 <xacro:property name="green" value="${[0,10,0,0]}"/>  
 <xacro:property name="red" value="${[0,-10,0,0]}"/>  -->
-<xacro:property name="ground" value="${[0,0,0,0]}"/>
-<xacro:property name="red01" value="${[0.5,-10.5,0,0]}"/>
-<xacro:property name="red02" value="${[-0.5,-10.5,0,0]}"/>
-<xacro:property name="red03" value="${[-0.5,-9.5,0,0]}"/>
-<xacro:property name="red04" value="${[0.5,-9.5,0,0]}"/>
-<xacro:property name="blue01" value="${[-11,0.5,0,0]}"/>
-<xacro:property name="blue02" value="${[-11,-0.5,0,0]}"/>
-<xacro:property name="blue03" value="${[-9,0.5,0,0]}"/>
-<xacro:property name="blue04" value="${[-9,-0.5,0,0]}"/>
-<xacro:property name="green01" value="${[0.5,10.5,0,0]}"/>
-<xacro:property name="green02" value="${[-0.5,10.5,0,0]}"/>
-<xacro:property name="green03" value="${[0.5,9.5,0,0]}"/>
-<xacro:property name="green04" value="${[-0.5,9.5,0,0]}"/>
-<xacro:property name="orange01" value="${[11,0.5,0,0]}"/>
-<xacro:property name="orange02" value="${[11,-0.5,0,0]}"/>
-<xacro:property name="orange03" value="${[9,0.5,0,0]}"/>
-<xacro:property name="orange04" value="${[9,-0.5,0,0]}"/>
+<xacro:property name="ground" value="${[30,25,0,0]}"/>
+<xacro:property name="red01" value="${[30.5,14.5,0,0]}"/>
+<xacro:property name="red02" value="${[29.5,14.5,0,0]}"/>
+<xacro:property name="red03" value="${[29.5,15.5,0,0]}"/>
+<xacro:property name="red04" value="${[30.5,15.5,0,0]}"/>
+<xacro:property name="blue01" value="${[19,25.5,0,0]}"/>
+<xacro:property name="blue02" value="${[19,24.5,0,0]}"/>
+<xacro:property name="blue03" value="${[21,25.5,0,0]}"/>
+<xacro:property name="blue04" value="${[21,24.5,0,0]}"/>
+<xacro:property name="green01" value="${[30.5,35.5,0,0]}"/>
+<xacro:property name="green02" value="${[29.5,35.5,0,0]}"/>
+<xacro:property name="green03" value="${[30.5,34.5,0,0]}"/>
+<xacro:property name="green04" value="${[29.5,34.5,0,0]}"/>
+<xacro:property name="orange01" value="${[41,25.5,0,0]}"/>
+<xacro:property name="orange02" value="${[41,24.5,0,0]}"/>
+<xacro:property name="orange03" value="${[39,25.5,0,0]}"/>
+<xacro:property name="orange04" value="${[39,24.5,0,0]}"/>
 
 
 
