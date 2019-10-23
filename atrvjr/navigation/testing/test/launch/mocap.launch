@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Optitrack hosting machine values -->
+    <arg name="ip" default="192.168.0.2" />
+
+    <node pkg="vrpn_client_ros" type="vrpn_client_node" name="vrpn_client_node" output="screen">
+        <rosparam subst_value="true">
+            server: $(arg ip)
+            port: 3883
+            update_frequency: 100.0
+            frame_id: world
+            use_server_time: false
+            broadcast_tf: false
+            refresh_tracker_frequency: 1.0
+        </rosparam>
+    </node>
+</launch>

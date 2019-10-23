@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atrvjr">
+
+	<xacro:include filename="$(find atrvjr_description)/urdf/atrvjr.xacro"/>
+	<xacro:atrvjr armConnectionFrame="arm_base_frame"/>
+
+	<xacro:macro name="ur5" params="baseframe">
+		<xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
+		<xacro:ur5_robot prefix="ur5_" joint_limited="false"/>
+
+		<joint name="$from_{baseframe}_joint" type="fixed">
+			<parent link="${baseframe}"/>
+			<child link="ur5_arm_base_link"/>
+			<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+		</joint>
+	</xacro:macro>
+	<xacro:ur5 baseframe="arm_base_frame"/>
+
+
+</robot>
+
+
+
+
+

@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="ns" default=""/>
+
+    <!-- RFLEX -->
+    <include file="$(find rflex)/launch/rflex.launch">
+        <arg name="ns" value="$(arg ns)/rflex"/>
+        <arg name="serialPort" value="/dev/ttyUSB0"/>
+    </include>
+
+      <!--   MPU IMU -->
+    <include file="$(find atrvjr)/launch/mpuimu.launch" >
+        <arg name="ns" value="$(arg ns)/atrvjr/mpu"/>
+        <arg name="port" value="/dev/mpuimu"/>
+        <arg name="imu_frame_id" value="mpuimu_frame"/>
+        <arg name="frame_id" value="mpuimu_frame"/>
+        <arg name="tf_frame_id" value="mpuimu_frame"/>
+    </include>
+
+    <!-- HOKUYO -->
+    <node pkg="urg_node" type="urg_node" name="hokuyo_node" output="screen">
+        <param name="serial_port" value="/dev/ttyACM2"/>
+        <param name="frame_id" value="hokuyo"/>
+        <param name="angle_min" value="-1.5"/>
+        <param name="angle_max" value="1.5"/>
+    </node>
+
+    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen">
+    	<remap from="/cmd_vel" to="/rflex/atrvjr_node/cmd_vel"/>
+    </node>
+
+
+
+
+    <!-- ROBOT DESCRIPTION -->
+
+    <arg name="model" default="$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro" />
+    <arg name="rvizconfig" default="$(find atrvjr_description)/launch/new_rviz_config.rviz" />
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />   
+    <param name="use_gui" value="false"/>
+    <arg name="kinematics_config" default="$(find ur_e_description)/config/ur5e_default.yaml"/>
+
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+<!--     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+ -->
+
+    <!-- ROBOT LOCALIZATION -->
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se" output="screen" clear_params="true">
+        <rosparam command="load" file="$(find robot_localization)/params/ekf_template.yaml" />
+    </node>
+
+    <arg name="ns1" default="/odom_calibration"/>
+    <arg name="odom_raw" default="/rflex/atrvjr_node/odom"/>
+    <arg name="odom_calibrated" default="/odom_calibration/odom_calibration_node/odom"/>
+    <arg name="parameters" default="$(find odom_calibration)/params/odom_calibration.yaml"/>
+
+    <node ns="$(arg ns1)" name="odom_calibration" pkg="odom_calibration" type="odom_calibration_node" output="screen" required="true">
+        <rosparam command="load" file="$(arg parameters)" />
+        <param name="odom_raw" value="$(arg odom_raw)"/>
+        <param name="odom_calibrated" value="$(arg odom_calibrated)"/>
+    </node>
+
+
+</launch>

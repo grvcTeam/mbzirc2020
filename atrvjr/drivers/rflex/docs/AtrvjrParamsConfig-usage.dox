@@ -1,0 +1,12 @@
+\subsubsection usage Usage
+\verbatim
+<node name="rflex" pkg="rflex" type="rflex">
+  <param name="odo_distance_conversion" type="int" value="93810" />
+  <param name="odo_angle_conversion" type="int" value="38500" />
+  <param name="trans_acceleration" type="double" value="0.7" />
+  <param name="trans_torque" type="double" value="0.3" />
+  <param name="rot_acceleration" type="double" value="2.6" />
+  <param name="rot_torque" type="double" value="0.9" />
+</node>
+\endverbatim
+

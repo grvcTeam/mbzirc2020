@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   std_msgs
   geometry_msgs
+  nav_msgs
+  moveit_ros_planning_interface
 )
 
 ## System dependencies are found with CMake's conventions
@@ -83,6 +85,7 @@ find_package(catkin REQUIRED COMPONENTS
    actionlib_msgs
    std_msgs
    geometry_msgs
+   nav_msgs
  )
 
 ################################################
@@ -117,7 +120,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES robot_action_servers
-   CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer message_runtime mbzirc_comm_objs std_msgs geometry_msgs
+   CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer message_runtime mbzirc_comm_objs std_msgs geometry_msgs nav_msgs
 #  DEPENDS system_lib
 )
 
@@ -147,6 +150,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_action_servers_node.cpp)
 add_executable(uav_action_server src/uav_action_server.cpp)
+add_executable(ugv_action_server src/ugv_action_server.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,12 +162,16 @@ add_executable(uav_action_server src/uav_action_server.cpp)
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(uav_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ugv_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(uav_action_server
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(ugv_action_server
   ${catkin_LIBRARIES}
 )
 

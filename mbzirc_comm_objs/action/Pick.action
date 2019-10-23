@@ -1,6 +1,6 @@
 #goal definition
 # string type
-# string color
+string color
 # geometry_msgs/Vector3 scale
 geometry_msgs/PoseStamped approximate_pose
 ---

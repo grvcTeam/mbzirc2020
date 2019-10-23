@@ -1,0 +1,11 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~odo_distance_conversion" : \b [int] Arbitrary units per meter. min: 1, default: 93810, max: 188000
+- \b "~odo_angle_conversion" : \b [int] Arbitrary units per radian. min: 1, default: 38500, max: 78000
+- \b "~trans_acceleration" : \b [double] How fast to change translational speed, m/s^2. min: 0.0, default: 0.7, max: 4.0
+- \b "~trans_torque" : \b [double] Translational torque , N*m. min: 0.0, default: 0.3, max: 2.0
+- \b "~rot_acceleration" : \b [double] How fast to change rotational speed, rad/s^2. min: 0.0, default: 2.6, max: 4.0
+- \b "~rot_torque" : \b [double] Rotational torque , N*m. min: 0.0, default: 0.9, max: 2.0
+

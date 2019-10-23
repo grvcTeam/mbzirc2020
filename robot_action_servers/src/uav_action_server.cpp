@@ -309,7 +309,7 @@ public:
         //     // Break loop.
         //     return;
         // }
-	    }
+      }
       // Send target_position  // TODO: find equivalent!
       geometry_msgs::TwistStamped velocity;
       velocity.header.stamp = ros::Time::now();

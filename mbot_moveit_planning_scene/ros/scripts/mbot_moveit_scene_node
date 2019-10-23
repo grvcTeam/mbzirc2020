@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+import mbot_moveit_planning_scene_ros.mbot_moveit_scene_node
+
+if __name__ == '__main__':
+    mbot_moveit_planning_scene_ros.mbot_moveit_scene_node.main()

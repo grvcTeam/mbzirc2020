@@ -1,0 +1,20 @@
+# odom_calib_matrix: [    0.963329713581051,  -0.006232772488427, 0.013977423147320,
+#                         0.609216794801099,  0.092539517405894,  -1.837355744408050,
+#                         -0.006076460068179, 0.032439476158978,  0.949234087018579]
+
+# # Linear velocity x, linear regression parameters [m b]
+# twist_linear_x_regression: [0.028675791263105425, -0.007410879540513423]
+
+# # Angular velocity yaw, linear regression parameters [m b]
+# twist_angular_yaw_regression: [0.004977452731994694, 0.00018473302163572953]
+
+# taken from x_all_1_4.out created by OdometryCalibrationAllBags_nb
+odom_calib_matrix: [ 9.470021512144738418e-01,-8.083557889729493101e-03,1.838955864195330775e-04,
+                    -2.347225466758366963e+00,1.491974663400732759e-01,-4.779142165864205816e-01,
+                    1.261945316742196788e-01,2.347535926864094402e-02,9.717496109541265970e-01]
+
+# Linear velocity x, linear regression parameters [m b]
+twist_linear_x_regression: [ 0.004916433163270182, 0.0017965631841429606]
+
+# Angular velocity yaw, linear regression parameters [m b]
+twist_angular_yaw_regression: [0.0016438355284773458, 0.00039921023513597384]

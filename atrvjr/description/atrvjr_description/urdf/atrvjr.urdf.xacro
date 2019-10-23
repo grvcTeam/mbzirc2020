@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atrvjr">
+  <xacro:include filename="$(find atrvjr_description)/urdf/atrvjr.xacro" />
+  <xacro:atrvjr armConnectionFrame="arm_base_frame" />
+
+  <xacro:include filename="$(find ur_e_description)/urdf/ur5e.urdf.xacro" />
+
+  <xacro:include filename="$(find realsense2_camera)/urdf/_d435.urdf.xacro"/>
+
+  <!-- arm -->
+  <xacro:ur5e_robot parent="arm_base_frame" prefix="" joint_limited="false"/>
+
+
+  <sensor_d435 parent="arm_base_link">
+  	<origin xyz="0 0 0" rpy="0 0 0"/>
+  </sensor_d435>
+
+
+		<!-- new stuff with arm and realsense -->
+		
+</robot>
