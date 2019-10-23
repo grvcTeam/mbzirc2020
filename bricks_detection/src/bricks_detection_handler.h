@@ -12,6 +12,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <tf/transform_listener.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -45,6 +46,8 @@ class BricksDetectionHandler
    ros::Subscriber _pcloud2_sub;
    ros::Publisher _pcloud2_pub;
    ros::Publisher _bricks_detected_pub;
+
+   tf::TransformListener _baselink_listener;
 
    std::string _image_topic;
    std::string _pcloud_topic;

@@ -43,9 +43,10 @@ find_package(catkin REQUIRED
    sensor_msgs
    std_msgs
    message_filters
-   tf2
+   tf
    dynamic_reconfigure
    pcl_conversions
+   pcl_ros
    mbzirc_comm_objs)
 
 catkin_python_setup()
@@ -79,9 +80,10 @@ catkin_package(
    INCLUDE_DIRS   include
    LIBRARIES      ${PROJECT_NAME}
    CATKIN_DEPENDS rospy roscpp cv_bridge 
-                  tf2  
+                  tf  
                   dynamic_reconfigure
                   pcl_conversions
+                  pcl_ros
                   mbzirc_comm_objs)
 
 ###########

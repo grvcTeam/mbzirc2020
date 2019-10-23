@@ -11,6 +11,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/transforms.h>
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -96,8 +97,11 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
+   sensor_msgs::PointCloud2 pcloud_tf_msg;
+   pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener);
+
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
-   pcl::fromROSMsg(*pcloud_msg, pcloud);
+   pcl::fromROSMsg(pcloud_tf_msg, pcloud);
 
    _bricks_detection->processData(pcloud);
 
