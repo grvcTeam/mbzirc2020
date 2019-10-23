@@ -11,10 +11,12 @@
 
 #pragma once
 
+#include <set>
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <bricks_detection/types/hsv.h>
+#include <bricks_detection/types/hsv_range.h>
 
 namespace mbzirc
 {
@@ -25,13 +27,18 @@ class ColorFiltering
    virtual ~ColorFiltering(void);
 
    void addHSVFilter(const std::string& json_path);
-   void addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv);
+   void addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv, const std::string& color_name);
+   void setMinPointsPerColor(const int& min);
 
-   void pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud);
+   void pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
+                         std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 
   private:
    bool inRange(const float& vmin, const float& vmax, const float& value) const;
 
-   std::vector<std::pair<HSV, HSV>> _hsv_filters;
+   std::vector<HSVRange> _hsv_filters;
+   std::set<std::string> _colors;
+
+   int _min_cluster_size;
 };
 }  // namespace mbzirc

@@ -10,6 +10,7 @@
  */
 
 #include <limits>
+#include <map>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -21,7 +22,7 @@
 
 namespace mbzirc
 {
-ColorFiltering::ColorFiltering() {}
+ColorFiltering::ColorFiltering() { _min_cluster_size = 0; }
 
 ColorFiltering::~ColorFiltering() {}
 
@@ -33,6 +34,7 @@ void ColorFiltering::addHSVFilter(const std::string& json_path)
    pt::read_json(json_path, root);
 
    _hsv_filters.clear();
+   _colors.clear();
 
    for (pt::ptree::value_type& color : root.get_child("colors"))
    {
@@ -46,39 +48,56 @@ void ColorFiltering::addHSVFilter(const std::string& json_path)
       const float s_max = color_root.get<float>("max.s");
       const float v_max = color_root.get<float>("max.v");
 
+      const std::string color_name = color_root.get<std::string>("name");
+
       const HSV hsv_min(h_min, s_min, v_min);
       const HSV hsv_max(h_max, s_max, v_max);
-      addHSVFilter(hsv_min, hsv_max);
+      addHSVFilter(hsv_min, hsv_max, color_name);
    }
 }
 
-void ColorFiltering::addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv)
+void ColorFiltering::addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv, const std::string& color_name)
 {
-   _hsv_filters.push_back(std::make_pair(lower_hsv, upper_hsv));
+   _hsv_filters.push_back(HSVRange(lower_hsv, upper_hsv, color_name));
+   _colors.insert(color_name);
 }
 
-void ColorFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud)
+void ColorFiltering::setMinPointsPerColor(const int& min) { _min_cluster_size = min; }
+
+void ColorFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
+                                      std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
 {
-   pcl::PointCloud<pcl::PointXYZRGB> pcloud_filtered;
-   pcloud_filtered.height = 1;
+   for (auto color : _colors)
+   {
+      pcloud_color_cluster[color].height = 1;
+   }
 
    pcl::PointCloud<pcl::PointXYZHSV> pcloud_hsv;
    pcl::PointCloudXYZRGBtoXYZHSV(pcloud, pcloud_hsv);
 
-   for (size_t i = 0; i < pcloud_hsv.width*pcloud_hsv.height; i++)
+   for (size_t i = 0; i < pcloud_hsv.width * pcloud_hsv.height; i++)
    {
       for (auto hsv_filter : _hsv_filters)
       {
-         if (!inRange(hsv_filter.first.h, hsv_filter.second.h, pcloud_hsv.points[i].h)) continue;
-         if (!inRange(hsv_filter.first.s, hsv_filter.second.s, pcloud_hsv.points[i].s)) continue;
-         if (!inRange(hsv_filter.first.v, hsv_filter.second.v, pcloud_hsv.points[i].v)) continue;
+         if (!inRange(hsv_filter.min.h, hsv_filter.max.h, pcloud_hsv.points[i].h)) continue;
+         if (!inRange(hsv_filter.min.s, hsv_filter.max.s, pcloud_hsv.points[i].s)) continue;
+         if (!inRange(hsv_filter.min.v, hsv_filter.max.v, pcloud_hsv.points[i].v)) continue;
 
-         pcloud_filtered.points.push_back(pcloud.points[i]);
-         pcloud_filtered.width++;
+         pcloud_color_cluster[hsv_filter.color_name].points.push_back(pcloud.points[i]);
+         pcloud_color_cluster[hsv_filter.color_name].width++;
       }
    }
 
-   pcloud = pcloud_filtered;
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> result_pcloud_color_cluster;
+   for (auto color_pcloud : pcloud_color_cluster)
+   {
+      if (color_pcloud.second.size() >= _min_cluster_size)
+      {
+         result_pcloud_color_cluster[color_pcloud.first] = color_pcloud.second;
+      }
+   }
+
+   pcloud_color_cluster = result_pcloud_color_cluster;
 }
 
 bool ColorFiltering::inRange(const float& vmin, const float& vmax, const float& value) const

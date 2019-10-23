@@ -36,8 +36,9 @@ void BricksDetectionHandler::loadParameters()
    _nh.param<std::string>("rgb_img_topic", _image_topic, "/camera/color/image_raw");
    _nh.param<std::string>("pcloud_topic", _pcloud_topic, "/camera/depth_registered/points");
 
-   _nh.param<std::string>("colors_json", _colors_json,
-                          "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/bricks_detection/cfg/ist_colors.json");
+   _nh.param<std::string>(
+       "colors_json", _colors_json,
+       "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/mbzirc2020/bricks_detection/cfg/ist_colors.json");
 
    ROS_INFO_STREAM("Parameters loaded!");
 }
@@ -63,6 +64,8 @@ void BricksDetectionHandler::filters_reconfigure(bricks_detection::pointcloud_fi
    }
 
    if (config.colors_json_path != "default") _bricks_detection->color_filtering->addHSVFilter(config.colors_json_path);
+
+   _bricks_detection->color_filtering->setMinPointsPerColor(config.min_points_per_color);
 
    _bricks_detection->distance_filtering->toggleFilters(config.enable_voxel_grid, config.enable_distance_filter,
                                                         config.enable_sor);

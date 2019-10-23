@@ -16,6 +16,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <pcl/visualization/pcl_visualizer.h>
+
 #include <bricks_detection/filtering/color_filtering.h>
 #include <bricks_detection/filtering/distance_filtering.h>
 
@@ -33,6 +35,9 @@ class BricksDetection
    DistanceFiltering* distance_filtering;
 
   private:
-   void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud);
+   void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
+                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
+
+   void planeSegmentation(pcl::PointCloud<pcl::PointXYZRGB>& pcloud);
 };
 }  // namespace mbzirc
