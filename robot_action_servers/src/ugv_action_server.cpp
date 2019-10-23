@@ -170,8 +170,9 @@ public:
       ROS_ERROR("Failed to call [magnetize] service");
     }
 
-    color_detect.publish(_goal->color);
     std_msgs::String message;
+    message.data = _goal->color;
+    color_detect.publish(message);
     message.data = "e_start";
     pregrasp.publish(message);
     pregrasp_2.publish(message);
