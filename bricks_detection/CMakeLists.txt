@@ -45,7 +45,8 @@ find_package(catkin REQUIRED
    message_filters
    tf2
    dynamic_reconfigure
-   pcl_conversions)
+   pcl_conversions
+   mbzirc_comm_objs)
 
 catkin_python_setup()
 
@@ -80,7 +81,8 @@ catkin_package(
    CATKIN_DEPENDS rospy roscpp cv_bridge 
                   tf2  
                   dynamic_reconfigure
-                  pcl_conversions)
+                  pcl_conversions
+                  mbzirc_comm_objs)
 
 ###########
 ## Build ##

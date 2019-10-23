@@ -44,6 +44,7 @@ class BricksDetectionHandler
 
    ros::Subscriber _pcloud2_sub;
    ros::Publisher _pcloud2_pub;
+   ros::Publisher _bricks_detected_pub;
 
    std::string _image_topic;
    std::string _pcloud_topic;

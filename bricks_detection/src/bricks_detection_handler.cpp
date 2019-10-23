@@ -12,8 +12,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-#include <bricks_detection/bricks_detection.h>
+#include <mbzirc_comm_objs/ObjectDetection.h>
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+#include <bricks_detection/bricks_detection.h>
 #include "bricks_detection_handler.h"
 
 namespace mbzirc
@@ -46,6 +48,8 @@ void BricksDetectionHandler::loadTopics()
        _nh.subscribe<sensor_msgs::PointCloud2>(_pcloud_topic, 1, &BricksDetectionHandler::pointcloudCb, this);
 
    _pcloud2_pub = _nh.advertise<sensor_msgs::PointCloud2>("points", 1);
+
+   _bricks_detected_pub = _nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("bricks", 1);
 
    ROS_INFO_STREAM("Topics loaded!");
 }
