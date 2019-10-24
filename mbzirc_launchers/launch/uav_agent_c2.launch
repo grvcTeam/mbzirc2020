@@ -9,6 +9,7 @@
   <arg name="z" default="0" />
   <arg name="yaw" default="0" />
   <arg name="ual_backend" default="mavros" />
+  <arg name="mode" default="sim" />
   
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
@@ -22,7 +23,9 @@
     args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena -backend=light"/>
 
     <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
-        <arg name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'sim')" name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'real')" name="mode" value="custom"/>
+        <arg if="$(eval mode == 'real')" name="fcu_url" value="serial:///dev/ttyUSB0:921600"/>
         <arg name="description_package" value="uavs_description"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="id" value="$(arg agent_id)"/>

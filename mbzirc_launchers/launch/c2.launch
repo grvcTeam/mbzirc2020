@@ -3,7 +3,7 @@
 
     <arg name="mode" default="sim"/>
     <arg name="robot_model" default="mbzirc2020"/>
-    <arg name="arena_yaw" default="0"/>
+    <arg name="arena_yaw" default="0.745081"/>
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
@@ -15,7 +15,7 @@
 
     <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
-    <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="30 25 0 0 0 0 arena wall" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="12.855 7.5 0 0 0 0 arena wall" />
 
     <node name="target_estimator" pkg="target_estimation" type="estimation_node" output="screen">
         <param name="frequency" value="1.0"/>
@@ -31,15 +31,16 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="1"/>
         <arg name="color" value="Orange"/>
-        <arg name="flight_level" value="10.0"/>
-        <arg name="x" value="29"/>
-        <arg name="y" value="20"/>
+        <arg name="flight_level" value="5.0"/>
+        <arg name="x" value="12.855"/>
+        <arg name="y" value="0"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="light"/>
+        <arg name="ual_backend" value="mavros"/>
+        <arg name="mode" value="$(arg mode)"/>
     </include>
 
-    <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
+    <!-- <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
         <arg name="color" value="Indigo"/>
@@ -49,9 +50,9 @@
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
         <arg name="ual_backend" value="light"/>
-    </include>
+    </include> -->
 
 
-    <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/>
+    <!-- <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/> -->
 
 </launch>

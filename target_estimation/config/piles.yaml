@@ -2,8 +2,8 @@
 piles:
   - color: "red"
     frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
+    position_x: 5.0
+    position_y: 5.0
     position_z: 0.1
     orientation_yaw: 0.0
     scale_x: 3.0
@@ -12,8 +12,8 @@ piles:
 
   - color: "green"
     frame_id: "arena"
-    position_x: 30.0
-    position_y: 35.0
+    position_x: 20.7
+    position_y: 5.0
     position_z: 0.1
     orientation_yaw: 0.0
     scale_x: 3.0
@@ -22,8 +22,8 @@ piles:
 
   - color: "blue"
     frame_id: "arena"
-    position_x: 20.0
-    position_y: 25.0
+    position_x: 20.7
+    position_y: 10.0
     position_z: 0.1
     orientation_yaw: 0.0
     scale_x: 5.0
@@ -32,8 +32,8 @@ piles:
 
   - color: "orange"
     frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
+    position_x: 5.0
+    position_y: 10.0
     position_z: 0.1
     orientation_yaw: 0.0
     scale_x: 5.0

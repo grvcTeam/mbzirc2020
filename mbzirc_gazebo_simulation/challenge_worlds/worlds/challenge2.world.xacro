@@ -15,23 +15,23 @@
 <xacro:property name="blue" value="${[-10,0,0,0]}"/>  
 <xacro:property name="green" value="${[0,10,0,0]}"/>  
 <xacro:property name="red" value="${[0,-10,0,0]}"/>  -->
-<xacro:property name="ground" value="${[30,25,0,0]}"/>
-<xacro:property name="red01" value="${[30.5,14.5,0,0]}"/>
-<xacro:property name="red02" value="${[29.5,14.5,0,0]}"/>
-<xacro:property name="red03" value="${[29.5,15.5,0,0]}"/>
-<xacro:property name="red04" value="${[30.5,15.5,0,0]}"/>
-<xacro:property name="blue01" value="${[19,25.5,0,0]}"/>
-<xacro:property name="blue02" value="${[19,24.5,0,0]}"/>
-<xacro:property name="blue03" value="${[21,25.5,0,0]}"/>
-<xacro:property name="blue04" value="${[21,24.5,0,0]}"/>
-<xacro:property name="green01" value="${[30.5,35.5,0,0]}"/>
-<xacro:property name="green02" value="${[29.5,35.5,0,0]}"/>
-<xacro:property name="green03" value="${[30.5,34.5,0,0]}"/>
-<xacro:property name="green04" value="${[29.5,34.5,0,0]}"/>
-<xacro:property name="orange01" value="${[41,25.5,0,0]}"/>
-<xacro:property name="orange02" value="${[41,24.5,0,0]}"/>
-<xacro:property name="orange03" value="${[39,25.5,0,0]}"/>
-<xacro:property name="orange04" value="${[39,24.5,0,0]}"/>
+<xacro:property name="ground" value="${[12.855,7.5,0,0]}"/>
+<xacro:property name="red01" value="${[5.5,5.5,0,0]}"/>
+<xacro:property name="red02" value="${[5.5,4.5,0,0]}"/>
+<xacro:property name="red03" value="${[4.5,5.5,0,0]}"/>
+<xacro:property name="red04" value="${[4.5,4.5,0,0]}"/>
+<xacro:property name="blue01" value="${[20.5,10.5,0,0]}"/>
+<xacro:property name="blue02" value="${[20.5,9.5,0,0]}"/>
+<!-- <xacro:property name="blue03" value="${[19.5,10.5,0,0]}"/> -->
+<!-- <xacro:property name="blue04" value="${[19.5,9.5,0,0]}"/> -->
+<xacro:property name="green01" value="${[20.5,5.5,0,0]}"/>
+<xacro:property name="green02" value="${[20.5,4.5,0,0]}"/>
+<xacro:property name="green03" value="${[19.5,5.5,0,0]}"/>
+<xacro:property name="green04" value="${[19.5,4.5,0,0]}"/>
+<xacro:property name="orange01" value="${[5.5,10.5,0,0]}"/>
+<xacro:property name="orange02" value="${[5.5,9.5,0,0]}"/>
+<!-- <xacro:property name="orange03" value="${[4.5,10.5,0,0]}"/> -->
+<!-- <xacro:property name="orange04" value="${[4.5,9.5,0,0]}"/> -->
 
 
 
@@ -57,15 +57,15 @@
     <single_colored_brick id="Red_brick_04" pose="${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw}" sx="0.3" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Red" />
     <single_colored_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
     <single_colored_brick id="Blue_brick_02" pose="${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
+    <!-- <single_colored_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" /> -->
+    <!-- <single_colored_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" /> -->
     <single_colored_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
     <single_colored_brick id="Green_brick_02" pose="${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
     <single_colored_brick id="Green_brick_03" pose="${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
     <single_colored_brick id="Green_brick_04" pose="${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
     <single_colored_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
     <single_colored_brick id="Orange_brick_02" pose="${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
-    <single_colored_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
-    <single_colored_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <!-- <single_colored_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" /> -->
+    <!-- <single_colored_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" /> -->
   </world>
 </sdf>
