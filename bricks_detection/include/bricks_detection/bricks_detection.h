@@ -30,7 +30,8 @@ class BricksDetection
    BricksDetection();
    virtual ~BricksDetection(void);
 
-   void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud);
+   void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
+                    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 
    ColorFiltering* color_filtering;
    DistanceFiltering* distance_filtering;

@@ -22,21 +22,18 @@ BricksDetection::BricksDetection()
 
 BricksDetection::~BricksDetection() {}
 
-void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud)
+void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
+                                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
 {
    if (pcloud.empty()) return;
 
-   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> pcloud_color_cluster;
-
    filtering(pcloud, pcloud_color_cluster);
-   planeSegmentation(pcloud_color_cluster);
+   // planeSegmentation(pcloud_color_cluster);
 }
 
 void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                 std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
 {
-   if (pcloud.empty()) return;
-
    color_filtering->pointcloudFilter(pcloud, pcloud_color_cluster);
 
    for (auto color_pcloud : pcloud_color_cluster)

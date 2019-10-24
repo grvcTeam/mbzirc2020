@@ -49,7 +49,10 @@ void BricksDetectionHandler::loadTopics()
    _pcloud2_sub =
        _nh.subscribe<sensor_msgs::PointCloud2>(_pcloud_topic, 1, &BricksDetectionHandler::pointcloudCb, this);
 
-   _pcloud2_pub = _nh.advertise<sensor_msgs::PointCloud2>("points", 1);
+   _pcloud2_red_pub    = _nh.advertise<sensor_msgs::PointCloud2>("bricks/red", 1);
+   _pcloud2_blue_pub   = _nh.advertise<sensor_msgs::PointCloud2>("bricks/blue", 1);
+   _pcloud2_orange_pub = _nh.advertise<sensor_msgs::PointCloud2>("bricks/orange", 1);
+   _pcloud2_green_pub  = _nh.advertise<sensor_msgs::PointCloud2>("bricks/green", 1);
 
    _bricks_detected_pub = _nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("bricks", 1);
 
@@ -97,23 +100,49 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
-   sensor_msgs::PointCloud2 pcloud_tf_msg;
-   if (!pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener)) return;
+   // transforming
+   // sensor_msgs::PointCloud2 pcloud_tf_msg;
+   // if (!pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener)) return;
 
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
-   pcl::fromROSMsg(pcloud_tf_msg, pcloud);
+   pcl::fromROSMsg(*pcloud_msg, pcloud);
 
-   _bricks_detection->processData(pcloud);
+   // processing
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> pcloud_color_cluster;
+   _bricks_detection->processData(pcloud, pcloud_color_cluster);
 
-   pcl::PCLPointCloud2 pcloud2_out;
-   pcl::toPCLPointCloud2(pcloud, pcloud2_out);
+   // publishing
+   for (auto color_pcloud : pcloud_color_cluster)
+   {
+      pcl::PCLPointCloud2 pcloud2_out;
+      pcl::toPCLPointCloud2(color_pcloud.second, pcloud2_out);
 
-   sensor_msgs::PointCloud2 pcloud2_msg;
-   pcl_conversions::fromPCL(pcloud2_out, pcloud2_msg);
+      sensor_msgs::PointCloud2 pcloud2_msg;
+      pcl_conversions::fromPCL(pcloud2_out, pcloud2_msg);
 
-   pcloud2_msg.header.stamp    = pcloud_msg->header.stamp;
-   pcloud2_msg.header.frame_id = pcloud_msg->header.frame_id;
+      pcloud2_msg.header.stamp    = pcloud_msg->header.stamp;
+      pcloud2_msg.header.frame_id = pcloud_msg->header.frame_id;
 
-   _pcloud2_pub.publish(pcloud2_msg);
+      if (color_pcloud.first == "red")
+      {
+         _pcloud2_red_pub.publish(pcloud2_msg);
+         continue;
+      }
+      else if (color_pcloud.first == "blue")
+      {
+         _pcloud2_blue_pub.publish(pcloud2_msg);
+         continue;
+      }
+      else if (color_pcloud.first == "orange")
+      {
+         _pcloud2_orange_pub.publish(pcloud2_msg);
+         continue;
+      }
+      else if (color_pcloud.first == "green")
+      {
+         _pcloud2_green_pub.publish(pcloud2_msg);
+         continue;
+      }
+   }
 }
 }  // namespace mbzirc

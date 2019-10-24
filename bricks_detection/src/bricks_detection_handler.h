@@ -44,7 +44,10 @@ class BricksDetectionHandler
    dynamic_reconfigure::Server<bricks_detection::pointcloud_filtersConfig>::CallbackType _pcloud_filter_f;
 
    ros::Subscriber _pcloud2_sub;
-   ros::Publisher _pcloud2_pub;
+   ros::Publisher _pcloud2_red_pub;
+   ros::Publisher _pcloud2_blue_pub;
+   ros::Publisher _pcloud2_orange_pub;
+   ros::Publisher _pcloud2_green_pub;
    ros::Publisher _bricks_detected_pub;
 
    tf::TransformListener _baselink_listener;
