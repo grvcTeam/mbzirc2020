@@ -39,6 +39,7 @@ void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    for (auto color_pcloud : pcloud_color_cluster)
    {
       distance_filtering->pointcloudFilter(color_pcloud.second);
+      pcloud_color_cluster[color_pcloud.first] = color_pcloud.second;
    }
 }
 

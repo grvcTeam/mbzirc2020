@@ -39,7 +39,7 @@ void BricksDetectionHandler::loadParameters()
 
    _nh.param<std::string>(
        "colors_json", _colors_json,
-       "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/mbzirc2020/bricks_detection/cfg/ist_colors.json");
+       "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/mbzirc2020/bricks_detection/cfg/grvc_field_testing.json");
 
    ROS_INFO_STREAM("Parameters loaded!");
 }
