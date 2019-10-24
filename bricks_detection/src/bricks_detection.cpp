@@ -9,11 +9,6 @@
  *  Copyright (c) 2019, FADA-CATEC
  */
 
-#include <pcl/filters/extract_indices.h>
-
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/segmentation/region_growing.h>
-
 #include <bricks_detection/bricks_detection.h>
 
 namespace mbzirc
@@ -22,16 +17,19 @@ BricksDetection::BricksDetection()
 {
    color_filtering    = new ColorFiltering();
    distance_filtering = new DistanceFiltering();
+   plane_detector     = new RANSACPlaneDetection();
 }
 
 BricksDetection::~BricksDetection() {}
 
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud)
 {
+   if (pcloud.empty()) return;
+
    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> pcloud_color_cluster;
 
    filtering(pcloud, pcloud_color_cluster);
-   // planeSegmentation(pcloud);
+   planeSegmentation(pcloud_color_cluster);
 }
 
 void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
@@ -47,21 +45,21 @@ void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    }
 }
 
-void BricksDetection::planeSegmentation(pcl::PointCloud<pcl::PointXYZRGB>& pcloud)
+void BricksDetection::planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
 {
-   if (pcloud.empty()) return;
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> result_pcloud_color_cluster;
 
-   // TODO: move this to external class
-   pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>(pcloud);
+   for (auto color_pcloud : pcloud_color_cluster)
+   {
+      pcl::PointCloud<pcl::PointXYZRGB> plane_pcloud;
+      plane_detector->detect(color_pcloud.second, plane_pcloud);
 
-   pcl::PointCloud<pcl::Normal>::Ptr p_cloud_normals = boost::make_shared<pcl::PointCloud<pcl::Normal>>();
-   pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> normal_estimator;
+      if (!plane_pcloud.empty())
+      {
+         result_pcloud_color_cluster[color_pcloud.first] = plane_pcloud;
+      }
+   }
 
-   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGB>());
-   normal_estimator.setSearchMethod(tree);
-   normal_estimator.setRadiusSearch(0.02);  // TODO: dynamic param
-
-   normal_estimator.setInputCloud(p_pcloud);
-   normal_estimator.compute(*p_cloud_normals);
+   pcloud_color_cluster = result_pcloud_color_cluster;
 }
 }  // namespace mbzirc

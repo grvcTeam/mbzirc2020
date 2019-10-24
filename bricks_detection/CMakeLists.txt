@@ -107,6 +107,7 @@ add_library(${PROJECT_NAME}_lib
   src/bricks_detection.cpp
   src/color_filtering.cpp
   src/distance_filtering.cpp
+  src/ransac_plane_detection.cpp
   )
 add_dependencies(${PROJECT_NAME}_lib       ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_lib  ${catkin_LIBRARIES} ${Eigen3_LIBRARIES} ${PCL_LIBRARIES} ${BOOST_LIBRARYDIR})

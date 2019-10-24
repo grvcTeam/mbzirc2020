@@ -20,6 +20,7 @@
 
 #include <bricks_detection/filtering/color_filtering.h>
 #include <bricks_detection/filtering/distance_filtering.h>
+#include <bricks_detection/ransac_plane_detection.h>
 
 namespace mbzirc
 {
@@ -33,11 +34,12 @@ class BricksDetection
 
    ColorFiltering* color_filtering;
    DistanceFiltering* distance_filtering;
+   RANSACPlaneDetection* plane_detector;
 
   private:
    void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 
-   void planeSegmentation(pcl::PointCloud<pcl::PointXYZRGB>& pcloud);
+   void planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 };
 }  // namespace mbzirc

@@ -98,7 +98,7 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
    }
 
    sensor_msgs::PointCloud2 pcloud_tf_msg;
-   pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener);
+   if (!pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener)) return;
 
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
    pcl::fromROSMsg(pcloud_tf_msg, pcloud);
