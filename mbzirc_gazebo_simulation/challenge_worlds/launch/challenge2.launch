@@ -14,11 +14,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" />
 
     <node name="xacro" pkg="xacro" type="xacro"
-       args="--inorder -o $(find challenge_worlds)/worlds/challenge2.world $(find challenge_worlds)/worlds/challenge2.world.xacro arena_yaw:=$(arg arena_yaw)" />
+        args="--inorder -o $(find challenge_worlds)/worlds/challenge2.world $(find challenge_worlds)/worlds/challenge2.world.xacro arena_yaw:=$(arg arena_yaw)" />
 
     <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
         args="-physics=ode -world=$(find challenge_worlds)/worlds/challenge2.world
-			  -add_model_path=$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
+			  -add_model_path=$(find challenge_worlds)/models:$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
 			  -description_package=uavs_description">
         <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
     </node>
