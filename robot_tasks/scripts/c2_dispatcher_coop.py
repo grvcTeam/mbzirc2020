@@ -42,12 +42,12 @@ brick_scales['blue']   = Vector3(x = 1.2, y = 0.2, z = 0.2)
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green'], ['green', 'red']]
+wall_blueprint = [['green', 'green'], ['red', 'red']]
 
 
 class CentralUnit(object):
     def __init__(self):
-        self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+        self.available_robots = ['1']  # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
         self.robots = {}
         for robot_id in self.available_robots:
