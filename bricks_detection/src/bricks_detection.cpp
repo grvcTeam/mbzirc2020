@@ -30,18 +30,9 @@ void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
 {
    if (pcloud.empty()) return;
 
-   filtering(pcloud, pcloud_color_cluster);
-
-   // transforming
-   for (auto color_pcloud : pcloud_color_cluster)
-   {
-      pcl::PointCloud<pcl::PointXYZRGB> tf_pcloud;
-      pcl_ros::transformPointCloud(color_pcloud.second, tf_pcloud, transform);
-
-      pcloud_color_cluster[color_pcloud.first] = tf_pcloud;
-   }
-
-   // planeSegmentation(pcloud_color_cluster);
+   this->filtering(pcloud, pcloud_color_cluster);
+   this->transform(pcloud_color_cluster, transform);
+   // this->planeSegmentation(pcloud_color_cluster);
 }
 
 void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
@@ -53,6 +44,18 @@ void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    {
       distance_filtering->pointcloudFilter(color_pcloud.second);
       pcloud_color_cluster[color_pcloud.first] = color_pcloud.second;
+   }
+}
+
+void BricksDetection::transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+                                tf::StampedTransform& transform)
+{
+   for (auto color_pcloud : pcloud_color_cluster)
+   {
+      pcl::PointCloud<pcl::PointXYZRGB> tf_pcloud;
+      pcl_ros::transformPointCloud(color_pcloud.second, tf_pcloud, transform);
+
+      pcloud_color_cluster[color_pcloud.first] = tf_pcloud;
    }
 }
 

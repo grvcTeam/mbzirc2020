@@ -42,6 +42,9 @@ class BricksDetection
    void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 
+   void transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+                  tf::StampedTransform& transform);
+
    void planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
 };
 }  // namespace mbzirc
