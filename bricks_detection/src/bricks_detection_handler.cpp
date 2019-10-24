@@ -11,7 +11,6 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/transforms.h>
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -101,15 +100,23 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
    }
 
    // transforming
-   // sensor_msgs::PointCloud2 pcloud_tf_msg;
-   // if (!pcl_ros::transformPointCloud("base_link", *pcloud_msg, pcloud_tf_msg, _baselink_listener)) return;
+   tf::StampedTransform transform;
+   try
+   {
+      _baselink_listener.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0), transform);
+   }
+   catch (const tf::TransformException& e)
+   {
+      ROS_ERROR("%s", e.what());
+      return;
+   }
 
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
    pcl::fromROSMsg(*pcloud_msg, pcloud);
 
    // processing
    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> pcloud_color_cluster;
-   _bricks_detection->processData(pcloud, pcloud_color_cluster);
+   _bricks_detection->processData(pcloud, pcloud_color_cluster, transform);
 
    // publishing
    for (auto color_pcloud : pcloud_color_cluster)

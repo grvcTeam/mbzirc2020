@@ -16,7 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <pcl/visualization/pcl_visualizer.h>
+#include <tf/transform_datatypes.h>
 
 #include <bricks_detection/filtering/color_filtering.h>
 #include <bricks_detection/filtering/distance_filtering.h>
@@ -31,7 +31,8 @@ class BricksDetection
    virtual ~BricksDetection(void);
 
    void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
+                    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+                    tf::StampedTransform& transform);
 
    ColorFiltering* color_filtering;
    DistanceFiltering* distance_filtering;

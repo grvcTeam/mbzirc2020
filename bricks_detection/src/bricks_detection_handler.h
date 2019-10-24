@@ -12,6 +12,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <tf/tf.h>
 #include <tf/transform_listener.h>
 
 #include <dynamic_reconfigure/server.h>

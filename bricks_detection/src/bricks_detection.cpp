@@ -9,6 +9,8 @@
  *  Copyright (c) 2019, FADA-CATEC
  */
 
+#include <pcl_ros/transforms.h>
+
 #include <bricks_detection/bricks_detection.h>
 
 namespace mbzirc
@@ -23,11 +25,22 @@ BricksDetection::BricksDetection()
 BricksDetection::~BricksDetection() {}
 
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
+                                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+                                  tf::StampedTransform& transform)
 {
    if (pcloud.empty()) return;
 
    filtering(pcloud, pcloud_color_cluster);
+
+   // transforming
+   for (auto color_pcloud : pcloud_color_cluster)
+   {
+      pcl::PointCloud<pcl::PointXYZRGB> tf_pcloud;
+      pcl_ros::transformPointCloud(color_pcloud.second, tf_pcloud, transform);
+
+      pcloud_color_cluster[color_pcloud.first] = tf_pcloud;
+   }
+
    // planeSegmentation(pcloud_color_cluster);
 }
 
