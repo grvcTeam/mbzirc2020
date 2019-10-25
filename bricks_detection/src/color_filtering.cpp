@@ -65,11 +65,11 @@ void ColorFiltering::addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv, co
 void ColorFiltering::setMinPointsPerColor(const int& min) { _min_cluster_size = min; }
 
 void ColorFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                                      std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster)
+                                      std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster)
 {
    for (auto color : _colors)
    {
-      pcloud_color_cluster[color].height = 1;
+      color_pcloud_cluster[color].height = 1;
    }
 
    pcl::PointCloud<pcl::PointXYZHSV> pcloud_hsv;
@@ -83,21 +83,21 @@ void ColorFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
          if (!inRange(hsv_filter.min.s, hsv_filter.max.s, pcloud_hsv.points[i].s)) continue;
          if (!inRange(hsv_filter.min.v, hsv_filter.max.v, pcloud_hsv.points[i].v)) continue;
 
-         pcloud_color_cluster[hsv_filter.color_name].points.push_back(pcloud.points[i]);
-         pcloud_color_cluster[hsv_filter.color_name].width++;
+         color_pcloud_cluster[hsv_filter.color_name].points.push_back(pcloud.points[i]);
+         color_pcloud_cluster[hsv_filter.color_name].width++;
       }
    }
 
-   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> result_pcloud_color_cluster;
-   for (auto color_pcloud : pcloud_color_cluster)
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> result_color_pcloud_cluster;
+   for (auto color_pcloud : color_pcloud_cluster)
    {
       if (color_pcloud.second.size() >= _min_cluster_size)
       {
-         result_pcloud_color_cluster[color_pcloud.first] = color_pcloud.second;
+         result_color_pcloud_cluster[color_pcloud.first] = color_pcloud.second;
       }
    }
 
-   pcloud_color_cluster = result_pcloud_color_cluster;
+   color_pcloud_cluster = result_color_pcloud_cluster;
 }
 
 bool ColorFiltering::inRange(const float& vmin, const float& vmax, const float& value) const

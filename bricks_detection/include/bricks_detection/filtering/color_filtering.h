@@ -31,7 +31,7 @@ class ColorFiltering
    void setMinPointsPerColor(const int& min);
 
    void pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                         std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
+                         std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 
   private:
    bool inRange(const float& vmin, const float& vmax, const float& value) const;
@@ -39,6 +39,6 @@ class ColorFiltering
    std::vector<HSVRange> _hsv_filters;
    std::set<std::string> _colors;
 
-   int _min_cluster_size;
+   unsigned int _min_cluster_size;
 };
 }  // namespace mbzirc

@@ -31,7 +31,7 @@ class BricksDetection
    virtual ~BricksDetection(void);
 
    void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+                    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                     tf::StampedTransform& transform);
 
    ColorFiltering* color_filtering;
@@ -40,11 +40,11 @@ class BricksDetection
 
   private:
    void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
+                  std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 
-   void transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster,
+   void transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                   tf::StampedTransform& transform);
 
-   void planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& pcloud_color_cluster);
+   void planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 };
 }  // namespace mbzirc

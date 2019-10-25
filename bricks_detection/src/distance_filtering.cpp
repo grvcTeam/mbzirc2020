@@ -29,12 +29,16 @@ void DistanceFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pclo
       voxel_grid.filter(pcloud);
    }
 
+   if (pcloud.empty()) return;
+
    if (_enable_z_filtering)
    {
       z_filtering.setInputCloud(p_pcloud);
       z_filtering.setFilterFieldName("z");
       z_filtering.filter(pcloud);
    }
+
+   if (pcloud.empty()) return;
 
    if (_enable_sor_filtering)
    {

@@ -99,7 +99,6 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
-   // transforming
    tf::StampedTransform transform;
    try
    {
@@ -114,12 +113,10 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
    pcl::fromROSMsg(*pcloud_msg, pcloud);
 
-   // processing
-   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> pcloud_color_cluster;
-   _bricks_detection->processData(pcloud, pcloud_color_cluster, transform);
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> color_pcloud_cluster;
+   _bricks_detection->processData(pcloud, color_pcloud_cluster, transform);
 
-   // publishing
-   for (auto color_pcloud : pcloud_color_cluster)
+   for (auto color_pcloud : color_pcloud_cluster)
    {
       pcl::PCLPointCloud2 pcloud2_out;
       pcl::toPCLPointCloud2(color_pcloud.second, pcloud2_out);
