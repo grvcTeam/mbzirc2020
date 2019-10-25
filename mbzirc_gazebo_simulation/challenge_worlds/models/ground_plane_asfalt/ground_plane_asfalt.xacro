@@ -11,7 +11,7 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>100 60</size>
+              <size>100 100</size>
             </plane>
           </geometry>
           <surface>
@@ -36,14 +36,15 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>50 60</size>
+              <size>60 50</size>
             </plane>
           </geometry>
           <material>
             <script>
-              <uri>model://ground_plane_asfalt/materials/scripts</uri>
-              <uri>model://ground_plane_asfalt/materials/textures</uri>
-		      <name>${material}</name>
+              <uri>file://materials/mbzirc.material</uri>
+              <!-- <uri>model://ground_plane_asfalt/materials/scripts</uri>
+              <uri>model://ground_plane_asfalt/materials/textures</uri> -->
+		          <name>${material}</name>
             </script>
           </material>
         </visual>

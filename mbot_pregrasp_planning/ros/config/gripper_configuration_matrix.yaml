@@ -1,0 +1,11 @@
+# The offset in the Z axis is to account for the distance
+# between the left_arm_joint6 (e.g. end-effector in MoveIt!)
+# and the gripper_tip_link
+
+# this tf was obtained by running: rosrun tf tf_echo left_arm_virtual_endeffector left_arm_Wrist
+mbot_left_arm_gripper: [[ 1.0, 0.0,  0.0,   0.0  ],
+                        [ 0.0, 1.0,  0.0,   -0.205  ],
+                        [ 0.0, 0.0,  1.0,   0.0  ],
+                        [ 0.0, 0.0,  0.0,   1.0  ]]
+
+# neste momento isto está a zeros

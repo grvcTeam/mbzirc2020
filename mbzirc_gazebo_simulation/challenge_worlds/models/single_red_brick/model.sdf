@@ -1,0 +1,35 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+<model name="single_red_brick">
+  <link name="Red_brick_random_link">
+        <inertial> 
+		  <mass>1</mass>
+          <inertia> 
+			<ixx>${(1.0/12.0)*1*(pow(0.2,2)+pow(0.2,2))}</ixx> <ixy>0</ixy> 
+			<ixz>0</ixz> <iyy>${(1.0/12.0)*1*(pow(0.3,2)+pow(0.2,2))}</iyy> 
+			<iyz>0</iyz> <izz>${(1.0/12.0)*1*(pow(0.3,2)+pow(0.2,2))}</izz> 
+		  </inertia>
+        </inertial>
+    <visual name="visual">
+	  <material> 
+		<script>
+			<uri>gazebo.material</uri>
+			<name>Gazebo/Red</name>
+		</script> 
+	  </material>
+      <geometry>
+        <box>
+          <size>0.3 0.2 0.2</size>
+        </box>
+      </geometry>
+    </visual>
+    <collision name="collision">
+      <geometry>
+        <box>
+          <size>0.3 0.2 0.2</size>
+        </box>
+      </geometry>
+    </collision>
+  </link>
+</model>
+</sdf>

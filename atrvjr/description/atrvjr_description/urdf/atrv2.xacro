@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atrvjr">
+    <xacro:macro name="atrvjr" params="armConnectionFrame">
+
+    <!-- xacro parameters -->
+    <xacro:property name="M_PI" value="3.14159"/>
+    <!-- Robot parameters -->
+    <xacro:property name="center_height" value="0.1525" />
+    <!-- This is not including the bumpers -->
+    <xacro:property name="chassis_length" value="0.64" />
+    <!-- This is including the bumpers -->
+    <xacro:property name="chassis_length_bumpers" value="0.78" />
+    <!-- This is not including the wheels -->
+    <xacro:property name="chassis_width" value="0.385" />
+    <!-- This is not including equipment and racks on the top -->
+    <xacro:property name="chassis_height" value="0.42" />
+    <!-- Wheel properties -->
+    <xacro:property name="wheel_radius" value="0.155"/>
+    <xacro:property name="wheel_width" value="0.095"/>
+    <xacro:property name="wheel_base" value="0.38"/> <!-- aka distance between axis -->
+
+    <!-- xacro macros -->
+    <xacro:macro name="default_inertial" params="mass">
+        <inertial>
+        <mass value="${mass}" />
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+                iyy="1.0" iyz="0.0"
+                izz="1.0" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="wheel" params="prefix reflect_x reflect_y">
+        <link name="${prefix}_wheel_link">
+            <xacro:default_inertial mass="1"/>
+
+            <collision>
+                <origin xyz="0 0 ${wheel_width/2}" rpy="0 0 0" />
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+            </collision>
+        </link>
+
+        <!-- base_link -> ${prefix}_wheel_link -->
+        <joint name="${prefix}_wheel_joint" type="fixed">
+            <parent link="center_link"/>
+            <child link="${prefix}_wheel_link"/>
+            <origin xyz="${(wheel_base/2)*reflect_x} ${(chassis_width/2 + 0.02)*reflect_y} 0"
+            rpy="${(M_PI/2)*reflect_y*-1} 0 0"/>
+        </joint>
+    </xacro:macro>
+
+    <!-- left_front_wheel_link -->
+    <xacro:wheel prefix="left_front" reflect_x="1" reflect_y="1" />
+    <!-- left_rear_wheel_link -->
+    <xacro:wheel prefix="left_rear" reflect_x="-1" reflect_y="1" />
+    <!-- right_front_wheel_link -->
+    <xacro:wheel prefix="right_front" reflect_x="1" reflect_y="-1" />
+    <!-- right_rear_wheel_link -->
+    <xacro:wheel prefix="right_rear" reflect_x="-1" reflect_y="-1" />
+
+    <!-- links -->
+    <!-- base_link -->
+    <!-- The frame of the floor directly below the center_link and -->
+    <!-- is needed for the navigation stack to work properly -->
+    <link name="base_link"></link>
+
+    <!-- center_link -->
+    <!-- The link that is the origin of all of the components of the -->
+    <!-- robot and should also represent the main chassis via inertial, -->
+    <!-- visual, and geometry elements of the link -->
+    <link name="center_link">
+        <xacro:default_inertial mass="50"/>
+
+        <visual>
+            <geometry>
+                <mesh filename="package://atrvjr_description/meshes/atrvjr_chassis_v5.dae"/>
+            </geometry>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 ${chassis_height/2.0 - 0.10}" rpy="0 0 0" />
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- base_link -> center_link -->
+    <joint name="base_link_joint" type="fixed">
+        <origin xyz="0 0 ${center_height}" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="center_link"/>
+    </joint>
+
+    <!-- Crossbow Imu Link -->
+    <link name="cbimu_frame"/>
+
+    <joint name="base_cbimu_joint" type="fixed">
+        <origin xyz="0 0 0.267" rpy="0 ${M_PI} 0"/>
+        <parent link="center_link"/>
+        <child link="cbimu_frame"/>
+    </joint>
+
+        <!-- MPU Imu Link -->
+    <link name="mpuimu_frame"/>
+
+    <joint name="base_mpuimu_joint" type="fixed">
+        <origin xyz="0 0 0.35" rpy="0 0 ${M_PI/2.0}"/>
+        <parent link="center_link"/>
+        <child link="mpuimu_frame"/>
+    </joint>
+
+    <!-- Arm Link -->
+    <link name="${armConnectionFrame}"/>
+
+    <joint name="$to_{armConnectionFrame}_joint" type="fixed">
+        <origin xyz="0 0 0.38" rpy="0 0 0"/>
+        <parent link="center_link"/>
+        <child link="${armConnectionFrame}"/>
+    </joint>
+
+    <!-- Hokuyo Link -->
+    <link name="lrf_frame"/>
+
+    <joint name="lrf_joint" type="fixed">
+        <origin xyz="0.2 0 0.35" rpy="0 0 0"/>
+        <parent link="center_link"/>
+        <child link="lrf_frame"/>
+    </joint>
+
+    <!-- Hokuyo Link -->
+    <link name="novatel"/>
+
+    <joint name="novatel_joint" type="fixed">
+        <origin xyz="-0.15 0.1 0.4" rpy="0 0 0"/>
+        <parent link="center_link"/>
+        <child link="novatel"/>
+    </joint>
+
+    </xacro:macro>
+</robot>
+
+
+
+
+
+

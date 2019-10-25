@@ -1,0 +1,17 @@
+<launch>
+    <node name="imu_filter_madgwick" pkg="imu_filter_madgwick" type="imu_filter_node" output="screen">
+        <!-- Subscribes -->
+        <remap from="imu/data_raw" to="/xbow6x/xbow6x_node/data_raw"/>
+        <!-- Publishes -->
+        <remap from="imu/data" to="imu/data_madgwick"/>
+        <!-- Params -->
+        <param name="use_mag" value="false"/>-->
+    </node>
+
+    <node name="imu_complementary_filter" pkg="imu_complementary_filter" type="complementary_filter_node" output="screen">
+        <!-- Subscribes -->
+        <remap from="imu/data_raw" to="/xbow6x/xbow6x_node/data_raw"/>
+        <!-- Publishes -->
+        <remap from="imu/data" to="imu/data_complementary"/>
+    </node>
+</launch>

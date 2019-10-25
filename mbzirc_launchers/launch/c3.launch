@@ -3,12 +3,14 @@
 
     <arg name="mode" default="sim"/>
     <arg name="robot_model" default="mbzirc2020"/>
-    <arg name="arena_yaw" default="0.01"/>
+    <arg name="arena_yaw" default="0"/>
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
-        <include file="$(find challenge_worlds)/launch/challenge3.launch"/>
+        <include file="$(find challenge_worlds)/launch/challenge3.launch">
+            <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        </include>    
     </group>
 
     <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->

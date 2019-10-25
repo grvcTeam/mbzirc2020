@@ -1,0 +1,4 @@
+bool requestedState
+---
+bool actualState
+string msg

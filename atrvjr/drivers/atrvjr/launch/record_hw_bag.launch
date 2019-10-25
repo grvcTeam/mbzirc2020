@@ -1,0 +1,7 @@
+<launch>
+    <arg name="bag_dir" default="/home/atrvjr/ros_ws/bags/outside/" />
+    <node pkg="rosbag" type="record" name="bag_rec"
+        args="-o $(arg bag_dir)bag -a -x /rosout"
+    />
+</launch>
+

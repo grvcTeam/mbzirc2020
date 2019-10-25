@@ -1,0 +1,12 @@
+<launch>
+  <arg name="ns" default="/host_console"/>
+  <arg name="serialPort" default="/dev/ttyUSB2"/>
+  <arg name="severity" default="1"/>
+
+  <node ns="$(arg ns)" name="host_console_node" pkg="host_console" type="host_console_node" output="screen" required="true">
+  	<param name="port" value="$(arg serialPort)"/>
+    <param name="baudrate" value="9600" />
+    <param name="severity" value="$(arg severity)"/>
+  </node>
+ </launch>
+
