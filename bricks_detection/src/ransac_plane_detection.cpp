@@ -24,6 +24,7 @@ RANSACPlaneDetection::RANSACPlaneDetection()
 
    _max_ransac_iterations = 3;
    _coef0 = _coef1 = _coef2 = 0.2;
+   _enabled                 = true;
 }
 
 RANSACPlaneDetection::~RANSACPlaneDetection() {}
@@ -31,6 +32,12 @@ RANSACPlaneDetection::~RANSACPlaneDetection() {}
 void RANSACPlaneDetection::detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                   pcl::PointCloud<pcl::PointXYZRGB>& plane_pcloud)
 {
+   if (!_enabled || pcloud.empty())
+   {
+      plane_pcloud = pcloud;
+      return;
+   }
+
    pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>(pcloud);
 
    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
@@ -58,6 +65,8 @@ void RANSACPlaneDetection::detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
       }
    }
 }
+
+void RANSACPlaneDetection::toggle(const bool& enable) { _enabled = enable; }
 
 void RANSACPlaneDetection::setMaxIterations(const int& max_iterations) { _max_ransac_iterations = max_iterations; }
 

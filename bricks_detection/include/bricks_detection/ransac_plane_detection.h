@@ -24,6 +24,7 @@ class RANSACPlaneDetection
 
    void detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud, pcl::PointCloud<pcl::PointXYZRGB>& plane_pcloud);
 
+   void toggle(const bool& enable);
    void setMaxIterations(const int& max_iterations);
    void setMaxCoefs(const float& coef0, const float& coef1, const float& coef2);
 
@@ -32,6 +33,7 @@ class RANSACPlaneDetection
   private:
    bool checkPlane(const pcl::ModelCoefficients& coef);
 
+   bool _enabled;
    unsigned int _max_ransac_iterations;
    float _coef0, _coef1, _coef2;
 };
