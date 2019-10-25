@@ -89,6 +89,9 @@ void BricksDetectionHandler::filters_reconfigure(bricks_detection::pointcloud_fi
       _bricks_detection->distance_filtering->sor_filtering.setMeanK(config.sor_mean_k);
       _bricks_detection->distance_filtering->sor_filtering.setStddevMulThresh(config.sor_std_dev_mul_thresh);
    }
+
+   _bricks_detection->plane_detector->setMaxIterations(config.max_ransac_iterations);
+   _bricks_detection->plane_detector->setMaxCoefs(config.plane_coef0, config.plane_coef1, config.plane_coef2);
 }
 
 void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg)

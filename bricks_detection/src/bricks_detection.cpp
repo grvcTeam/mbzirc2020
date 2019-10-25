@@ -32,7 +32,7 @@ void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
 
    this->filtering(pcloud, color_pcloud_cluster);
    this->transform(color_pcloud_cluster, transform);
-   // this->planeSegmentation(color_pcloud_cluster);
+   this->planeSegmentation(color_pcloud_cluster);
 }
 
 void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,

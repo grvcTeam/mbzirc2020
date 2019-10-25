@@ -23,6 +23,7 @@ RANSACPlaneDetection::RANSACPlaneDetection()
    detector.setDistanceThreshold(0.01);
 
    _max_ransac_iterations = 3;
+   _coef0 = _coef1 = _coef2 = 0.2;
 }
 
 RANSACPlaneDetection::~RANSACPlaneDetection() {}
@@ -58,10 +59,22 @@ void RANSACPlaneDetection::detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    }
 }
 
+void RANSACPlaneDetection::setMaxIterations(const int& max_iterations) { _max_ransac_iterations = max_iterations; }
+
+void RANSACPlaneDetection::setMaxCoefs(const float& coef0, const float& coef1, const float& coef2)
+{
+   _coef0 = coef0;
+   _coef1 = coef1;
+   _coef2 = coef2;
+}
+
 bool RANSACPlaneDetection::checkPlane(const pcl::ModelCoefficients& coef)
 {
-   float constant = fmod(fabs((coef.values[4]) / (coef.values[3])), 0.2);
-   if (((fabs(coef.values[0]) < 0.2) && (fabs(coef.values[1]) < 0.2)) && (constant < 0.2)) return true;
+   float constant = fmod(fabs((coef.values[4]) / (coef.values[3])), _coef2);
+   if ((fabs(coef.values[0]) < _coef0) && (fabs(coef.values[1]) < _coef1) && (fabs(coef.values[3]) < 0.1))
+      return false;
+   else if (((fabs(coef.values[0]) < _coef0) && (fabs(coef.values[1]) < _coef1)) && (constant < _coef2))
+      return true;
    return false;
 }
 

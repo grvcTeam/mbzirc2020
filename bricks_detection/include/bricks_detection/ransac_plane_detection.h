@@ -22,8 +22,10 @@ class RANSACPlaneDetection
    RANSACPlaneDetection();
    virtual ~RANSACPlaneDetection(void);
 
-   void detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
-                                  pcl::PointCloud<pcl::PointXYZRGB>& plane_pcloud);
+   void detect(pcl::PointCloud<pcl::PointXYZRGB>& pcloud, pcl::PointCloud<pcl::PointXYZRGB>& plane_pcloud);
+
+   void setMaxIterations(const int& max_iterations);
+   void setMaxCoefs(const float& coef0, const float& coef1, const float& coef2);
 
    pcl::SACSegmentation<pcl::PointXYZRGB> detector;
 
@@ -31,5 +33,6 @@ class RANSACPlaneDetection
    bool checkPlane(const pcl::ModelCoefficients& coef);
 
    unsigned int _max_ransac_iterations;
+   float _coef0, _coef1, _coef2;
 };
 }  // namespace mbzirc
