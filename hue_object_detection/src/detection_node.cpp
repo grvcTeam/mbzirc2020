@@ -222,14 +222,14 @@ int main(int argc, char** argv) {
   }
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter("camera_0/camera_info", "camera_0/image_raw", "hue_detection", true);
+  ImageConverter image_converter("camera/color/camera_info", "camera/color/image_raw", "hue_detection", false);
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
   HueDetection detection;
   HueDetectionConfig detection_config;
-	detection_config.saturation_threshold = 128.0;
-	detection_config.likelihood_threshold = 96.0;
-	detection_config.min_area = 2.0;
+	detection_config.saturation_threshold = 40.0;
+	detection_config.likelihood_threshold = 95.0;
+	detection_config.min_area = 400.0;
 	detection_config.poly_epsilon = 3.0;
   detection.setConfig(detection_config);
   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
