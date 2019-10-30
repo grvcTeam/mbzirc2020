@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <opencv2/core/core.hpp>
+
 #include <pcl/filters/filter.h>
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/point_cloud.h>
@@ -30,6 +32,7 @@ class BricksDetection
    BricksDetection();
    virtual ~BricksDetection(void);
 
+   void processData(cv::Mat& img, cv::Mat& filtered_img);
    void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                     std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                     tf::StampedTransform& transform);
@@ -39,6 +42,7 @@ class BricksDetection
    RANSACPlaneDetection* plane_detector;
 
   private:
+   void filtering(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster);
    void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 

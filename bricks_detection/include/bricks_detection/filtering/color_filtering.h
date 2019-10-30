@@ -13,6 +13,8 @@
 
 #include <set>
 
+#include <opencv2/core/core.hpp>
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -30,6 +32,7 @@ class ColorFiltering
    void addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv, const std::string& color_name);
    void setMinPointsPerColor(const int& min);
 
+   void imageFilter(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster);
    void pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                          std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 

@@ -20,6 +20,8 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include <std_srvs/SetBool.h>
+
 #include <bricks_detection/pointcloud_filtersConfig.h>
 
 namespace mbzirc
@@ -33,10 +35,14 @@ class BricksDetectionHandler
 
   private:
    void loadParameters();
-   void loadTopics();
+   void loadServices();
+   void loadTopics(const bool set_publishers = true);
 
-   void filters_reconfigure(bricks_detection::pointcloud_filtersConfig& config, uint32_t);
+   void filtersReconfigureCb(bricks_detection::pointcloud_filtersConfig& config, uint32_t);
 
+   bool usePointcloudCb(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
+
+   void rgbImageCb(const sensor_msgs::Image::ConstPtr& image_msg);
    void pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg);
 
    ros::NodeHandle _nh;
@@ -44,7 +50,11 @@ class BricksDetectionHandler
    dynamic_reconfigure::Server<bricks_detection::pointcloud_filtersConfig> _pcloud_filter_rconfig_server;
    dynamic_reconfigure::Server<bricks_detection::pointcloud_filtersConfig>::CallbackType _pcloud_filter_f;
 
+   ros::ServiceServer _use_pointcloud_srv;
+
+   ros::Subscriber _rgb_sub;
    ros::Subscriber _pcloud2_sub;
+   ros::Publisher _rgb_pub;
    ros::Publisher _pcloud2_red_pub;
    ros::Publisher _pcloud2_blue_pub;
    ros::Publisher _pcloud2_orange_pub;
@@ -58,5 +68,7 @@ class BricksDetectionHandler
    std::string _colors_json;
 
    BricksDetection* _bricks_detection = {nullptr};
+
+   bool _use_pointcloud;
 };
 }  // namespace mbzirc

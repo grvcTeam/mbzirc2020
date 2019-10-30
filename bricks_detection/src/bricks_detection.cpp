@@ -9,6 +9,8 @@
  *  Copyright (c) 2019, FADA-CATEC
  */
 
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include <pcl_ros/transforms.h>
 
 #include <bricks_detection/bricks_detection.h>
@@ -24,6 +26,26 @@ BricksDetection::BricksDetection()
 
 BricksDetection::~BricksDetection() {}
 
+void BricksDetection::processData(cv::Mat& img, cv::Mat& filtered_img)
+{
+   if (img.empty()) return;
+
+   std::map<std::string, cv::Mat> color_imgs_cluster;
+
+   this->filtering(img, color_imgs_cluster);
+
+   // TODO: Refactor this
+   cv::Mat total_mask(img.rows, img.cols, CV_8UC1, 0.0f);
+   for (auto mask : color_imgs_cluster)
+   {
+      total_mask = total_mask + mask.second;
+   }
+   cv::Mat mask;
+   cv::cvtColor(total_mask, mask, cv::COLOR_GRAY2BGR);
+
+   filtered_img = img & mask;
+}
+
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                                   tf::StampedTransform& transform)
@@ -33,6 +55,11 @@ void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    this->filtering(pcloud, color_pcloud_cluster);
    this->transform(color_pcloud_cluster, transform);
    this->planeSegmentation(color_pcloud_cluster);
+}
+
+void BricksDetection::filtering(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster)
+{
+   color_filtering->imageFilter(img, color_imgs_cluster);
 }
 
 void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,

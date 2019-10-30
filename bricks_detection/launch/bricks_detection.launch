@@ -1,14 +1,17 @@
 <launch>
 
+   <arg name="use_pointcloud" default="false"/>
+
    <arg name="rgb_img_topic" default="/camera/color/image_raw"/>
    <arg name="pcloud_topic"  default="/camera/depth_registered/points"/>
 
    <arg name="colors_json" default="$(find bricks_detection)/cfg/ist_colors.json"/>
    
    <node name="bricks_detection" pkg="bricks_detection" type="bricks_detection_node" output="screen" respawn="false">
-      <param name="rgb_img_topic" type="str" value="$(arg rgb_img_topic)"/>
-      <param name="pcloud_topic"  type="str" value="$(arg pcloud_topic)"/>
-      <param name="colors_json"   type="str" value="$(arg colors_json)"/>
+      <param name="use_pointcloud" type="bool" value="$(arg use_pointcloud)"/>
+      <param name="rgb_img_topic"  type="str"  value="$(arg rgb_img_topic)"/>
+      <param name="pcloud_topic"   type="str"  value="$(arg pcloud_topic)"/>
+      <param name="colors_json"    type="str"  value="$(arg colors_json)"/>
    </node>
 
 </launch>

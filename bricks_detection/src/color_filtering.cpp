@@ -15,6 +15,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include <pcl/point_types.h>
 #include <pcl/point_types_conversion.h>
 
@@ -63,6 +65,43 @@ void ColorFiltering::addHSVFilter(const HSV& lower_hsv, const HSV& upper_hsv, co
 }
 
 void ColorFiltering::setMinPointsPerColor(const int& min) { _min_cluster_size = min; }
+
+void ColorFiltering::imageFilter(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster)
+{
+   CV_Assert(img.depth() == CV_8U);
+
+   for (auto color : _colors)
+   {
+      color_imgs_cluster[color] = cv::Mat(img.rows, img.cols, CV_8UC1, cv::Scalar(0));
+   }
+
+   cv::Mat hsv_img;
+   cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
+
+   unsigned char* p_hsv_data = (unsigned char*)(hsv_img.data);
+   for (int i = 0; i < hsv_img.rows; i++)
+   {
+      for (int j = 0; j < hsv_img.cols; j++)
+      {
+         int ocv_h = p_hsv_data[hsv_img.step * i + hsv_img.channels() * j];
+         int ocv_s = p_hsv_data[hsv_img.step * i + hsv_img.channels() * j + 1];
+         int ocv_v = p_hsv_data[hsv_img.step * i + hsv_img.channels() * j + 2];
+
+         const float h = ocv_h * 2.0f;    // [0, 180] to [0, 360]
+         const float s = ocv_s / 255.0f;  // [0, 255] to [0, 1]
+         const float v = ocv_v / 255.0f;  // [0, 255] to [0, 1]
+
+         for (auto hsv_filter : _hsv_filters)
+         {
+            if (!inRange(hsv_filter.min.h, hsv_filter.max.h, h)) continue;
+            if (!inRange(hsv_filter.min.s, hsv_filter.max.s, s)) continue;
+            if (!inRange(hsv_filter.min.v, hsv_filter.max.v, v)) continue;
+
+            color_imgs_cluster[hsv_filter.color_name].at<uchar>(i, j) = 255;
+         }
+      }
+   }
+}
 
 void ColorFiltering::pointcloudFilter(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                       std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster)
