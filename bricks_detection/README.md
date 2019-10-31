@@ -11,6 +11,8 @@ This package provides a brick detection tool for MBZIRC2020 Challenge 2
 - Boost v1.58
 - ROS Kinetic
 
+Compilation instructions can be found in the main README of this repository.
+
 ## Usage
 
 Just run the main launch file:
@@ -27,7 +29,7 @@ roslaunch bricks_detection ns_bricks_detection.launch
 
 **Dynamic reconfigure** is enabled for most of the parameters. This means that these can be changed dynamically at runtime. For starting the dynamic reconfigure GUI:
 ```bash
-rosrun dynamic_reconfigure reconfigure_gui
+rosrun rqt_reconfigure rqt_reconfigure
 ```
 
 ## Config files
