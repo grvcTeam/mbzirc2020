@@ -23,6 +23,7 @@
 #include <bricks_detection/filtering/color_filtering.h>
 #include <bricks_detection/filtering/distance_filtering.h>
 #include <bricks_detection/ransac_plane_detection.h>
+#include <bricks_detection/shape_detection.h>
 
 namespace mbzirc
 {
@@ -32,7 +33,7 @@ class BricksDetection
    BricksDetection();
    virtual ~BricksDetection(void);
 
-   void processData(cv::Mat& img, cv::Mat& filtered_img);
+   void processData(cv::Mat& img, cv::Mat& filtered_img, std::vector<ImageItem>& detected_items);
    void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                     std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                     tf::StampedTransform& transform);
@@ -40,11 +41,15 @@ class BricksDetection
    ColorFiltering* color_filtering;
    DistanceFiltering* distance_filtering;
    RANSACPlaneDetection* plane_detector;
+   ShapeDetection* shape_detector;
 
   private:
    void filtering(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster);
    void filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
+
+   void findRectangles(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster,
+                       std::vector<ImageItem>& detected_items);
 
    void transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
                   tf::StampedTransform& transform);

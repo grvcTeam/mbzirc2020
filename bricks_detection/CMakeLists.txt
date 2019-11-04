@@ -71,7 +71,7 @@ find_package(OpenCV REQUIRED)
 
 
 generate_dynamic_reconfigure_options(
-   cfg/pointcloud_filters.cfg
+   cfg/reconfig_filters.cfg
 )
 
 ###################################
@@ -111,6 +111,7 @@ add_library(${PROJECT_NAME}_lib
   src/color_filtering.cpp
   src/distance_filtering.cpp
   src/ransac_plane_detection.cpp
+  src/shape_detection.cpp
   )
 add_dependencies(${PROJECT_NAME}_lib       ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_lib  ${catkin_LIBRARIES} ${Eigen3_LIBRARIES} ${PCL_LIBRARIES} ${BOOST_LIBRARYDIR} ${OpenCV_LIBS})

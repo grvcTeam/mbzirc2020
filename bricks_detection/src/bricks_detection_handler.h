@@ -22,7 +22,7 @@
 
 #include <std_srvs/SetBool.h>
 
-#include <bricks_detection/pointcloud_filtersConfig.h>
+#include <bricks_detection/reconfig_filtersConfig.h>
 
 namespace mbzirc
 {
@@ -38,7 +38,7 @@ class BricksDetectionHandler
    void loadServices();
    void loadTopics(const bool set_publishers = true);
 
-   void filtersReconfigureCb(bricks_detection::pointcloud_filtersConfig& config, uint32_t);
+   void filtersReconfigureCb(bricks_detection::reconfig_filtersConfig& config, uint32_t);
 
    bool usePointcloudCb(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
 
@@ -47,8 +47,8 @@ class BricksDetectionHandler
 
    ros::NodeHandle _nh;
 
-   dynamic_reconfigure::Server<bricks_detection::pointcloud_filtersConfig> _pcloud_filter_rconfig_server;
-   dynamic_reconfigure::Server<bricks_detection::pointcloud_filtersConfig>::CallbackType _pcloud_filter_f;
+   dynamic_reconfigure::Server<bricks_detection::reconfig_filtersConfig> _pcloud_filter_rconfig_server;
+   dynamic_reconfigure::Server<bricks_detection::reconfig_filtersConfig>::CallbackType _pcloud_filter_f;
 
    ros::ServiceServer _use_pointcloud_srv;
 

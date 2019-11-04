@@ -16,6 +16,8 @@
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
 #include <bricks_detection/bricks_detection.h>
+#include <bricks_detection/types/image_item.h>
+
 #include "bricks_detection_handler.h"
 
 namespace mbzirc
@@ -41,7 +43,7 @@ void BricksDetectionHandler::loadParameters()
 
    _nh.param<std::string>(
        "colors_json", _colors_json,
-       "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/mbzirc2020/bricks_detection/cfg/grvc_field_testing.json");
+       "/home/rcaballero/Projects/Mbzirc2020/team_ws/src/mbzirc2020/bricks_detection/cfg/bags_colors.json");
 
    ROS_INFO_STREAM("Parameters loaded!");
 }
@@ -80,7 +82,7 @@ void BricksDetectionHandler::loadTopics(const bool set_publishers)
    }
 }
 
-void BricksDetectionHandler::filtersReconfigureCb(bricks_detection::pointcloud_filtersConfig& config, uint32_t)
+void BricksDetectionHandler::filtersReconfigureCb(bricks_detection::reconfig_filtersConfig& config, uint32_t)
 {
    if (!_bricks_detection)
    {
@@ -89,6 +91,9 @@ void BricksDetectionHandler::filtersReconfigureCb(bricks_detection::pointcloud_f
    }
 
    if (config.colors_json_path != "default") _bricks_detection->color_filtering->addHSVFilter(config.colors_json_path);
+
+   _bricks_detection->shape_detector->setMinArea(config.min_area);
+   _bricks_detection->shape_detector->setPolyEpsilon(config.poly_epsilon);
 
    _bricks_detection->color_filtering->setMinPointsPerColor(config.min_points_per_color);
 
@@ -151,7 +156,21 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    }
 
    cv::Mat filtered_img;
-   _bricks_detection->processData(image_ptr->image, filtered_img);
+   std::vector<ImageItem> detected_items;
+   _bricks_detection->processData(image_ptr->image, filtered_img, detected_items);
+
+   mbzirc_comm_objs::ObjectDetectionList object_list;
+   for (auto item : detected_items)
+   {
+      mbzirc_comm_objs::ObjectDetection object;
+      object.header.stamp = image_msg->header.stamp;
+      object.type         = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
+      object.color        = 0;  // TODO
+
+      object_list.objects.push_back(object);
+   }
+
+   _bricks_detected_pub.publish(object_list);
 
    cv_bridge::CvImage cv_bridge = cv_bridge::CvImage(image_msg->header, "bgr8", filtered_img);
    sensor_msgs::Image filtered_img_msg;

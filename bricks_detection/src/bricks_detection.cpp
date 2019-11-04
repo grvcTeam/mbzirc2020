@@ -9,9 +9,9 @@
  *  Copyright (c) 2019, FADA-CATEC
  */
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <pcl_ros/transforms.h>
+
+#include <bricks_detection/types/image_item.h>
 
 #include <bricks_detection/bricks_detection.h>
 
@@ -22,28 +22,21 @@ BricksDetection::BricksDetection()
    color_filtering    = new ColorFiltering();
    distance_filtering = new DistanceFiltering();
    plane_detector     = new RANSACPlaneDetection();
+   shape_detector     = new ShapeDetection();
 }
 
 BricksDetection::~BricksDetection() {}
 
-void BricksDetection::processData(cv::Mat& img, cv::Mat& filtered_img)
+void BricksDetection::processData(cv::Mat& img, cv::Mat& filtered_img, std::vector<ImageItem>& detected_items)
 {
    if (img.empty()) return;
 
    std::map<std::string, cv::Mat> color_imgs_cluster;
 
    this->filtering(img, color_imgs_cluster);
+   this->findRectangles(img, color_imgs_cluster, detected_items);
 
-   // TODO: Refactor this
-   cv::Mat total_mask(img.rows, img.cols, CV_8UC1, 0.0f);
-   for (auto mask : color_imgs_cluster)
-   {
-      total_mask = total_mask + mask.second;
-   }
-   cv::Mat mask;
-   cv::cvtColor(total_mask, mask, cv::COLOR_GRAY2BGR);
-
-   filtered_img = img & mask;
+   filtered_img = img;
 }
 
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
@@ -71,6 +64,15 @@ void BricksDetection::filtering(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
    {
       distance_filtering->pointcloudFilter(color_pcloud.second);
       color_pcloud_cluster[color_pcloud.first] = color_pcloud.second;
+   }
+}
+
+void BricksDetection::findRectangles(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster,
+                                     std::vector<ImageItem>& detected_items)
+{
+   for (auto color_mask : color_imgs_cluster)
+   {
+      shape_detector->detect(color_mask.second, img, color_mask.first, detected_items);
    }
 }
 
