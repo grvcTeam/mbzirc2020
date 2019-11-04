@@ -255,7 +255,7 @@ class UalActionServer
       double search_size_length = _goal->upper_bound.y - _goal->lower_bound.y;
 
       uint i        = 5;
-      double offset = search_size_length / i + 1;
+      double offset = search_size_length / i;
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // TODO: Tune!
@@ -332,15 +332,18 @@ class UalActionServer
          tf::quaternionMsgToTF(ual_->pose().pose.orientation, quat);
          double roll, pitch, yaw;
          tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-         double yaw_rate     = -yaw;
+         double yaw_rate                = -yaw;
          geometry_msgs::Pose drone_pose = ual_->pose().pose;
          // Send target_position  // TODO: find equivalent!
          geometry_msgs::TwistStamped velocity;
          velocity.header.stamp    = ros::Time::now();
          velocity.header.frame_id = "map";
-         velocity.twist.linear.x  = x_pid.control_signal(target_position.x - drone_pose.position.x, 1.0 / CATCHING_LOOP_RATE);
-         velocity.twist.linear.y  = y_pid.control_signal(target_position.y - drone_pose.position.y, 1.0 / CATCHING_LOOP_RATE);
-         velocity.twist.linear.z  = z_pid.control_signal(target_position.z - drone_pose.position.z, 1.0 / CATCHING_LOOP_RATE);
+         velocity.twist.linear.x =
+             x_pid.control_signal(target_position.x - drone_pose.position.x, 1.0 / CATCHING_LOOP_RATE);
+         velocity.twist.linear.y =
+             y_pid.control_signal(target_position.y - drone_pose.position.y, 1.0 / CATCHING_LOOP_RATE);
+         velocity.twist.linear.z =
+             z_pid.control_signal(target_position.z - drone_pose.position.z, 1.0 / CATCHING_LOOP_RATE);
          velocity.twist.angular.z = yaw_rate;
          ROS_INFO_STREAM("-> " + std::to_string(object_sensed_));
          ROS_INFO_STREAM("target_pos:      " + std::to_string(target_position.x));

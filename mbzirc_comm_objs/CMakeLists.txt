@@ -68,6 +68,8 @@ add_action_files(
   Pick.action
   Place.action
   Land.action
+  SearchTarget.action
+  Track.action
   MoveInCircles.action
 )
 

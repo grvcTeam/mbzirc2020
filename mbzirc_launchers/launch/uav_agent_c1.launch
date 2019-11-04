@@ -18,8 +18,7 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.16 0 -0.04 0 0.41887902047863906 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
     <!-- TODO: Use robot_description + state_publihser? -->
 
-    <node if="$(eval ual_backend == 'light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
-    args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=map -backend=light"/>
+    <node if="$(eval ual_backend == 'light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen" args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=map -backend=light"/>
 
     <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
       <arg name="mode" value="sitl"/>
@@ -34,15 +33,16 @@
       <arg name="frame_id" value="map"/>
     </include>
 
-    <node pkg="uav_abstraction_layer" type="server" name="ual" output="screen">
+    <node pkg="robot_action_servers" type="uav_action_server_c1" name="server" output="screen">
       <param name="uav_id" value="$(arg agent_id)"/>
+      <param name="pose_frame_id" value="arena"/>
+      <param name="home_pose_parent_frame" value="arena"/>
       <param name="backend" value="$(arg ual_backend)"/>
       <param name="model_name" value="$(arg robot_model)_$(arg agent_id)"/>
-      <param name="pose_frame_id" value="map"/>
-      <param name="ual_server" value="on"/>
-      <param name="noise_var" value="0.0"/>
-      <param name="max_position_error" value="0"/>
-      <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), 0]</rosparam>      <!-- [x,y,z] -->
+      <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>
+      <param name="position_th" value="1.00"/>
+      <param name="orientation_th" value="0.75"/>
+      <param name="hold_pose_time" value="0"/>
     </node>
 
     <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node"/> -->
