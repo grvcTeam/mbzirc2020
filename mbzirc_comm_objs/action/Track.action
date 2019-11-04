@@ -1,0 +1,8 @@
+#goal definition
+# geometry_msgs/Point detection
+---
+#result definition
+string message
+---
+#feedback
+mbzirc_comm_objs/RobotDataFeed data_feed

@@ -1,0 +1,10 @@
+#goal definition
+std_msgs/Float64 altitude
+geometry_msgs/Point upper_bound
+geometry_msgs/Point lower_bound
+---
+#result definition
+string message
+---
+#feedback
+mbzirc_comm_objs/RobotDataFeed data_feed

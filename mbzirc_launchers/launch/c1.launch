@@ -3,13 +3,14 @@
 
     <arg name="mode" default="sim"/>
     <arg name="robot_model" default="dji_f550_c1"/>
+    <arg name="arena_yaw" default="0"/>
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
         <include file="$(find challenge_worlds)/launch/challenge1.launch"/>
     </group>
-
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
     <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
 
     <include file="$(find mbzirc_launchers)/launch/uav_agent_c1.launch">
