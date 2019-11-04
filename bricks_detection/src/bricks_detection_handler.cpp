@@ -26,6 +26,9 @@ BricksDetectionHandler::BricksDetectionHandler(std::string) : _nh("~"), _use_poi
 {
    loadParameters();
    loadServices();
+
+   _tfListener = new tf2_ros::TransformListener(_tf_buffer);
+
    loadTopics();
 
    _pcloud_filter_f = boost::bind(&BricksDetectionHandler::filtersReconfigureCb, this, _1, _2);
@@ -38,7 +41,11 @@ void BricksDetectionHandler::loadParameters()
 {
    _nh.param<bool>("use_pointcloud", _use_pointcloud, false);
 
+   _nh.param<std::string>("tf_prefix", _tf_prefix, "");
+   if (_tf_prefix != "") _tf_prefix += "/";
+
    _nh.param<std::string>("rgb_img_topic", _image_topic, "/camera/color/image_rect_color");
+   _nh.param<std::string>("rgb_info_topic", _image_info_topic, "/camera/color/camera_info");
    _nh.param<std::string>("pcloud_topic", _pcloud_topic, "/camera/depth_registered/points");
 
    _nh.param<std::string>(
@@ -63,6 +70,8 @@ void BricksDetectionHandler::loadTopics(const bool set_publishers)
    else
    {
       _rgb_sub = _nh.subscribe<sensor_msgs::Image>(_image_topic, 1, &BricksDetectionHandler::rgbImageCb, this);
+      _rgb_info_sub =
+          _nh.subscribe<sensor_msgs::CameraInfo>(_image_info_topic, 1, &BricksDetectionHandler::cameraInfoCb, this);
    }
 
    ROS_INFO_STREAM("Subscribed topics loaded!");
@@ -144,6 +153,24 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
+   try
+   {
+      geometry_msgs::TransformStamped camera_link_tf =
+          _tf_buffer.lookupTransform(_tf_prefix + "camera_link", "map", ros::Time(0));
+
+      tf2::Stamped<tf2::Transform> camera_link_tf2;
+      tf2::fromMsg(camera_link_tf, camera_link_tf2);
+
+      const tf2::Matrix3x3 link_to_cv(0, -1, 0, 0, 0, -1, 1, 0, 0);
+      _camera_parameters.R = link_to_cv * camera_link_tf2.getBasis();
+      _camera_parameters.T = link_to_cv * camera_link_tf2.getOrigin();
+   }
+   catch (tf2::TransformException& e)
+   {
+      ROS_WARN("%s", e.what());
+      return;
+   }
+
    cv_bridge::CvImagePtr image_ptr;
    try
    {
@@ -159,13 +186,63 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    std::vector<ImageItem> detected_items;
    _bricks_detection->processData(image_ptr->image, filtered_img, detected_items);
 
+   const tf2::Matrix3x3 Rt  = _camera_parameters.R.transpose();
+   tf2::Vector3 T_world     = Rt * _camera_parameters.T;
+   tf2::Vector3 K_0         = _camera_parameters.K.getRow(0);
+   tf2::Vector3 K_1         = _camera_parameters.K.getRow(1);
+   const double estimated_z = 0.2;  // TODO check height
+
    mbzirc_comm_objs::ObjectDetectionList object_list;
    for (auto item : detected_items)
    {
       mbzirc_comm_objs::ObjectDetection object;
-      object.header.stamp = image_msg->header.stamp;
-      object.type         = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
-      object.color        = 0;  // TODO
+      object.header.stamp    = image_msg->header.stamp;
+      object.header.frame_id = "map";
+      object.type            = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
+      object.color           = item.color_id;
+
+      tf2::Vector3 ray;
+      double aux = (item.centroid.y - K_1[2]) / K_1[1];
+
+      ray[0] = (item.centroid.x - K_0[2] - K_0[1] * aux) / K_0[0];
+      ray[1] = aux;
+      ray[2] = 1.0;
+
+      tf2::Vector3 ray_world = Rt * ray;
+      if (ray_world[2] == 0)
+      {
+         ROS_WARN("geoLocate: ray_world[2] == 0");
+         continue;
+      }
+
+      double lambda               = (estimated_z + T_world[2]) / ray_world[2];
+      object.relative_position.x  = lambda * ray_world[0];
+      object.relative_position.y  = lambda * ray_world[1];
+      object.relative_position.z  = lambda * ray_world[2];
+      object.pose.pose.position.x = object.relative_position.x - T_world[0];
+      object.pose.pose.position.y = object.relative_position.y - T_world[1];
+      object.pose.pose.position.z = object.relative_position.z - T_world[2];
+
+      tf2::Vector3 orientation_camera(cos(item.orientation), sin(item.orientation), 0);
+      tf2::Vector3 orientation_world = _camera_parameters.R * orientation_camera;
+      double theta_world             = atan2(orientation_world[1], orientation_world[0]);
+      object.relative_yaw            = theta_world;
+      object.pose.pose.orientation.x = 0;
+      object.pose.pose.orientation.y = 0;
+      object.pose.pose.orientation.z = sin(0.5 * theta_world);
+      object.pose.pose.orientation.w = cos(0.5 * theta_world);
+      object.pose.covariance[0]      = 0.01;  // TODO: Covariance?
+      object.pose.covariance[7]      = 0.01;
+      object.pose.covariance[14]     = 0.01;
+
+      // Suppose item is a rectangle: P = 2 * (side_1 + side_2); A = side_1 * side_2
+      // side_i = (P ± sqrt(P*P - 16*A)) / 4
+      aux                      = sqrt(item.perimeter * item.perimeter - 16.0 * item.area);
+      double pixel_to_metric_x = lambda / K_0[0];
+      double pixel_to_metric_y = lambda / K_1[1];
+      object.scale.x           = pixel_to_metric_x * (item.perimeter + aux) / 4.0;
+      object.scale.y           = pixel_to_metric_y * (item.perimeter - aux) / 4.0;
+      object.scale.z           = estimated_z;
 
       object_list.objects.push_back(object);
    }
@@ -178,6 +255,17 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    _rgb_pub.publish(filtered_img_msg);
 }
 
+void BricksDetectionHandler::cameraInfoCb(const sensor_msgs::CameraInfo::ConstPtr& camera_info_msg)
+{
+   _camera_parameters.K = tf2::Matrix3x3(camera_info_msg->K[0], camera_info_msg->K[1], camera_info_msg->K[2],
+                                         camera_info_msg->K[3], camera_info_msg->K[4], camera_info_msg->K[5],
+                                         camera_info_msg->K[6], camera_info_msg->K[7], camera_info_msg->K[8]);
+
+   ROS_INFO_STREAM("Camera Intrinsics set!");
+
+   _rgb_info_sub.shutdown();
+}
+
 void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg)
 {
    if (!_bricks_detection)
@@ -186,16 +274,17 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
+   // TODO: fix this (use tf2)
    tf::StampedTransform transform;
-   try
-   {
-      _baselink_listener.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0), transform);
-   }
-   catch (const tf::TransformException& e)
-   {
-      ROS_ERROR("%s", e.what());
-      return;
-   }
+   // try
+   // {
+   //    _baselink_listener.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0), transform);
+   // }
+   // catch (const tf::TransformException& e)
+   // {
+   //    ROS_ERROR("%s", e.what());
+   //    return;
+   // }
 
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
    pcl::fromROSMsg(*pcloud_msg, pcloud);

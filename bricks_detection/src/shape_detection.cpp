@@ -55,8 +55,7 @@ void ShapeDetection::detect(cv::Mat& binary_img, cv::Mat& color_img, std::string
       const double mu11_prime  = moments.mu11 / moments.m00;  // mu00 = m00
       const double theta       = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
 
-      ImageItem image_item;
-      image_item.color       = color;
+      ImageItem image_item(color);
       image_item.centroid    = centroid;
       image_item.area        = area;
       image_item.perimeter   = perimeter;

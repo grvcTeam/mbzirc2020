@@ -12,11 +12,13 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
+
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <dynamic_reconfigure/server.h>
 
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -26,6 +28,13 @@
 
 namespace mbzirc
 {
+struct CameraParameters
+{
+   tf2::Matrix3x3 K;
+   tf2::Matrix3x3 R;
+   tf2::Vector3 T;
+};
+
 class BricksDetection;
 class BricksDetectionHandler
 {
@@ -43,6 +52,7 @@ class BricksDetectionHandler
    bool usePointcloudCb(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
 
    void rgbImageCb(const sensor_msgs::Image::ConstPtr& image_msg);
+   void cameraInfoCb(const sensor_msgs::CameraInfo::ConstPtr& camera_info_msg);
    void pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg);
 
    ros::NodeHandle _nh;
@@ -53,6 +63,7 @@ class BricksDetectionHandler
    ros::ServiceServer _use_pointcloud_srv;
 
    ros::Subscriber _rgb_sub;
+   ros::Subscriber _rgb_info_sub;
    ros::Subscriber _pcloud2_sub;
    ros::Publisher _rgb_pub;
    ros::Publisher _pcloud2_red_pub;
@@ -61,14 +72,18 @@ class BricksDetectionHandler
    ros::Publisher _pcloud2_green_pub;
    ros::Publisher _bricks_detected_pub;
 
-   tf::TransformListener _baselink_listener;
+   tf2_ros::Buffer _tf_buffer;
+   tf2_ros::TransformListener* _tfListener;
 
    std::string _image_topic;
+   std::string _image_info_topic;
    std::string _pcloud_topic;
    std::string _colors_json;
-
-   BricksDetection* _bricks_detection = {nullptr};
+   std::string _tf_prefix;
 
    bool _use_pointcloud;
+
+   BricksDetection* _bricks_detection = {nullptr};
+   CameraParameters _camera_parameters;
 };
 }  // namespace mbzirc
