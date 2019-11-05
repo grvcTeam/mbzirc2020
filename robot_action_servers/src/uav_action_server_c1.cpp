@@ -237,7 +237,7 @@ class UalActionServer
 
       ros::NodeHandle nh;
       ros::Subscriber sensed_sub_ =
-          nh.subscribe("color_detector/detection_points", 1, &UalActionServer::sensedObjectsCallback, this);
+          nh.subscribe("color_detector/sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
 
       ros::Subscriber depth_sensed_sub_ =
           nh.subscribe("drone_detector/detection_points", 1, &UalActionServer::depthDetectionCallback, this);
@@ -255,14 +255,14 @@ class UalActionServer
       double search_size_length = _goal->upper_bound.y - _goal->lower_bound.y;
 
       uint i        = 5;
-      double offset = search_size_length / i;
+      double offset = search_size_length / (i + 1);
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // TODO: Tune!
 #define Z_GIVE_UP_CATCHING 17.5  // TODO: From config file?
 #define Z_RETRY_CATCH 1.0
 #define CANDIDATE_TIMEOUT 30   // [s]
-#define CATCHING_LOOP_RATE 10  // [Hz]
+#define CATCHING_LOOP_RATE 50  // [Hz]
 #define AVG_XY_ERROR_WINDOW_SIZE 13
 #define MAX_DELTA_Z 0.5       // [m] --> [m/s]
 #define MAX_AVG_XY_ERROR 0.3  // [m]
@@ -282,11 +282,10 @@ class UalActionServer
       while (true)
       {
          geometry_msgs::Point target_position;
-         ros::Duration since_last_candidate;
+         ros::Duration since_last_point, since_last_candidate;
          if (!object_sensed_)
          {
-            since_last_candidate = ros::Time::now() - start_time;
-            ROS_INFO_STREAM("bound:      " + std::to_string(_goal->lower_bound.x));
+            since_last_point = ros::Time::now() - start_time;
 
             target_position.x = _goal->lower_bound.x + 5;
             target_position.y = _goal->upper_bound.y - i * offset;
@@ -302,8 +301,9 @@ class UalActionServer
                 matched_candidate_.pose.pose.position.z < _goal->upper_bound.z)
             {
                since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
+               
                // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
-               target_position.x = matched_candidate_.pose.pose.position.x - 5;
+               target_position.x = matched_candidate_.pose.pose.position.x - 3;
                target_position.y = matched_candidate_.pose.pose.position.y;
                target_position.z = matched_candidate_.pose.pose.position.z;
             }
@@ -313,8 +313,8 @@ class UalActionServer
                start_time     = ros::Time::now();
             }
          }
-
-         if (since_last_candidate > timeout)
+         if(since_last_candidate > timeout) {object_sensed_ = false;}
+         if (since_last_point > timeout)
          {
             object_sensed_ = false;
             start_time     = ros::Time::now();
@@ -345,17 +345,12 @@ class UalActionServer
          velocity.twist.linear.z =
              z_pid.control_signal(target_position.z - drone_pose.position.z, 1.0 / CATCHING_LOOP_RATE);
          velocity.twist.angular.z = yaw_rate;
-         ROS_INFO_STREAM("-> " + std::to_string(object_sensed_));
-         ROS_INFO_STREAM("target_pos:      " + std::to_string(target_position.x));
-         ROS_INFO_STREAM("twist:           " + std::to_string(velocity.twist.linear.x) + "\r\n");
 
          ual_->setVelocity(velocity);
-         // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x,
-         // matched_candidate_.relative_position.y, matched_candidate_.relative_position.z); ROS_INFO("target_position =
-         // [%lf, %lf, %lf] target angle = x", target_position.x, target_position.y, target_position.z);
-         // ROS_INFO("velocity = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y,
-         // velocity.twist.linear.z);
-
+         
+         // ROS_INFO_STREAM("Candidate position = ["+std::to_string(matched_candidate_.pose.pose.position.x)+  ", "+std::to_string(matched_candidate_.pose.pose.position.y)+  ", "+std::to_string(matched_candidate_.pose.pose.position.z)+  "]");
+         // ROS_INFO_STREAM("target_position = ["+std::to_string(target_position.x)+", "+std::to_string(target_position.y)+", "+std::to_string(target_position.z)+"] target angle = x");
+         // ROS_INFO_STREAM("velocity = ["+std::to_string(velocity.twist.linear.x)+", "+std::to_string(velocity.twist.linear.y)+", "+std::to_string(velocity.twist.linear.z)+"]");
          // If we're too high, give up TODO: use _goal->z?
          if (object_sensed_depth_)
          {

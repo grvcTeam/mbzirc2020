@@ -1,0 +1,4 @@
+syntax: glob
+
+.vscode
+*.orig

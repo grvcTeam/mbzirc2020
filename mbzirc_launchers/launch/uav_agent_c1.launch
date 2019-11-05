@@ -9,6 +9,7 @@
   <arg name="z" default="0" />
   <arg name="yaw" default="0" />
   <arg name="ual_backend" default="mavros" />
+  <arg name="color_detector" default="true" />
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
@@ -45,7 +46,17 @@
       <param name="hold_pose_time" value="0"/>
     </node>
 
+
     <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node"/> -->
+    <include if="$(arg color_detector)" file="$(find drone_detector_tracking)/launch/color_detection.launch">
+
+      <arg name="rgb_topic" value="/dji_f550_camera_$(arg agent_id)/rgb/image_raw"/>
+      <arg name="camera_info_topic" value="/dji_f550_camera_$(arg agent_id)/rgb/camera_info"/>
+      <arg name="pose_topic" value="/$(arg robot_model)_$(arg agent_id)/ual/pose"/>
+      <arg name="ball_diameter" value="0.11"/>
+
+    </include>
+
 
   </group>
 </launch>
