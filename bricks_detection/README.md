@@ -41,6 +41,7 @@ Possible ranges are:
 * **s** -> [0, 1]  
 * **v** -> [0, 1]  
 
+Example file:
 ```json
 {
    "colors": [
@@ -81,6 +82,9 @@ Limits from IST at the beginning of the integration week.
 * **grvc_field_testing.json**  
 Limits after testing in the GRVC fly zone during integration week.
 
+* **bags_colors.json**  
+Refined limits for bags flying bags recorded during integration week at GRVC.
+
 ## Launch files
 * **bricks_detection.launch:**
 
@@ -98,7 +102,7 @@ Limits after testing in the GRVC fly zone during integration week.
 
      Same arguments as **bricks_detection.launch** plus:
 
-     - **`ns`** Namespace. Type: **string**. Default: `false`.  
+     - **`ns`** Namespace. Type: **string**. Default: `f450`.  
 
 ## Topics
 
