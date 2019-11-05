@@ -3,6 +3,12 @@
 Catkin repository to store ROS packages for the MBZIRC2020
 
 ## Dependencies
+
+A list of required ROS default packages are provided in the root of this repo ([requirements.txt](requirements.txt)). For installing them:
+```
+sudo apt-get install $(cat requirements.txt)
+```
+
 Be sure of having an updated **master**-branch clone of:
 * [grvc-ual](https://github.com/grvcTeam/grvc-ual)
 * [grvc-utils](https://github.com/grvcTeam/grvc-utils)
