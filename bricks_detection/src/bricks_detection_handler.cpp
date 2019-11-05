@@ -274,23 +274,22 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
 
-   // TODO: fix this (use tf2)
-   tf::StampedTransform transform;
-   // try
-   // {
-   //    _baselink_listener.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0), transform);
-   // }
-   // catch (const tf::TransformException& e)
-   // {
-   //    ROS_ERROR("%s", e.what());
-   //    return;
-   // }
+   geometry_msgs::TransformStamped baselink_tf;
+   try
+   {
+      baselink_tf = _tf_buffer.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0));
+   }
+   catch (tf2::TransformException& e)
+   {
+      ROS_WARN("%s", e.what());
+      return;
+   }
 
    pcl::PointCloud<pcl::PointXYZRGB> pcloud;
    pcl::fromROSMsg(*pcloud_msg, pcloud);
 
    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> color_pcloud_cluster;
-   _bricks_detection->processData(pcloud, color_pcloud_cluster, transform);
+   _bricks_detection->processData(pcloud, color_pcloud_cluster, baselink_tf);
 
    for (auto color_pcloud : color_pcloud_cluster)
    {

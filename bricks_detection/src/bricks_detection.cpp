@@ -41,7 +41,7 @@ void BricksDetection::processData(cv::Mat& img, cv::Mat& filtered_img, std::vect
 
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
-                                  tf::StampedTransform& transform)
+                                  geometry_msgs::TransformStamped& transform)
 {
    if (pcloud.empty()) return;
 
@@ -77,12 +77,12 @@ void BricksDetection::findRectangles(cv::Mat& img, std::map<std::string, cv::Mat
 }
 
 void BricksDetection::transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
-                                tf::StampedTransform& transform)
+                                geometry_msgs::TransformStamped& transform)
 {
    for (auto color_pcloud : color_pcloud_cluster)
    {
       pcl::PointCloud<pcl::PointXYZRGB> tf_pcloud;
-      pcl_ros::transformPointCloud(color_pcloud.second, tf_pcloud, transform);
+      pcl_ros::transformPointCloud(color_pcloud.second, tf_pcloud, transform.transform);
 
       color_pcloud_cluster[color_pcloud.first] = tf_pcloud;
    }

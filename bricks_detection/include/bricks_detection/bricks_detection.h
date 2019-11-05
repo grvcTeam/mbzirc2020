@@ -18,7 +18,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <tf/transform_datatypes.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include <bricks_detection/filtering/color_filtering.h>
 #include <bricks_detection/filtering/distance_filtering.h>
@@ -36,7 +36,7 @@ class BricksDetection
    void processData(cv::Mat& img, cv::Mat& filtered_img, std::vector<ImageItem>& detected_items);
    void processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                     std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
-                    tf::StampedTransform& transform);
+                    geometry_msgs::TransformStamped& transform);
 
    ColorFiltering* color_filtering;
    DistanceFiltering* distance_filtering;
@@ -52,7 +52,7 @@ class BricksDetection
                        std::vector<ImageItem>& detected_items);
 
    void transform(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
-                  tf::StampedTransform& transform);
+                  geometry_msgs::TransformStamped& transform);
 
    void planeSegmentation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster);
 };
