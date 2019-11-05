@@ -34,6 +34,14 @@ source ~/.bashrc
 
 Then remove 'build' and 'devel' folders and compile the workspace. 'pcl_conversions' and 'pcl_ros' included manually in the repo will compile against the new PCL library.
 
+## Compilation
+
+For improving code performance and running speed, remember compiling in RELEASE mode:
+
+```
+catkin_make -DCMAKE_BUILD_TYPE=Release
+```
+
 ## Run instructions
 
 ### Challenge 1 [UNCOMPLETED]:
