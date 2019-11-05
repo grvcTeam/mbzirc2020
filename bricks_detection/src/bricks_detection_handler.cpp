@@ -15,6 +15,8 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+#include <geometry_msgs/PoseArray.h>
+
 #include <bricks_detection/bricks_detection.h>
 #include <bricks_detection/types/image_item.h>
 
@@ -85,7 +87,8 @@ void BricksDetectionHandler::loadTopics(const bool set_publishers)
       _pcloud2_orange_pub = _nh.advertise<sensor_msgs::PointCloud2>("bricks/orange", 1);
       _pcloud2_green_pub  = _nh.advertise<sensor_msgs::PointCloud2>("bricks/green", 1);
 
-      _bricks_detected_pub = _nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("bricks", 1);
+      _detected_bricks_pub      = _nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("bricks", 1);
+      _detected_bricks_pose_pub = _nh.advertise<geometry_msgs::PoseArray>("bricks/pose", 1);
 
       ROS_INFO_STREAM("Advertised topics loaded!");
    }
@@ -156,14 +159,13 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    try
    {
       geometry_msgs::TransformStamped camera_link_tf =
-          _tf_buffer.lookupTransform(_tf_prefix + "camera_link", "map", ros::Time(0));
+          _tf_buffer.lookupTransform(image_msg->header.frame_id, "map", ros::Time(0));
 
       tf2::Stamped<tf2::Transform> camera_link_tf2;
       tf2::fromMsg(camera_link_tf, camera_link_tf2);
 
-      const tf2::Matrix3x3 link_to_cv(0, -1, 0, 0, 0, -1, 1, 0, 0);
-      _camera_parameters.R = link_to_cv * camera_link_tf2.getBasis();
-      _camera_parameters.T = link_to_cv * camera_link_tf2.getOrigin();
+      _camera_parameters.R = camera_link_tf2.getBasis();
+      _camera_parameters.T = camera_link_tf2.getOrigin();
    }
    catch (tf2::TransformException& e)
    {
@@ -191,6 +193,10 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    tf2::Vector3 K_0         = _camera_parameters.K.getRow(0);
    tf2::Vector3 K_1         = _camera_parameters.K.getRow(1);
    const double estimated_z = 0.2;  // TODO check height
+
+   geometry_msgs::PoseArray object_pose_list;
+   object_pose_list.header.stamp    = image_msg->header.stamp;
+   object_pose_list.header.frame_id = "map";
 
    mbzirc_comm_objs::ObjectDetectionList object_list;
    for (auto item : detected_items)
@@ -235,7 +241,9 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
       object.pose.covariance[7]      = 0.01;
       object.pose.covariance[14]     = 0.01;
 
-      // Suppose item is a rectangle: P = 2 * (side_1 + side_2); A = side_1 * side_2
+      // Suppose item is a rectangle:
+      // P = 2 * (side_1 + side_2);
+      // A = side_1 * side_2
       // side_i = (P ± sqrt(P*P - 16*A)) / 4
       aux                      = sqrt(item.perimeter * item.perimeter - 16.0 * item.area);
       double pixel_to_metric_x = lambda / K_0[0];
@@ -245,9 +253,11 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
       object.scale.z           = estimated_z;
 
       object_list.objects.push_back(object);
+      object_pose_list.poses.push_back(object.pose.pose);
    }
 
-   _bricks_detected_pub.publish(object_list);
+   _detected_bricks_pub.publish(object_list);
+   _detected_bricks_pose_pub.publish(object_pose_list);
 
    cv_bridge::CvImage cv_bridge = cv_bridge::CvImage(image_msg->header, "bgr8", filtered_img);
    sensor_msgs::Image filtered_img_msg;
@@ -277,7 +287,7 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
    geometry_msgs::TransformStamped baselink_tf;
    try
    {
-      baselink_tf = _tf_buffer.lookupTransform("base_link", pcloud_msg->header.frame_id, ros::Time(0));
+      baselink_tf = _tf_buffer.lookupTransform(_tf_prefix + "base_link", pcloud_msg->header.frame_id, ros::Time(0));
    }
    catch (tf2::TransformException& e)
    {
@@ -300,7 +310,7 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       pcl_conversions::fromPCL(pcloud2_out, pcloud2_msg);
 
       pcloud2_msg.header.stamp    = pcloud_msg->header.stamp;
-      pcloud2_msg.header.frame_id = "base_link";
+      pcloud2_msg.header.frame_id = _tf_prefix + "base_link";
 
       if (color_pcloud.first == "red")
       {

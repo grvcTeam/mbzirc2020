@@ -70,7 +70,8 @@ class BricksDetectionHandler
    ros::Publisher _pcloud2_blue_pub;
    ros::Publisher _pcloud2_orange_pub;
    ros::Publisher _pcloud2_green_pub;
-   ros::Publisher _bricks_detected_pub;
+   ros::Publisher _detected_bricks_pub;
+   ros::Publisher _detected_bricks_pose_pub;
 
    tf2_ros::Buffer _tf_buffer;
    tf2_ros::TransformListener* _tfListener;

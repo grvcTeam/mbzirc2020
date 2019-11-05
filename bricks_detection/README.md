@@ -92,6 +92,8 @@ Refined limits for bags flying bags recorded during integration week at GRVC.
 
      - **`use_pointcloud`** If true, node uses pointcloud for bricks detection. If false, just RGB images. Type: **bool**. Default: `false`.
 
+     - **`tf_prefix`** TF frame_id prefix: **string**. Default: `mbzirc2020_1`.
+
      - **`rgb_img_topic`** Topic for RGB images. Type: **string**. Default: `/camera/color/image_raw`.
 
      - **`pcloud_topic`**  Topic for pointclouds. Type: **string**. Default: `/camera/depth_registered/points`.
@@ -121,6 +123,10 @@ Refined limits for bags flying bags recorded during integration week at GRVC.
 * **`bricks`** ([mbzirc_comm_objs/ObjectDetectionList])
 
 	List of detected objects for a given image or pointcloud.  
+
+* **`bricks/pose`** ([geometry_msgs/PoseArray])
+
+	List of poses for the detected objects. It is used for RViz visualization.  
 
 * **`bricks/color`** ([sensor_msgs/PointCloud2])
 

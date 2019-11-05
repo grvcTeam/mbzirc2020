@@ -41,6 +41,7 @@ find_package(catkin REQUIRED
    rospy
    cv_bridge
    sensor_msgs
+   geometry_msgs
    std_msgs
    message_filters
    tf2_ros
@@ -83,6 +84,9 @@ catkin_package(
    LIBRARIES      ${PROJECT_NAME}
    CATKIN_DEPENDS rospy roscpp cv_bridge 
                   tf2_ros
+                  std_msgs
+                  geometry_msgs
+                  sensor_msgs
                   dynamic_reconfigure
                   pcl_conversions
                   pcl_ros
