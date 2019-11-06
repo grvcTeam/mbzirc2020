@@ -91,7 +91,7 @@ void DroneDetector::depthThresholding(cv::Mat& img)
 {
    _processed_images.clear();
 
-   if (_max_depth_value > _params->max_depth) _max_depth_value = _params->max_depth;
+   if (_max_depth_value > _params->max_depth || std::isnan(_max_depth_value)) _max_depth_value = _params->max_depth;
 
    const size_t iterations = (int)_max_depth_value / _params->step_depth;
 

@@ -10,6 +10,10 @@
   <arg name="yaw" default="0" />
   <arg name="ual_backend" default="mavros" />
   <arg name="color_detector" default="true" />
+  <arg name="depth_detector" default="true" />
+  <arg name="base_link_name" default="$(arg robot_model)_$(arg agent_id)/base_link"/>
+  <arg name="camera_link_name" default="$(arg robot_model)_$(arg agent_id)/camera_link"/>
+
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
@@ -54,9 +58,21 @@
       <arg name="camera_info_topic" value="/dji_f550_camera_$(arg agent_id)/rgb/camera_info"/>
       <arg name="pose_topic" value="/$(arg robot_model)_$(arg agent_id)/ual/pose"/>
       <arg name="ball_diameter" value="0.11"/>
+      <arg name="base_link_name"  value="$(arg base_link_name)"/>
+      <arg name="camera_link_name"  value="$(arg camera_link_name)"/>
+
 
     </include>
 
+    <include if="$(arg depth_detector)" file="$(find drone_detector_tracking)/launch/drone_detection.launch">
+      <arg name="rgb_topic" value="/dji_f550_camera_$(arg agent_id)/rgb/image_raw/compressed"/>
+      <arg name="depth_topic" value="/dji_f550_camera_$(arg agent_id)/depth/image_raw"/>
+      <arg name="camera_info_topic" value="/dji_f550_camera_$(arg agent_id)/depth/camera_info"/>
+      <arg name="pose_topic" value="/$(arg robot_model)_$(arg agent_id)/ual/pose"/>
+      <arg name="publish_debug" value="false"/>
+      <arg name="base_link_name"  value="$(arg base_link_name)"/>
+      <arg name="camera_link_name"  value="$(arg camera_link_name)"/>
+    </include>
 
   </group>
 </launch>

@@ -22,7 +22,9 @@
         <arg name="y" value="0"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="light"/>
+        <arg name="ual_backend" value="mavros"/>
+        <arg name="color_detector" value="true" />
+        <arg name="depth_detector" value="true" />
     </include>
 
     <include file="$(find mbzirc_launchers)/launch/uav_agent_c1.launch">
@@ -34,6 +36,8 @@
         <arg name="y" value="5"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="light"/>
+        <arg name="ual_backend" value="mavros"/>
+        <arg name="color_detector" value="false"/>
+        <arg name="depth_detector" value="false"/>
     </include>
 </launch>

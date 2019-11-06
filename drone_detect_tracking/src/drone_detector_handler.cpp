@@ -32,6 +32,9 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
 
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
+
+
 namespace mbzirc
 {
 DroneDetectorHandler::DroneDetectorHandler(std::string node_name) : _nh("~"), _it(_nh)
@@ -44,23 +47,21 @@ DroneDetectorHandler::DroneDetectorHandler(std::string node_name) : _nh("~"), _i
    loadTopics();
 
    _camera_tf_listener = new tf2_ros::TransformListener(_tf_buffer);
-
-   listenBaseToCameraTf();
 }
 
 DroneDetectorHandler::~DroneDetectorHandler() {}
 
 void DroneDetectorHandler::loadParameters()
 {
-   _nh.param<std::string>("depth_img_topic", _depth_img_topic, "/camera/aligned_depth_to_color/image_raw");
-   _nh.param<std::string>("rgb_img_topic", _rgb_img_topic, "/camera/image_raw");
-   _nh.param<std::string>("camera_info_topic", _camera_info_topic, "/camera_info");
-   _nh.param<std::string>("uav_pose_topic", _pose_topic, "/m600/dji_control/pose");
+   _nh.param<std::string>("depth_img_topic", _depth_img_topic, "/dji_f550_camera_1/depth/image_raw");
+   _nh.param<std::string>("rgb_img_topic", _rgb_img_topic, "/dji_f550_camera_1/rgb/image_raw/compressed");
+   _nh.param<std::string>("camera_info_topic", _camera_info_topic, "/dji_f550_camera_1/depth/camera_info");
+   _nh.param<std::string>("uav_pose_topic", _pose_topic, "/dji_f550_c1_1/ual/pose");
 
-   _nh.param<bool>("publish_debug_images", _publish_debug_images, "true");
+   _nh.param<bool>("publish_debug_images", _publish_debug_images, "false");
 
-   _nh.param<std::string>("base_link_name", _base_link_name, "base_link");
-   _nh.param<std::string>("camera_link_name", _camera_link_name, "camera_link");
+   _nh.param<std::string>("base_link_name", _base_link_name, "dji_f550_c1_1/base_link");
+   _nh.param<std::string>("camera_link_name", _camera_link_name, "dji_f550_c1_1/camera_link");
 
    _reconfigureParams = new ReconfigureParameters();
 
@@ -72,7 +73,7 @@ void DroneDetectorHandler::loadParameters()
 
 void DroneDetectorHandler::loadTopics()
 {
-   _detection_markers_pub         = _nh.advertise<visualization_msgs::MarkerArray>("detection_markers", 1);
+   _detection_list_pub            = _nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1);
    _detection_points_pub          = _nh.advertise<geometry_msgs::PointStamped>("detection_points", 1);
    _detection_relative_points_pub = _nh.advertise<geometry_msgs::PointStamped>("detection_relative_points", 1);
    _depth_pub                     = _it.advertise("result/depth", 1);
@@ -86,6 +87,7 @@ void DroneDetectorHandler::loadTopics()
 
 void DroneDetectorHandler::depthImgCb(const sensor_msgs::ImageConstPtr& depth_img_msg)
 {
+
    if (_drone_detector == nullptr) return;
    if (_rgb_img.empty()) return;
 
@@ -150,6 +152,7 @@ void DroneDetectorHandler::depthImgCb(const sensor_msgs::ImageConstPtr& depth_im
 
 void DroneDetectorHandler::rgbImgCb(const sensor_msgs::CompressedImageConstPtr& rgb_img_msg)
 {
+
    try
    {
       _rgb_img = cv::imdecode(cv::Mat(rgb_img_msg->data), 1);
@@ -163,6 +166,7 @@ void DroneDetectorHandler::rgbImgCb(const sensor_msgs::CompressedImageConstPtr& 
 
 void DroneDetectorHandler::cameraInfoCb(const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
+
    CameraParameters camera_params;
    camera_params.intrinsics.fx = camera_info_msg->K[0];
    camera_params.intrinsics.fy = camera_info_msg->K[4];
@@ -180,19 +184,22 @@ void DroneDetectorHandler::cameraInfoCb(const sensor_msgs::CameraInfoConstPtr& c
 
    _drone_detector->setCameraCalibration(camera_params);
    _camera_info_sub.shutdown();
+
+   listenBaseToCameraTf();
 }
 
-void DroneDetectorHandler::poseCb(const geometry_msgs::PoseConstPtr& pose_msg)
+void DroneDetectorHandler::poseCb(const geometry_msgs::PoseStampedConstPtr& pose_msg)
 {
    Eigen::Isometry3d pose;
 
-   tf::poseMsgToEigen(*pose_msg, pose);
+   tf::poseMsgToEigen(pose_msg->pose, pose);
 
    _drone_detector->updateDronePose(pose);
 }
 
 void DroneDetectorHandler::listenBaseToCameraTf()
 {
+
    geometry_msgs::TransformStamped transformStamped;
    try
    {
@@ -223,33 +230,27 @@ void DroneDetectorHandler::publishDetectionMarkers()
    std::vector<Eigen::Vector3d> detections_positions          = _drone_detector->getDetectionPositions();
    std::vector<Eigen::Vector3d> detections_relative_positions = _drone_detector->getDetectionRelativePositions();
 
-   visualization_msgs::MarkerArray markers_array_msg;
+   mbzirc_comm_objs::ObjectDetectionList detection_list;
    for (auto position : detections_positions)
    {
-      visualization_msgs::Marker marker;
-      marker.header.frame_id = "map";
-      marker.header.stamp    = ros::Time::now();
-      marker.pose.position.x = position.x();
-      marker.pose.position.y = position.y();
-      marker.pose.position.z = position.z();
-      marker.scale.x         = 0.1;
-      marker.scale.y         = 0.1;
-      marker.scale.z         = 0.1;
-      marker.color.a         = 1.0;  // Don't forget to set the alpha!
-      marker.color.g         = 1.0;
-      marker.ns              = _node_name;
-      marker.id              = lastest_marker_id;
-      marker.type            = visualization_msgs::Marker::SPHERE;
-      marker.action          = visualization_msgs::Marker::ADD;
-      lastest_marker_id++;
-      markers_array_msg.markers.push_back(marker);
-
       geometry_msgs::PointStamped point_msg;
       point_msg.header.frame_id = "map";
       point_msg.header.stamp    = ros::Time::now();
-      point_msg.point.x         = position.x();
-      point_msg.point.y         = position.y();
-      point_msg.point.z         = position.z();
+      point_msg.point.x = position.x();
+      point_msg.point.y = position.y();
+      point_msg.point.z = position.z();
+    
+      mbzirc_comm_objs::ObjectDetection object;
+      object.type                    = "drone";
+      object.pose.pose.position      = point_msg.point;
+      object.pose.pose.orientation.w = 1;
+
+      object.relative_position = point_msg.point;
+      object.scale.x = object.scale.y = object.scale.z = 0.4;
+      object.color                                     = 0;
+
+      detection_list.objects.push_back(object);
+
 
       _detection_points_pub.publish(point_msg);
    }
@@ -266,10 +267,7 @@ void DroneDetectorHandler::publishDetectionMarkers()
       _detection_relative_points_pub.publish(point_msg);
    }
 
-   if (markers_array_msg.markers.size() > 0)
-   {
-      _detection_markers_pub.publish(markers_array_msg);
-   }
+   _detection_list_pub.publish(detection_list);
 }
 
 void DroneDetectorHandler::reconfigure(drone_detector_tracking::drone_detector_reconfigureConfig& config, uint32_t)

@@ -24,7 +24,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
 
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/CompressedImage.h>
 
 #include <drone_detector_tracking/drone_detector_reconfigureConfig.h>
@@ -49,7 +49,7 @@ class DroneDetectorHandler
 
    void cameraInfoCb(const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
 
-   void poseCb(const geometry_msgs::PoseConstPtr& pose_msg);
+   void poseCb(const geometry_msgs::PoseStampedConstPtr& pose_msg);
 
    void listenBaseToCameraTf();
 
@@ -62,7 +62,7 @@ class DroneDetectorHandler
    ros::NodeHandle _nh;
    image_transport::ImageTransport _it;
 
-   ros::Publisher _detection_markers_pub;
+   ros::Publisher _detection_list_pub;
    ros::Publisher _detection_points_pub;
    ros::Publisher _detection_relative_points_pub;
 
