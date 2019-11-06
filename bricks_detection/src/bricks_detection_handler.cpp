@@ -19,6 +19,7 @@
 
 #include <bricks_detection/bricks_detection.h>
 #include <bricks_detection/types/image_item.h>
+#include <bricks_detection/types/pcloud_item.h>
 
 #include "bricks_detection_handler.h"
 
@@ -299,7 +300,67 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
    pcl::fromROSMsg(*pcloud_msg, pcloud);
 
    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> color_pcloud_cluster;
-   _bricks_detection->processData(pcloud, color_pcloud_cluster, baselink_tf);
+   std::vector<PCloudItem> detected_items;
+   _bricks_detection->processData(pcloud, color_pcloud_cluster, baselink_tf, detected_items);
+
+   geometry_msgs::TransformStamped map_tf;
+   try
+   {
+      map_tf = _tf_buffer.lookupTransform("map", _tf_prefix + "base_link", ros::Time(0));
+   }
+   catch (tf2::TransformException& e)
+   {
+      ROS_WARN("%s", e.what());
+      return;
+   }
+
+   geometry_msgs::PoseArray object_pose_list;
+   object_pose_list.header.stamp    = pcloud_msg->header.stamp;
+   object_pose_list.header.frame_id = "map";
+
+   mbzirc_comm_objs::ObjectDetectionList object_list;
+   for (auto item : detected_items)
+   {
+      mbzirc_comm_objs::ObjectDetection object;
+      object.header.stamp    = pcloud_msg->header.stamp;
+      object.header.frame_id = "map";
+      object.type            = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
+      object.color           = item.color_id;
+
+      geometry_msgs::PoseStamped pose;
+      pose.header.frame_id    = _tf_prefix + "base_link";
+      pose.header.stamp       = pcloud_msg->header.stamp;
+      pose.pose.position.x    = item.position.x();
+      pose.pose.position.y    = item.position.y();
+      pose.pose.position.z    = item.position.z();
+      pose.pose.orientation.x = item.orientation.x();
+      pose.pose.orientation.y = item.orientation.y();
+      pose.pose.orientation.z = item.orientation.z();
+      pose.pose.orientation.w = item.orientation.w();
+
+      if (!_tf_buffer.canTransform("map", _tf_prefix + "base_link", ros::Time(0))) continue;
+      geometry_msgs::PoseStamped converted_pose;
+      _tf_buffer.transform(pose, converted_pose, "map", ros::Time(0), pose.header.frame_id);
+      object.pose.pose = converted_pose.pose;
+
+      object.pose.covariance[0]  = 0.01;  // TODO: Covariance?
+      object.pose.covariance[7]  = 0.01;
+      object.pose.covariance[14] = 0.01;
+
+      if (!_tf_buffer.canTransform(pcloud_msg->header.frame_id, _tf_prefix + "base_link", ros::Time(0))) continue;
+      geometry_msgs::PoseStamped converted_rel_pose;
+      _tf_buffer.transform(pose, converted_rel_pose, pcloud_msg->header.frame_id, ros::Time(0), pose.header.frame_id);
+
+      object.relative_position = converted_rel_pose.pose.position;
+      // TODO: relative_yaw calculation
+      // object.relative_yaw ?
+
+      object_list.objects.push_back(object);
+      object_pose_list.poses.push_back(object.pose.pose);
+   }
+
+   _detected_bricks_pub.publish(object_list);
+   _detected_bricks_pose_pub.publish(object_pose_list);
 
    for (auto color_pcloud : color_pcloud_cluster)
    {

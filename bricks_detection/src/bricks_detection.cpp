@@ -12,6 +12,7 @@
 #include <pcl_ros/transforms.h>
 
 #include <bricks_detection/types/image_item.h>
+#include <bricks_detection/types/pcloud_item.h>
 
 #include <bricks_detection/bricks_detection.h>
 
@@ -23,6 +24,7 @@ BricksDetection::BricksDetection()
    distance_filtering = new DistanceFiltering();
    plane_detector     = new RANSACPlaneDetection();
    shape_detector     = new ShapeDetection();
+   pose_estimation    = new PoseEstimation();
 }
 
 BricksDetection::~BricksDetection() {}
@@ -41,13 +43,14 @@ void BricksDetection::processData(cv::Mat& img, cv::Mat& filtered_img, std::vect
 
 void BricksDetection::processData(pcl::PointCloud<pcl::PointXYZRGB>& pcloud,
                                   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
-                                  geometry_msgs::TransformStamped& transform)
+                                  geometry_msgs::TransformStamped& transform, std::vector<PCloudItem>& detected_items)
 {
    if (pcloud.empty()) return;
 
    this->filtering(pcloud, color_pcloud_cluster);
    this->transform(color_pcloud_cluster, transform);
    this->planeSegmentation(color_pcloud_cluster);
+   this->poseEstimation(color_pcloud_cluster, detected_items);
 }
 
 void BricksDetection::filtering(cv::Mat& img, std::map<std::string, cv::Mat>& color_imgs_cluster)
@@ -105,4 +108,15 @@ void BricksDetection::planeSegmentation(std::map<std::string, pcl::PointCloud<pc
 
    color_pcloud_cluster = result_color_pcloud_cluster;
 }
+
+void BricksDetection::poseEstimation(std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
+                                     std::vector<PCloudItem>& detected_items)
+{
+   for (auto color_pcloud : color_pcloud_cluster)
+   {
+      PCloudItem item(color_pcloud.first);
+      if (pose_estimation->estimate(color_pcloud.second, item)) detected_items.push_back(item);
+   }
+}
+
 }  // namespace mbzirc

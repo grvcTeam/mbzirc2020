@@ -40,11 +40,15 @@ find_package(catkin REQUIRED
    roscpp
    rospy
    cv_bridge
+   tf2
+   tf2_ros
+   tf2_eigen
+   tf2_msgs
+   tf2_geometry_msgs
+   std_msgs
    sensor_msgs
    geometry_msgs
-   std_msgs
    message_filters
-   tf2_ros
    dynamic_reconfigure
    pcl_conversions
    pcl_ros
@@ -82,8 +86,12 @@ generate_dynamic_reconfigure_options(
 catkin_package(
    INCLUDE_DIRS   include
    LIBRARIES      ${PROJECT_NAME}
-   CATKIN_DEPENDS rospy roscpp cv_bridge 
+   CATKIN_DEPENDS rospy roscpp cv_bridge
+                  tf2
                   tf2_ros
+                  tf2_eigen
+                  tf2_msgs
+                  tf2_geometry_msgs
                   std_msgs
                   geometry_msgs
                   sensor_msgs
@@ -116,6 +124,7 @@ add_library(${PROJECT_NAME}_lib
   src/distance_filtering.cpp
   src/ransac_plane_detection.cpp
   src/shape_detection.cpp
+  src/pose_estimation.cpp
   )
 add_dependencies(${PROJECT_NAME}_lib       ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_lib  ${catkin_LIBRARIES} ${Eigen3_LIBRARIES} ${PCL_LIBRARIES} ${BOOST_LIBRARYDIR} ${OpenCV_LIBS})

@@ -22,7 +22,7 @@ class ShapeDetection
    ShapeDetection();
    virtual ~ShapeDetection(void);
 
-   void detect(cv::Mat& img, cv::Mat& color_img, std::string color, std::vector<ImageItem>& detected_items);
+   void detect(cv::Mat& img, cv::Mat& color_img, const std::string color, std::vector<ImageItem>& detected_items);
 
    void setMinArea(const double& min_area);
    void setPolyEpsilon(const float& poly_epsilon);

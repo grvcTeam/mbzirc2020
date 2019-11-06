@@ -19,7 +19,7 @@ ShapeDetection::ShapeDetection() : _min_area(2.0), _poly_epsilon(3.0) {}
 
 ShapeDetection::~ShapeDetection() {}
 
-void ShapeDetection::detect(cv::Mat& binary_img, cv::Mat& color_img, std::string color,
+void ShapeDetection::detect(cv::Mat& binary_img, cv::Mat& color_img, const std::string color,
                             std::vector<ImageItem>& detected_items)
 {
    std::vector<std::vector<cv::Point>> contours;
