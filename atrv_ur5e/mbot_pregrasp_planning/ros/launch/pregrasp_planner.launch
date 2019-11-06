@@ -7,12 +7,12 @@
 
   <arg name="pregrasp_planner_pose_in" default="/armIKpipeline/target_pose" />
 
-  <arg name= "namespace_robot" default="/dgsdfgsdfg"/> <!-- ATENCAO - POR A BARRA -->
+  <arg name= "namespace_robot" default=""/> <!-- ATENCAO - POR A BARRA -->
 
-  <arg name= "namespace_pregrasp" default="armIKpipeline"/>  
+  <arg name= "namespace_pregrasp" default=""/>  
 
 
-<!--   ____________________________MOVEIT DEPENDING NODES (reason why they are outside the group below)____________________________________________-->  
+<!--   __________________MOVEIT DEPENDING NODES (reason why they are outside the group below)__________________________-->  
   
   <node pkg="mcr_manipulation_pose_selector" type="reachability_pose_selector_node" name="pregrasp_pipeline_pose_selector" output="screen">
     
@@ -54,78 +54,77 @@
 
 
   <!-- ______________________________________GROUP STARTING________________________________________ -->
-  <group ns="$(arg namespace_pregrasp)"> 
 
-      <!-- transform the pose to the reference frame of the moveit planning interface -->
-      <!-- this is useful because typically the pose is comming from perception in odom frame -->
-    <node pkg="mcr_manipulation_measurers" type="pose_transformer_node" name="pose_transformer" output="screen">
-      <param name="loop_rate" type="double" value="10.0"/>
-      <param name="wait_for_transform" type="double" value="0.1"/>
-      <param name="target_frame" type="str" value="$(arg reference_frame)"/>
-      <param name="trigger" type="boolean" value="false"/>
-      <remap from="~pose_in" to="$(arg pregrasp_planner_pose_in)" />
-    </node>
 
-    <!-- specify the type of grasp, laying object or standing object to generate the best end effector pose to grasp an object -->
-    <node pkg="mir_pregrasp_planning" type="simple_pregrasp_planner_node" name="pregrasp_planner" output="screen">
+<!--   TIREI O GROUP E FUNCIONOU EM 6 NOVEMBRO-->
+ <!-- <group ns="$(arg namespace_pregrasp)">  -->
 
-      <param name="loop_rate" type="double" value="10.0"/>
-      
-      <param name="min_distance_to_object" type="double" value="0.0"/>
-      <param name="max_distance_to_object" type="double" value="0.02"/> 
+    <!-- transform the pose to the reference frame of the moveit planning interface -->
+    <!-- this is useful because typically the pose is comming from perception in odom frame -->
+  <node pkg="mcr_manipulation_measurers" type="pose_transformer_node" name="pose_transformer" output="screen">
+    <param name="loop_rate" type="double" value="10.0"/>
+    <param name="wait_for_transform" type="double" value="0.1"/>
+    <param name="target_frame" type="str" value="$(arg reference_frame)"/>
+    <param name="trigger" type="boolean" value="false"/>
+    <remap from="~pose_in" to="$(arg pregrasp_planner_pose_in)" />
+  </node>
 
-      <param name="min_azimuth" type="double" value="-10.0"/> 
-      <param name="max_azimuth" type="double" value="10.0"/>
-      <param name="min_zenith" type="double" value="-10.0"/>
-      <param name="max_zenith" type="double" value="10.0"/>
-      <param name="min_roll" type="double" value="0.0"/>
-      <param name="max_roll" type="double" value="0.0"/> 
+  <node pkg="mir_pregrasp_planning" type="simple_pregrasp_planner_node" name="pregrasp_planner" output="screen">
 
-      <!-- the tolerance to decide whether an object should be re-oriented,
-      based on its height (in meters) -->
-      <param name="height_tolerance" type="double" value="0.08"/> <!-- HACK ignored for now, objects are always standing -->
-      <!-- Angular tolerance to check if an object is standing up (in degrees) -->
-      <param name="angular_tolerance" type="double" value="10.0"/> 
+    <param name="loop_rate" type="double" value="10.0"/>
+    
+    <param name="min_distance_to_object" type="double" value="0.0"/>
+    <param name="max_distance_to_object" type="double" value="0.02"/> 
 
-      <remap from="~pose_in" to="pose_transformer/transformed_pose"/>
-      <rosparam param="linear_offset">
-        - 0.00
-        - 0.00
-        - 0.00
-      </rosparam>
+    <param name="min_azimuth" type="double" value="-10.0"/> 
+    <param name="max_azimuth" type="double" value="10.0"/>
+    <param name="min_zenith" type="double" value="-10.0"/>
+    <param name="max_zenith" type="double" value="10.0"/>
+    <param name="min_roll" type="double" value="0.0"/>
+    <param name="max_roll" type="double" value="0.0"/> 
 
-    </node>
+    <param name="height_tolerance" type="double" value="0.08"/> <!-- HACK ignored for now, objects are always standing -->
 
-    <!-- generates a list of poses around a target pose based on a set of parameters -->
-    <node pkg="mcr_pose_generation" type="pose_generator_node" name="pose_generator" output="screen">
-      <rosparam command="load" file="$(find mbot_pregrasp_planning)/ros/config/gripper_configuration_matrix.yaml" />
-      
-      <param name="loop_rate"  type="double" value="10.0"/>
-      <param name="linear_step" type="double" value="0.01"/>
-      <param name="angular_step" type="double" value="10"/>
-      <param name="gripper_config_matrix" type="str" value="mbot_left_arm_gripper"/>
-      <remap from="~target_pose" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/pose_out"/>
-      <remap from="~sampling_parameters" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/sampling_parameters"/>
-    </node>
+    <param name="angular_tolerance" type="double" value="10.0"/> 
 
-    <!-- COORDINATOR EVENT based to command/monitor previous pregrasp components -->
-    <node pkg="mir_pregrasp_planning" type="pregrasp_planner_pipeline_node" name="coordinator" output="screen">
+    <remap from="~pose_in" to="pose_transformer/transformed_pose"/>
+    <rosparam param="linear_offset">
+      - 0.00
+      - 0.00
+      - 0.00
+    </rosparam>
 
-      <param name="loop_rate" type="double" value="30.0"/>
-      <!-- REMAP ROS TOPICS -->
-      <remap from="~event_in" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/event_in"/>
-      <remap from="~event_out" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/event_out"/>
-      <remap from="~start_pose_transformer" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_transformer/event_in"/>
-      <remap from="~start_pregrasp_planner" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/event_in"/>
-      <remap from="~start_pose_generator" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_generator/event_in"/>
-      <remap from="~start_pose_selector" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_pipeline_pose_selector/event_in"/>
-      <remap from="~pose_transformer_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_transformer/event_out"/>
-      <remap from="~pregrasp_planner_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/event_out"/>
-      <remap from="~pose_generator_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_generator/event_out"/>
-      <remap from="~pose_selector_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_pipeline_pose_selector/event_out"/>
-    </node>
+  </node>
 
-  </group> 
+  <node pkg="mcr_pose_generation" type="pose_generator_node" name="pose_generator" output="screen">
+    <rosparam command="load" file="$(find mbot_pregrasp_planning)/ros/config/gripper_configuration_matrix.yaml" />
+    
+    <param name="loop_rate"  type="double" value="10.0"/>
+    <param name="linear_step" type="double" value="0.01"/>
+    <param name="angular_step" type="double" value="10"/>
+    <param name="gripper_config_matrix" type="str" value="mbot_left_arm_gripper"/>
+    <remap from="~target_pose" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/pose_out"/>
+    <remap from="~sampling_parameters" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/sampling_parameters"/>
+  </node>
+
+  <!-- COORDINATOR EVENT based to command/monitor previous pregrasp components -->
+  <node pkg="mir_pregrasp_planning" type="pregrasp_planner_pipeline_node" name="coordinator" output="screen">
+
+    <param name="loop_rate" type="double" value="30.0"/>
+    <!-- REMAP ROS TOPICS -->
+    <remap from="~event_in" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/event_in"/>
+    <remap from="~event_out" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/event_out"/>
+    <remap from="~start_pose_transformer" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_transformer/event_in"/>
+    <remap from="~start_pregrasp_planner" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/event_in"/>
+    <remap from="~start_pose_generator" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_generator/event_in"/>
+    <remap from="~start_pose_selector" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_pipeline_pose_selector/event_in"/>
+    <remap from="~pose_transformer_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_transformer/event_out"/>
+    <remap from="~pregrasp_planner_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_planner/event_out"/>
+    <remap from="~pose_generator_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pose_generator/event_out"/>
+    <remap from="~pose_selector_status" to="$(arg namespace_robot)/$(arg namespace_pregrasp)/pregrasp_pipeline_pose_selector/event_out"/>
+  </node>
+
+<!-- </group>  -->
   <!-- ________________________________________GROUP ENDING_______________________________________________ -->
 
 
