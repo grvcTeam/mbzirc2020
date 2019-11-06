@@ -42,8 +42,6 @@ find_package(catkin REQUIRED
    cv_bridge
    tf2
    tf2_ros
-   tf2_eigen
-   tf2_msgs
    tf2_geometry_msgs
    std_msgs
    sensor_msgs
@@ -89,8 +87,6 @@ catkin_package(
    CATKIN_DEPENDS rospy roscpp cv_bridge
                   tf2
                   tf2_ros
-                  tf2_eigen
-                  tf2_msgs
                   tf2_geometry_msgs
                   std_msgs
                   geometry_msgs

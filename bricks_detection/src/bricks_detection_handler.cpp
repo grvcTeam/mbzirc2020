@@ -30,12 +30,10 @@ BricksDetectionHandler::BricksDetectionHandler(std::string) : _nh("~"), _use_poi
    loadParameters();
    loadServices();
 
-   _tfListener = new tf2_ros::TransformListener(_tf_buffer);
+   _tf_listener = new tf2_ros::TransformListener(_tf_buffer);
 
    loadTopics();
-
-   _pcloud_filter_f = boost::bind(&BricksDetectionHandler::filtersReconfigureCb, this, _1, _2);
-   _pcloud_filter_rconfig_server.setCallback(_pcloud_filter_f);
+   loadDynamicReconfigure();
 }
 
 BricksDetectionHandler::~BricksDetectionHandler() {}
@@ -95,6 +93,12 @@ void BricksDetectionHandler::loadTopics(const bool set_publishers)
    }
 }
 
+void BricksDetectionHandler::loadDynamicReconfigure()
+{
+   _pcloud_filter_f = boost::bind(&BricksDetectionHandler::filtersReconfigureCb, this, _1, _2);
+   _pcloud_filter_rconfig_server.setCallback(_pcloud_filter_f);
+}
+
 void BricksDetectionHandler::filtersReconfigureCb(bricks_detection::reconfig_filtersConfig& config, uint32_t)
 {
    if (!_bricks_detection)
@@ -143,7 +147,7 @@ bool BricksDetectionHandler::usePointcloudCb(std_srvs::SetBool::Request& req, st
    _pcloud2_sub.shutdown();
    loadTopics(false);
 
-   ROS_INFO("Setting use_pointcloud to %s", _use_pointcloud ? "true" : "false");
+   ROS_INFO("Setting use_pointcloud to [%s]", _use_pointcloud ? "true" : "false");
 
    res.success = true;
    return true;
@@ -189,6 +193,58 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    std::vector<ImageItem> detected_items;
    _bricks_detection->processData(image_ptr->image, filtered_img, detected_items);
 
+   publishMbzircObjectList(detected_items, image_msg->header);
+
+   cv_bridge::CvImage cv_bridge = cv_bridge::CvImage(image_msg->header, "bgr8", filtered_img);
+   sensor_msgs::Image filtered_img_msg;
+   cv_bridge.toImageMsg(filtered_img_msg);
+   _rgb_pub.publish(filtered_img_msg);
+}
+
+void BricksDetectionHandler::cameraInfoCb(const sensor_msgs::CameraInfo::ConstPtr& camera_info_msg)
+{
+   _camera_parameters.K = tf2::Matrix3x3(camera_info_msg->K[0], camera_info_msg->K[1], camera_info_msg->K[2],
+                                         camera_info_msg->K[3], camera_info_msg->K[4], camera_info_msg->K[5],
+                                         camera_info_msg->K[6], camera_info_msg->K[7], camera_info_msg->K[8]);
+
+   ROS_INFO_STREAM("Camera Intrinsics set!");
+
+   _rgb_info_sub.shutdown();
+}
+
+void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg)
+{
+   if (!_bricks_detection)
+   {
+      _bricks_detection = new BricksDetection();
+      _bricks_detection->color_filtering->addHSVFilter(_colors_json);
+   }
+
+   geometry_msgs::TransformStamped baselink_tf;
+   try
+   {
+      baselink_tf = _tf_buffer.lookupTransform(_tf_prefix + "base_link", pcloud_msg->header.frame_id, ros::Time(0));
+   }
+   catch (tf2::TransformException& e)
+   {
+      ROS_WARN("%s", e.what());
+      return;
+   }
+
+   pcl::PointCloud<pcl::PointXYZRGB> pcloud;
+   pcl::fromROSMsg(*pcloud_msg, pcloud);
+
+   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> color_pcloud_cluster;
+   std::vector<PCloudItem> detected_items;
+   _bricks_detection->processData(pcloud, color_pcloud_cluster, baselink_tf, detected_items);
+
+   publishMbzircObjectList(detected_items, pcloud_msg->header);
+   publishDebugPointclouds(color_pcloud_cluster, pcloud_msg->header);
+}
+
+void BricksDetectionHandler::publishMbzircObjectList(const std::vector<ImageItem>& detected_items,
+                                                     const std_msgs::Header& original_header) const
+{
    const tf2::Matrix3x3 Rt  = _camera_parameters.R.transpose();
    tf2::Vector3 T_world     = Rt * _camera_parameters.T;
    tf2::Vector3 K_0         = _camera_parameters.K.getRow(0);
@@ -196,14 +252,14 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
    const double estimated_z = 0.2;  // TODO check height
 
    geometry_msgs::PoseArray object_pose_list;
-   object_pose_list.header.stamp    = image_msg->header.stamp;
+   object_pose_list.header.stamp    = original_header.stamp;
    object_pose_list.header.frame_id = "map";
 
    mbzirc_comm_objs::ObjectDetectionList object_list;
    for (auto item : detected_items)
    {
       mbzirc_comm_objs::ObjectDetection object;
-      object.header.stamp    = image_msg->header.stamp;
+      object.header.stamp    = original_header.stamp;
       object.header.frame_id = "map";
       object.type            = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
       object.color           = item.color_id;
@@ -259,77 +315,27 @@ void BricksDetectionHandler::rgbImageCb(const sensor_msgs::Image::ConstPtr& imag
 
    _detected_bricks_pub.publish(object_list);
    _detected_bricks_pose_pub.publish(object_pose_list);
-
-   cv_bridge::CvImage cv_bridge = cv_bridge::CvImage(image_msg->header, "bgr8", filtered_img);
-   sensor_msgs::Image filtered_img_msg;
-   cv_bridge.toImageMsg(filtered_img_msg);
-   _rgb_pub.publish(filtered_img_msg);
 }
 
-void BricksDetectionHandler::cameraInfoCb(const sensor_msgs::CameraInfo::ConstPtr& camera_info_msg)
+void BricksDetectionHandler::publishMbzircObjectList(const std::vector<PCloudItem>& detected_items,
+                                                     const std_msgs::Header& original_header) const
 {
-   _camera_parameters.K = tf2::Matrix3x3(camera_info_msg->K[0], camera_info_msg->K[1], camera_info_msg->K[2],
-                                         camera_info_msg->K[3], camera_info_msg->K[4], camera_info_msg->K[5],
-                                         camera_info_msg->K[6], camera_info_msg->K[7], camera_info_msg->K[8]);
-
-   ROS_INFO_STREAM("Camera Intrinsics set!");
-
-   _rgb_info_sub.shutdown();
-}
-
-void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstPtr& pcloud_msg)
-{
-   if (!_bricks_detection)
-   {
-      _bricks_detection = new BricksDetection();
-      _bricks_detection->color_filtering->addHSVFilter(_colors_json);
-   }
-
-   geometry_msgs::TransformStamped baselink_tf;
-   try
-   {
-      baselink_tf = _tf_buffer.lookupTransform(_tf_prefix + "base_link", pcloud_msg->header.frame_id, ros::Time(0));
-   }
-   catch (tf2::TransformException& e)
-   {
-      ROS_WARN("%s", e.what());
-      return;
-   }
-
-   pcl::PointCloud<pcl::PointXYZRGB> pcloud;
-   pcl::fromROSMsg(*pcloud_msg, pcloud);
-
-   std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>> color_pcloud_cluster;
-   std::vector<PCloudItem> detected_items;
-   _bricks_detection->processData(pcloud, color_pcloud_cluster, baselink_tf, detected_items);
-
-   geometry_msgs::TransformStamped map_tf;
-   try
-   {
-      map_tf = _tf_buffer.lookupTransform("map", _tf_prefix + "base_link", ros::Time(0));
-   }
-   catch (tf2::TransformException& e)
-   {
-      ROS_WARN("%s", e.what());
-      return;
-   }
-
    geometry_msgs::PoseArray object_pose_list;
-   object_pose_list.header.stamp    = pcloud_msg->header.stamp;
+   object_pose_list.header.stamp    = original_header.stamp;
    object_pose_list.header.frame_id = "map";
 
    mbzirc_comm_objs::ObjectDetectionList object_list;
    for (auto item : detected_items)
    {
       mbzirc_comm_objs::ObjectDetection object;
-      object.header.stamp    = pcloud_msg->header.stamp;
+      object.header.stamp    = original_header.stamp;
       object.header.frame_id = "map";
       object.type            = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
       object.color           = item.color_id;
 
       geometry_msgs::PoseStamped pose;
       pose.header.frame_id    = _tf_prefix + "base_link";
-      pose.header.stamp       = pcloud_msg->header.stamp;
+      pose.header.stamp       = original_header.stamp;
       pose.pose.position.x    = item.position.x();
       pose.pose.position.y    = item.position.y();
       pose.pose.position.z    = item.position.z();
@@ -347,9 +353,9 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       object.pose.covariance[7]  = 0.01;
       object.pose.covariance[14] = 0.01;
 
-      if (!_tf_buffer.canTransform(pcloud_msg->header.frame_id, _tf_prefix + "base_link", ros::Time(0))) continue;
+      if (!_tf_buffer.canTransform(original_header.frame_id, _tf_prefix + "base_link", ros::Time(0))) continue;
       geometry_msgs::PoseStamped converted_rel_pose;
-      _tf_buffer.transform(pose, converted_rel_pose, pcloud_msg->header.frame_id, ros::Time(0), pose.header.frame_id);
+      _tf_buffer.transform(pose, converted_rel_pose, original_header.frame_id, ros::Time(0), pose.header.frame_id);
 
       object.relative_position = converted_rel_pose.pose.position;
       // TODO: relative_yaw calculation
@@ -361,7 +367,12 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
 
    _detected_bricks_pub.publish(object_list);
    _detected_bricks_pose_pub.publish(object_pose_list);
+}
 
+void BricksDetectionHandler::publishDebugPointclouds(
+    std::map<std::string, pcl::PointCloud<pcl::PointXYZRGB>>& color_pcloud_cluster,
+    const std_msgs::Header& original_header) const
+{
    for (auto color_pcloud : color_pcloud_cluster)
    {
       pcl::PCLPointCloud2 pcloud2_out;
@@ -370,7 +381,7 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       sensor_msgs::PointCloud2 pcloud2_msg;
       pcl_conversions::fromPCL(pcloud2_out, pcloud2_msg);
 
-      pcloud2_msg.header.stamp    = pcloud_msg->header.stamp;
+      pcloud2_msg.header.stamp    = original_header.stamp;
       pcloud2_msg.header.frame_id = _tf_prefix + "base_link";
 
       if (color_pcloud.first == "red")
@@ -395,4 +406,5 @@ void BricksDetectionHandler::pointcloudCb(const sensor_msgs::PointCloud2::ConstP
       }
    }
 }
+
 }  // namespace mbzirc
