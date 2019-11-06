@@ -8,6 +8,7 @@
     <!-- <include>
       <uri>model://ground_plane</uri>
     </include> -->
+    <!-- GRIPPER PLUGIN TO AVOID THE NEED OF COLLISIONS -->
     <plugin filename="libgazebo_ros_link_attacher.so" name="ros_link_attacher_plugin"/>
     <include>
       <uri>model://sun</uri>
