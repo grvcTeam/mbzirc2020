@@ -101,6 +101,7 @@ class BricksDetectionHandler
    std::string _tf_prefix;
 
    bool _use_pointcloud;
+   double _brick_default_height;
 
    BricksDetection* _bricks_detection = {nullptr};
    CameraParameters _camera_parameters;

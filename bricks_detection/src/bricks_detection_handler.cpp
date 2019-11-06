@@ -25,7 +25,8 @@
 
 namespace mbzirc
 {
-BricksDetectionHandler::BricksDetectionHandler(std::string) : _nh("~"), _use_pointcloud(false)
+BricksDetectionHandler::BricksDetectionHandler(std::string)
+    : _nh("~"), _use_pointcloud(false), _brick_default_height(0.2)
 {
    loadParameters();
    loadServices();
@@ -106,6 +107,8 @@ void BricksDetectionHandler::filtersReconfigureCb(bricks_detection::reconfig_fil
       _bricks_detection = new BricksDetection();
       _bricks_detection->color_filtering->addHSVFilter(_colors_json);
    }
+
+   _brick_default_height = config.brick_default_height;
 
    if (config.colors_json_path != "default") _bricks_detection->color_filtering->addHSVFilter(config.colors_json_path);
 
@@ -249,7 +252,7 @@ void BricksDetectionHandler::publishMbzircObjectList(const std::vector<ImageItem
    tf2::Vector3 T_world     = Rt * _camera_parameters.T;
    tf2::Vector3 K_0         = _camera_parameters.K.getRow(0);
    tf2::Vector3 K_1         = _camera_parameters.K.getRow(1);
-   const double estimated_z = 0.2;  // TODO check height
+   const double estimated_z = _brick_default_height;
 
    geometry_msgs::PoseArray object_pose_list;
    object_pose_list.header.stamp    = original_header.stamp;
