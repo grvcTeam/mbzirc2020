@@ -39,6 +39,8 @@
     <!-- <include>
       <uri>model://ground_plane</uri>
     </include> -->
+
+    <!-- GRIPPER PLUGIN TO AVOID THE NEED OF COLLISIONS -->
     <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
     
     <include>

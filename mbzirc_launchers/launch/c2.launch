@@ -52,6 +52,6 @@
     </include>
 
 
-    <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/>
-
+<!--     <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/>
+ -->
 </launch>

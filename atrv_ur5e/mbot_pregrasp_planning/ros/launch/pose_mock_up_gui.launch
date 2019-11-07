@@ -11,7 +11,7 @@
     <param name="loop_rate" type="double" value="10.0"/>
     <param name="reference_frame" type="str" value="$(arg reference_frame)"/>
 
-    <remap from="~mock_up_pose" to="/mir_manipulation/pregrasp_planner_pipeline/target_pose"/>
+    <remap from="~mock_up_pose" to="/armIKpipeline/target_pose"/>
   </node>
   
 </launch>
