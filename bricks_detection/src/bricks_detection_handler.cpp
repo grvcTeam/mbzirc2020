@@ -297,8 +297,8 @@ void BricksDetectionHandler::publishMbzircObjectList(const std::vector<ImageItem
       object.pose.pose.orientation.y = 0;
       object.pose.pose.orientation.z = sin(0.5 * theta_world);
       object.pose.pose.orientation.w = cos(0.5 * theta_world);
-      object.pose.covariance[0]      = 0.01;  // TODO: Covariance?
-      object.pose.covariance[7]      = 0.01;
+      object.pose.covariance[0]      = 0.01;  // NOTE: Since the algorithm does not track the detections,
+      object.pose.covariance[7]      = 0.01;  // covariances calculation is not possible
       object.pose.covariance[14]     = 0.01;
 
       // Suppose item is a rectangle:
@@ -352,8 +352,8 @@ void BricksDetectionHandler::publishMbzircObjectList(const std::vector<PCloudIte
       _tf_buffer.transform(pose, converted_pose, "map", ros::Time(0), pose.header.frame_id);
       object.pose.pose = converted_pose.pose;
 
-      object.pose.covariance[0]  = 0.01;  // TODO: Covariance?
-      object.pose.covariance[7]  = 0.01;
+      object.pose.covariance[0]  = 0.01;  // NOTE: Since the algorithm does not track the detections,
+      object.pose.covariance[7]  = 0.01;  // covariances calculation is not possible
       object.pose.covariance[14] = 0.01;
 
       if (!_tf_buffer.canTransform(original_header.frame_id, _tf_prefix + "base_link", ros::Time(0))) continue;
