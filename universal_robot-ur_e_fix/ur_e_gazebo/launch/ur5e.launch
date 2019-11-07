@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="limited" default="false"  doc="If true, limits joint range [-PI, PI] on all joints." />
+  <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
+  <arg name="gui" default="true" doc="Starts gazebo gui" />
+  
+  <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- <arg name="world_name" default="worlds/empty.world"/> -->
+    <arg name="world_name" value="$(find gazebo_ros_link_attacher)/worlds/test_attacher.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+  <!-- send robot urdf to param server -->
+  <!-- <include file="$(find ur_e_description)/launch/ur5e_upload.launch">
+    <arg name="limited" value="$(arg limited)"/>
+  </include> -->
+
+  <arg name="model" default="$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro" />
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />   
+
+  <!-- <arg name="map_file" default="$(find atrvjr_description)/maps/empty_map.yaml"/>
+ -->
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.1" respawn="false" output="screen" />
+
+  <include file="$(find ur_e_gazebo)/launch/controller_utils.launch"/>
+
+  <rosparam file="$(find ur_e_gazebo)/controller/arm_controller_ur5e.yaml" command="load"/>
+  <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn arm_controller base_controller" respawn="false" output="screen"/>
+
+
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se" output="screen" clear_params="true">
+        <rosparam command="load" file="$(find robot_localization)/params/ekf_template.yaml" />
+  </node>
+
+
+  <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node" clear_params="true">
+        <rosparam command="load" file="$(find robot_localization)/params/navsat_transform_template.yaml" />
+        
+        <remap from="imu/data" to="/imu_plugin"/>
+        <remap from="gps/fix" to="/fix"/>
+        <remap from="odometry/filtered" to="odometry/filtered"/>
+  </node>
+
+
+
+</launch>

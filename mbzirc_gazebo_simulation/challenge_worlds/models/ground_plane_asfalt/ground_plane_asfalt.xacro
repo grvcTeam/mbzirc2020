@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:macro name="ground_plane_asfalt" params="arena_yaw pose material">
+  <model name="arena">
+	  <static>1</static>
+      <link name='link'>
+        <pose>${pose}</pose>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+              <torsional>
+                <ode/>
+              </torsional>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>60 50</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://materials/mbzirc.material</uri>
+              <!-- <uri>model://ground_plane_asfalt/materials/scripts</uri>
+              <uri>model://ground_plane_asfalt/materials/textures</uri> -->
+		          <name>${material}</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+  </model>
+</xacro:macro>
+
+</robot>

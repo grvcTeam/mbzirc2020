@@ -1,0 +1,13 @@
+ros-kinetic-moveit-msgs
+ros-kinetic-controller-interface
+ros-kinetic-controller-manager-msgs
+ros-kinetic-moveit-ros-planning-interface
+ros-kinetic-joint-trajectory-controller
+ros-kinetic-controller-manager
+ros-kinetic-industrial-msgs
+ros-kinetic-move-base-msgs
+ros-kinetic-mavros
+ros-kinetic-mavros-extras
+ros-kinetic-geodesy
+ros-kinetic-joy
+libeigen3-dev

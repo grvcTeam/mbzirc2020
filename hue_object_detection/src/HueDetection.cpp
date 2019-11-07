@@ -3,15 +3,11 @@
 #include <ros/console.h>
 #include <iostream>
 
-// TODO: Make these parameters
-#define SATURATION_THR 128
-#define LIKEHOOD_THR 96
-#define MIN_AREA 2
-#define POLY_EPSILON 3
-
 HueDetection::HueDetection() {
 	capture_size_ = cvSize(0, 0);
 }
+
+void HueDetection::setConfig(const HueDetectionConfig& _config) { config_ = _config; }
 
 void HueDetection::addDetector(const std::string _id, const std::string _histogram_file, cv::Scalar _contour_colour) {
 
@@ -51,7 +47,7 @@ void HueDetection::setFrame(cv::Mat& _frame) {
 	cv::mixChannels(&hls_, 3, &sat_, 1, get_sat, 1);  // ...and saturation channels.
 
 	// Create a mask based on saturation channel...
-	cv::threshold(sat_, satmask_, SATURATION_THR, 255, CV_THRESH_BINARY_INV);
+	cv::threshold(sat_, satmask_, config_.saturation_threshold, 255, CV_THRESH_BINARY_INV);
 	frame_ = _frame;
 }
 
@@ -76,7 +72,7 @@ std::vector<HueItem> HueDetection::detect(const std::string _id, bool _draw) {
 
 	// Smooth likelihood image...
 	cv::medianBlur(likelihood_, smoothed_, 3);
-	cv::threshold(smoothed_, segmented_, LIKEHOOD_THR, 255, CV_THRESH_BINARY);  // .. and segment it.
+	cv::threshold(smoothed_, segmented_, config_.likelihood_threshold, 255, CV_THRESH_BINARY);  // .. and segment it.
 
 	// Find contours
   	std::vector<std::vector<cv::Point>> contours;
@@ -88,9 +84,9 @@ std::vector<HueItem> HueDetection::detect(const std::string _id, bool _draw) {
   	for (int i = 0; i < contours.size(); i++) {
 
 		cv::Mat polygon;
-		cv::approxPolyDP(cv::Mat(contours[i]), polygon, POLY_EPSILON, true);
+		cv::approxPolyDP(cv::Mat(contours[i]), polygon, config_.poly_epsilon, true);
 		double area = fabs(cv::contourArea(polygon));
-		if (area < MIN_AREA) { continue; }
+		if (area < config_.min_area) { continue; }
 
 		CvMoments moments = cv::moments(polygon);
 		cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));

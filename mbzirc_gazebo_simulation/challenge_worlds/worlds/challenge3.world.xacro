@@ -1,19 +1,18 @@
 <?xml version="1.0" ?>
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" />
-    
 <!-- Global yaw: to change the global position of all the objects in the world -->
-<xacro:property name="yaw" value="0.0"/>
+<xacro:arg name="arena_yaw" default="0"/>
+<xacro:property name="yaw" value="$(arg arena_yaw)"/>
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
-<xacro:property name="f1" value="${[15,27,0,0]}"/> 
-<xacro:property name="f2" value="${[33,16,0,0]}"/> 
-<xacro:property name="f3" value="${[32,50,0,0]}"/> 
-<xacro:property name="f4" value="${[26,31,0,0]}"/> 
-<xacro:property name="f5" value="${[25,31,15,0]}"/> 
-<xacro:property name="b" value="${[25,30,0,0]}"/> 
-<xacro:property name="g" value="${[25,30,0,0]}"/> 
+<xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
+<xacro:property name="f2" value="${[33,16,0,1.570795]}"/> 
+<xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
+<xacro:property name="f4" value="${[31,25,0,1.570795]}"/> 
+<xacro:property name="f5" value="${[31,25,15,1.570795]}"/> 
+<xacro:property name="b" value="${[30,25,0,3.14159]}"/> 
+<xacro:property name="g" value="${[30,25,0,0]}"/> 
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
    <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
