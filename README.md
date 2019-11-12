@@ -25,6 +25,18 @@ Since Kinetic default PCL (v1.7) library has a bug for converting XYZRGB to XYZH
 
 **WARNING: If you have 'pcl_ros' and 'pcl_conversions' installed by default with ros-kinetic-desktop-full, please remove them from the ROS instalation path ('/opt/ros/kinetic/..') but keep 'pcl_msgs'**
 
+Instructions for removing 'pcl_conversions' and 'pcl_ros':
+```
+sudo rm -r /opt/ros/kinetic/include/pcl_ros
+sudo rm -r /opt/ros/kinetic/include/pcl_conversions
+
+sudo rm -r /opt/ros/kinetic/share/pcl_ros
+sudo rm -r /opt/ros/kinetic/share/pcl_conversions
+
+sudo rm /opt/ros/kinetic/lib/libpcl_*
+sudo rm -r /opt/ros/kinetic/lib/pcl_ros
+```
+
 PCL compilation and installation:
 ```
 git clone https://github.com/PointCloudLibrary/pcl.git
