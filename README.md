@@ -12,6 +12,7 @@ sudo apt-get install $(cat requirements.txt)
 Be sure of having an updated **master**-branch clone of:
 * [grvc-ual](https://github.com/grvcTeam/grvc-ual)
 * [grvc-utils](https://github.com/grvcTeam/grvc-utils)
+* [atrv_ur5e](https://github.com/joaocabogon/atrv_ur5e)
 
 
 ### PCL library
