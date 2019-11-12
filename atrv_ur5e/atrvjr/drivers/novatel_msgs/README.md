@@ -1,1 +1,0 @@
-# novatel_msgs

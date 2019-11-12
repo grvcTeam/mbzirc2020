@@ -1,7 +1,0 @@
-<launch>        
-
-    <rosparam command="load" file="$(find ur5_driver)/cfg/ur5.yaml" />
-    
-    <node name="ur5_driver" pkg="ur5_driver" type="node.py" />
-
-</launch>
