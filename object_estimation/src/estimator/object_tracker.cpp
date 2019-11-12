@@ -66,17 +66,17 @@ void ObjectTracker::initialize(mbzirc_comm_objs::ObjectDetection* z)
 
 	// Setup state vector
 	pose_.setZero(4, 1);
-	pose_(0,0) = z->location(0);
-	pose_(1,0) = z->location(1);
+	pose_(0,0) = z->pose.pose.position.x;
+	pose_(1,0) = z->pose.pose.position.y;
 	pose_(2,0) = 0.0;
 	pose_(3,0) = 0.0;
 		
 	// Setup cov matrix
 	pose_cov_.setIdentity(4, 4);
-	pose_cov_(0,0) = 2*z->locationCovariance(0,0);
-	pose_cov_(0,1) = 2*z->locationCovariance(0,1);
-	pose_cov_(1,0) = 2*z->locationCovariance(1,0);
-	pose_cov_(1,1) = 2*z->locationCovariance(1,1);
+	pose_cov_(0,0) = 2*z->pose.covariance[0];
+	pose_cov_(0,1) = 2*z->pose.covariance[1];
+	pose_cov_(1,0) = 2*z->pose.covariance[6];
+	pose_cov_(1,1) = 2*z->pose.covariance[7];
 
 	pose_cov_(2,2) = VEL_NOISE_VAR;
 	pose_cov_(3,3) = VEL_NOISE_VAR;
@@ -217,10 +217,10 @@ bool ObjectTracker::update(mbzirc_comm_objs::ObjectDetection* z)
 		
 	// Compute update noise matrix
 	Eigen::Matrix<double, 2, 2> R;
-	R(0,0) = z->locationCovariance(0,0);
-	R(0,1) = z->locationCovariance(0,1);
-	R(1,0) = z->locationCovariance(1,0);
-	R(1,1) = z->locationCovariance(1,1);
+	R(0,0) = z->pose.covariance[0];
+	R(0,1) = z->pose.covariance[1];
+	R(1,0) = z->pose.covariance[6];
+	R(1,1) = z->pose.covariance[7];
 		
 	// Calculate innovation matrix
 	Eigen::Matrix<double, 2, 2> S;
@@ -233,8 +233,8 @@ bool ObjectTracker::update(mbzirc_comm_objs::ObjectDetection* z)
 	// Calculate innovation vector
 	Eigen::Matrix<double, 2, 1> y;
 	y = H*pose_;
-	y(0,0) = z->location(0) - y(0,0);
-	y(1,0) = z->location(1) - y(1,0);
+	y(0,0) = z->pose.pose.position.x - y(0,0);
+	y(1,0) = z->pose.pose.position.y - y(1,0);
 		
 	// Calculate new state vector
 	pose_ = pose_ + K*y;
@@ -254,7 +254,7 @@ Compute the likelihood of an observation with current belief. Based on Mahalanob
 \param z Observation. 
 \return Likelihood measurement
 */
-double ObjectTracker::getLikelihood(Candidate* z)
+double ObjectTracker::getLikelihood(mbzirc_comm_objs::ObjectDetection* z)
 {
 	double distance;
 
@@ -266,10 +266,10 @@ double ObjectTracker::getLikelihood(Candidate* z)
 		
 	// Compute update noise matrix
 	Eigen::Matrix<double, 2, 2> R;
-	R(0,0) = z->locationCovariance(0,0);
-	R(0,1) = z->locationCovariance(0,1);
-	R(1,0) = z->locationCovariance(1,0);
-	R(1,1) = z->locationCovariance(1,1);
+	R(0,0) = z->pose.covariance[0];
+	R(0,1) = z->pose.covariance[1];
+	R(1,0) = z->pose.covariance[6];
+	R(1,1) = z->pose.covariance[7];
 		
 	// Calculate innovation matrix
 	Eigen::Matrix<double, 2, 2> S;
@@ -278,8 +278,8 @@ double ObjectTracker::getLikelihood(Candidate* z)
 	// Calculate innovation vector
 	Eigen::Matrix<double, 2, 1> y;
 	y = H*pose_;
-	y(0,0) = z->location(0) - y(0,0);
-	y(1,0) = z->location(1) - y(1,0);
+	y(0,0) = z->pose.pose.position.x - y(0,0);
+	y(1,0) = z->pose.pose.position.y - y(1,0);
 
 	distance = y.transpose()*S.inverse()*y;
 	
@@ -306,11 +306,11 @@ Compute the euclidean distance of an observation with current belief.
 \param z Observation. 
 \return Euclidean distance
 */
-double ObjectTracker::getDistance(Candidate* z)
+double ObjectTracker::getDistance(mbzirc_comm_objs::ObjectDetection* z)
 {
 	double dx, dy;
-	dx = pose_(0,0) - z->location(0);
-	dy = pose_(1,0) - z->location(1);
+	dx = pose_(0,0) - z->pose.pose.position.x;
+	dy = pose_(1,0) - z->pose.pose.position.y;
 
 	return sqrt(dx*dx + dy*dy);
 }

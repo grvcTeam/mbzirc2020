@@ -167,7 +167,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			cout << "Candidate " << z_list[best_pair.second]->location(0) << "," << z_list[best_pair.second]->location(1) << ". New target " << track_id_count_ << ", with distance " << min_dist << endl;
 			#endif
 			int new_target_id = track_id_count_++;
-			targets_[new_target_id] = new TargetTracker(new_target_id);
+			targets_[new_target_id] = new ObjectTracker(new_target_id);
 			targets_[new_target_id]->initialize(z_list[best_pair.second]);
 
 			// Include new target's distances
@@ -206,7 +206,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 				cout << "Candidate " << z_list[i]->location(0) << "," << z_list[i]->location(1) << ". New target " << track_id_count_ << endl;
 				#endif
 
-				targets_[track_id_count_] = new TargetTracker(track_id_count_);
+				targets_[track_id_count_] = new ObjectTracker(track_id_count_);
 				targets_[track_id_count_++]->initialize(z_list[i]);
 			}
 		}
