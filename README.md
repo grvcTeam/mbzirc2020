@@ -9,6 +9,11 @@ A list of required ROS default packages are provided in the root of this repo ([
 sudo apt-get install $(cat requirements.txt)
 ```
 
+Additionally:
+```
+sudo pip install crcmod
+```
+
 Be sure of having an updated **master**-branch clone of:
 * [grvc-ual](https://github.com/grvcTeam/grvc-ual)
 * [grvc-utils](https://github.com/grvcTeam/grvc-utils)
