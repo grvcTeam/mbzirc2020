@@ -1,5 +1,0 @@
-string programName
-bool runMode
----
-string loadedProgramName
-bool isRunning
