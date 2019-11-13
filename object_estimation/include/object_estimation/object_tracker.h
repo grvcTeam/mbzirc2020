@@ -35,7 +35,6 @@
 #include <Eigen/Eigen>
 
 enum ObjectStatus {UNASSIGNED, ASSIGNED, CAUGHT, DEPLOYED, LOST, FAILED, N_STATUS};
-enum Color {UNKNOWN = -1, RED = 0, BLUE, GREEN, YELLOW, ORANGE, N_COLORS};
 enum Factor {COLOR};
     
 /** \brief This class implements a stochastic filter for an object. 
@@ -49,7 +48,7 @@ moving.
 class ObjectTracker 
 {
 public:
-	ObjectTracker(int id);
+	ObjectTracker(int id, int type);
 	~ObjectTracker();
 
 	void initialize(mbzirc_comm_objs::ObjectDetection* z);
@@ -59,8 +58,8 @@ public:
 	double getDistance(mbzirc_comm_objs::ObjectDetection* z);
 	double lastUpdateTime();
 	int getUpdateCount();
-	void getPose(double &x, double &y);
-	void getVelocity(double &vx, double &vy);
+	void getPose(double &x, double &y, double &z);
+	void getVelocity(double &vx, double &vy, double &vz);
 	std::vector<std::vector<double> > getCov();
 	int getNumFactors();
 	std::vector<double> getFactorProbs(int factor);
@@ -68,24 +67,25 @@ public:
 	ObjectStatus getStatus();
 	void setStatus(ObjectStatus status);
 	int getId();
-	bool isLarge();
+	int getColor();
 	bool isStatic();
-	Color getColor();
-
+	
 protected:
 	Timer update_timer_;			/// Timer for last update
 	int update_count_;				/// Counter with the number of updates
 	int id_;						/// Target identifier
+	int obj_type_;					/// Object type
 	bool is_static_;				/// It indicates whether the target is static/dynamic
-	bool is_large_;					/// It indicates whether the targes is large
 	ObjectStatus status_;			/// Current status
 
-	/// Factored discrete belief: COLOR	
+	/// Factored discrete belief	
 	std::vector<std::vector<double> > fact_bel_;	
 	
-	/// State vector: [x (m), y (m), vx (m/s), vy (m/s)]
+	/// State vector: [x (m), y (m), z(m), vx (m/s), vy (m/s), vz (m/s)]
+	/// Orientation as quaternion
 	Eigen::MatrixXd pose_;
 	Eigen::MatrixXd pose_cov_;
+	Eigen::MatrixXd orientation_;
 
 };
 

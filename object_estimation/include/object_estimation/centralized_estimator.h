@@ -51,7 +51,7 @@ public:
 
 	int getNumTargets();
 	std::vector<int> getActiveTargets();
-	bool getTargetInfo(int target_id, double &x, double &y, ObjectStatus &type, Color &color);
+	bool getTargetInfo(int target_id, double &x, double &y, ObjectStatus &type, int &color);
 	bool getTargetInfo(int target_id, double &x, double &y, std::vector<std::vector<double> > &covariances);
 	bool getTargetInfo(int target_id, double &x, double &y, std::vector<std::vector<double> > &covariances, double &vx, double &vy);
 	bool setTargetStatus(int target_id, ObjectStatus status);

@@ -243,7 +243,7 @@ vector<int> CentralizedEstimator::getActiveTargets()
 \param color Color of the target
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ObjectStatus &status, Color &color)
+bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ObjectStatus &status, int &color)
 {
 	bool found = false;
 

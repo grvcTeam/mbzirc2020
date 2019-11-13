@@ -7,14 +7,16 @@ uint8 type                             # Detected object type (see TYPE_* consta
 uint8 color                            # Detected object color (see COLOR_* constats below)
 
 uint8 TYPE_UNKNOWN = 0
-uint8 TYPE_BALL    = 1
-uint8 TYPE_DRONE   = 2
-uint8 TYPE_BRICK   = 3
-uint8 TYPE_FIRE    = 4
-uint8 TYPE_PASSAGE = 5
+uint8 TYPE_BALLOON = 1
+uint8 TYPE_BALL    = 2
+uint8 TYPE_DRONE   = 3
+uint8 TYPE_BRICK   = 4
+uint8 TYPE_FIRE    = 5
+uint8 TYPE_PASSAGE = 6
 
-uint8 COLOR_UNKNOWN = 0
-uint8 COLOR_RED     = 1
-uint8 COLOR_GREEN   = 2
-uint8 COLOR_BLUE    = 3
-uint8 COLOR_ORANGE  = 4
+int8 COLOR_UNKNOWN = -1
+int8 COLOR_RED     = 0
+int8 COLOR_GREEN   = 1
+int8 COLOR_BLUE    = 2
+int8 COLOR_ORANGE  = 3
+int8 NCOLORS = 4
