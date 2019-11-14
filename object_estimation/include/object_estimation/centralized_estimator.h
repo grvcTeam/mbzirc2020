@@ -43,7 +43,7 @@ class CentralizedEstimator
 {
 public:
 
-	CentralizedEstimator(double lkhd_th, double lost_th, int min_update_count);
+	CentralizedEstimator(int type, double lkhd_th, double lost_th, int min_update_count);
 	~CentralizedEstimator();
 
 	void predict(double dt);
@@ -51,9 +51,9 @@ public:
 
 	int getNumTargets();
 	std::vector<int> getActiveTargets();
-	bool getTargetInfo(int target_id, double &x, double &y, ObjectStatus &type, int &color);
-	bool getTargetInfo(int target_id, double &x, double &y, std::vector<std::vector<double> > &covariances);
-	bool getTargetInfo(int target_id, double &x, double &y, std::vector<std::vector<double> > &covariances, double &vx, double &vy);
+	bool getTargetInfo(int target_id, double &x, double &y, double &z, ObjectStatus &status, int &color);
+	bool getTargetInfo(int target_id, double &x, double &y, double &z, std::vector<std::vector<double> > &covariances);
+	bool getTargetInfo(int target_id, double &x, double &y, double &z, std::vector<std::vector<double> > &covariances, double &vx, double &vy, double &vz);
 	bool setTargetStatus(int target_id, ObjectStatus status);
 	void removeLostTargets();
 	void resetFailedTargets();
@@ -61,6 +61,7 @@ public:
 
 protected:
 
+	int obj_type_;								/// Object type
 	std::map<int, ObjectTracker *> targets_;	/// Map with targets
 	double likelihood_th_;						/// Minimum likelihood threshold for data association
 	double lost_th_;							/// Maximum time threshold to lose target

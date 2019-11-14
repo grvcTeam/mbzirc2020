@@ -28,6 +28,7 @@
 
 #include <object_estimation/object_tracker.h>
 
+// TODO: These parameters could vary depending on the type of object.
 #define VEL_NOISE_VAR 0.2 
 #define COLOR_DETECTOR_PD 0.9
 #define MIN_COLOR_DISTANCE 0.15

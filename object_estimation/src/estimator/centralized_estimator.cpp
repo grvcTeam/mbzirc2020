@@ -33,12 +33,14 @@
 using namespace std;
 
 /** Constructor
+\param type Object type
 \param likelihood_th Likelihood threshold to associate observations
 \param lost_th Time threshold to consider target lost
 \param min_update_count Minimum number of updates to consider a target consistent 
 */
-CentralizedEstimator::CentralizedEstimator(double lkhd_th, double lost_th, int min_update_count)
+CentralizedEstimator::CentralizedEstimator(int type, double lkhd_th, double lost_th, int min_update_count)
 {
+	obj_type_ = type;
 	likelihood_th_ = lkhd_th;
 	lost_th_ = lost_th;
 	min_update_count_ = min_update_count;
@@ -156,7 +158,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 		if(min_dist != -1 && min_dist <= likelihood_th_)
 		{
 			#ifdef DEBUG_MODE
-			cout << "Candidate " << z_list[best_pair.second]->location(0) << "," << z_list[best_pair.second]->location(1) << ". Associated to target " << valid_targets[best_pair.first] << ", with distance " << min_dist << endl;
+			cout << "Candidate " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". Associated to target " << valid_targets[best_pair.first] << ", with distance " << min_dist << endl;
 			#endif
 
 			targets_[valid_targets[best_pair.first]]->update(z_list[best_pair.second]);
@@ -164,10 +166,10 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 		else
 		{
 			#ifdef DEBUG_MODE
-			cout << "Candidate " << z_list[best_pair.second]->location(0) << "," << z_list[best_pair.second]->location(1) << ". New target " << track_id_count_ << ", with distance " << min_dist << endl;
+			cout << "Candidate " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". New target " << track_id_count_ << ", with distance " << min_dist << endl;
 			#endif
 			int new_target_id = track_id_count_++;
-			targets_[new_target_id] = new ObjectTracker(new_target_id);
+			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
 			targets_[new_target_id]->initialize(z_list[best_pair.second]);
 
 			// Include new target's distances
@@ -206,7 +208,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 				cout << "Candidate " << z_list[i]->location(0) << "," << z_list[i]->location(1) << ". New target " << track_id_count_ << endl;
 				#endif
 
-				targets_[track_id_count_] = new ObjectTracker(track_id_count_);
+				targets_[track_id_count_] = new ObjectTracker(track_id_count_, obj_type_);
 				targets_[track_id_count_++]->initialize(z_list[i]);
 			}
 		}
@@ -239,11 +241,12 @@ vector<int> CentralizedEstimator::getActiveTargets()
 \param target_id Identifier of the target
 \param x Position of the target
 \param y Position of the target
+\param z Position of the target
 \param Status Status of the target 
 \param color Color of the target
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ObjectStatus &status, int &color)
+bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, ObjectStatus &status, int &color)
 {
 	bool found = false;
 
@@ -251,7 +254,7 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, Ob
 	if(it != targets_.end())
 	{
 		found = true;
-		targets_[target_id]->getPose(x, y);
+		targets_[target_id]->getPose(x, y, z);
 		status = targets_[target_id]->getStatus();
 		color = targets_[target_id]->getColor();
 	}
@@ -263,10 +266,11 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, Ob
 \param target_id Identifier of the target
 \param x Position of the target
 \param y Position of the target
+\param z Position of the target
 \param covariance Covariance matrix for position
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, vector<vector<double> > &covariances)
+bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, vector<vector<double> > &covariances)
 {
 	bool found = false;
 
@@ -274,7 +278,7 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ve
 	if(it != targets_.end())
 	{
 		found = true;
-		targets_[target_id]->getPose(x, y);
+		targets_[target_id]->getPose(x, y, z);
 		covariances = targets_[target_id]->getCov();
 	}
 	
@@ -285,12 +289,14 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ve
 \param target_id Identifier of the target
 \param x Position of the target
 \param y Position of the target
+\param z Position of the target
 \param covariance Covariance matrix for position
 \param vx Velocity of the target
 \param vy Velocity of the target
+\param vz Velocity of the target
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, vector<vector<double> > &covariances, double &vx, double &vy)
+bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, vector<vector<double> > &covariances, double &vx, double &vy, double &vz)
 {
 	bool found = false;
 
@@ -298,9 +304,9 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, ve
 	if(it != targets_.end())
 	{
 		found = true;
-		targets_[target_id]->getPose(x, y);
+		targets_[target_id]->getPose(x, y, z);
 		covariances = targets_[target_id]->getCov();
-		targets_[target_id]->getVelocity(vx, vy);
+		targets_[target_id]->getVelocity(vx, vy, vz);
 	}
 	
 	return found;
@@ -403,35 +409,32 @@ void CentralizedEstimator::printTargetsInfo()
 
 		if( (it->second)->getStatus() != LOST && (it->second)->getStatus() != CAUGHT && (it->second)->getStatus() != DEPLOYED )
 		{
-			double x, y, vx, vy;
+			double x, y, z, vx, vy, vz;
 			vector<vector<double> > cov;
 			vector<double> color_probs;
 
-			(it->second)->getPose(x,y);
-			(it->second)->getVelocity(vx,vy);
+			(it->second)->getPose(x,y,z);
+			(it->second)->getVelocity(vx,vy,vz);
 			cov = (it->second)->getCov();
 			color_probs = (it->second)->getFactorProbs(0);
 
-			cout << "Position: " << x << "," << y << ". Velocity: " << vx << "," << vy << ". Covariances: " << cov[0][0] << " " << cov[0][1] << "; " << cov[1][0] << " " << cov[1][1] << "." << endl;
+			cout << "Position: " << x << "," << y << "," << z << ". Velocity: " << vx << "," << vy << "," << vz << ". Covariances: " << cov[0][0] << " " << cov[0][1] << " " << cov[0][2] << "; " << cov[1][0] << " " << cov[1][1] << " " << cov[1][2] << "; " << cov[2][0] << " " << cov[2][1] << " " << cov[2][2] << "." << endl;
 			cout << "Color: ";
 			switch((it->second)->getColor())
 			{
-				case UNKNOWN:
+				case mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN:
 				cout << "UNKNOWN. ";
 				break;
-				case RED:
+				case mbzirc_comm_objs::ObjectDetection::COLOR_RED:
 				cout << "RED. ";
 				break;
-				case BLUE:
+				case mbzirc_comm_objs::ObjectDetection::COLOR_BLUE:
 				cout << "BLUE. ";
 				break;
-				case GREEN:
+				case mbzirc_comm_objs::ObjectDetection::COLOR_GREEN:
 				cout << "GREEN. ";
 				break;
-				case YELLOW:
-				cout << "YELLOW. ";
-				break;
-				case ORANGE:
+				case mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE:
 				cout << "ORANGE. ";
 				break;
 				default:
@@ -446,12 +449,6 @@ void CentralizedEstimator::printTargetsInfo()
 
 			cout << "Static? ";
 			if((it->second)->isStatic())
-				cout << "yes. ";
-			else
-				cout << "no. ";
-
-			cout << "Large? ";
-			if((it->second)->isLarge())
 				cout << "yes. ";
 			else
 				cout << "no. ";
