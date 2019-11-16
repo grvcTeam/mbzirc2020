@@ -58,6 +58,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    Magnetize.srv
    AskForRegion.srv
    FreeRegions.srv
+   SetObjectStatus.srv
  )
 
 ## Generate actions in the 'action' folder

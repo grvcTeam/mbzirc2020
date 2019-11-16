@@ -1,0 +1,12 @@
+int16 object_id
+uint8 object_status	# see Types constants below
+uint8 object_type       # Detected object type (see TYPE_* constants ObjectDetection.msg)
+
+int16 UNASSIGNED = 0 
+int16 ASSIGNED = 1 
+int16 CAUGHT = 2 
+int16 DEPLOYED = 3 
+int16 LOST = 4
+int16 FAILED = 5
+---
+
