@@ -56,6 +56,14 @@ CentralizedEstimator::~CentralizedEstimator()
 	}
 }
 
+/** \brief Initialize estimator with a priori information
+\param config_file File with a priori information
+*/
+void CentralizedEstimator::initializeAPrioriInfo(string config_file)
+{
+
+}
+
 /** Prediction step for all targets
 \param dt Length in seconds of the prediction step.
 */
@@ -349,27 +357,6 @@ void CentralizedEstimator::removeLostTargets()
 		else
 			++it;
 	}
-}
-
-/** Reset targets to UNASSIGNED if all are FAILED
-*/
-void CentralizedEstimator::resetFailedTargets()
-{
-	bool all_failed = true;
-	for(auto it = targets_.begin(); it != targets_.end() && all_failed; ++it)
-	{
-		if((it->second)->getStatus() == UNASSIGNED)
-			all_failed = false;
-	}
-
-	if(all_failed)
-	{
-		for(auto it = targets_.begin(); it != targets_.end(); ++it)
-		{
-			if((it->second)->getStatus() == FAILED)
-				(it->second)->setStatus(UNASSIGNED); 
-		}
-	}	
 }
 
 /** Print information from the targets for debugging

@@ -107,7 +107,9 @@ void ObjectTracker::initialize(ObjectDetection* z)
 
 			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
 			{
-				if(z->color == i)
+				if(z->color == ObjectDetection::COLOR_UNKNOWN)
+					prob_z = 1.0;
+				else if(z->color == i)
 					prob_z = COLOR_DETECTOR_PD;
 				else
 					prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
@@ -179,6 +181,8 @@ bool ObjectTracker::update(ObjectDetection* z)
 
 			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
 			{
+				if(z->color == ObjectDetection::COLOR_UNKNOWN)
+					prob_z = 1.0;
 				if(z->color == i)
 					prob_z = COLOR_DETECTOR_PD;
 				else
@@ -353,6 +357,20 @@ void ObjectTracker::getVelocity(double &vx, double &vy, double &vz)
 	vx = pose_(3,0);
 	vy = pose_(4,0);
 	vz = pose_(5,0);
+}
+
+/** \brief Return orientation information from the target
+\param qx 
+\param qy 
+\param qz 
+\param qw 
+*/
+void ObjectTracker::getOrientation(double &qx, double &qy, double &qz, double &qw)
+{
+	qx = orientation_(0,0);
+	qy = orientation_(1,0);
+	qz = orientation_(2,0);
+	qw = orientation_(3,0);
 }
 
 /** \brief Return covariance matrix from the target position

@@ -46,6 +46,7 @@ public:
 	CentralizedEstimator(int type, double lkhd_th, double lost_th, int min_update_count);
 	~CentralizedEstimator();
 
+	void initializeAPrioriInfo(std::string config_file);
 	void predict(double dt);
 	bool update(std::vector<mbzirc_comm_objs::ObjectDetection*> z_list);
 
@@ -56,7 +57,6 @@ public:
 	bool getTargetInfo(int target_id, double &x, double &y, double &z, std::vector<std::vector<double> > &covariances, double &vx, double &vy, double &vz);
 	bool setTargetStatus(int target_id, ObjectStatus status);
 	void removeLostTargets();
-	void resetFailedTargets();
 	void printTargetsInfo();
 
 protected:

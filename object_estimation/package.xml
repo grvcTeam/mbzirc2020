@@ -36,6 +36,8 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <depend>mbzirc_comm_objs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>tf2</depend>
   <depend>roscpp</depend>
   <depend>yaml-cpp</depend>
   <depend>eigen</depend>

@@ -60,6 +60,7 @@ public:
 	int getUpdateCount();
 	void getPose(double &x, double &y, double &z);
 	void getVelocity(double &vx, double &vy, double &vz);
+	void getOrientation(double &qx, double &qy, double &qz, double &qw);
 	std::vector<std::vector<double> > getCov();
 	int getNumFactors();
 	std::vector<double> getFactorProbs(int factor);
