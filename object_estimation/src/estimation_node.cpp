@@ -25,7 +25,7 @@ public:
         string robot_ns;
         vector<string> object_types;
         
-        double lost_time_th, min_update_count, association_th, delay_max;
+        double lost_time_th, min_update_count, association_th;
 
         // Get parameters
         ros::param::param<double>("~frequency", frequency, 1.0);
@@ -39,7 +39,7 @@ public:
         ros::param::param<double>("~lost_time_th", lost_time_th, 20.0);
         ros::param::param<double>("~min_update_count", min_update_count, 0.0);
         ros::param::param<double>("~association_th", association_th, 6.0);
-        ros::param::param<double>("~delay_max", delay_max, 2.0);
+        ros::param::param<double>("~delay_max", delay_max_, 2.0);
 
         n_uavs_ = uav_ids_.size();
 
@@ -125,7 +125,37 @@ protected:
 
     /** \brief Callback to receive object detections
     */
-    void updateCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
+    void updateCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) 
+    {
+
+        double delay = (ros::Time::now() - msg->stamp).toSec();
+
+        int uav = msg->uav_id;
+
+        if(msg->objects.size() && delay < delay_max_ && find(uav_ids_.begin(), uav_ids_.end(), uav) != uav_ids_.end())
+        {
+            int obj_type = msg->objects[0].type;    // TODO. We assume the same type for all objects in the list. Should we have a type in ObjectDetectionList?
+
+            // Remove existing candidates
+            if(candidates_[obj_type][uav].size())
+            {
+                for(int j = 0; j < candidates_[obj_type][uav].size(); j++)
+                {
+                    delete candidates_[obj_type][uav][j];
+                }
+                candidates_[obj_type][uav].clear();
+            }
+
+            // Store received candidates
+            for(int j = 0; j < msg->objects.size(); j++)
+            {
+                ObjectDetection* detection_p = new ObjectDetection();
+                *detection_p = msg->objects[j];
+                candidates_[obj_type][uav].push_back(detection_p);
+            }
+        }
+        else
+            ROS_WARN("Received detections empty, with long delay or from a UAV not considered.");
     }
 
     /** \brief Callback to execute main thread at node's rate
@@ -209,7 +239,8 @@ protected:
     }
 
     // TODO: Move to some kind of utils lib, as it is repeated
-    int obj_type_from_string(const string& type) {
+    int obj_type_from_string(const string& type) 
+    {
 
         int obj_type;
         if(type == "balloon")
@@ -244,6 +275,9 @@ protected:
 
         // Get ids to plot active targets
         vector<int> active_targets = estimators_[obj_type]->getActiveTargets();
+
+        list.uav_id = -1;
+        list.stamp = ros::Time::now();
 
         for(int i = 0; i < active_targets.size(); i++)
         {
@@ -482,6 +516,7 @@ protected:
     
     int iteration_counter_;
     bool visualization_;        /// Activate to publish markers
+    double delay_max_;          /// Maximum delay allowed for object detections
 
     /// Timer, publishers and subscribers
     ros::Timer estimation_timer_;

@@ -71,6 +71,7 @@ ObjectTracker::~ObjectTracker()
 */
 void ObjectTracker::initialize(ObjectDetection* z)
 {
+	// TODO: Check frame of measurement first and transform to expected
 
 	// Setup state vector
 	pose_.setZero(6, 1);
@@ -170,6 +171,8 @@ void ObjectTracker::predict(double dt)
 */
 bool ObjectTracker::update(ObjectDetection* z)
 {
+	// TODO: Check frame of measurement first and transform to expected
+
 	// Update factored belief 
 	for(int fact = 0; fact < fact_bel_.size(); fact++)
 	{
@@ -256,6 +259,8 @@ Compute the likelihood of an observation with current belief. Based on Mahalanob
 */
 double ObjectTracker::getLikelihood(ObjectDetection* z)
 {
+
+	// TODO: Check frame of measurement first and transform to expected
 	double distance;
 
 	// Compute update jacobian
