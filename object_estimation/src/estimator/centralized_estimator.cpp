@@ -27,6 +27,7 @@
 
 
 #include <object_estimation/centralized_estimator.h>
+#include <yaml-cpp/yaml.h>
 
 // #define DEBUG_MODE
 
@@ -61,7 +62,57 @@ CentralizedEstimator::~CentralizedEstimator()
 */
 void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 {
+	YAML::Node yaml_config = YAML::LoadFile(config_file);
+	string item;
 
+	switch(obj_type_)
+	{
+		case mbzirc_comm_objs::ObjectDetection::TYPE_BRICK:
+			item = "brick";
+		break;
+		case mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE:
+			item = "passage";
+		break;
+		case mbzirc_comm_objs::ObjectDetection::TYPE_FIRE:
+			item = "fire";
+		break;
+		default:
+		cout << "There is no a priori information for objects of this type" << endl;
+	}
+
+	if(!item.empty())
+	{
+		for (size_t i = 0; i < yaml_config[item].size(); i++) 
+		{
+			mbzirc_comm_objs::ObjectDetection object;
+
+			// TODO: Check that expected fields do exist
+            object.header.stamp = ros::Time::now();
+            object.header.frame_id = yaml_config[item][i]["frame_id"].as<string>();
+            object.type = obj_type_;
+
+			object.pose.pose.position.x = yaml_config[item][i]["position_x"].as<float>();
+            object.pose.pose.position.y = yaml_config[item][i]["position_y"].as<float>();;
+            object.pose.pose.position.z = yaml_config[item][i]["position_z"].as<float>();;
+
+			for(int j = 0; j < 6; j++)
+				for(int k = 0; k < 6; k++)
+					object.pose.covariance[j*6+k] = 0.0;
+	
+			// TODO: can w be computed automatically?
+			object.pose.pose.orientation.x = yaml_config[item][i]["orientation_x"].as<float>();
+			object.pose.pose.orientation.y = yaml_config[item][i]["orientation_y"].as<float>();
+			object.pose.pose.orientation.z = yaml_config[item][i]["orientation_z"].as<float>();
+			object.pose.pose.orientation.w = yaml_config[item][i]["orientation_w"].as<float>();
+
+			// TODO. if there is no color, UNKNOWN
+    		object.color = color_from_string(yaml_config[item][i]["color"].as<string>());
+    		
+			int new_target_id = track_id_count_++;
+			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
+			targets_[new_target_id]->initialize(&object);
+    	}
+	}
 }
 
 /** Prediction step for all targets
@@ -442,4 +493,32 @@ void CentralizedEstimator::printTargetsInfo()
 		}
 		cout << endl;
 	}
+}
+
+/** \brief Tranform string to color value
+*/
+int CentralizedEstimator::color_from_string(const string& color) {
+    int out_color;
+    switch(color[0]) {
+        case 'R':
+		case 'r':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_RED;
+            break;
+        case 'G':
+		case 'g':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;
+            break;
+        case 'B':
+		case 'b':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_BLUE;
+            break;
+        case 'O':
+		case 'o':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
+            break;
+        default:
+        cout << "Unknown color " << color.c_str() << endl;
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
+    }
+    return out_color;
 }

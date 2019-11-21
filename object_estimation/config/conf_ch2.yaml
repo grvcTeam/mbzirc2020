@@ -1,41 +1,41 @@
-# TODO: could color be "unknown"?
-piles:
+brick:
   - color: "red"
     frame_id: "arena"
     position_x: 30.0
     position_y: 15.0
     position_z: 0.1
-    orientation_yaw: 0.0
-    scale_x: 3.0
-    scale_y: 3.0
-    scale_z: 0.2
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
 
   - color: "green"
     frame_id: "arena"
     position_x: 30.0
     position_y: 35.0
     position_z: 0.1
-    orientation_yaw: 0.0
-    scale_x: 3.0
-    scale_y: 3.0
-    scale_z: 0.2
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
 
   - color: "blue"
     frame_id: "arena"
     position_x: 20.0
     position_y: 25.0
     position_z: 0.1
-    orientation_yaw: 0.0
-    scale_x: 5.0
-    scale_y: 5.0
-    scale_z: 0.2
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
 
   - color: "orange"
     frame_id: "arena"
     position_x: 40.0
     position_y: 25.0
     position_z: 0.1
-    orientation_yaw: 0.0
-    scale_x: 5.0
-    scale_y: 5.0
-    scale_z: 0.2
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+

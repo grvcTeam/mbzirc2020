@@ -61,6 +61,8 @@ public:
 
 protected:
 
+	int color_from_string(const std::string& color);
+	
 	int obj_type_;								/// Object type
 	std::map<int, ObjectTracker *> targets_;	/// Map with targets
 	double likelihood_th_;						/// Minimum likelihood threshold for data association

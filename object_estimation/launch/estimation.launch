@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<arg name="robot_model" default="mbzirc2020"/>
+
+	<node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
+
+	<param name="frequency" value="1.0"/>
+	<param name="robot_ns" value="$(arg robot_model)"/>
+	<param name="visualization" value="false" />
+
+	<rosparam param="object_types">["brick"]</rosparam>
+	<!-- <rosparam param="object_types">["fire","passage"]</rosparam> -->	
+	<rosparam param="uav_ids">[1, 2, 3]</rosparam>
+	<param name="a_priori_info" value="true" />
+	<param name="conf_file" value="conf_ch2.yaml" />
+	<!-- <param name="conf_file" value="conf_ch3.yaml" /> -->
+
+	<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
+	<param name="association_th" value="6.0" />
+	<param name="min_update_count" value="5" />
+	<param name="delay_max" value="2.0" />          <!-- in seconds -->
+	        
+	</node>
+
+</launch>
