@@ -1,0 +1,14 @@
+<launch>
+
+   <arg name="tf_prefix" default="mbzirc2020_1"/>
+
+   <arg name="pcloud_sub_topic"  default="/camera/depth_registered/points"/>
+   <arg name="pcloud_pub_topic"  default="merged_pcloud"/>
+   
+   <node name="pcloud_merge" pkg="bricks_detection" type="pcloud_merge_node" output="screen" respawn="false">
+      <param name="tf_prefix"        type="str"  value="$(arg tf_prefix)"/>
+      <param name="pcloud_sub_topic" type="str"  value="$(arg pcloud_sub_topic)"/>
+      <param name="pcloud_pub_topic" type="str"  value="$(arg pcloud_pub_topic)"/>
+   </node>
+
+</launch>
