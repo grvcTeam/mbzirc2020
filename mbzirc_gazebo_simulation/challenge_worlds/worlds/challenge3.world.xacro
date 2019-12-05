@@ -7,11 +7,11 @@
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
 <xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
-<xacro:property name="f2" value="${[33,16,0,1.570795]}"/> 
+<xacro:property name="f2" value="${[36,17,0,0]}"/> 
 <xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
-<xacro:property name="f4" value="${[31,25,0,1.570795]}"/> 
-<xacro:property name="f5" value="${[31,25,15,1.570795]}"/> 
-<xacro:property name="b" value="${[30,25,0,3.14159]}"/> 
+<xacro:property name="f4" value="${[43,22,0,0]}"/> 
+<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/> 
+<xacro:property name="b" value="${[30,25,0,4.7124]}"/> 
 <xacro:property name="g" value="${[30,25,0,0]}"/> 
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
