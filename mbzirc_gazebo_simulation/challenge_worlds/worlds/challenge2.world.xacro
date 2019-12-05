@@ -1,49 +1,38 @@
 <?xml version="1.0" ?>
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
-<!-- <xacro:include filename="$(find challenge_worlds)/urdf/orange_pile.xacro" />
-<xacro:include filename="$(find challenge_worlds)/urdf/blue_pile.xacro" />
-<xacro:include filename="$(find challenge_worlds)/urdf/red_pile.xacro" />
-<xacro:include filename="$(find challenge_worlds)/urdf/green_pile.xacro" /> -->
 <xacro:include filename="$(find challenge_worlds)/models/ground_plane_asfalt/ground_plane_asfalt.xacro" />
-<xacro:include filename="$(find challenge_worlds)/urdf/single_colored_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_red_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_blue_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_green_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_orange_brick.xacro" />
+
 <!-- Global yaw: to change the global position of all the objects in the world -->
 <xacro:arg name="arena_yaw" default="0"/>
 <xacro:property name="yaw" value="$(arg arena_yaw)"/>
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
-<!-- <xacro:property name="orange" value="${[10,0,0,0]}"/> 
-<xacro:property name="blue" value="${[-10,0,0,0]}"/>  
-<xacro:property name="green" value="${[0,10,0,0]}"/>  
-<xacro:property name="red" value="${[0,-10,0,0]}"/>  -->
 <xacro:property name="ground" value="${[30,25,0,0]}"/>
 <xacro:property name="red01" value="${[30.5,14.5,0,0]}"/>
 <xacro:property name="red02" value="${[29.5,14.5,0,0]}"/>
 <xacro:property name="red03" value="${[29.5,15.5,0,0]}"/>
 <xacro:property name="red04" value="${[30.5,15.5,0,0]}"/>
-<xacro:property name="blue01" value="${[19,25.5,0,0]}"/>
-<xacro:property name="blue02" value="${[19,24.5,0,0]}"/>
-<xacro:property name="blue03" value="${[21,25.5,0,0]}"/>
-<xacro:property name="blue04" value="${[21,24.5,0,0]}"/>
+<xacro:property name="blue01" value="${[19,26,0,0]}"/>
+<xacro:property name="blue02" value="${[19,24,0,0]}"/>
+<xacro:property name="blue03" value="${[21,26,0,0]}"/>
+<xacro:property name="blue04" value="${[21,24,0,0]}"/>
 <xacro:property name="green01" value="${[30.5,35.5,0,0]}"/>
 <xacro:property name="green02" value="${[29.5,35.5,0,0]}"/>
 <xacro:property name="green03" value="${[30.5,34.5,0,0]}"/>
 <xacro:property name="green04" value="${[29.5,34.5,0,0]}"/>
-<xacro:property name="orange01" value="${[41,25.5,0,0]}"/>
-<xacro:property name="orange02" value="${[41,24.5,0,0]}"/>
-<xacro:property name="orange03" value="${[39,25.5,0,0]}"/>
-<xacro:property name="orange04" value="${[39,24.5,0,0]}"/>
-
-
+<xacro:property name="orange01" value="${[41,26,0,0]}"/>
+<xacro:property name="orange02" value="${[41,24,0,0]}"/>
+<xacro:property name="orange03" value="${[39,26,0,0]}"/>
+<xacro:property name="orange04" value="${[39,24,0,0]}"/>
+<xacro:property name="L_frame" value="${[0.5,0.5,0.005,0.3]}"/>
 
   <world name="default">
-    <!-- <include>
-      <uri>model://ground_plane</uri>
-    </include> -->
-
     <!-- GRIPPER PLUGIN TO AVOID THE NEED OF COLLISIONS -->
     <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
-    
-    
     <include>
       <uri>model://sun</uri>
     </include>
@@ -52,25 +41,27 @@
     <!-- The following is the geometric expresion for an axis rotation -->
     <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
     <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
-    <!-- <orange_pile id="1" pose="${orange[0]*cos(yaw)-orange[1]*sin(yaw)} ${orange[0]*sin(yaw)+orange[1]*cos(yaw)} ${orange[2]} 0 0 ${orange[3]+yaw}" />
-    <blue_pile id="2" pose="${blue[0]*cos(yaw)-blue[1]*sin(yaw)} ${blue[0]*sin(yaw)+blue[1]*cos(yaw)} ${blue[2]} 0 0 ${yaw+blue[3]}" />
-    <green_pile id="3" pose="${green[0]*cos(yaw)-green[1]*sin(yaw)} ${green[0]*sin(yaw)+green[1]*cos(yaw)} ${green[2]} 0 0 ${yaw+green[3]}" />
-    <red_pile id="4" pose="${red[0]*cos(yaw)-red[1]*sin(yaw)} ${red[0]*sin(yaw)+red[1]*cos(yaw)} ${red[2]} 0 0 ${yaw+red[3]}" /> -->
-    <single_colored_brick id="Red_brick_01" pose="${red01[0]*cos(yaw)-red01[1]*sin(yaw)} ${red01[0]*sin(yaw)+red01[1]*cos(yaw)} ${red01[2]} 0 0 ${red01[3]+yaw}" sx="0.3" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_colored_brick id="Red_brick_02" pose="${red02[0]*cos(yaw)-red02[1]*sin(yaw)} ${red02[0]*sin(yaw)+red02[1]*cos(yaw)} ${red02[2]} 0 0 ${red02[3]+yaw}" sx="0.3" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_colored_brick id="Red_brick_03" pose="${red03[0]*cos(yaw)-red03[1]*sin(yaw)} ${red03[0]*sin(yaw)+red03[1]*cos(yaw)} ${red03[2]} 0 0 ${red03[3]+yaw}" sx="0.3" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_colored_brick id="Red_brick_04" pose="${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw}" sx="0.3" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_colored_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Blue_brick_02" pose="${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="1.2" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
-    <single_colored_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_colored_brick id="Green_brick_02" pose="${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_colored_brick id="Green_brick_03" pose="${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_colored_brick id="Green_brick_04" pose="${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw}" sx="0.6" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_colored_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
-    <single_colored_brick id="Orange_brick_02" pose="${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
-    <single_colored_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
-    <single_colored_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="1.8" sy="0.2" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <single_red_brick id="Red_brick_01" pose="${red01[0]*cos(yaw)-red01[1]*sin(yaw)} ${red01[0]*sin(yaw)+red01[1]*cos(yaw)} ${red01[2]} 0 0 ${red01[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
+    <single_red_brick id="Red_brick_02" pose="${red02[0]*cos(yaw)-red02[1]*sin(yaw)} ${red02[0]*sin(yaw)+red02[1]*cos(yaw)} ${red02[2]} 0 0 ${red02[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
+    <single_red_brick id="Red_brick_03" pose="${red03[0]*cos(yaw)-red03[1]*sin(yaw)} ${red03[0]*sin(yaw)+red03[1]*cos(yaw)} ${red03[2]} 0 0 ${red03[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
+    <single_red_brick id="Red_brick_04" pose="${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
+    <single_blue_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
+    <single_blue_brick id="Blue_brick_02" pose="${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
+    <single_blue_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
+    <single_blue_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.0" mat="Gazebo/Blue" />
+    <single_green_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
+    <single_green_brick id="Green_brick_02" pose="${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
+    <single_green_brick id="Green_brick_03" pose="${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
+    <single_green_brick id="Green_brick_04" pose="${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
+    <single_orange_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <single_orange_brick id="Orange_brick_02" pose="${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <single_orange_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <single_orange_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="1.0" mat="Gazebo/Orange" />
+    <model name="L_wooden_frame">
+      <include>
+        <uri>model://L_wooden_frame</uri>
+      </include>
+      <pose frame=''>${L_frame[0]*cos(yaw)-L_frame[1]*sin(yaw)} ${L_frame[0]*sin(yaw)+L_frame[1]*cos(yaw)} ${L_frame[2]} 0 0 ${L_frame[3]+yaw} </pose>
+    </model>
   </world>
 </sdf>
