@@ -18,16 +18,18 @@
 		</script> 
 	  </material>
       <geometry>
-        <box>
-          <size>0.3 0.2 0.2</size>
-        </box>
+        <mesh>
+            <uri>model://single_red_brick/meshes/Brick_RibShape_Red_redux.stl</uri>
+            <scale>0.01 0.01 0.01</scale>
+        </mesh>
       </geometry>
     </visual>
     <collision name="collision">
       <geometry>
-        <box>
-          <size>0.3 0.2 0.2</size>
-        </box>
+        <mesh>
+            <uri>model://single_red_brick/meshes/Brick_RibShape_Red_redux.stl</uri>
+            <scale>0.01 0.01 0.01</scale>
+        </mesh>
       </geometry>
     </collision>
   </link>
