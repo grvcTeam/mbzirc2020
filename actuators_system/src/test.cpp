@@ -3,7 +3,7 @@
 #include <arduino/actuators_input.h>
 #include <arduino/actuators_output.h>
 
-uint8_t rx_buffer[ACTUATORS_OUTPUT_MIN_BUFFER_SIZE];
+uint8_t rx_buffer[2*ACTUATORS_OUTPUT_MIN_BUFFER_SIZE];
 uint8_t tx_buffer[ACTUATORS_INPUT_MIN_BUFFER_SIZE];
 uint8_t aux_rx_buffer[ACTUATORS_OUTPUT_MAX_MSG_SIZE];
 uint8_t aux_tx_buffer[ACTUATORS_INPUT_MAX_MSG_SIZE];
@@ -49,7 +49,8 @@ int main() {
     ActuatorsOutputReader actuators_output_reader;
     deframer.connect(&actuators_output_reader);
 
-    for (int i = 0; i < 10; i++) {
+    int i = 0;
+    while (true) {
         size_t msg_size = actuators_input.to_buffer(aux_tx_buffer);
         size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
         write(serial_port, tx_buffer, frame_size);
@@ -75,6 +76,7 @@ int main() {
         }
 
         sleep(1);
+        i++;
     }
 
     close(serial_port);
