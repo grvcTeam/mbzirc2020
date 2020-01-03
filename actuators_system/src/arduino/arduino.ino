@@ -51,6 +51,10 @@ void loop() {
   if (actuators_input_reader.has_new_data) {
     actuators_input_reader.has_new_data = false;
 
+    actuators_output.low_level = 1;
+    actuators_output.attached_0 = 0;
+    actuators_output.attached_1 = 1;
+    actuators_output.attached_2 = 0;
     actuators_output.input_echo = actuators_input_reader.data;
     actuators_output.rx_error = rx_error;
 
