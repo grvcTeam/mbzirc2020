@@ -1,10 +1,9 @@
-//#include <Arduino.h>
 #include "ssfp.h"
 #include "actuators_input.h"
 #include "actuators_output.h"
-//#include "Timer.h"
+#include "Timer.h"
 
-//#define PERIOD_IN_MS 1000
+#define PERIOD_IN_MS 20
 #define SERIAL_BAUDRATE 9600
 
 uint8_t rx_buffer[ACTUATORS_INPUT_MIN_BUFFER_SIZE];
@@ -32,14 +31,19 @@ DeframerError rx_error;
 ActuatorsInputReader actuators_input_reader;
 Framer framer;    
 ActuatorsOutput actuators_output;
-//Timer timer = Timer(PERIOD_IN_MS);
+Timer timer = Timer(PERIOD_IN_MS);
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(SERIAL_BAUDRATE);
-  Serial.setTimeout(10);
+  Serial.setTimeout(5);
   deframer.connect(&actuators_input_reader);
-  //timer.begin();
+  actuators_input_reader.data.gripper_pwm[0]   = 900;
+  actuators_input_reader.data.gripper_pwm[1]   = 900;
+  actuators_input_reader.data.gripper_pwm[2]   = 900;
+  actuators_input_reader.data.extinguisher_pwm = 900;
+  actuators_input_reader.data.pump_activation  = false;  
+  timer.begin();
 }
 
 void loop() {
@@ -63,5 +67,5 @@ void loop() {
     Serial.write(tx_buffer, frame_size);
   }
 
-//  timer.sleep();
+  timer.sleep();
 }

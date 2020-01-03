@@ -42,7 +42,7 @@ int main() {
     actuators_input.gripper_pwm[1] = 901;
     actuators_input.gripper_pwm[2] = 902;
     actuators_input.extinguisher_pwm = 1000;
-    actuators_input.pump_activation = 0x7E;  // TODO: bool?
+    actuators_input.pump_activation = false;
 
     Deframer deframer;
     // ActuatorsOutput actuators_output;

@@ -15,7 +15,7 @@ struct ActuatorsInput {
 
     uint16_t gripper_pwm[3];
     uint16_t extinguisher_pwm;
-    uint8_t pump_activation;
+    bool pump_activation : 1;
 
     size_t size() {
         // TODO: Variable size?
@@ -28,7 +28,9 @@ struct ActuatorsInput {
             index += t16_to_buffer(gripper_pwm[i], &buffer[index]);
         }
         index += t16_to_buffer(extinguisher_pwm, &buffer[index]);
-        index += t8_to_buffer(pump_activation, &buffer[index]);
+        uint8_t packed_data = 0;
+        packed_data |= pump_activation? (uint8_t)(1 << 0): 0;
+        index += t8_to_buffer(packed_data, &buffer[index]);
         return index;
     }
 
@@ -38,7 +40,9 @@ struct ActuatorsInput {
             index += t16_from_buffer(&gripper_pwm[i], &buffer[index]);
         }
         index += t16_from_buffer(&extinguisher_pwm, &buffer[index]);
-        index += t8_from_buffer(&pump_activation, &buffer[index]);
+        uint8_t packed_data;
+        index += t8_from_buffer(&packed_data, &buffer[index]);
+        pump_activation = packed_data & (uint8_t)(1 << 0);
         return index;
     }
 
@@ -47,7 +51,7 @@ struct ActuatorsInput {
             printf("gripper_pwm[%d]: %d\n", i, gripper_pwm[i]);
         }
         printf("extinguisher_pwm: %d\n", extinguisher_pwm);
-        printf("pump_activation: %d\n", pump_activation);
+        printf("pump_activation: %s\n", pump_activation? "true": "false");
     }
 };
 
