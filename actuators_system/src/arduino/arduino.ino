@@ -1,6 +1,6 @@
 #include "ssfp.h"
-#include "actuators_input.h"
-#include "actuators_output.h"
+#include "board_input.h"
+#include "board_output.h"
 #include "Timer.h"
 #include <Servo.h>
 
@@ -11,26 +11,26 @@
 #define INI_SERVO_PWM 1500
 #define MAX_SERVO_PWM 2100
 
-#define PIN_SERVO_GRIPPER_0     3
-#define PIN_SERVO_GRIPPER_1     5
-#define PIN_SERVO_GRIPPER_2     6
-#define PIN_SERVO_EXTINGUISHER  9
-#define PIN_PUMP_RELAY          2
+#define PIN_PWM_0   3
+#define PIN_PWM_1   5
+#define PIN_PWM_2   6
+#define PIN_PWM_3   9
+#define PIN_OUT_0   2
 
-#define PIN_LEVEL               4
-#define PIN_GRIPPER_ATTACHED_0  7
-#define PIN_GRIPPER_ATTACHED_1  8
-#define PIN_GRIPPER_ATTACHED_2 12
+#define PIN_IN_0    4
+#define PIN_IN_1    7
+#define PIN_IN_2    8
+#define PIN_IN_3   12
 
-uint8_t rx_buffer[2*ACTUATORS_INPUT_MIN_BUFFER_SIZE];
-uint8_t aux_rx_buffer[ACTUATORS_INPUT_MAX_MSG_SIZE];
+uint8_t rx_buffer[2*BOARD_INPUT_MIN_BUFFER_SIZE];
+uint8_t aux_rx_buffer[BOARD_INPUT_MAX_MSG_SIZE];
 
-uint8_t tx_buffer[ACTUATORS_OUTPUT_MIN_BUFFER_SIZE];
-uint8_t aux_tx_buffer[ACTUATORS_OUTPUT_MAX_MSG_SIZE];
+uint8_t tx_buffer[BOARD_OUTPUT_MIN_BUFFER_SIZE];
+uint8_t aux_tx_buffer[BOARD_OUTPUT_MAX_MSG_SIZE];
 
-class ActuatorsInputReader: public OnReadInterface {
+class BoardInputReader: public OnReadInterface {
 public:
-    ActuatorsInput data;
+    BoardInput data;
     bool has_new_data = false;
 
     bool call(uint8_t *buffer, size_t size) {
@@ -45,76 +45,74 @@ public:
 
 Deframer deframer;
 DeframerError rx_error;
-ActuatorsInputReader actuators_input_reader;
+BoardInputReader board_input_reader;
 
 Framer framer;    
-ActuatorsOutput actuators_output;
+BoardOutput board_output;
 
 Timer timer = Timer(PERIOD_IN_MS);
 
-Servo gripper[3];
-Servo extinguisher;
+Servo servo[4];
 
 void setup() {
   Serial.begin(SERIAL_BAUDRATE);
   Serial.setTimeout(5);
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(PIN_PUMP_RELAY, OUTPUT);
+  pinMode(PIN_OUT_0, OUTPUT);
 
-  pinMode(PIN_LEVEL, INPUT);
-  pinMode(PIN_GRIPPER_ATTACHED_0, INPUT);
-  pinMode(PIN_GRIPPER_ATTACHED_1, INPUT);
-  pinMode(PIN_GRIPPER_ATTACHED_2, INPUT);
+  pinMode(PIN_IN_0, INPUT);
+  pinMode(PIN_IN_1, INPUT);
+  pinMode(PIN_IN_2, INPUT);
+  pinMode(PIN_IN_3, INPUT);
 
-  deframer.connect(&actuators_input_reader);
-  actuators_input_reader.data.gripper_pwm[0]   = INI_SERVO_PWM;
-  actuators_input_reader.data.gripper_pwm[1]   = INI_SERVO_PWM;
-  actuators_input_reader.data.gripper_pwm[2]   = INI_SERVO_PWM;
-  actuators_input_reader.data.extinguisher_pwm = INI_SERVO_PWM;
-  actuators_input_reader.data.pump_activation  = false;
+  deframer.connect(&board_input_reader);
+  board_input_reader.data.pwm[0] = INI_SERVO_PWM;
+  board_input_reader.data.pwm[1] = INI_SERVO_PWM;
+  board_input_reader.data.pwm[2] = INI_SERVO_PWM;
+  board_input_reader.data.pwm[3] = INI_SERVO_PWM;
+  board_input_reader.data.digital_out_0  = false;
 
-  actuators_output.low_level = false;
-  actuators_output.attached_0 = false;
-  actuators_output.attached_1 = false;
-  actuators_output.attached_2 = false;
-  actuators_output.input_echo = actuators_input_reader.data;
-  actuators_output.rx_error = rx_error;
+  board_output.digital_in_0 = false;
+  board_output.digital_in_1 = false;
+  board_output.digital_in_2 = false;
+  board_output.digital_in_3 = false;
+  board_output.input_echo = board_input_reader.data;
+  board_output.rx_error = rx_error;
   
-  gripper[0].attach(PIN_SERVO_GRIPPER_0, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  gripper[1].attach(PIN_SERVO_GRIPPER_1, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  gripper[2].attach(PIN_SERVO_GRIPPER_2, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  extinguisher.attach(PIN_SERVO_EXTINGUISHER, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[0].attach(PIN_PWM_0, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[1].attach(PIN_PWM_1, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[2].attach(PIN_PWM_2, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[3].attach(PIN_PWM_3, MIN_SERVO_PWM, MAX_SERVO_PWM);
 
   timer.begin();
 }
 
 void loop() {
-  size_t bytes_read = Serial.readBytes(rx_buffer, ACTUATORS_INPUT_MIN_BUFFER_SIZE);
+  size_t bytes_read = Serial.readBytes(rx_buffer, BOARD_INPUT_MIN_BUFFER_SIZE);
   deframer.deframe(rx_buffer, bytes_read, aux_rx_buffer);
   rx_error = deframer.get_error();
   digitalWrite(LED_BUILTIN, rx_error.any());  // Error LED
 
-  if (actuators_input_reader.has_new_data) {
-    actuators_input_reader.has_new_data = false;
+  if (board_input_reader.has_new_data) {
+    board_input_reader.has_new_data = false;
 
-    actuators_output.low_level = digitalRead(PIN_LEVEL);
-    actuators_output.attached_0 = digitalRead(PIN_SERVO_GRIPPER_0);
-    actuators_output.attached_1 = digitalRead(PIN_SERVO_GRIPPER_1);
-    actuators_output.attached_2 = digitalRead(PIN_SERVO_GRIPPER_2);
-    actuators_output.input_echo = actuators_input_reader.data;
-    actuators_output.rx_error = rx_error;
+    board_output.digital_in_0 = digitalRead(PIN_IN_0);
+    board_output.digital_in_1 = digitalRead(PIN_IN_1);
+    board_output.digital_in_2 = digitalRead(PIN_IN_2);
+    board_output.digital_in_3 = digitalRead(PIN_IN_3);
+    board_output.input_echo = board_input_reader.data;
+    board_output.rx_error = rx_error;
 
-    size_t output_size = actuators_output.to_buffer(aux_tx_buffer);
+    size_t output_size = board_output.to_buffer(aux_tx_buffer);
     size_t frame_size = framer.frame(aux_tx_buffer, output_size, tx_buffer);
     Serial.write(tx_buffer, frame_size);
   }
 
-  for (int i = 0; i < 3; i++) {
-    gripper[i].writeMicroseconds(actuators_input_reader.data.gripper_pwm[i]);
+  for (int i = 0; i < 4; i++) {
+    servo[i].writeMicroseconds(board_input_reader.data.pwm[i]);
   }
-  extinguisher.writeMicroseconds(actuators_input_reader.data.extinguisher_pwm);
-  digitalWrite(PIN_PUMP_RELAY, actuators_input_reader.data.pump_activation);
+  digitalWrite(PIN_OUT_0, board_input_reader.data.digital_out_0);
 
   timer.sleep();
 }

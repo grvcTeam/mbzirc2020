@@ -1,16 +1,16 @@
 #include <serial_port.h>
 #include <arduino/ssfp.h>
-#include <arduino/actuators_input.h>
-#include <arduino/actuators_output.h>
+#include <arduino/board_input.h>
+#include <arduino/board_output.h>
 
-uint8_t rx_buffer[2*ACTUATORS_OUTPUT_MIN_BUFFER_SIZE];
-uint8_t tx_buffer[ACTUATORS_INPUT_MIN_BUFFER_SIZE];
-uint8_t aux_rx_buffer[ACTUATORS_OUTPUT_MAX_MSG_SIZE];
-uint8_t aux_tx_buffer[ACTUATORS_INPUT_MAX_MSG_SIZE];
+uint8_t rx_buffer[2*BOARD_OUTPUT_MIN_BUFFER_SIZE];
+uint8_t tx_buffer[BOARD_INPUT_MIN_BUFFER_SIZE];
+uint8_t aux_rx_buffer[BOARD_OUTPUT_MAX_MSG_SIZE];
+uint8_t aux_tx_buffer[BOARD_INPUT_MAX_MSG_SIZE];
 
-class ActuatorsOutputReader: public OnReadInterface {
+class BoardOutputReader: public OnReadInterface {
 public:
-    ActuatorsOutput data;  // TODO: only through get, has_new_data = false
+    BoardOutput data;  // TODO: only through get, has_new_data = false
     bool has_new_data = false;
 
     bool call(uint8_t *buffer, size_t size) {
@@ -37,21 +37,20 @@ int main() {
     serial_port::lock(serial_port);
 
     Framer framer;
-    ActuatorsInput actuators_input;
-    actuators_input.gripper_pwm[0] = 900;
-    actuators_input.gripper_pwm[1] = 901;
-    actuators_input.gripper_pwm[2] = 902;
-    actuators_input.extinguisher_pwm = 1000;
-    actuators_input.pump_activation = false;
+    BoardInput board_input;
+    board_input.pwm[0] = 900;
+    board_input.pwm[1] = 901;
+    board_input.pwm[2] = 902;
+    board_input.pwm[3] = 903;
+    board_input.digital_out_0 = false;
 
     Deframer deframer;
-    // ActuatorsOutput actuators_output;
-    ActuatorsOutputReader actuators_output_reader;
-    deframer.connect(&actuators_output_reader);
+    BoardOutputReader board_output_reader;
+    deframer.connect(&board_output_reader);
 
     int i = 0;
     while (true) {
-        size_t msg_size = actuators_input.to_buffer(aux_tx_buffer);
+        size_t msg_size = board_input.to_buffer(aux_tx_buffer);
         size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
         write(serial_port, tx_buffer, frame_size);
 
@@ -69,13 +68,13 @@ int main() {
             // if (error.any()) { return 1; }
         }
 
-        if (actuators_output_reader.has_new_data) {
+        if (board_output_reader.has_new_data) {
             printf("\n________[%d]________\n\n", i);
-            actuators_output_reader.data.print();
-            actuators_output_reader.has_new_data = false;
+            board_output_reader.data.print();
+            board_output_reader.has_new_data = false;
         }
 
-        sleep(1);
+        usleep(1e6);
         i++;
     }
 
