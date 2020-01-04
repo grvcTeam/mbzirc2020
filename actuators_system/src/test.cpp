@@ -26,7 +26,7 @@ public:
 
 int main() {
     // Open the serial port. Change device path as needed
-    int serial_port = open("/dev/ttyACM0", O_RDWR);
+    int serial_port = open("/dev/ttyUSB0", O_RDWR);
     if (serial_port == -1) {
         char e_buffer[256];
         snprintf(e_buffer, sizeof(e_buffer), "Error %i calling open: %s", errno, strerror(errno));

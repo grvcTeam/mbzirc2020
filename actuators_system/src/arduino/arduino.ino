@@ -11,16 +11,16 @@
 #define INI_SERVO_PWM 1500
 #define MAX_SERVO_PWM 2100
 
-#define PIN_PWM_0   3
-#define PIN_PWM_1   5
-#define PIN_PWM_2   6
-#define PIN_PWM_3   9
-#define PIN_OUT_0   2
+#define PIN_PWM_0   9
+#define PIN_PWM_1   6
+#define PIN_PWM_2   5
+#define PIN_PWM_3  10
+#define PIN_OUT_0  12
 
-#define PIN_IN_0    4
-#define PIN_IN_1    7
-#define PIN_IN_2    8
-#define PIN_IN_3   12
+#define PIN_IN_0   A3
+#define PIN_IN_1   A2
+#define PIN_IN_2   A1
+#define PIN_IN_3   A0
 
 uint8_t rx_buffer[2*BOARD_INPUT_MIN_BUFFER_SIZE];
 uint8_t aux_rx_buffer[BOARD_INPUT_MAX_MSG_SIZE];
