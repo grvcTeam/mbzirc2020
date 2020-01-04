@@ -15,6 +15,8 @@
 #define PIN_PWM_1   6
 #define PIN_PWM_2   5
 #define PIN_PWM_3  10
+#define PIN_PWM_4  11
+
 #define PIN_OUT_0  12
 
 #define PIN_IN_0   A3
@@ -52,7 +54,7 @@ BoardOutput board_output;
 
 Timer timer = Timer(PERIOD_IN_MS);
 
-Servo servo[4];
+Servo servo[5];
 
 void setup() {
   Serial.begin(SERIAL_BAUDRATE);
@@ -71,6 +73,7 @@ void setup() {
   board_input_reader.data.pwm[1] = INI_SERVO_PWM;
   board_input_reader.data.pwm[2] = INI_SERVO_PWM;
   board_input_reader.data.pwm[3] = INI_SERVO_PWM;
+  board_input_reader.data.pwm[4] = INI_SERVO_PWM;
   board_input_reader.data.digital_out_0  = false;
 
   board_output.digital_in_0 = false;
@@ -84,6 +87,7 @@ void setup() {
   servo[1].attach(PIN_PWM_1, MIN_SERVO_PWM, MAX_SERVO_PWM);
   servo[2].attach(PIN_PWM_2, MIN_SERVO_PWM, MAX_SERVO_PWM);
   servo[3].attach(PIN_PWM_3, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[4].attach(PIN_PWM_4, MIN_SERVO_PWM, MAX_SERVO_PWM);
 
   timer.begin();
 }
@@ -109,7 +113,7 @@ void loop() {
     Serial.write(tx_buffer, frame_size);
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     servo[i].writeMicroseconds(board_input_reader.data.pwm[i]);
   }
   digitalWrite(PIN_OUT_0, board_input_reader.data.digital_out_0);

@@ -42,6 +42,7 @@ int main() {
     board_input.pwm[1] = 901;
     board_input.pwm[2] = 902;
     board_input.pwm[3] = 903;
+    board_input.pwm[4] = 904;
     board_input.digital_out_0 = false;
 
     Deframer deframer;
