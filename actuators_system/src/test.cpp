@@ -35,6 +35,7 @@ int main() {
 
     serial_port::configure(serial_port);
     serial_port::lock(serial_port);
+    // usleep(5e5);
 
     Framer framer;
     BoardInput board_input;
@@ -51,14 +52,11 @@ int main() {
 
     int i = 0;
     while (true) {
-        size_t msg_size = board_input.to_buffer(aux_tx_buffer);
-        size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
-        write(serial_port, tx_buffer, frame_size);
 
         size_t rx_bytes = read(serial_port, &rx_buffer, sizeof(rx_buffer));
         if (rx_bytes < 0) {
             printf("Error reading: %s", strerror(errno));
-        } else {
+        } else if (rx_bytes > 0) {
             deframer.deframe(rx_buffer, rx_bytes, aux_rx_buffer);
             DeframerError error = deframer.get_error();
             if (error.crc) { printf("ERROR: crc\n"); }
@@ -74,6 +72,10 @@ int main() {
             board_output_reader.data.print();
             board_output_reader.has_new_data = false;
         }
+
+        size_t msg_size = board_input.to_buffer(aux_tx_buffer);
+        size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
+        write(serial_port, tx_buffer, frame_size);
 
         usleep(1e6);
         i++;

@@ -57,8 +57,10 @@ Timer timer = Timer(PERIOD_IN_MS);
 Servo servo[5];
 
 void setup() {
+
   Serial.begin(SERIAL_BAUDRATE);
   Serial.setTimeout(5);
+  while (!Serial) { ; }  // Wait for serial port to connect
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_OUT_0, OUTPUT);
@@ -93,10 +95,13 @@ void setup() {
 }
 
 void loop() {
-  size_t bytes_read = Serial.readBytes(rx_buffer, BOARD_INPUT_MIN_BUFFER_SIZE);
-  deframer.deframe(rx_buffer, bytes_read, aux_rx_buffer);
-  rx_error = deframer.get_error();
-  digitalWrite(LED_BUILTIN, rx_error.any());  // Error LED
+
+  if (Serial.available() > 0) {
+    size_t bytes_read = Serial.readBytes(rx_buffer, BOARD_INPUT_MIN_BUFFER_SIZE);
+    deframer.deframe(rx_buffer, bytes_read, aux_rx_buffer);
+    rx_error = deframer.get_error();
+    digitalWrite(LED_BUILTIN, rx_error.any());  // Error LED
+  }
 
   if (board_input_reader.has_new_data) {
     board_input_reader.has_new_data = false;
