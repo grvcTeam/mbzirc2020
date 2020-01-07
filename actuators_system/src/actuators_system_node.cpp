@@ -1,7 +1,9 @@
-#include <serial_port.h>
-#include <arduino/ssfp.h>
-#include <arduino/board_input.h>
-#include <arduino/board_output.h>
+#include <ros/ros.h>
+
+#include <actuators_system/serial_port.h>
+#include <actuators_system/arduino/ssfp.h>
+#include <actuators_system/arduino/board_input.h>
+#include <actuators_system/arduino/board_output.h>
 
 uint8_t rx_buffer[2*BOARD_OUTPUT_MIN_BUFFER_SIZE];
 uint8_t tx_buffer[BOARD_INPUT_MIN_BUFFER_SIZE];
@@ -24,7 +26,9 @@ public:
     };
 };
 
-int main() {
+int main(int argc, char** argv) {
+   ros::init(argc, argv, "actuators_system_node");
+
     // Open the serial port. Change device path as needed
     int serial_port = open("/dev/ttyUSB0", O_RDWR);
     if (serial_port == -1) {
@@ -51,7 +55,7 @@ int main() {
     deframer.connect(&board_output_reader);
 
     int i = 0;
-    while (true) {
+    while (ros::ok()) {
 
         size_t rx_bytes = read(serial_port, &rx_buffer, sizeof(rx_buffer));
         if (rx_bytes < 0) {
@@ -59,25 +63,31 @@ int main() {
         } else if (rx_bytes > 0) {
             deframer.deframe(rx_buffer, rx_bytes, aux_rx_buffer);
             DeframerError error = deframer.get_error();
-            if (error.crc) { printf("ERROR: crc\n"); }
-            if (error.lost) { printf("ERROR: lost\n"); }
-            if (error.sequence) { printf("ERROR: sequence\n"); }
-            if (error.nullback) { printf("ERROR: nullback\n"); }
-            if (error.callback) { printf("ERROR: callback\n"); }
+            if (error.crc) { printf("in::error: crc\n"); }
+            if (error.lost) { printf("in::error: lost\n"); }
+            if (error.sequence) { printf("in::error: sequence\n"); }
+            if (error.nullback) { printf("in::error: nullback\n"); }
+            if (error.callback) { printf("in::error: callback\n"); }
             // if (error.any()) { return 1; }
         }
 
         if (board_output_reader.has_new_data) {
+            board_output_reader.has_new_data = false;
             printf("\n________[%d]________\n\n", i);
             board_output_reader.data.print();
-            board_output_reader.has_new_data = false;
+
+            if (board_output_reader.data.rx_error.crc) { printf("out::error: crc\n"); }
+            if (board_output_reader.data.rx_error.lost) { printf("out::error: lost\n"); }
+            if (board_output_reader.data.rx_error.sequence) { printf("out::error: sequence\n"); }
+            if (board_output_reader.data.rx_error.nullback) { printf("out::error: nullback\n"); }
+            if (board_output_reader.data.rx_error.callback) { printf("out::error: callback\n"); }
         }
 
         size_t msg_size = board_input.to_buffer(aux_tx_buffer);
         size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
         write(serial_port, tx_buffer, frame_size);
 
-        usleep(1e6);
+        usleep(1e5);
         i++;
     }
 
