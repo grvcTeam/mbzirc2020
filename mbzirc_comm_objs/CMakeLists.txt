@@ -49,6 +49,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    ObjectDetectionList.msg
    GripperAttached.msg
    RobotDataFeed.msg
+   ActuatorsData.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -58,6 +59,8 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    Magnetize.srv
    AskForRegion.srv
    FreeRegions.srv
+   SetPWM.srv
+   SetDigital.srv
  )
 
 ## Generate actions in the 'action' folder
