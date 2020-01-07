@@ -108,11 +108,11 @@ int main(int argc, char** argv) {
         } else if (rx_bytes > 0) {
             deframer.deframe(rx_buffer, rx_bytes, aux_rx_buffer);
             DeframerError error = deframer.get_error();
-            if (error.crc) { printf("in::error: crc\n"); }
-            if (error.lost) { printf("in::error: lost\n"); }
-            if (error.sequence) { printf("in::error: sequence\n"); }
-            if (error.nullback) { printf("in::error: nullback\n"); }
-            if (error.callback) { printf("in::error: callback\n"); }
+            if (error.crc)      { ROS_WARN("Deframer error at computer side: crc"); }
+            if (error.lost)     { ROS_WARN("Deframer error at computer side: lost"); }
+            if (error.sequence) { ROS_WARN("Deframer error at computer side: sequence"); }
+            if (error.nullback) { ROS_WARN("Deframer error at computer side: nullback"); }
+            if (error.callback) { ROS_WARN("Deframer error at computer side: callback"); }
             // if (error.any()) { return 1; }
         }
 
@@ -121,11 +121,11 @@ int main(int argc, char** argv) {
             actuators_data_pub.publish(from_board_output(board_output_reader.data));
             // board_output_reader.data.print();
 
-            if (board_output_reader.data.rx_error.crc) { printf("out::error: crc\n"); }
-            if (board_output_reader.data.rx_error.lost) { printf("out::error: lost\n"); }
-            if (board_output_reader.data.rx_error.sequence) { printf("out::error: sequence\n"); }
-            if (board_output_reader.data.rx_error.nullback) { printf("out::error: nullback\n"); }
-            if (board_output_reader.data.rx_error.callback) { printf("out::error: callback\n"); }
+            if (board_output_reader.data.rx_error.crc)      { ROS_WARN("Deframer error at board side: crc"); }
+            if (board_output_reader.data.rx_error.lost)     { ROS_WARN("Deframer error at board side: lost"); }
+            if (board_output_reader.data.rx_error.sequence) { ROS_WARN("Deframer error at board side: sequence"); }
+            if (board_output_reader.data.rx_error.nullback) { ROS_WARN("Deframer error at board side: nullback"); }
+            if (board_output_reader.data.rx_error.callback) { ROS_WARN("Deframer error at board side: callback"); }
         }
 
         size_t msg_size = board_input.to_buffer(aux_tx_buffer);
