@@ -9,12 +9,22 @@
 #define BOARD_INPUT_MAX_MSG_SIZE 11
 #define BOARD_INPUT_MIN_BUFFER_SIZE (2 + 2 + 2*BOARD_INPUT_MAX_MSG_SIZE + 4)
 
+#define PWM_INI 1500
+uint16_t def_pwm_ini[5] = {PWM_INI, PWM_INI, PWM_INI, PWM_INI, PWM_INI};
+
 // TODO: Auto generate? e.g: from ROS msg file
 // TODO: Base class to force: size, to_buffer, from_buffer, print...
 struct BoardInput {
 
     uint16_t pwm[5];
     bool digital_out_0 : 1;
+
+    BoardInput(uint16_t pwm_ini[5] = def_pwm_ini, bool digital_out_0_ini = false) {
+        for (int i = 0; i < 5; i++) {
+            pwm[i] = pwm_ini[i];
+        }
+        digital_out_0 = digital_out_0_ini;
+    }
 
     size_t size() {
         // TODO: Variable size? -> min_size!
