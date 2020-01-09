@@ -8,7 +8,7 @@
             <pose>${pose}</pose>
             <inertial> 
 		      <mass>${mass}</mass>
-              <pose frame=''>0.1 0.9 0.1 0 -0 0</pose>
+              <!-- <pose frame=''>0.1 0.9 0.1 0 -0 0</pose> -->
               <inertia> 
 			    <ixx>${(1.0/12.0)*mass*(pow(sy,2)+pow(sz,2))}</ixx> <ixy>0</ixy> 
 			    <ixz>0</ixz> <iyy>${(1.0/12.0)*mass*(pow(sx,2)+pow(sz,2))}</iyy> 
@@ -16,7 +16,7 @@
 		      </inertia>
             </inertial>
  
-            <visual name="visual">
+            <visual name="visual">              
               <material> 
 			    <script>
 				  <uri>gazebo.material</uri>
@@ -24,19 +24,74 @@
 			    </script> 
 		      </material>
               <geometry>
-                <mesh>
+                <!-- <mesh>
                   <uri>model://single_orange_brick/meshes/Brick_RibShape_Orange_redux.stl</uri>
                   <scale>0.01 0.01 0.01</scale>
-                </mesh>
+                </mesh> -->
+                <box>
+                      <size>0.2 1.8 0.2</size>
+                </box>
+              </geometry>
+            </visual>
+
+            <visual name="visual FM plate 1">
+            <pose>0 -0.805 0.1 0 -0 0</pose>  
+              <material> 
+			    <script>
+				  <uri>gazebo.material</uri>
+				  <name>Gazebo/White</name>
+			    </script> 
+		      </material>
+              <geometry>
+                <!-- <mesh>
+                  <uri>model://single_orange_brick/meshes/Brick_RibShape_Orange_redux.stl</uri>
+                  <scale>0.01 0.01 0.01</scale>
+                </mesh> -->
+                <box>
+                      <size>0.150 0.190 0.001</size>
+                </box>
               </geometry>
             </visual>
             
+            <visual name="visual FM plate 2">
+            <pose>0 0 0.1 0 -0 0</pose>
+              <material> 
+			    <script>
+				  <uri>gazebo.material</uri>
+				  <name>Gazebo/White</name>
+			    </script> 
+		      </material>
+              <geometry>
+                <box>
+                      <size>0.150 0.190 0.001</size>
+                </box>
+              </geometry>
+            </visual>
+
+            <visual name="visual FM plate 3">
+            <pose>0 0.805 0.1 0 -0 0</pose>
+              <material> 
+			    <script>
+				  <uri>gazebo.material</uri>
+				  <name>Gazebo/White</name>
+			    </script> 
+		      </material>
+              <geometry>
+                <box>
+                      <size>0.150 0.190 0.001</size>
+                </box>
+              </geometry>
+            </visual>
+
             <collision name="collision">
               <geometry>
-                <mesh>
+                <!-- <mesh>
                   <uri>model://single_orange_brick/meshes/Brick_RibShape_Orange_redux.stl</uri>
                   <scale>0.01 0.01 0.01</scale>
-                </mesh>
+                </mesh> -->
+                <box>
+                      <size>0.2 1.8 0.2</size>
+                </box>
               </geometry>
             </collision>
     </link>
