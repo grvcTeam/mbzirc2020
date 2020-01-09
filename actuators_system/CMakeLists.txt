@@ -10,6 +10,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   mbzirc_comm_objs
   roscpp
+  handy_tools
 )
 
 ## System dependencies are found with CMake's conventions

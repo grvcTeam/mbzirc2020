@@ -25,7 +25,7 @@
 #include <mbzirc_comm_objs/SetDigital.h>
 #include <mbzirc_comm_objs/ActuatorsData.h>
 
-#include <actuators_system/serial_port.h>
+#include <handy_tools/serial_port.h>
 #include <actuators_system/arduino/ssfp.h>
 #include <actuators_system/arduino/board_input.h>
 #include <actuators_system/arduino/board_output.h>
