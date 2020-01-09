@@ -39,7 +39,7 @@
 
 #define PIN_OUT_0  12
 
-#define PIN_IN_0   A3
+#define PIN_IN_0   A3  // This one needs pullup
 #define PIN_IN_1   A2
 #define PIN_IN_2   A1
 #define PIN_IN_3   A0
@@ -85,7 +85,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(PIN_OUT_0, OUTPUT);
 
-  pinMode(PIN_IN_0, INPUT);
+  pinMode(PIN_IN_0, INPUT_PULLUP);
   pinMode(PIN_IN_1, INPUT);
   pinMode(PIN_IN_2, INPUT);
   pinMode(PIN_IN_3, INPUT);
