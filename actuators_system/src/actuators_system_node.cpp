@@ -99,15 +99,20 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "actuators_system_node");
     ros::NodeHandle n;
 
-    // Open the serial port. Change device path as needed
-    int serial_port = open("/dev/ttyUSB0", O_RDWR);
+    std::string serial_path;
+    int serial_baudrate;
+    ros::param::param<std::string>("~serial_path", serial_path, "/dev/ttyUSB0");
+    ros::param::param<int>("~serial_baudrate", serial_baudrate, 9600);
+
+    // Open the serial port
+    int serial_port = open(serial_path.c_str(), O_RDWR);
     if (serial_port == -1) {
         char e_buffer[256];
         snprintf(e_buffer, sizeof(e_buffer), "Error %i calling open: %s", errno, strerror(errno));
         throw std::runtime_error(e_buffer);
     }
 
-    serial_port::configure(serial_port);
+    serial_port::configure(serial_port, serial_baudrate);
     serial_port::lock(serial_port);
 
     Framer framer;
