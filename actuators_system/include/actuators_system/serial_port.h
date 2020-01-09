@@ -1,6 +1,6 @@
 // A couple of functions to simplify serial port handling, without OOP interference...
 // Thanks mbedded.ninja! [https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/]
-
+// freal@us.es
 #ifndef SERIAL_PORT_H
 #define SERIAL_PORT_H
 

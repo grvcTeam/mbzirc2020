@@ -1,3 +1,6 @@
+// Simple class that helps to keep frequency loop constant, 
+// sleeping for the remaining time
+// freal@us.es
 #ifndef TIMER_H
 #define TIMER_H
 

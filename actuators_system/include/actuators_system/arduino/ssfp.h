@@ -1,3 +1,9 @@
+// Inspired by Serial Framing Protocol [https://github.com/BaroboRobotics/libsfp/wiki/Serial-Framing-Protocol],
+// this library tries to make serial communication even simpler, hence its name: Simple Serial Framing Protocol
+// It uses SSFP_FLAG_BYTE to start and finish a message, and SSFP_ESCAPE_BYTE to scape both SSFP_FLAG_BYTE
+// and SSFP_ESCAPE_BYTE itself. First byte is always a sequence id that allows missing frames checking. Two last
+// bytes are a CRC that allows data corruption checking.
+// freal@us.es
 #ifndef SSFP_H
 #define SSFP_H
 
