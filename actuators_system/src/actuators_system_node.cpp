@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
         throw std::runtime_error(e_buffer);
     }
 
-    serial_port::configure(serial_port, serial_baudrate);
+    serial_port::configure(serial_port, serial_port::baudrate(serial_baudrate));
     serial_port::lock(serial_port);
 
     Framer framer;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
 
         size_t rx_bytes = read(serial_port, &rx_buffer, sizeof(rx_buffer));
         if (rx_bytes < 0) {
-            printf("Error reading: %s", strerror(errno));
+            ROS_ERROR("Error reading: %s", strerror(errno));
         } else if (rx_bytes > 0) {
             deframer.deframe(rx_buffer, rx_bytes, aux_rx_buffer);
             DeframerError error = deframer.get_error();
