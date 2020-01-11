@@ -9,7 +9,7 @@
 <xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
 <xacro:property name="f2" value="${[36,17,0,0]}"/> 
 <xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
-<xacro:property name="f4" value="${[43,22,0,0]}"/> 
+<xacro:property name="f4a" value="${[35, 15, 2, 0]}"/>
 <xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/> 
 <xacro:property name="b" value="${[30,25,0,4.7124]}"/> 
 <xacro:property name="g" value="${[30,25,0,0]}"/> 
@@ -41,11 +41,12 @@
       </include>
       <pose frame=''>${f3[0]*cos(yaw)-f3[1]*sin(yaw)} ${f3[0]*sin(yaw)+f3[1]*cos(yaw)} ${f3[2]} 0 0 ${f3[3]+yaw} </pose>
     </model>
-    <model name="cubewithflames_4">
+    <model name="f4a">
       <include>
-        <uri>model://cubewithflames</uri>
+        <uri>model://vertical_fire_holder</uri>
       </include>
-      <pose frame=''>${f4[0]*cos(yaw)-f4[1]*sin(yaw)} ${f4[0]*sin(yaw)+f4[1]*cos(yaw)} ${f4[2]} 0 0 ${f4[3]+yaw} </pose>
+      <pose frame=''>${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw} </pose>
+      <static>true</static>
     </model>
     <model name="cubewithflames_5">
       <include>
