@@ -196,14 +196,14 @@ int main(int argc, char** argv) {
   ros::param::param<std::string>("~camera_url", camera_url, "camera_0");
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "circles_detection", true);
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "circles_detection", false);
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
   HoughCirclesDetection detection;
   HoughCirclesDetectionConfig detection_config;
-	detection_config.dp = 4;
-  detection_config.minDist = 1;
-  detection_config.param1 = 125;
+	detection_config.dp = 20;
+  detection_config.minDist = 0.01;
+  detection_config.param1 = 100;
   detection_config.param2 = 105;
   detection_config.minRadius = 0;
   detection_config.maxRadius = 100;
@@ -228,12 +228,12 @@ int main(int argc, char** argv) {
       cv_bridge::CvImagePtr cv_ptr = image_converter.getCvImagePtr();
       // Pass frame to the tracker:
       detection.setFrame(cv_ptr->image);
-      std::vector<CircleItem> detected = detection.detect(true);
+      std::vector<CircleItem> detected = detection.detect(1, true);
       // Print detected items:
-      for (int i = 0; i < detected.size(); i++) {
-       	printf("[%d] Detected: center = {%lf, %lf}, radius = %lf\n", i, detected[i].x, detected[i].y, detected[i].radius);
-      }
-      // draw_hud(cv_ptr);
+      // for (int i = 0; i < detected.size(); i++) {
+      //  	printf("[%d] Detected: center = {%lf, %lf}, radius = %lf\n", i, detected[i].x, detected[i].y, detected[i].radius);
+      // }
+      draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
 
       // try {

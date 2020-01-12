@@ -43,7 +43,7 @@ public:
         frame_ = _frame;
     }
 
-    std::vector<CircleItem> detect(bool _draw = false) {
+    std::vector<CircleItem> detect(uint16_t _max_count = 3, bool _draw = false) {
         /// Convert frame to gray
         cvtColor(frame_, blur_, CV_BGR2GRAY);
 
@@ -57,9 +57,10 @@ public:
 
         std::vector<CircleItem> item_list;
         for (size_t i = 0; i < circles.size(); i++) {
+            if (i >= _max_count) { break; }
             CircleItem c(circles[i]);
             item_list.push_back(c);
-            if (_draw && i == 0) {  // TODO: Only first?
+            if (_draw) {
                 cv::Point center(cvRound(c.x), cvRound(c.y));
                 int radius = cvRound(c.radius);
                 circle(frame_, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);  // center
