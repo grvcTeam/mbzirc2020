@@ -8,37 +8,11 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <hue_object_detection/HueDetection.h>
+#include <hue_object_detection/HoughCirclesDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/DetectTypes.h>
 
-// TODO: Move to some kind of utils lib, as it is repeated
-int color_from_string(const std::string& color) {
-    int out_color;
-    switch(color[0]) {
-        case 'R':
-        case 'r':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_RED;
-            break;
-        case 'G':
-        case 'g':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;
-            break;
-        case 'B':
-        case 'b':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_BLUE;
-            break;
-        case 'O':
-        case 'o':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
-            break;
-        default:
-        ROS_ERROR("Unknown color %s", color.c_str());
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
-    }
-    return out_color;
-}
-
+// TODO: Move to header!
 class ImageConverter {
 public:
 
@@ -121,7 +95,7 @@ struct CameraParameters {
   tf2::Matrix3x3 R;
   tf2::Vector3 T;
 };
-
+/*
 mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _hue_item_list, const CameraParameters& _camera) {
 
   mbzirc_comm_objs::ObjectDetectionList object_list;
@@ -190,7 +164,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHueItem(const std::vector<HueItem>& _h
   }
   return object_list;
 }
-
+*/
 // dummy service callback to make this node compatible with the fake camera plugin which allows to set the object types which can be recognized
 bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
                           mbzirc_comm_objs::DetectTypes::Response &res)
@@ -213,7 +187,7 @@ void draw_hud(cv_bridge::CvImagePtr _ptr) {
 
 int main(int argc, char** argv) {
 
-  ros::init(argc, argv, "detection_node");
+  ros::init(argc, argv, "circles_detection_node");
   ros::NodeHandle nh;
 
   std::string tf_prefix;
@@ -222,21 +196,18 @@ int main(int argc, char** argv) {
   ros::param::param<std::string>("~camera_url", camera_url, "camera_0");
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hue_detection", true);
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "circles_detection", true);
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
-  HueDetection detection;
-  HueDetectionConfig detection_config;
-	detection_config.saturation_threshold = 128.0;
-	detection_config.likelihood_threshold = 96.0;
-	detection_config.min_area = 2.0;
-	detection_config.poly_epsilon = 3.0;
+  HoughCirclesDetection detection;
+  HoughCirclesDetectionConfig detection_config;
+	detection_config.dp = 4;
+  detection_config.minDist = 1;
+  detection_config.param1 = 125;
+  detection_config.param2 = 105;
+  detection_config.minRadius = 0;
+  detection_config.maxRadius = 100;
   detection.setConfig(detection_config);
-  std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
-  detection.addDetector("red", histogram_folder + "red.yaml", cvScalar(255, 255, 0));
-  detection.addDetector("green", histogram_folder + "green.yaml", cvScalar(255, 0, 255));
-  detection.addDetector("blue", histogram_folder + "blue.yaml", cvScalar(0, 255, 255));
-  detection.addDetector("orange", histogram_folder + "orange.yaml", cvScalar(255, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
     // TODO(performance): If camera info is constant, having a subscriber is overkill
@@ -255,28 +226,28 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     if (image_converter.hasNewImage()) {
       cv_bridge::CvImagePtr cv_ptr = image_converter.getCvImagePtr();
-      // Pass frame to the hue-model-based tracker:
+      // Pass frame to the tracker:
       detection.setFrame(cv_ptr->image);
-      std::vector<HueItem> detected = detection.detectAll(true);
+      std::vector<CircleItem> detected = detection.detect(true);
       // Print detected items:
-      // for (int i = 0; i < detected.size(); i++) {
-      //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
-      // }
-      draw_hud(cv_ptr);
+      for (int i = 0; i < detected.size(); i++) {
+       	printf("[%d] Detected: center = {%lf, %lf}, radius = %lf\n", i, detected[i].x, detected[i].y, detected[i].radius);
+      }
+      // draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
 
-      try {
-        geometry_msgs::TransformStamped camera_link_tf = tf_buffer.lookupTransform(tf_prefix + "/camera_link", "map", ros::Time(0));
-        tf2::Stamped<tf2::Transform> camera_link_tf2;
-        tf2::fromMsg(camera_link_tf, camera_link_tf2);
-        camera.R = link_to_cv * camera_link_tf2.getBasis();
-        camera.T = link_to_cv * camera_link_tf2.getOrigin();
-        sensed_pub.publish(fromHueItem(detected, camera));
+      // try {
+      //   geometry_msgs::TransformStamped camera_link_tf = tf_buffer.lookupTransform(tf_prefix + "/camera_link", "map", ros::Time(0));
+      //   tf2::Stamped<tf2::Transform> camera_link_tf2;
+      //   tf2::fromMsg(camera_link_tf, camera_link_tf2);
+      //   camera.R = link_to_cv * camera_link_tf2.getBasis();
+      //   camera.T = link_to_cv * camera_link_tf2.getOrigin();
+      //   sensed_pub.publish(fromHueItem(detected, camera));
 
-      } catch (tf2::TransformException &e) {
-        ROS_WARN("%s", e.what());
-        continue;
-      }
+      // } catch (tf2::TransformException &e) {
+      //   ROS_WARN("%s", e.what());
+      //   continue;
+      // }
     }
     ros::spinOnce();
     rate.sleep();

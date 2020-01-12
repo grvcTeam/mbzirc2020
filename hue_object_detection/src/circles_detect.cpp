@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     std::vector<cv::Vec3f> circles;
 
     /// Apply the Hough Transform to find the circles
-    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 2, 5, 100, 100, 0, 1000);
+    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 2, 10, 125, 105, 0, 0);
 
     /// Draw the circles detected
     printf("Total of %ld circles found!\n", circles.size());
