@@ -1,4 +1,4 @@
-This folder contains a series of scripts designed for the UGV actions. Each script corresponds to a class from which some are called by others.
+    This folder contains a series of scripts designed for the UGV actions. Each script corresponds to a class from which some are called by others.
 
 edge_detector_class.py - this class receives as input the side (string "left" or "right"), color (string "red", "blue", "green, "orange")
     and level (int 1 to 5) of the brick which will be used as reference. It will output a PointStamped corresponding to the point of the desired edge. 
