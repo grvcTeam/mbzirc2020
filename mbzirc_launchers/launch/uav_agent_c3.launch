@@ -50,6 +50,7 @@
 
     <node name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
     <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/> -->
+    <node name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen"/>
 
   </group>
 </launch>

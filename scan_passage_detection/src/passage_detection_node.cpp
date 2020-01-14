@@ -3,7 +3,7 @@
 #include <geometry_msgs/Point.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
-// #include <mbzirc_comm_objs/DetectTypes.h>
+#include <mbzirc_comm_objs/WallList.h>
 #include <random_numbers/random_numbers.h>
 
 struct LineModel {
@@ -148,25 +148,22 @@ std_msgs::ColorRGBA colorFromIndex(int _index) {
     return color;
 }
 
-struct Wall {
-
-    Wall(const geometry_msgs::Point& _start, const geometry_msgs::Point& _end) {
-        start[0] = _start.x;
-        start[1] = _start.y;
-        end[0] = _end.x;
-        end[1] = _end.y;
-    }
-
-    float start[2];
-    float end[2];
-};
+mbzirc_comm_objs::Wall fromPoints(const geometry_msgs::Point& _start, const geometry_msgs::Point& _end) {
+    mbzirc_comm_objs::Wall wall;
+    wall.start[0] = _start.x;
+    wall.start[1] = _start.y;
+    wall.end[0] = _end.x;
+    wall.end[1] = _end.y;
+    return wall;
+}
 
 class PassageDetectionNode {
 public:
     PassageDetectionNode() {
         marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
         sensed_pub_ = n_.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 3);
-        scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("/mbzirc2020_1/scan_0", 1, &PassageDetectionNode::scanCallback, this);
+        walls_pub_ = n_.advertise<mbzirc_comm_objs::WallList>("walls", 3);
+        scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
     }
 
     void scanCallback(const sensor_msgs::LaserScan::ConstPtr& _msg) {
@@ -198,7 +195,7 @@ public:
             return;
         }
 
-        std::vector<Wall> walls;
+        mbzirc_comm_objs::WallList wall_list;
         mbzirc_comm_objs::ObjectDetectionList object_list;
         visualization_msgs::MarkerArray marker_array;
         for (int i = 0; i < max_line_count; i++) {
@@ -248,15 +245,18 @@ public:
                     object.color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;  // TODO!
                     object_list.objects.push_back(object);
 
-                    walls.push_back(Wall(start, line.inliers[j]));
+                    wall_list.walls.push_back(fromPoints(start, line.inliers[j]));
                     start = line.inliers[j+1];
                 }
             }
-            walls.push_back(Wall(start, line.inliers[line.inliers.size()-1]));
+            wall_list.walls.push_back(fromPoints(start, line.inliers[line.inliers.size()-1]));
             points = line.outliers;
             if (points.size() < min_points_size) { break; }
         }
-        for (int i = 0; i < walls.size(); i++) {
+        wall_list.header.frame_id = _msg->header.frame_id;
+        wall_list.header.stamp = _msg->header.stamp;
+
+        for (int i = 0; i < wall_list.walls.size(); i++) {
             visualization_msgs::Marker line_marker;
             line_marker.header.frame_id = _msg->header.frame_id;
             line_marker.header.stamp = ros::Time::now();
@@ -275,11 +275,11 @@ public:
             line_marker.scale.y = 0.1;
             //line_marker.scale.z = 0.1;
             geometry_msgs::Point p;
-            p.x = walls[i].start[0];
-            p.y = walls[i].start[1];
+            p.x = wall_list.walls[i].start[0];
+            p.y = wall_list.walls[i].start[1];
             line_marker.points.push_back(p);
-            p.x = walls[i].end[0];
-            p.y = walls[i].end[1];
+            p.x = wall_list.walls[i].end[0];
+            p.y = wall_list.walls[i].end[1];
             line_marker.points.push_back(p);
             line_marker.color = colorFromIndex(i);
             line_marker.lifetime = ros::Duration(0.1);
@@ -288,12 +288,14 @@ public:
         }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
         sensed_pub_.publish(object_list);
+        walls_pub_.publish(wall_list);
     }
 
 protected:
     ros::NodeHandle n_;
     ros::Publisher marker_pub_;
     ros::Publisher sensed_pub_;
+    ros::Publisher walls_pub_;
     ros::Subscriber scan_sub_;
     random_numbers::RandomNumberGenerator random_;
 };
