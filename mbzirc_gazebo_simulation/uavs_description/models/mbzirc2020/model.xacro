@@ -220,7 +220,7 @@
     <xacro:laser_scanner
       namespace="${namespace}"
       id="1"
-      pub_topic="sf11_sim"
+      pub_topic="sf11_sim_as_scan"
       tf="sf11_link"
       parent_link="base_link"
       update_rate="20"
