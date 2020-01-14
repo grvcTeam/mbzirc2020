@@ -1,0 +1,4 @@
+uint8 id  # TODO: Use a string?
+uint16 pwm
+---
+

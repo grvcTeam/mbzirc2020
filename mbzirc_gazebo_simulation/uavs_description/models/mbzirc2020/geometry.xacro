@@ -11,7 +11,8 @@
   <xacro:property name="mesh_scale_prop" value=".001 .001 .001"/>
   <xacro:property name="mass" value="5.850" /> <!-- [kg] -->
   <xacro:property name="body_width" value="0.8" /> <!-- [m] -->
-  <xacro:property name="body_height" value="0.6" /> <!-- [m] -->
+  <xacro:property name="body_height" value="0.3" /> <!-- [m] -->
+  <xacro:property name="height_offset" value="-0.15" /> <!-- [m] -->
   <xacro:property name="mass_rotor" value="0.005" /> <!-- [kg] -->
   <xacro:property name="rotor_offset_top" value="0.0" /> <!-- [m] -->
   <xacro:property name="radius_rotor" value="0.19" /> <!-- [m] -->
@@ -52,6 +53,7 @@
     mass="${mass}"
     body_width="${body_width}"
     body_height="${body_height}"
+    height_offset="${height_offset}"
     mesh_file="${mesh_file}"
     mesh_scale="${mesh_scale}"
     color="DarkGrey"

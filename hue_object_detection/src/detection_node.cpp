@@ -216,13 +216,13 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "detection_node");
   ros::NodeHandle nh;
 
-  std::string tf_prefix = "";  // TODO: Default value?
-  if (ros::param::has("tf_prefix")) {
-    ros::param::get("tf_prefix", tf_prefix);
-  }
+  std::string tf_prefix;
+  std::string camera_url;
+  ros::param::param<std::string>("~tf_prefix", tf_prefix, "mbzirc");
+  ros::param::param<std::string>("~camera_url", camera_url, "camera_0");
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter("camera_0/camera_info", "camera_0/image_raw", "hue_detection", true);
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hue_detection", true);
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB); 
 
   HueDetection detection;

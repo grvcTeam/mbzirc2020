@@ -116,6 +116,7 @@ add_library(${PROJECT_NAME}_lib
   ${SRC_INCS}
   src/bricks_detection_handler.cpp
   src/bricks_detection.cpp
+  src/pcloud_merge_handler.cpp
   src/color_filtering.cpp
   src/distance_filtering.cpp
   src/ransac_plane_detection.cpp
@@ -128,6 +129,9 @@ target_link_libraries(${PROJECT_NAME}_lib  ${catkin_LIBRARIES} ${Eigen3_LIBRARIE
 ## Build a C++ executable
 add_executable(bricks_detection_node          src/bricks_detection_node.cpp)
 target_link_libraries(bricks_detection_node   ${PROJECT_NAME}_lib)
+
+add_executable(pcloud_merge_node          src/pcloud_merge_node.cpp)
+target_link_libraries(pcloud_merge_node   ${PROJECT_NAME}_lib)
 
 #########################
 ## Print configuration ##

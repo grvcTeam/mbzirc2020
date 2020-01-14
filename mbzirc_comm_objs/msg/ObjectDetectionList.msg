@@ -1,3 +1,4 @@
-int16 uav_id
+string agent_id  # TODO: better than an int?
+
 time stamp
 ObjectDetection[] objects

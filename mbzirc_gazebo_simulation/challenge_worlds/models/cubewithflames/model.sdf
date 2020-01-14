@@ -2,7 +2,7 @@
 <sdf version='1.6'>
   <model name='cubewithflames'>
     <link name='link_0'>
-      <pose frame=''>-0.15 0.2 0 0 -0 0</pose>
+      <pose frame=''>-0.075 0.1 0 0 -0 0</pose>
       <inertial>
         <mass>1</mass>
         <inertia>
@@ -23,7 +23,7 @@
         <geometry>
           <mesh>
             <uri>model://cubewithflames/meshes/Cube_fire.dae</uri>
-            <scale>0.01 0.01 0.01</scale>
+            <scale>0.005 0.005 0.005</scale>
           </mesh>
         </geometry>
         <material>
@@ -51,7 +51,7 @@
         <geometry>
           <mesh>
             <uri>model://cubewithflames/meshes/Cube_fire.dae</uri>
-            <scale>0.01 0.01 0.01</scale>
+            <scale>0.005 0.005 0.005</scale>
           </mesh>
         </geometry>
         <surface>
@@ -102,7 +102,7 @@
       </collision>
     </link>
     <link name='link_1'>
-      <pose frame=''>0.15 -0.2 0.8 0 -0 0</pose>
+      <pose frame=''>0.075 -0.1 0.4 0 -0 0</pose>
       <inertial>
         <mass>1</mass>
         <inertia>
@@ -123,7 +123,7 @@
         <geometry>
           <mesh>
             <uri>model://cubewithflames/meshes/Fire_Tongue.dae</uri>
-            <scale>0.1 0.07 0.065</scale>
+            <scale>0.05 0.035 0.033</scale>
           </mesh>
         </geometry>
         <material>
@@ -148,7 +148,7 @@
         <geometry>
           <mesh>
             <uri>model://cubewithflames/meshes/Fire_Tongue.dae</uri>
-            <scale>0.1 0.07 0.065</scale>
+            <scale>0.05 0.035 0.033</scale>
           </mesh>
         </geometry>
         <surface>

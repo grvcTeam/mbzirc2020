@@ -11,7 +11,7 @@ material ladrillo
       texture_unit
       {
         texture ladrillo.png
-        scale 0.08 0.08
+        scale 1 1
         
       }
     }
@@ -31,7 +31,7 @@ material building_floor
       texture_unit
       {
         texture building_floor.jpg
-        scale 0.08 0.08
+        scale 10 10
       }
     }
   }

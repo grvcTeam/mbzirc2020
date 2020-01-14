@@ -35,6 +35,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <uav_abstraction_layer/ual.h>
+#include <uav_abstraction_layer/ual_backend_dummy.h>
+#include <ual_backend_mavros/ual_backend_mavros.h>
 #include <uav_abstraction_layer/State.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
@@ -72,7 +74,7 @@ public:
 
     tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
 
-    ual_ = new grvc::ual::UAL();
+    ual_ = new grvc::ual::UAL(new grvc::ual::BackendMavros());
     data_feed_timer_ = nh_.createTimer(ros::Duration(0.1), &UalActionServer::publishDataFeed, this);  // TODO: frequency?
     data_feed_pub_ = nh_.advertise<mbzirc_comm_objs::RobotDataFeed>("data_feed", 1);  // TODO: namespacing?
     // TODO: start servers only when needed?
