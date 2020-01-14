@@ -50,6 +50,8 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    GripperAttached.msg
    RobotDataFeed.msg
    ActuatorsData.msg
+   Wall.msg
+   WallList.msg
  )
 
 ## Generate services in the 'srv' folder
