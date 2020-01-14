@@ -81,13 +81,13 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs
-   std_msgs
-   geometry_msgs
-   nav_msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   actionlib_msgs
+#   std_msgs
+#   geometry_msgs
+#   nav_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
