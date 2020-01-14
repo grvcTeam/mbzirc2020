@@ -201,6 +201,8 @@
     <xacro:laser_scanner
       namespace="${namespace}"
       id="0"
+      pub_topic="scan"
+      tf="laser_link"
       parent_link="base_link"
       update_rate="40"
       sample_count="720"
@@ -218,6 +220,8 @@
     <xacro:laser_scanner
       namespace="${namespace}"
       id="1"
+      pub_topic="sf11_sim"
+      tf="sf11_link"
       parent_link="base_link"
       update_rate="20"
       sample_count="1"
