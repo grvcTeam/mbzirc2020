@@ -146,5 +146,7 @@
       </vertical>
     </plugin>
 
+    <plugin name="factory" filename="libdroplet_factory.so"/>
+
    </world>
 </sdf>
