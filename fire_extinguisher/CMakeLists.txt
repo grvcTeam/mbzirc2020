@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   roscpp
   mbzirc_comm_objs
+  handy_tools
 )
 
 ## System dependencies are found with CMake's conventions
