@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslib
   roscpp
   mbzirc_comm_objs
+  uav_abstraction_layer
   handy_tools
 )
 

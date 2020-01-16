@@ -5,6 +5,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/Range.h>
 #include <mbzirc_comm_objs/WallList.h>
+#include <uav_abstraction_layer/GoToWaypoint.h>
 #include <handy_tools/pid_controller.h>
 #include <Eigen/Geometry>
 
@@ -118,11 +119,12 @@ public:
             fire_map[fire_data.id] = fire_data;
         }
 
-        pose_sub_ = n_.subscribe<geometry_msgs::PoseStamped>("/mbzirc2020_1/ual/pose", 1, &FireExtinguisher::poseCallback, this);
-        range_sub_ = n_.subscribe<sensor_msgs::Range>("/mbzirc2020_1/sf11", 1, &FireExtinguisher::rangeCallback, this);
-        walls_sub_ = n_.subscribe<mbzirc_comm_objs::WallList>("/mbzirc2020_1/walls", 1, &FireExtinguisher::wallsCallback, this);
+        pose_sub_ = n_.subscribe<geometry_msgs::PoseStamped>("ual/pose", 1, &FireExtinguisher::poseCallback, this);
+        range_sub_ = n_.subscribe<sensor_msgs::Range>("sf11", 1, &FireExtinguisher::rangeCallback, this);
+        walls_sub_ = n_.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &FireExtinguisher::wallsCallback, this);
         control_timer_ = n_.createTimer(ros::Duration(CONTROL_PERIOD), &FireExtinguisher::controlCallback, this);  // TODO: frequency from param!
-        velocity_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/mbzirc2020_1/ual/set_velocity", 1);
+        velocity_pub_ = n_.advertise<geometry_msgs::TwistStamped>("ual/set_velocity", 1);
+        goto_client_ = n_.serviceClient<uav_abstraction_layer::GoToWaypoint>("ual/go_to_waypoint");
     }
 
     void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& _msg) {
@@ -141,12 +143,19 @@ public:
     }
 
     void extinguish(const std::string& fire_id) {
+        target_is_set_ = false;
         target_fire_ = fire_map[fire_id];  // TODO: check existence!
-        target_is_set_ = true;
 
         largest_wall_ = largestWall(target_fire_.wall_list);
         closest_wall_ = closestWall(target_fire_.wall_list);
         target_yaw_ = 2 * atan2(target_fire_.ual_pose.pose.orientation.z, target_fire_.ual_pose.pose.orientation.w);
+
+        uav_abstraction_layer::GoToWaypoint goto_srv;
+        goto_srv.request.waypoint = target_fire_.ual_pose;
+        goto_srv.request.blocking = true;
+        if (goto_client_.call(goto_srv)) {
+            target_is_set_ = true;
+        }
     }
 
     void controlCallback(const ros::TimerEvent& event) {
@@ -209,6 +218,7 @@ protected:
     ros::Subscriber walls_sub_;
     ros::Timer control_timer_;
     ros::Publisher velocity_pub_;
+    ros::ServiceClient goto_client_;
 
     grvc::utils::PidController *x_pid_;
     grvc::utils::PidController *y_pid_;
