@@ -52,6 +52,8 @@
   <depend>roslib</depend>
   <depend>roscpp</depend>
   <depend>mbzirc_comm_objs</depend>
+  <depend>uav_abstraction_layer</depend>
+  <depend>handy_tools</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
