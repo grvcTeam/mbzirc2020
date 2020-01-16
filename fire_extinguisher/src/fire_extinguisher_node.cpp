@@ -209,22 +209,16 @@ public:
 
         visualization_msgs::MarkerArray marker_array;
         std_msgs::ColorRGBA color;
-        color.r = 1.0;
-        color.g = 0.0;
-        color.b = 0.0;
-        color.a = 1.0;
-        marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0));
         color.r = 0.0;
         color.g = 1.0;
         color.b = 0.0;
         color.a = 1.0;
-        marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1));
-        marker_pub_.publish(marker_array);
+        marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0));
 
         double x_error = 0;
         double y_error = 0;
         double squared_delta_length = fabs(squaredLength(target_wall) - squaredLength(current_wall));
-        if (squared_delta_length < 4.0) {  // TODO: Tune threshold (sq!)
+        if (squared_delta_length < 10.0) {  // TODO: Tune threshold (sq!)
             double x_start_error = target_wall.start[0] - current_wall.start[0];
             double y_start_error = target_wall.start[1] - current_wall.start[1];
             double x_end_error = target_wall.end[0] - current_wall.end[0];
@@ -232,11 +226,21 @@ public:
             x_error = 0.5 * (x_start_error + x_end_error);
             y_error = 0.5 * (y_start_error + y_end_error);
             // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
-        }/* else {
+            color.r = 0.0;
+            color.g = 0.0;
+            color.b = 1.0;
+            color.a = 1.0;
+        } else {
             // ROS_ERROR("squared_delta_length = %lf", squared_delta_length);
             // std::cout << target_wall;
             // std::cout << current_wall;
-        }*/
+            color.r = 1.0;
+            color.g = 0.0;
+            color.b = 0.0;
+            color.a = 1.0;
+        }
+        marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1));
+        marker_pub_.publish(marker_array);
 
         // ROS_ERROR("start: %lf, %lf", x_start_error, y_start_error);
         // ROS_ERROR("end: %lf, %lf", x_end_error, y_end_error);
