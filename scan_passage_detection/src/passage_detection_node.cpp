@@ -129,6 +129,37 @@ visualization_msgs::Marker getLineMarker(const RansacOutput& _result, const std:
     return line_marker;
 }
 
+visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0) {
+    visualization_msgs::Marker line_marker;
+    line_marker.header.frame_id = _frame_id;
+    line_marker.header.stamp = ros::Time::now();
+    line_marker.ns = "wall";
+    line_marker.id = _id;
+    line_marker.type = visualization_msgs::Marker::LINE_STRIP;
+    line_marker.action = visualization_msgs::Marker::ADD;
+    line_marker.pose.position.x = 0;
+    line_marker.pose.position.y = 0;
+    line_marker.pose.position.z = 0;
+    line_marker.pose.orientation.x = 0.0;
+    line_marker.pose.orientation.y = 0.0;
+    line_marker.pose.orientation.z = 0.0;
+    line_marker.pose.orientation.w = 1.0;
+    line_marker.scale.x = 0.1;
+    line_marker.scale.y = 0.1;
+    //line_marker.scale.z = 0.1;
+    geometry_msgs::Point p;
+    p.x = _wall.start[0];
+    p.y = _wall.start[1];
+    line_marker.points.push_back(p);
+    p.x = _wall.end[0];
+    p.y = _wall.end[1];
+    line_marker.points.push_back(p);
+    line_marker.color = _color;
+    line_marker.lifetime = ros::Duration(0.1);
+
+    return line_marker;
+}
+
 // TODO: More colors than just r/g/b
 std_msgs::ColorRGBA colorFromIndex(int _index) {
     std_msgs::ColorRGBA color;
@@ -257,34 +288,7 @@ public:
         wall_list.header.stamp = _msg->header.stamp;
 
         for (int i = 0; i < wall_list.walls.size(); i++) {
-            visualization_msgs::Marker line_marker;
-            line_marker.header.frame_id = _msg->header.frame_id;
-            line_marker.header.stamp = ros::Time::now();
-            line_marker.ns = "wall";
-            line_marker.id = i;
-            line_marker.type = visualization_msgs::Marker::LINE_STRIP;
-            line_marker.action = visualization_msgs::Marker::ADD;
-            line_marker.pose.position.x = 0;
-            line_marker.pose.position.y = 0;
-            line_marker.pose.position.z = 0;
-            line_marker.pose.orientation.x = 0.0;
-            line_marker.pose.orientation.y = 0.0;
-            line_marker.pose.orientation.z = 0.0;
-            line_marker.pose.orientation.w = 1.0;
-            line_marker.scale.x = 0.1;
-            line_marker.scale.y = 0.1;
-            //line_marker.scale.z = 0.1;
-            geometry_msgs::Point p;
-            p.x = wall_list.walls[i].start[0];
-            p.y = wall_list.walls[i].start[1];
-            line_marker.points.push_back(p);
-            p.x = wall_list.walls[i].end[0];
-            p.y = wall_list.walls[i].end[1];
-            line_marker.points.push_back(p);
-            line_marker.color = colorFromIndex(i);
-            line_marker.lifetime = ros::Duration(0.1);
-
-            marker_array.markers.push_back(line_marker);
+            marker_array.markers.push_back(getLineMarker(wall_list.walls[i], _msg->header.frame_id, colorFromIndex(i), i));
         }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
         sensed_pub_.publish(object_list);

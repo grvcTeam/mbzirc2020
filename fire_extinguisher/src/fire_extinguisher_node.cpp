@@ -4,6 +4,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/Range.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <mbzirc_comm_objs/WallList.h>
 #include <uav_abstraction_layer/GoToWaypoint.h>
 #include <handy_tools/pid_controller.h>
@@ -93,6 +94,38 @@ mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list)
   return largest;
 }
 
+// TODO: this is repeated code!
+visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0) {
+    visualization_msgs::Marker line_marker;
+    line_marker.header.frame_id = _frame_id;
+    line_marker.header.stamp = ros::Time::now();
+    line_marker.ns = "wall_control";
+    line_marker.id = _id;
+    line_marker.type = visualization_msgs::Marker::LINE_STRIP;
+    line_marker.action = visualization_msgs::Marker::ADD;
+    line_marker.pose.position.x = 0;
+    line_marker.pose.position.y = 0;
+    line_marker.pose.position.z = 0;
+    line_marker.pose.orientation.x = 0.0;
+    line_marker.pose.orientation.y = 0.0;
+    line_marker.pose.orientation.z = 0.0;
+    line_marker.pose.orientation.w = 1.0;
+    line_marker.scale.x = 0.1;
+    line_marker.scale.y = 0.1;
+    //line_marker.scale.z = 0.1;
+    geometry_msgs::Point p;
+    p.x = _wall.start[0];
+    p.y = _wall.start[1];
+    line_marker.points.push_back(p);
+    p.x = _wall.end[0];
+    p.y = _wall.end[1];
+    line_marker.points.push_back(p);
+    line_marker.color = _color;
+    line_marker.lifetime = ros::Duration(0.1);
+
+    return line_marker;
+}
+
 class FireExtinguisher {
 public:
 
@@ -124,6 +157,7 @@ public:
         walls_sub_ = n_.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &FireExtinguisher::wallsCallback, this);
         control_timer_ = n_.createTimer(ros::Duration(CONTROL_PERIOD), &FireExtinguisher::controlCallback, this);  // TODO: frequency from param!
         velocity_pub_ = n_.advertise<geometry_msgs::TwistStamped>("ual/set_velocity", 1);
+        marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
         goto_client_ = n_.serviceClient<uav_abstraction_layer::GoToWaypoint>("ual/go_to_waypoint");
     }
 
@@ -173,6 +207,20 @@ public:
         // mbzirc_comm_objs::Wall target_wall = largest_wall_;
         // mbzirc_comm_objs::Wall current_wall = largestWall(wall_list_);
 
+        visualization_msgs::MarkerArray marker_array;
+        std_msgs::ColorRGBA color;
+        color.r = 1.0;
+        color.g = 0.0;
+        color.b = 0.0;
+        color.a = 1.0;
+        marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0));
+        color.r = 0.0;
+        color.g = 1.0;
+        color.b = 0.0;
+        color.a = 1.0;
+        marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1));
+        marker_pub_.publish(marker_array);
+
         double x_error = 0;
         double y_error = 0;
         double squared_delta_length = fabs(squaredLength(target_wall) - squaredLength(current_wall));
@@ -218,6 +266,7 @@ protected:
     ros::Subscriber walls_sub_;
     ros::Timer control_timer_;
     ros::Publisher velocity_pub_;
+    ros::Publisher marker_pub_;
     ros::ServiceClient goto_client_;
 
     grvc::utils::PidController *x_pid_;
