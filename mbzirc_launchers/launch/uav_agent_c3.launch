@@ -76,5 +76,17 @@
       <param name="publish_rate" value="20"/>
     </node>
 
+    <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+      <arg name="enable_pointcloud"   value="false"/>
+
+      <arg name="enable_depth"        value="true"/>
+      <arg name="enable_infra1"       value="true"/>
+      <arg name="enable_infra2"       value="true"/>
+
+      <arg name="enable_color"        value="true"/>
+      <arg name="color_width"         value="640"/>
+      <arg name="color_height"        value="480"/>
+    </include>
+
   </group>
 </launch>
