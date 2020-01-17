@@ -161,6 +161,42 @@ public:
         goto_client_ = n_.serviceClient<uav_abstraction_layer::GoToWaypoint>("ual/go_to_waypoint");
     }
 
+    void track() {
+        track_timer_ = n_.createTimer(ros::Duration(0.1), &FireExtinguisher::trackCallback, this);  // TODO: frequency from param!
+    }
+
+    void trackCallback(const ros::TimerEvent& event) {
+        if (!has_ual_pose_)   { return; }
+        if (!has_sf11_range_) { return; }
+        if (!has_wall_list_)  { return; }
+
+        ROS_ERROR("sf11_range_.range: %lf", sf11_range_.range);
+
+        // TODO: target criteria
+        mbzirc_comm_objs::Wall target_wall = closestWall(wall_list_);
+        // mbzirc_comm_objs::Wall target_wall = largestWall(wall_list_);
+
+        double x_s = target_wall.start[0];
+        double y_s = target_wall.start[1];
+        double x_e = target_wall.end[0];
+        double y_e = target_wall.end[1];
+        double length = sqrt(squaredLength(target_wall));
+        double distance = sqrt(squaredDistanceToSegment(0, 0, x_s, y_s, x_e, y_e));
+        double dx = x_e - x_s;
+        double dy = y_e - y_s;
+        double yaw = atan2(dy, dx);
+
+        ROS_ERROR("wall: [%lf, %lf] [%lf, %lf]", x_s, y_s, x_e, y_e);
+        ROS_ERROR("length: %lf", length);
+        ROS_ERROR("distance: %lf", distance);
+        ROS_ERROR("yaw - pi/2: %lf", yaw - 0.5*M_PI);
+        // std::cout << current_wall;
+
+        double current_yaw = 2 * atan2(ual_pose_.pose.orientation.z, ual_pose_.pose.orientation.w);
+        double yaw_error = target_yaw_ - current_yaw;
+
+    }
+
     void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& _msg) {
         ual_pose_ = *_msg;
         has_ual_pose_ = true;
@@ -269,6 +305,7 @@ protected:
     ros::Subscriber range_sub_;
     ros::Subscriber walls_sub_;
     ros::Timer control_timer_;
+    ros::Timer track_timer_;
     ros::Publisher velocity_pub_;
     ros::Publisher marker_pub_;
     ros::ServiceClient goto_client_;
@@ -295,7 +332,8 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "fire_extinguisher_node");
 
     FireExtinguisher fire_extinguisher;
-    fire_extinguisher.extinguish("default_0");
+    fire_extinguisher.track();
+    // fire_extinguisher.extinguish("default_0");
     ros::spin();
 
     return 0;
