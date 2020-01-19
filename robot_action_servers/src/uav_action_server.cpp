@@ -476,7 +476,8 @@ public:
     int iteration_count = 0;
 
     while (ros::ok()) {
-      if (move_in_circles_server_.isPreemptRequested()  || !ros::ok()) {
+      if (move_in_circles_server_.isPreemptRequested()) {
+        ual_->setPose(ual_->pose());
         move_in_circles_server_.setPreempted();
         return;
       }
@@ -570,6 +571,11 @@ public:
 
     ros::Rate loop_rate(EXTINGUISH_LOOP_RATE);
     while (ros::ok()) {
+      if (extinguish_facade_fire_server_.isPreemptRequested()) {
+        ual_->setPose(ual_->pose());
+        extinguish_facade_fire_server_.setPreempted();
+        return;
+      }
 
       double z_error = target_fire.sf11_range.range - sf11_range_.range;
       // ROS_ERROR("z: %lf", z_error);
