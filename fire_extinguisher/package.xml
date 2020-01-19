@@ -53,6 +53,7 @@
   <depend>roscpp</depend>
   <depend>mbzirc_comm_objs</depend>
   <depend>uav_abstraction_layer</depend>
+  <depend>scan_passage_detection</depend>
   <depend>handy_tools</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

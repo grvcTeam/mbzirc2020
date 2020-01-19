@@ -4,6 +4,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/WallList.h>
+#include <scan_passage_detection/wall_utils.h>
 #include <random_numbers/random_numbers.h>
 
 struct LineModel {
@@ -129,37 +130,6 @@ visualization_msgs::Marker getLineMarker(const RansacOutput& _result, const std:
     return line_marker;
 }
 
-visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0) {
-    visualization_msgs::Marker line_marker;
-    line_marker.header.frame_id = _frame_id;
-    line_marker.header.stamp = ros::Time::now();
-    line_marker.ns = "wall";
-    line_marker.id = _id;
-    line_marker.type = visualization_msgs::Marker::LINE_STRIP;
-    line_marker.action = visualization_msgs::Marker::ADD;
-    line_marker.pose.position.x = 0;
-    line_marker.pose.position.y = 0;
-    line_marker.pose.position.z = 0;
-    line_marker.pose.orientation.x = 0.0;
-    line_marker.pose.orientation.y = 0.0;
-    line_marker.pose.orientation.z = 0.0;
-    line_marker.pose.orientation.w = 1.0;
-    line_marker.scale.x = 0.1;
-    line_marker.scale.y = 0.1;
-    //line_marker.scale.z = 0.1;
-    geometry_msgs::Point p;
-    p.x = _wall.start[0];
-    p.y = _wall.start[1];
-    line_marker.points.push_back(p);
-    p.x = _wall.end[0];
-    p.y = _wall.end[1];
-    line_marker.points.push_back(p);
-    line_marker.color = _color;
-    line_marker.lifetime = ros::Duration(0.1);
-
-    return line_marker;
-}
-
 // TODO: More colors than just r/g/b
 std_msgs::ColorRGBA colorFromIndex(int _index) {
     std_msgs::ColorRGBA color;
@@ -177,15 +147,6 @@ std_msgs::ColorRGBA colorFromIndex(int _index) {
     color.a = 0.5;
 
     return color;
-}
-
-mbzirc_comm_objs::Wall fromPoints(const geometry_msgs::Point& _start, const geometry_msgs::Point& _end) {
-    mbzirc_comm_objs::Wall wall;
-    wall.start[0] = _start.x;
-    wall.start[1] = _start.y;
-    wall.end[0] = _end.x;
-    wall.end[1] = _end.y;
-    return wall;
 }
 
 class PassageDetectionNode {

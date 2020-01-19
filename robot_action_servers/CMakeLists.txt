@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   moveit_ros_planning_interface
+  fire_extinguisher
+  scan_passage_detection
 )
 
 ## System dependencies are found with CMake's conventions
@@ -171,6 +173,7 @@ add_dependencies(ugv_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 # )
 target_link_libraries(uav_action_server
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
 target_link_libraries(ugv_action_server
   ${catkin_LIBRARIES}

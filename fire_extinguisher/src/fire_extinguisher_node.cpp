@@ -8,123 +8,10 @@
 #include <mbzirc_comm_objs/WallList.h>
 #include <uav_abstraction_layer/GoToWaypoint.h>
 #include <handy_tools/pid_controller.h>
-#include <Eigen/Geometry>
+#include <fire_extinguisher/fire_data.h>
+#include <scan_passage_detection/wall_utils.h>
 
 #define CONTROL_PERIOD 0.05
-
-// TODO: eigen? float?
-double squaredDistanceToSegment(double x, double y, double x1, double y1, double x2, double y2) {
-	double dx = x2 - x1;
-	double dy = y2 - y1;
-
-  double t_star;
-	double t_hat = (dx * (x - x1) + dy * (y - y1)) / (dx*dx + dy*dy);
-	if (t_hat < 0.0) {
-		t_star = 0;
-	} else if (t_hat > 1.0) {
-		t_star = 1;
-	} else {
-		t_star = t_hat;
-	}
-
-	double closest_x = x1 + t_star * dx - x;
-	double closest_y = y1 + t_star * dy - y;
-	return closest_x*closest_x + closest_y*closest_y;
-}
-
-struct FireData {
-    std::string id;
-    geometry_msgs::PoseStamped ual_pose;
-    sensor_msgs::Range sf11_range;
-    mbzirc_comm_objs::WallList wall_list;
-};
-
-void operator>>(const YAML::Node& in, FireData& fire_data) {
-    // TODO: Check that expected fields do exist
-    fire_data.id = in["id"].as<std::string>();
-    fire_data.ual_pose.header.frame_id = in["pose_frame"].as<std::string>();
-    fire_data.ual_pose.pose.position.x = in["pose"][0].as<double>();
-    fire_data.ual_pose.pose.position.y = in["pose"][1].as<double>();
-    fire_data.ual_pose.pose.position.z = in["pose"][2].as<double>();
-    fire_data.ual_pose.pose.orientation.x = in["pose"][3].as<double>();
-    fire_data.ual_pose.pose.orientation.y = in["pose"][4].as<double>();
-    fire_data.ual_pose.pose.orientation.z = in["pose"][5].as<double>();
-    fire_data.ual_pose.pose.orientation.w = in["pose"][6].as<double>();
-    fire_data.sf11_range.range = in["sf11_range"].as<float>();
-    fire_data.wall_list.header.frame_id = in["walls_frame"].as<std::string>();
-    for (int i = 0; i < in["walls"].size(); i++) {
-        mbzirc_comm_objs::Wall wall;
-        wall.start[0] = in["walls"][i][0].as<float>();
-        wall.start[1] = in["walls"][i][1].as<float>();
-        wall.end[0]   = in["walls"][i][2].as<float>();
-        wall.end[1]   = in["walls"][i][3].as<float>();
-        fire_data.wall_list.walls.push_back(wall);
-    }
-}
-
-mbzirc_comm_objs::Wall closestWall(const mbzirc_comm_objs::WallList& _wall_list) {
-  mbzirc_comm_objs::Wall closest;
-  double min_sq_distance = 1e6;
-  for (auto wall: _wall_list.walls) {
-      double sq_distance = squaredDistanceToSegment(0, 0, wall.start[0], wall.start[1], wall.end[0], wall.end[1]);
-      if (sq_distance < min_sq_distance) {
-          min_sq_distance = sq_distance;
-          closest = wall;
-      }
-  }
-  return closest;
-}
-
-double squaredLength(const mbzirc_comm_objs::Wall& _wall) {
-    double dx = _wall.end[0] - _wall.start[0];
-    double dy = _wall.end[1] - _wall.start[1];
-    return dx*dx + dy*dy;
-}
-
-mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list) {
-  mbzirc_comm_objs::Wall largest;
-  double max_squared_length = 0;
-  for (auto wall: _wall_list.walls) {
-      double squared_length = squaredLength(wall);
-      if (squared_length > max_squared_length) {
-          max_squared_length = squared_length;
-          largest = wall;
-      }
-  }
-  return largest;
-}
-
-// TODO: this is repeated code!
-visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0) {
-    visualization_msgs::Marker line_marker;
-    line_marker.header.frame_id = _frame_id;
-    line_marker.header.stamp = ros::Time::now();
-    line_marker.ns = "wall_control";
-    line_marker.id = _id;
-    line_marker.type = visualization_msgs::Marker::LINE_STRIP;
-    line_marker.action = visualization_msgs::Marker::ADD;
-    line_marker.pose.position.x = 0;
-    line_marker.pose.position.y = 0;
-    line_marker.pose.position.z = 0;
-    line_marker.pose.orientation.x = 0.0;
-    line_marker.pose.orientation.y = 0.0;
-    line_marker.pose.orientation.z = 0.0;
-    line_marker.pose.orientation.w = 1.0;
-    line_marker.scale.x = 0.1;
-    line_marker.scale.y = 0.1;
-    //line_marker.scale.z = 0.1;
-    geometry_msgs::Point p;
-    p.x = _wall.start[0];
-    p.y = _wall.start[1];
-    line_marker.points.push_back(p);
-    p.x = _wall.end[0];
-    p.y = _wall.end[1];
-    line_marker.points.push_back(p);
-    line_marker.color = _color;
-    line_marker.lifetime = ros::Duration(0.1);
-
-    return line_marker;
-}
 
 class FireExtinguisher {
 public:
@@ -249,7 +136,7 @@ public:
         color.g = 1.0;
         color.b = 0.0;
         color.a = 1.0;
-        marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0));
+        marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0, "wall_control"));
 
         double x_error = 0;
         double y_error = 0;
@@ -275,7 +162,7 @@ public:
             color.b = 0.0;
             color.a = 1.0;
         }
-        marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1));
+        marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1, "wall_control"));
         marker_pub_.publish(marker_array);
 
         // ROS_ERROR("start: %lf, %lf", x_start_error, y_start_error);
@@ -286,9 +173,9 @@ public:
         double current_yaw = 2 * atan2(ual_pose_.pose.orientation.z, ual_pose_.pose.orientation.w);
         double yaw_error = target_yaw_ - current_yaw;
 
-        geometry_msgs::TwistStamped velocity;  // TODO: frame_id?
+        geometry_msgs::TwistStamped velocity;
         velocity.header.stamp = ros::Time::now();
-        velocity.header.frame_id = "mbzirc2020_1/laser_link";
+        velocity.header.frame_id = wall_list_.header.frame_id;
         velocity.twist.linear.x = x_pid_->control_signal(-x_error, CONTROL_PERIOD);
         velocity.twist.linear.y = y_pid_->control_signal(-y_error, CONTROL_PERIOD);
         velocity.twist.linear.z = z_pid_->control_signal(z_error, CONTROL_PERIOD);

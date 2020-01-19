@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //----------------------------------------------------------------------------------------------------------------------
 #include <ros/ros.h>
+#include <ros/package.h>
+#include <yaml-cpp/yaml.h>
 #include <actionlib/server/simple_action_server.h>
 #include <mbzirc_comm_objs/TakeOffAction.h>
 #include <mbzirc_comm_objs/GoToAction.h>
@@ -26,20 +28,28 @@
 #include <mbzirc_comm_objs/PlaceAction.h>
 #include <mbzirc_comm_objs/LandAction.h>
 #include <mbzirc_comm_objs/MoveInCirclesAction.h>
+#include <mbzirc_comm_objs/ExtinguishFacadeFireAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
 #include <mbzirc_comm_objs/Magnetize.h>
+#include <mbzirc_comm_objs/WallList.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <sensor_msgs/Range.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <uav_abstraction_layer/ual.h>
 #include <uav_abstraction_layer/ual_backend_dummy.h>
 #include <ual_backend_mavros/ual_backend_mavros.h>
 #include <uav_abstraction_layer/State.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
+#include <fire_extinguisher/fire_data.h>
+#include <scan_passage_detection/wall_utils.h>
+
+#define EXTINGUISH_LOOP_RATE 20  // [Hz]
 
 class UalActionServer {
 protected:
@@ -52,6 +62,7 @@ protected:
   actionlib::SimpleActionServer<mbzirc_comm_objs::PlaceAction> place_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::LandAction> land_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::MoveInCirclesAction> move_in_circles_server_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishFacadeFireAction> extinguish_facade_fire_server_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener *tf_listener_;
@@ -59,8 +70,11 @@ protected:
   grvc::ual::UAL *ual_;
   ros::Timer data_feed_timer_;
   ros::Publisher data_feed_pub_;
+  ros::Publisher marker_pub_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
   bool gripper_attached_ = false;
+  sensor_msgs::Range sf11_range_;
+  mbzirc_comm_objs::WallList wall_list_;
 
 public:
 
@@ -70,13 +84,15 @@ public:
     pick_server_(nh_, "pick_action", boost::bind(&UalActionServer::pickCallback, this, _1), false),
     place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
     land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
-    move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false) {
+    move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false),
+    extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false) {
 
     tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
 
-    ual_ = new grvc::ual::UAL(new grvc::ual::BackendMavros());
+    ual_ = new grvc::ual::UAL(new grvc::ual::BackendMavros());  // TODO: Wait until isReady()?
     data_feed_timer_ = nh_.createTimer(ros::Duration(0.1), &UalActionServer::publishDataFeed, this);  // TODO: frequency?
     data_feed_pub_ = nh_.advertise<mbzirc_comm_objs::RobotDataFeed>("data_feed", 1);  // TODO: namespacing?
+    marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
     // TODO: start servers only when needed?
     // TODO: make servers separated classes?
     take_off_server_.start();
@@ -85,6 +101,7 @@ public:
     place_server_.start();
     land_server_.start();
     move_in_circles_server_.start();
+    extinguish_facade_fire_server_.start();
   }
 
   ~UalActionServer() {
@@ -200,6 +217,14 @@ public:
 
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg) {
     gripper_attached_ = msg->attached;
+  }
+
+  void sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg) {
+    sf11_range_ = *msg;
+  }
+
+  void wallListCallback(const mbzirc_comm_objs::WallListConstPtr& msg) {
+    wall_list_ = *msg;
   }
 
   void pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal) {
@@ -476,6 +501,142 @@ public:
       loop_rate.sleep();
     }
     move_in_circles_server_.setSucceeded(result);
+  }
+
+  void extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal) {
+    mbzirc_comm_objs::ExtinguishFacadeFireFeedback feedback;
+    mbzirc_comm_objs::ExtinguishFacadeFireResult result;
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      result.message = "UAL is not flying auto!";
+      extinguish_facade_fire_server_.setAborted(result);
+      return;
+    }
+
+    std::string fires_folder = ros::package::getPath("fire_extinguisher") + "/fires/";
+    std::string fires_filename = fires_folder + (_goal->fires_file != ""? _goal->fires_file: "fire_default.yaml");
+
+    std::map<std::string, FireData> fire_map;
+    YAML::Node yaml_fires = YAML::LoadFile(fires_filename);  // TODO: Check file existence
+    for (std::size_t i = 0; i < yaml_fires["fires"].size(); i++) {
+        FireData fire_data;
+        yaml_fires["fires"][i] >> fire_data;
+        // std::cout << "\n index: " << i<< '\n';
+        // std::cout << fire_data.id << '\n';
+        // std::cout << fire_data.ual_pose << '\n';
+        // std::cout << fire_data.sf11_range << '\n';
+        // std::cout << fire_data.wall_list << '\n';
+        fire_map[fire_data.id] = fire_data;
+    }
+
+    if (!fire_map.count(_goal->fire_id)) {
+      result.message = "fire_id [" + _goal->fire_id + "] not found";
+      extinguish_facade_fire_server_.setAborted(result);
+      return;
+    }
+    FireData target_fire = fire_map[_goal->fire_id];
+
+    ros::NodeHandle nh;
+    ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
+    ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
+    ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+
+    bool has_sf11_range;
+    bool has_wall_list;
+    for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
+      has_sf11_range = (sf11_range_.header.seq != 0);
+      has_wall_list = (wall_list_.header.seq != 0);
+      if (has_sf11_range && has_wall_list) {
+        break;
+      }
+      ros::Duration(0.1).sleep();
+    }
+    if (!has_sf11_range || !has_wall_list) {
+      result.message = "could not get valid: ";
+      if (!has_sf11_range) { result.message += "[sf11_range] "; }
+      if (!has_wall_list) { result.message += "[wall_list]"; }
+      extinguish_facade_fire_server_.setAborted(result);
+      return;
+    }
+
+    grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);
+    grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
+    grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
+    grvc::utils::PidController yaw_pid("yaw", 0.4, 0.02, 0);
+
+    mbzirc_comm_objs::Wall fire_closest_wall = closestWall(target_fire.wall_list);
+    mbzirc_comm_objs::Wall fire_largest_wall = largestWall(target_fire.wall_list);
+    double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
+
+    ros::Rate loop_rate(EXTINGUISH_LOOP_RATE);
+    while (ros::ok()) {
+
+      double z_error = target_fire.sf11_range.range - sf11_range_.range;
+      // ROS_ERROR("z: %lf", z_error);
+
+      // TODO: target criteria
+      mbzirc_comm_objs::Wall target_wall = fire_closest_wall;
+      mbzirc_comm_objs::Wall current_wall = closestWall(wall_list_);
+      // mbzirc_comm_objs::Wall target_wall = fire_largest_wall;
+      // mbzirc_comm_objs::Wall current_wall = largestWall(wall_list_);
+
+      visualization_msgs::MarkerArray marker_array;
+      std_msgs::ColorRGBA color;
+      color.r = 0.0;
+      color.g = 1.0;
+      color.b = 0.0;
+      color.a = 1.0;
+      marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0, "target_wall"));
+
+      double x_error = 0;
+      double y_error = 0;
+      double squared_delta_length = fabs(squaredLength(target_wall) - squaredLength(current_wall));
+      if (squared_delta_length < 10.0) {  // TODO: Tune threshold (sq!)
+          double x_start_error = target_wall.start[0] - current_wall.start[0];
+          double y_start_error = target_wall.start[1] - current_wall.start[1];
+          double x_end_error = target_wall.end[0] - current_wall.end[0];
+          double y_end_error = target_wall.end[1] - current_wall.end[1];
+          x_error = 0.5 * (x_start_error + x_end_error);
+          y_error = 0.5 * (y_start_error + y_end_error);
+          // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
+          color.r = 0.0;
+          color.g = 0.0;
+          color.b = 1.0;
+          color.a = 1.0;
+      } else {
+          // ROS_ERROR("squared_delta_length = %lf", squared_delta_length);
+          // std::cout << target_wall;
+          // std::cout << current_wall;
+          color.r = 1.0;
+          color.g = 0.0;
+          color.b = 0.0;
+          color.a = 1.0;
+      }
+      marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1, "target_wall"));
+      marker_pub_.publish(marker_array);  // TODO: optional!
+
+      // ROS_ERROR("start: %lf, %lf", x_start_error, y_start_error);
+      // ROS_ERROR("end: %lf, %lf", x_end_error, y_end_error);
+      // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
+      // std::cout << current_wall;
+
+      auto ual_pose = ual_->pose();
+      double current_yaw = 2 * atan2(ual_pose.pose.orientation.z, ual_pose.pose.orientation.w);
+      double yaw_error = fire_ual_yaw - current_yaw;
+
+      geometry_msgs::TwistStamped velocity;  // TODO: frame_id?
+      velocity.header.stamp = ros::Time::now();
+      velocity.header.frame_id = wall_list_.header.frame_id;
+      velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/EXTINGUISH_LOOP_RATE);
+      velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/EXTINGUISH_LOOP_RATE);
+      velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/EXTINGUISH_LOOP_RATE);
+      velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/EXTINGUISH_LOOP_RATE);
+
+      // std::cout << velocity << '\n';
+      ual_->setVelocity(velocity);
+
+      loop_rate.sleep();
+    }
   }
 
 };

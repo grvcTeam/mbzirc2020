@@ -74,6 +74,7 @@ add_action_files(
   Place.action
   Land.action
   MoveInCircles.action
+  ExtinguishFacadeFire.action
 )
 
 ## Generate added messages and services with any dependencies listed here
