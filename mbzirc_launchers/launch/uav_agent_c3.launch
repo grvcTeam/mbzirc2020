@@ -34,6 +34,7 @@
         <arg name="yaw" value="$(arg yaw)"/>
         <arg name="frame_id" value="arena"/>
         <arg name="append_xacro_args" value="challenge=3"/>
+        <arg name="rtcm_topic" value="/rtcm_stream"/>
     </include>
 
     <node pkg="robot_action_servers" type="uav_action_server" name="server" output="screen">
