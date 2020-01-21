@@ -54,12 +54,12 @@ class DropletFactory: public WorldPlugin {
           <link name ='link'>\
             <collision name ='collision'>\
               <geometry>\
-                <sphere><radius>0.05</radius></sphere>\
+                <sphere><radius>0.025</radius></sphere>\
               </geometry>\
             </collision>\
             <visual name ='visual'>\
               <geometry>\
-                <sphere><radius>0.05</radius></sphere>\
+                <sphere><radius>0.025</radius></sphere>\
               </geometry>\
               <material>\
                 <ambient>0 0 1 0.5</ambient>\

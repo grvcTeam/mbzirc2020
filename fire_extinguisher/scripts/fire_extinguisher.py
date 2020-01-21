@@ -10,7 +10,7 @@ class FireExtiguisher(object):
 
     def __init__(self):
         self.enabled = False
-        self.droplets_left = 10  # TODO: from param
+        self.droplets_left = 12  # TODO: 3.6L * 1s/0.3L = 12s
         self.droplets_velocity = 10.0  # TODO: from params?
         rospy.Service('enable_fire_extiguisher', SetBool, self.enable_callback)
         self.droplet_pub = rospy.Publisher('/spawn_droplet', SimDroplet, queue_size=1)
@@ -47,7 +47,7 @@ class FireExtiguisher(object):
         sim_droplet.position = extinguisher_origin.pose.position
         sim_droplet.velocity = droplet_velocity.vector
         self.droplets_left -= 1
-        self.droplets_velocity *= 0.99  # Some kind of decay law
+        # self.droplets_velocity *= 0.99  # Some kind of decay law
         self.droplet_pub.publish(sim_droplet)
 
 if __name__ == '__main__':

@@ -53,6 +53,8 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>fire_extinguisher</depend>
+  <depend>scan_passage_detection</depend>
 
   <build_depend>message_generation</build_depend>
   <build_depend>actionlib</build_depend>

@@ -9,7 +9,8 @@
   <arg name="z" default="0" />
   <arg name="yaw" default="0" />
   <arg name="ual_backend" default="mavros" />
-  
+  <arg name="mode" default="sim"/>
+
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
     <param name="flight_level" value="$(arg flight_level)"/>  <!-- TODO: Makes no sense here! -->
@@ -23,7 +24,9 @@
     args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena -backend=light"/>
 
     <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
-        <arg name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'sim')" name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'real')" name="mode" value="custom"/>
+        <arg if="$(eval mode == 'real')" name="fcu_url" value="serial:///dev/pixhawk:921600"/>
         <arg name="description_package" value="uavs_description"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="id" value="$(arg agent_id)"/>
@@ -49,9 +52,46 @@
       <param name="hold_pose_time" value="0"/>
     </node>
 
-    <node name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
-    <!-- <node name="object_detection" pkg="hue_object_detection" type="detection_node" output="screen"/> -->
-    <node name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen"/>
+    <node pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>
+
+    <node if="$(eval mode == 'sim')" name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
+    <node if="$(eval mode == 'sim')" name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen"/>
+
+    <node if="$(eval mode == 'real')" name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" output="screen">
+      <param name="serial_port"         type="string" value="/dev/rplidar"/>
+      <param name="serial_baudrate"     type="int"    value="256000"/>
+      <param name="frame_id"            type="string" value="$(arg robot_model)_$(arg agent_id)/laser_link"/>
+      <param name="inverted"            type="bool"   value="false"/>
+      <param name="angle_compensate"    type="bool"   value="true"/>
+      <param name="scan_mode"           type="string" value="Stability"/>
+    </node>
+
+    <node if="$(eval mode == 'real')" name="actuators" pkg="actuators_system" type="actuators_system_node">
+      <param name="serial_path" value="/dev/actuators"/>
+      <param name="serial_baudrate" value="9600"/>
+    </node>
+
+    <node if="$(eval mode == 'real')" name="sf11" pkg="sf11_driver" type="sf11_driver_node" output="screen">
+      <param name="serial_path" value="/dev/sf11"/>
+      <param name="serial_baudrate" value="115200"/>
+      <param name="publish_rate" value="20"/>
+    </node>
+
+    <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+      <arg name="enable_pointcloud"   value="false"/>
+
+      <arg name="enable_depth"        value="true"/>
+      <arg name="enable_infra1"       value="true"/>
+      <arg name="enable_infra2"       value="true"/>
+
+      <arg name="enable_color"        value="true"/>
+      <arg name="color_width"         value="640"/>
+      <arg name="color_height"        value="480"/>
+    </include>
+
+    <node if="$(eval mode == 'real')" pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
+      <param name="portname" value="/dev/evot33"/>
+    </node>
 
   </group>
 </launch>
