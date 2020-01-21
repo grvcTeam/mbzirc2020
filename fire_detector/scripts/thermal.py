@@ -32,13 +32,15 @@ def thermal_data(data):
     global maxim, minim, fila, col, temp_matrix
     maxim=0
     minim=1000
+    # print(data.data)
     #Obtaining temperature array
     for i in range(len(data.data)):
         if data.data[i]>maxim:
             fila=int(i/32)
             col=i-fila*32
             vec=data.data
-            temp_matrix=np.reshape(vec,(32,32))            
+            temp_matrix=np.reshape(vec,(32,32))    
+                 
             maxim=data.data[i]
         if data.data[i]<minim:
             minim=data.data[i]
@@ -49,7 +51,7 @@ def image_operations(data):
     background = 0
     flag = 0    
     white_thres=205   # Threeshold filter, 255 = white
-    thermal_threshold=35  #Thermal threshold to detect fire
+    thermal_threshold=70  #Thermal threshold to detect fire
     detection = 0
     a=32
     i=0
@@ -69,6 +71,7 @@ def image_operations(data):
 
     # Declaration needed in order to change Image format to a readable format in OpenCV
     bridge = CvBridge()
+ 
     # Creation rec_list in appropiate format
     rec_list=ObjectDetectionList()
     rec_object = ObjectDetection()
@@ -84,13 +87,13 @@ def image_operations(data):
         flag += 1
         dif = cv2.absdiff(gray_im,background)
 
-        ## Uncomment next lines to obtain a temperature txt based on the thermal
-        # f = open( 'Matriz_temperaturas.txt', 'w' )
-        # for i in range (a):
-        #     for j in range (a):
-        #         f.write( str(int(temp_matrix[i,j])) + ' ')
-        #     f.write ('\n')
-        # f.close()
+        # Uncomment next lines to obtain a temperature txt based on the thermal
+        f = open( 'Matriz_temperaturas.txt', 'w' )
+        for i in range (a):
+            for j in range (a):
+                f.write( str(int(temp_matrix[i,j])) + ' ')
+            f.write ('\n')
+        f.close()
 
         # Definition of the black and white matrix
         for i in range (a):
@@ -106,7 +109,7 @@ def image_operations(data):
         # Obtain the number of fires in the image
         outlineimg = temp_matrix.copy()
         _,outline, hierarchy = cv2.findContours(outlineimg, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-  
+        # print (outline)
         # Draw zones and contours for the fire zone
         if maxim>thermal_threshold:
             detection = 1   
@@ -114,7 +117,7 @@ def image_operations(data):
                 if max_count<(count+1):
                     max_count=count+1
                 count = count + 1
-
+                # print(c)
                 M = cv2.moments(c)
                 cx = int(M['m10']/M['m00'])
                 cy = int(M['m01']/M['m00'])
@@ -147,11 +150,11 @@ def image_operations(data):
         cv_image= cv2.flip(cv_image,0)
         cv_image=cv2.rotate(cv_image, cv2.ROTATE_90_COUNTERCLOCKWISE)
         cv2.imshow("Teraranger", cv_image)
-        cv2.moveWindow("Teraranger",0,0)
+        cv2.moveWindow("Teraranger",0,500)
         temp_matrix= cv2.flip(temp_matrix,0)
         temp_matrix=cv2.rotate(temp_matrix, cv2.ROTATE_90_COUNTERCLOCKWISE)
         cv2.imshow("Outline", temp_matrix)
-        cv2.moveWindow("Outline",565, 0)
+        cv2.moveWindow("Outline",565, 500)
         cv2.waitKey(3)
         
         #Convert the previous operations to a format that ROS can receive as a topic
@@ -169,7 +172,7 @@ def image_operations(data):
         # print(detection_sampling)
 
         if detection and detection_sampling>=10:
-            # print("Fire detected!")
+            print("Fire detected!")
             detection_sampling = 0
             last_detection=last_detection+1
             # rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE
@@ -180,7 +183,7 @@ def image_operations(data):
                 pub = rospy.Publisher('Fire_detect',ObjectDetectionList,queue_size=2)
                 rec_object = ObjectDetection()
                 # Create a fire type message
-                rec_object.type = 3
+                rec_object.type = 4
                 # Calculate distance of the fire toward image center
                 image_center_x=ysize/2
                 image_center_y=xsize/2
@@ -196,7 +199,7 @@ def image_operations(data):
             last_detection = detection
         if detection==0 and last_detection>=1:
             last_detection=0
-            # print("Waiting...")
+            print("Waiting...")
         last_detection=detection
 
     except CvBridgeError as e:
