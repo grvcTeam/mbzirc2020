@@ -62,12 +62,14 @@
   <build_depend>roscpp</build_depend>
   <build_depend>uav_abstraction_layer</build_depend>
   <build_depend>ual_backend_mavros</build_depend>
+  <build_depend>ual_backend_gazebo_light</build_depend>
   <build_export_depend>message_generation</build_export_depend>
   <build_export_depend>actionlib</build_export_depend>
   <build_export_depend>actionlib_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>uav_abstraction_layer</build_export_depend>
   <build_export_depend>ual_backend_mavros</build_export_depend>
+  <build_export_depend>ual_backend_gazebo_light</build_export_depend>
   <build_export_depend>handy_tools</build_export_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>actionlib</exec_depend>
@@ -75,6 +77,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>uav_abstraction_layer</exec_depend>
   <exec_depend>ual_backend_mavros</exec_depend>
+  <exec_depend>ual_backend_gazebo_light</exec_depend>
   <exec_depend>handy_tools</exec_depend>
 
 

@@ -43,6 +43,7 @@
 #include <uav_abstraction_layer/ual.h>
 #include <uav_abstraction_layer/ual_backend_dummy.h>
 #include <ual_backend_mavros/ual_backend_mavros.h>
+#include <ual_backend_gazebo_light/ual_backend_gazebo_light.h>
 #include <uav_abstraction_layer/State.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
@@ -87,9 +88,22 @@ public:
     move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false),
     extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false) {
 
+    std::string ual_backend;
+    ros::param::param<std::string>("~ual_backend", ual_backend, "mavros");
+    grvc::ual::Backend *backend = nullptr;
+    if (ual_backend == "dummy") {
+      backend = new grvc::ual::BackendDummy();
+    } else if (ual_backend == "mavros") {
+      backend = new grvc::ual::BackendMavros();
+    } else if (ual_backend == "gazebo_light") {
+      backend = new grvc::ual::BackendGazeboLight();
+    } else {
+      throw std::runtime_error("Unexpected UAL backend");
+    }
+
     tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
 
-    ual_ = new grvc::ual::UAL(new grvc::ual::BackendMavros());  // TODO: Wait until isReady()?
+    ual_ = new grvc::ual::UAL(backend);  // TODO: Wait until isReady()?
     data_feed_timer_ = nh_.createTimer(ros::Duration(0.1), &UalActionServer::publishDataFeed, this);  // TODO: frequency?
     data_feed_pub_ = nh_.advertise<mbzirc_comm_objs::RobotDataFeed>("data_feed", 1);  // TODO: namespacing?
     marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);

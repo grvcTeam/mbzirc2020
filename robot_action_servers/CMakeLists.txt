@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   uav_abstraction_layer
   ual_backend_mavros
+  ual_backend_gazebo_light
   mbzirc_comm_objs
   handy_tools
   message_generation
