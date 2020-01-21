@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   cv_bridge
-  message_generation
   image_transport
   mbzirc_comm_objs
 )
@@ -23,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(OpenCV 3 REQUIRED)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -55,11 +53,11 @@ find_package(OpenCV 3 REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-   FILES
-   ObjectDetection.msg
-   ObjectDetectionList.msg
- )
+# add_message_files(
+#    FILES
+#    ObjectDetection.msg
+#    ObjectDetectionList.msg
+#  )
 
 ## Generate services in the 'srv' folder
  #add_service_files(
@@ -75,11 +73,11 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   geometry_msgs
-   std_msgs
- )
+#  generate_messages(
+#    DEPENDENCIES
+#    geometry_msgs
+#    std_msgs
+#  )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -115,7 +113,7 @@ catkin_package(
 #  LIBRARIES primer_tutorial
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
-   CATKIN_DEPENDS message_runtime
+#  CATKIN_DEPENDS message_runtime
 )
 
 ###########
@@ -144,8 +142,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 
 add_executable(thermal src/thermal.cpp)
+add_dependencies(thermal ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(thermal ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-# add_dependencies(talker beginner_tutorials_generate_messages_cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
