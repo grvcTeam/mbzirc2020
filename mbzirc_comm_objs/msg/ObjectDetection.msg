@@ -9,10 +9,12 @@ uint8 color                            # Detected object color (see COLOR_* cons
 uint8 TYPE_UNKNOWN = 0
 uint8 TYPE_BALLOON = 1
 uint8 TYPE_BALL    = 2
-uint8 TYPE_DRONE   = 3
 uint8 TYPE_BRICK   = 4
-uint8 TYPE_FIRE    = 5
-uint8 TYPE_PASSAGE = 6
+uint8 TYPE_UCHANNEL= 5
+uint8 TYPE_LWALL   = 6
+uint8 TYPE_FIRE    = 7
+uint8 TYPE_HOLE    = 8
+uint8 TYPE_PASSAGE = 9
 
 int8 COLOR_UNKNOWN = -1
 int8 COLOR_RED     = 0

@@ -45,6 +45,8 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
+   Object.msg
+   ObjectList.msg
    ObjectDetection.msg
    ObjectDetectionList.msg
    GripperAttached.msg

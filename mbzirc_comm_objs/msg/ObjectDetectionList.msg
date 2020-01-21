@@ -1,4 +1,3 @@
-string agent_id  # TODO: better than an int?
-
+string agent_id  
 time stamp
 ObjectDetection[] objects

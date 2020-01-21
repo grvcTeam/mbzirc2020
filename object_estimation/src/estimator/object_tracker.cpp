@@ -45,10 +45,7 @@ ObjectTracker::ObjectTracker(int id, int type)
 	id_ = id;
 	obj_type_ = type;
 
-	if(obj_type_ == ObjectDetection::TYPE_DRONE)
-		is_static_ = false;
-	else
-		is_static_ = true;
+	is_static_ = true;
 		
 	status_ = UNASSIGNED;
 

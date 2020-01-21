@@ -4,6 +4,8 @@
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
+#include <mbzirc_comm_objs/Object.h>
+#include <mbzirc_comm_objs/ObjectList.h>
 #include <mbzirc_comm_objs/SetObjectStatus.h>
 
 #include <visualization_msgs/MarkerArray.h>
@@ -33,7 +35,7 @@ public:
         ros::param::param<bool>("~a_priori_info", a_priori_info, false);
         ros::param::param<string>("~conf_file", conf_file, "conf.yaml");
         ros::param::param<bool>("~visualization", visualization_, false);
-        ros::param::param<vector<int> >("~uav_ids", uav_ids_, vector<int>());
+        ros::param::param<vector<string> >("~uav_ids", uav_ids_, vector<string>());
         
         ros::param::param<double>("~lost_time_th", lost_time_th, 20.0);
         ros::param::param<double>("~min_update_count", min_update_count, 0.0);
@@ -68,7 +70,7 @@ public:
             sensed_sub_.push_back(nh.subscribe(sensed_topic, 1, &Estimator::updateCallback, this));
         }
 
-        objects_pub_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("estimated_objects", 1);
+        objects_pub_ = nh.advertise<mbzirc_comm_objs::ObjectList>("estimated_objects", 1);
 
         if(visualization_)
             markers_pub_ = nh.advertise<visualization_msgs::MarkerArray>("objects_makers", 1);
@@ -77,25 +79,29 @@ public:
 
         for(int i = 0; i < object_types.size(); i++)
         {
-            int type = obj_type_from_string(object_types[i]);
+            vector<int> detectors;
+
+            int type = obj_type_from_string(object_types[i], detectors);
 
             if(estimators_.find(type) != estimators_.end())
                 ROS_WARN("Object type repeated.");
-            else if(type != ObjectDetection::TYPE_UNKNOWN)
+            else
             {
                 estimators_[type] = new CentralizedEstimator(type, association_th, lost_time_th, min_update_count);
+                detectors_[type] = detectors;
 
                 if(a_priori_info)
                     estimators_[type]->initializeAPrioriInfo(conf_file);
 
-                for(int id = 0; id < n_uavs_; id++)
+                for(int j = 0; j < detectors.size(); j++)
                 {
                     vector<ObjectDetection *> empty_cand_vector;
-                    map<int, vector<ObjectDetection *> > uav_cands;
-                    uav_cands[uav_ids_[id]] = empty_cand_vector;
 
-                    candidates_[type] = uav_cands;
-                }
+                    for(int id = 0; id < n_uavs_; id++)
+                    {    
+                        candidates_[detectors[j]][uav_ids_[id]] = empty_cand_vector;
+                    }
+                }       
             }
         }
     }
@@ -129,20 +135,20 @@ protected:
 
         double delay = (ros::Time::now() - msg->stamp).toSec();
 
-        int uav = msg->uav_id;
+        string uav = msg->agent_id;
 
         if(msg->objects.size() && delay < delay_max_ && find(uav_ids_.begin(), uav_ids_.end(), uav) != uav_ids_.end())
         {
-            int obj_type = msg->objects[0].type;    // TODO. We assume the same type for all objects in the list. Should we have a type in ObjectDetectionList?
+            int detector_type = msg->objects[0].type;   
 
             // Remove existing candidates
-            if(candidates_[obj_type][uav].size())
+            if(candidates_[detector_type][uav].size())
             {
-                for(int j = 0; j < candidates_[obj_type][uav].size(); j++)
+                for(int j = 0; j < candidates_[detector_type][uav].size(); j++)
                 {
-                    delete candidates_[obj_type][uav][j];
+                    delete candidates_[detector_type][uav][j];
                 }
-                candidates_[obj_type][uav].clear();
+                candidates_[detector_type][uav].clear();
             }
 
             // Store received candidates
@@ -150,7 +156,7 @@ protected:
             {
                 ObjectDetection* detection_p = new ObjectDetection();
                 *detection_p = msg->objects[j];
-                candidates_[obj_type][uav].push_back(detection_p);
+                candidates_[detector_type][uav].push_back(detection_p);
             }
         }
         else
@@ -170,23 +176,26 @@ protected:
             // Predict objects
             est_ptr->predict( (event.current_real - event.last_real).toSec() );
 
-            // Update objects 
-            for(auto cand_it = candidates_[obj_type].begin(); cand_it != candidates_[obj_type].end(); ++cand_it)
+            // Update objects for all associated detectors
+            for(auto det_it = detectors_[obj_type].begin(); det_it != detectors_[obj_type].end(); ++det_it)
             {
-                if((cand_it->second).size())
+                for(auto cand_it = candidates_[*det_it].begin(); cand_it != candidates_[*det_it].end(); ++cand_it)
                 {
-                    est_ptr->update(cand_it->second);
-
-                    // Remove candidates
-                    
-                    for(int j = 0; j < (cand_it->second).size(); j++)
+                    if((cand_it->second).size())
                     {
-                        delete (cand_it->second)[j];
-                    }
-                    (cand_it->second).clear();
-                }
-            }
+                        est_ptr->update(cand_it->second);
 
+                        // Remove candidates
+                        
+                        for(int j = 0; j < (cand_it->second).size(); j++)
+                        {
+                            delete (cand_it->second)[j];
+                        }
+                        (cand_it->second).clear();
+                    }
+                }    
+            }
+            
             est_ptr->removeLostTargets();
             
             publishObjects(obj_type);
@@ -238,25 +247,35 @@ protected:
     }
 
     // TODO: Move to some kind of utils lib, as it is repeated
-    int obj_type_from_string(const string& type) 
+    int obj_type_from_string(const string& type, vector<int> &detectors) 
     {
 
-        int obj_type;
-        if(type == "balloon")
-            obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_BALLOON;
-        else if(type == "drone")
-            obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_DRONE;
-        else if(type == "brick")
-            obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
+        int obj_type = -1;
+        if(type == "pile")
+        {
+            obj_type = mbzirc_comm_objs::Object::TYPE_PILE;
+            detectors.push_back(mbzirc_comm_objs::ObjectDetection::TYPE_BRICK);
+        }
+        else if(type == "wall")
+        {
+            obj_type = mbzirc_comm_objs::Object::TYPE_WALL;
+            detectors.push_back(mbzirc_comm_objs::ObjectDetection::TYPE_UCHANNEL);
+            detectors.push_back(mbzirc_comm_objs::ObjectDetection::TYPE_LWALL);
+        }
         else if(type == "fire")
-            obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
+        {
+            obj_type = mbzirc_comm_objs::Object::TYPE_FIRE;
+            detectors.push_back(mbzirc_comm_objs::ObjectDetection::TYPE_FIRE);
+        }
         else if(type == "passage")
-            obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE;    
+        {
+            obj_type = mbzirc_comm_objs::Object::TYPE_PASSAGE;
+            detectors.push_back(mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE);
+        }
         else
-            {
+        {
                 ROS_ERROR("Unknown object type %s", type.c_str());
-                obj_type = mbzirc_comm_objs::ObjectDetection::TYPE_UNKNOWN;
-            }
+        }
 
         return obj_type;
     }
@@ -275,7 +294,7 @@ protected:
         // Get ids to plot active targets
         vector<int> active_targets = estimators_[obj_type]->getActiveTargets();
 
-        list.uav_id = -1;
+        list.agent_id = "-1";
         list.stamp = ros::Time::now();
 
         for(int i = 0; i < active_targets.size(); i++)
@@ -437,6 +456,7 @@ protected:
                 
                 marker_array.markers.push_back(marker);
 
+                /*
                 if(obj_type == ObjectDetection::TYPE_DRONE)
                 {
                     // Plot velocity
@@ -458,6 +478,7 @@ protected:
                     
                     marker_array.markers.push_back(marker);
                 }
+                */
             }
             else
                 ROS_ERROR("Object ID not found");
@@ -511,7 +532,7 @@ protected:
 
     /// Ids of UAVs to connect
     int n_uavs_;
-    vector<int> uav_ids_;
+    vector<string> uav_ids_;
     
     int iteration_counter_;
     bool visualization_;        /// Activate to publish markers
@@ -524,11 +545,14 @@ protected:
     ros::ServiceServer set_object_status_srv_;
     vector<ros::Subscriber> sensed_sub_;
 
-    /// Candidates queues with object detections, one per object and UAV
-	map<int, map<int, vector<ObjectDetection *> > > candidates_;
+    /// Candidates queues with object detections, one per detector and UAV
+	map<int, map<string, vector<ObjectDetection *> > > candidates_;
 
     /// Centralized filter for each type of object 
 	map<int, CentralizedEstimator*> estimators_;
+
+    /// Detector types for each type of object 
+	map<int, vector<int> > detectors_;
 	
 };
 
