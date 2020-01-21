@@ -56,7 +56,7 @@
   </xacro:teraranger_macro> -->
 
 <!-- WATER C3 UAV -->
-  <xacro:if value="${$(arg challenge) == 3}">
+  <xacro:if value="${$(arg challenge) == 30}">
     <!-- Install fake camera for fire detection -->
     <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
     <xacro:fake_camera parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
@@ -238,8 +238,8 @@
 
   </xacro:if>
 
-<!-- BLANKET C3 UAV -->
-<xacro:if value="${$(arg challenge) == 3b}">
+  <!-- BLANKET C3 UAV -->
+  <xacro:if value="${$(arg challenge) == 31}">
     <!-- Install fake camera for fire detection -->
     <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
     <xacro:fake_camera parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
