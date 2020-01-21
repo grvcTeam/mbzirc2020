@@ -57,7 +57,11 @@
     <node pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>
 
     <node if="$(eval mode == 'sim')" name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
-    <node if="$(eval mode == 'sim')" name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen"/>
+
+    <node if="$(eval mode == 'real')" name="actuators" pkg="actuators_system" type="actuators_system_node">
+      <param name="serial_path" value="/dev/actuators"/>
+      <param name="serial_baudrate" value="9600"/>
+    </node>
 
     <node if="$(eval mode == 'real')" name="rplidarNode" pkg="rplidar_ros" type="rplidarNode" output="screen">
       <param name="serial_port"         type="string" value="/dev/rplidar"/>
@@ -68,12 +72,12 @@
       <param name="scan_mode"           type="string" value="Stability"/>
     </node>
 
-    <node if="$(eval mode == 'real')" name="actuators" pkg="actuators_system" type="actuators_system_node">
-      <param name="serial_path" value="/dev/actuators"/>
-      <param name="serial_baudrate" value="9600"/>
+    <node if="$(eval mode == 'sim')" name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen">
+      <param name="frame_id" type="string" value="$(arg robot_model)_$(arg agent_id)/sf11_link"/>
     </node>
 
     <node if="$(eval mode == 'real')" name="sf11" pkg="sf11_driver" type="sf11_driver_node" output="screen">
+      <param name="frame_id" type="string" value="$(arg robot_model)_$(arg agent_id)/sf11_link"/>
       <param name="serial_path" value="/dev/sf11"/>
       <param name="serial_baudrate" value="115200"/>
       <param name="publish_rate" value="20"/>
