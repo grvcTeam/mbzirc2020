@@ -10,6 +10,8 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <geometry_msgs/Point.h>
 #include <visualization_msgs/Marker.h>
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
+#include <mbzirc_comm_objs/ObjectDetection.h>
 #include <iostream>
 
 // Typedef
@@ -30,6 +32,16 @@ private:
 
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
+
+    std::string agent_id_;
+
+    // Hough Circles parameters
+    double dp_; // Inverse ratio of accumulator resolution to image resolution. The greater the value, the lower the accu resolution
+    int min_dist_between_circle_center_; // Min distance between two circles centers.
+    double canny_edge_upper_threshold_; // Intensity gradient threshold to detect strong edges
+    int accu_th_; // Accu min value to detect a circle
+    int min_radius_; // Circle min radius
+    int max_radius_; // Circle max radius
 
     // Depth camera info subscriber
     ros::Subscriber camera_info_sub_;
@@ -65,6 +77,12 @@ private:
     // Detected Circle Image Publisher
     image_transport::Publisher detected_circles_image_pub_;
 
+    // Object detection list objects
+    mbzirc_comm_objs::ObjectDetection object_detection_;
+    mbzirc_comm_objs::ObjectDetectionList object_detection_list_;
+
+    // Object detection list publisher
+    ros::Publisher object_detection_pub_;
 
 };
 
@@ -79,12 +97,22 @@ depth_image_sub_(nh_, "camera/aligned_depth_to_color/image_raw", 1),
 color_image_sub_(nh_, "camera/color/image_raw", 1),
 sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
 {
+    // Read parameters
+    pnh_.param<std::string>("agent_id", agent_id_, "default_agent");
+    pnh_.param<bool>("publish_debug_marker", publish_debug_marker_, false);
+    pnh_.param<bool>("publish_debug_images", publish_debug_images_, false);
+    pnh_.param<double>("dp", dp_, 1);
+    pnh_.param<int>("min_dist_between_circle_center", min_dist_between_circle_center_, 480/8);
+    pnh_.param<double>("canny_edge_upper_threshold", canny_edge_upper_threshold_, 150);
+    pnh_.param<int>("accumulator_threshold", accu_th_, 50);
+    pnh_.param<int>("min_radius", min_radius_, 0);
+    pnh_.param<int>("max_radius", max_radius_, 0);
+
     camera_info_sub_ = nh_.subscribe("camera/aligned_depth_to_color/camera_info", 1, &CircleDetector::callbackDepthCameraInfo, this);
     //depth_image_sub_ = message_filters::Subscriber<sensor_msgs::Image>(nh, "depth_image_topic", 1);
     //color_image_sub_ = message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image_topic", 1);
     sync.registerCallback(boost::bind(&CircleDetector::callbackSyncColorDepth, this, _1, _2));
-
-    pnh_.param("publish_debug_marker", publish_debug_marker_, false);
+    
     if (publish_debug_marker_)
     {
         circle_center_marker_pub_ = nh_.advertise<visualization_msgs::Marker>("circle_center_marker", 1);
@@ -101,13 +129,17 @@ sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
         circle_center_marker_.color.r = 1.0;
         circle_center_marker_.color.b = circle_center_marker_.color.g = 0;
     }
-    pnh_.param("publish_debug_images", publish_debug_images_, false);
+
     if (publish_debug_images_)
     {
         detected_circles_image_pub_ = image_transport_.advertise("detected_circles_image", 1); 
         gaussian_blur_image_pub_ = image_transport_.advertise("gaussian_blur_image", 1);
         canny_edge_image_pub_ = image_transport_.advertise("canny_edge_image", 1);
     }
+
+    object_detection_.type = object_detection_.TYPE_FIRE;
+    object_detection_.color = object_detection_.COLOR_UNKNOWN;
+    object_detection_pub_ = nh_.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_ring_detected", 1);
 }
 
 CircleDetector::~CircleDetector()
@@ -149,23 +181,16 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
 
         // Find fire circle using HoughCircles on color image
         std::vector<cv::Vec3f> circles_detected;
-        double dp = 1; // Image_resolution / Accumulator_resolution
-        int min_dist_between_circles = gray_image_cv.image.rows/8;
-        double canny_edge_upper_threshold = 150;
-        int accumulator_threshold = 50;
-        int min_radius = 0;
-        int max_radius = 0;
-
         if (publish_debug_images_)
         {
             cv_bridge::CvImage canny_edge_image;
             canny_edge_image.encoding = sensor_msgs::image_encodings::MONO8;
-            cv::Canny(gaussian_blur_image_cv.image, canny_edge_image.image, canny_edge_upper_threshold, canny_edge_upper_threshold/2);
+            cv::Canny(gaussian_blur_image_cv.image, canny_edge_image.image, canny_edge_upper_threshold_, canny_edge_upper_threshold_/2);
             canny_edge_image_pub_.publish(canny_edge_image.toImageMsg());
         }
 
-        cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp, min_dist_between_circles, 
-                         canny_edge_upper_threshold, accumulator_threshold, min_radius, max_radius);
+        cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp_, min_dist_between_circle_center_, 
+                         canny_edge_upper_threshold_, accu_th_, min_radius_, max_radius_);
 
         for (size_t i = 0; i < circles_detected.size(); i++)
         {
@@ -185,11 +210,27 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
             // Calc 3D position of circle center
             geometry_msgs::Point circle_center_3D;
             get3DPointCameraModel(circle_center_3D, circle_center_depth, center.y, center.x);
-            circle_center_marker_.pose.position = circle_center_3D;
-            circle_center_marker_pub_.publish(circle_center_marker_);
+            if (publish_debug_marker_)
+            {
+                circle_center_marker_.pose.position = circle_center_3D;
+                circle_center_marker_pub_.publish(circle_center_marker_);
+            }
+            object_detection_.header.stamp = color_img_ptr->header.stamp;
+            object_detection_.header.frame_id = color_img_ptr->header.frame_id;
+            object_detection_.pose.pose.position = circle_center_3D;
+            object_detection_.pose.pose.orientation.w = 1.0; // TODO: Calc orientation
+            object_detection_list_.stamp = color_img_ptr->header.stamp;
+            object_detection_.scale.x = object_detection_.scale.y = object_detection_.scale.z = radius;
+            // TODO: Fill covariance
+            
+            object_detection_list_.objects.push_back(object_detection_);
         }
         if (publish_debug_images_)
             detected_circles_image_pub_.publish(color_image_cv->toImageMsg());
+
+        // Publish detected circles
+        object_detection_pub_.publish(object_detection_list_);
+        object_detection_list_.objects.clear();
     }
     else
     {
