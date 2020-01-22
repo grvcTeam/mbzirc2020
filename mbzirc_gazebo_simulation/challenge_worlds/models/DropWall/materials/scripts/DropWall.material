@@ -1,0 +1,57 @@
+material DropWallUp
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.7 0.7 0.7 1.000000
+
+      texture_unit
+      {
+        texture dropwallup.png
+        scale 1 1
+        
+      }
+    }
+  }
+}
+
+material DropWallDown
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture dropwalldown.png
+        scale 0.2 0.2
+      }
+    }
+  }
+}
+
+material DropWallDown_lat
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture dropwalldown.png
+        scale 2 0.2
+      }
+    }
+  }
+}

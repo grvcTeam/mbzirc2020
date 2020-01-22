@@ -1,0 +1,39 @@
+material L_frame
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.7 0.1 0.1 1.000000
+
+      texture_unit
+      {
+        texture L_frame.png
+        scale 10 1
+        
+      }
+    }
+  }
+}
+
+material L_frame_2
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.7 0.1 0.1 1.000000
+
+      texture_unit
+      {
+        texture L_frame.png
+        scale 1 10
+        
+      }
+    }
+  }
+}
