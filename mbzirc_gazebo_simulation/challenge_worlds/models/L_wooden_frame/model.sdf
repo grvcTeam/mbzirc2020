@@ -19,17 +19,18 @@
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
       <visual name='visual'>
-        <pose frame=''>0.2 2 0.015 0 -0 0</pose>
+        <pose frame=''>0.2 2.2 0.015 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.4 4 0.03</size>
+            <size>0.4 3.6 0.03</size>
           </box>
         </geometry>
         <material>
           <lighting>1</lighting>
           <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
+            <uri>model://L_wooden_frame/materials/scripts</uri>
+            <uri>model://L_wooden_frame/materials/textures</uri>
+            <name>L_frame_2</name>
           </script>
           <ambient>0.9 0.9 0.9 1</ambient>
           <diffuse>0.9 0.9 0.9 1</diffuse>
@@ -52,8 +53,9 @@
         <material>
           <lighting>1</lighting>
           <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/White</name>
+            <uri>model://L_wooden_frame/materials/scripts</uri>
+            <uri>model://L_wooden_frame/materials/textures</uri>
+            <name>L_frame</name>
           </script>
           <ambient>0.9 0.9 0.9 1</ambient>
           <diffuse>0.9 0.9 0.9 1</diffuse>
