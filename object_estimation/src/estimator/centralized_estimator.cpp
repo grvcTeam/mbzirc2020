@@ -262,7 +262,7 @@ int CentralizedEstimator::getNumTargets()
 	return targets_.size();
 }
 
-/// Return Identifiers of active targets not caught, lost or deployed
+/// Return Identifiers of active targets
 vector<int> CentralizedEstimator::getActiveTargets()
 {
 	vector<int> targets_ids;

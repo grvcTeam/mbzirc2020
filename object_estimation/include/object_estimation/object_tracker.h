@@ -97,7 +97,11 @@ protected:
 	Eigen::MatrixXd pose_cov_;
 	Eigen::MatrixXd orientation_;
 	std::vector<double> scale_;
-	bool fixed_pose_;				/// Do not update pose when True
+
+	/// Do not update when True
+	bool fixed_pose_;
+	bool fixed_color_;
+	bool fixed_scale_;				
 
 };
 

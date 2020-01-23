@@ -97,7 +97,12 @@ void ObjectTracker::initialize(YAML::Node node)
 {
 	if(node["sub_type"])
 		obj_subtype_ = subtype_from_string(node["sub_type"].as<string>());
-			
+
+	if(node["status"] && node["status"].as<string>() == "active" )
+	{
+		status_ = ACTIVE;
+	}
+					
 	if(node["frame_id"] && node["position_x"] && node["orientation_x"])
 	{
 		fixed_pose_ = true;
@@ -136,7 +141,11 @@ void ObjectTracker::initialize(YAML::Node node)
 		int color;
 
 		if(node["color"])
-    		color = color_from_string(node["color"].as<string>());
+		{
+			color = color_from_string(node["color"].as<string>());
+			fixed_color_ = true;
+		}
+    	
 		else
 			color = ObjectDetection::COLOR_UNKNOWN;
 		
@@ -162,6 +171,15 @@ void ObjectTracker::initialize(YAML::Node node)
 					
 				break;			
 			}
+		}
+
+		if(node["scale_x"] && node["scale_y"] && node["scale_z"])
+		{
+			scale_.resize(3);
+			scale_[0] = node["scale_x"].as<float>();
+			scale_[1] = node["scale_y"].as<float>();
+			scale_[2] = node["scale_z"].as<float>();
+			fixed_scale_ = true;
 		}
 
 		// Update timer
@@ -237,6 +255,8 @@ void ObjectTracker::initialize(ObjectDetection* z)
 			break;			
 		}
 	}
+
+	// TODO scale
 
 	// Update timer
 	update_timer_.reset();
