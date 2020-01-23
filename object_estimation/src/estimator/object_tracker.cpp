@@ -28,7 +28,6 @@
 
 #include <object_estimation/object_tracker.h>
 
-// TODO: These parameters could vary depending on the type of object.
 #define VEL_NOISE_VAR 0.2 
 #define COLOR_DETECTOR_PD 0.9
 #define MIN_COLOR_DISTANCE 0.15
@@ -44,10 +43,11 @@ ObjectTracker::ObjectTracker(int id, int type)
 {
 	id_ = id;
 	obj_type_ = type;
+	obj_subtype_ = mbzirc_comm_objs::Object::SUBTYPE_UNKNOWN;
 
 	is_static_ = true;
 		
-	status_ = UNASSIGNED;
+	status_ = ACTIVE;
 
 	fact_bel_.resize(1);
 	fact_bel_[COLOR].resize(ObjectDetection::NCOLORS);
@@ -55,6 +55,31 @@ ObjectTracker::ObjectTracker(int id, int type)
 	pose_ = Eigen::MatrixXd::Zero(6,1);
 	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
 	orientation_ = Eigen::MatrixXd::Zero(4,1);
+	scale_.resize(3);
+}
+
+/** Constructor
+\param id Identifier
+\param type Type of object
+\param subtype Subtype of object
+*/
+ObjectTracker::ObjectTracker(int id, int type, int subtype)
+{
+	id_ = id;
+	obj_type_ = type;
+	obj_subtype_ = subtype;
+
+	is_static_ = true;
+		
+	status_ = ACTIVE;
+
+	fact_bel_.resize(1);
+	fact_bel_[COLOR].resize(ObjectDetection::NCOLORS);
+
+	pose_ = Eigen::MatrixXd::Zero(6,1);
+	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
+	orientation_ = Eigen::MatrixXd::Zero(4,1);
+	scale_.resize(3);
 }
 
 /// Destructor
@@ -338,41 +363,52 @@ int ObjectTracker::getUpdateCount()
 }
     
 /** \brief Return pose information from the target
-\param x Position of the target
-\param y Position of the target
-\param z Position of the target
+\return Position of the target
 */
-void ObjectTracker::getPose(double &x, double &y, double &z)
+vector<double> ObjectTracker::getPose()
 {
-	x = pose_(0,0);
-	y = pose_(1,0);
-	z = pose_(2,0);
+	vector<double> p;
+	p.resize(3);
+	p[0] = pose_(0,0);
+	p[1] = pose_(1,0);
+	p[2] = pose_(2,0);
+}
+
+/** \brief Return scale information from the target
+\return Scale 
+*/
+vector<double> ObjectTracker::getScale()
+{
+	vector<double> s;
+	s.resize(3);
+	s[0] = scale_[0];
+	s[1] = scale_[1];
+	s[2] = scale_[2];
 }
 
 /** \brief Return velocity information from the target
-\param vx Velocity of the target
-\param vy Velocity of the target
-\param vz Velocity of the target
+\return Velocity of the target
 */
-void ObjectTracker::getVelocity(double &vx, double &vy, double &vz)
+vector<double> ObjectTracker::getVelocity()
 {
-	vx = pose_(3,0);
-	vy = pose_(4,0);
-	vz = pose_(5,0);
+	vector<double> v;
+	v.resize(3);
+	v[0] = pose_(3,0);
+	v[1] = pose_(4,0);
+	v[2] = pose_(5,0);
 }
 
 /** \brief Return orientation information from the target
-\param qx 
-\param qy 
-\param qz 
-\param qw 
+\return Quaterion 
 */
-void ObjectTracker::getOrientation(double &qx, double &qy, double &qz, double &qw)
+vector<double> ObjectTracker::getOrientation()
 {
-	qx = orientation_(0,0);
-	qy = orientation_(1,0);
-	qz = orientation_(2,0);
-	qw = orientation_(3,0);
+	vector<double> q;
+	q.resize(4);
+	q[0] = orientation_(0,0);
+	q[1] = orientation_(1,0);
+	q[2] = orientation_(2,0);
+	q[3] = orientation_(3,0);
 }
 
 /** \brief Return covariance matrix from the target position
@@ -407,6 +443,14 @@ int ObjectTracker::getNumFactors()
 vector<double> ObjectTracker::getFactorProbs(int factor)
 {
 	return fact_bel_[factor];
+}
+
+/** \brief Return subtype of the target
+\return Target subtype
+*/
+int ObjectTracker::getSubtype()
+{
+	return obj_subtype_;
 }
 
 /** \brief Return likeliest target status

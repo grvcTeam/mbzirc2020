@@ -1,5 +1,7 @@
-brick:
+# Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the piles, but only active per trial.
+pile:
   - color: "red"
+    sub_type: "uav"
     frame_id: "arena"
     position_x: 30.0
     position_y: 15.0
@@ -10,6 +12,7 @@ brick:
     orientation_w: 1.0
 
   - color: "green"
+    sub_type: "uav"
     frame_id: "arena"
     position_x: 30.0
     position_y: 35.0
@@ -20,6 +23,7 @@ brick:
     orientation_w: 1.0
 
   - color: "blue"
+    sub_type: "uav"
     frame_id: "arena"
     position_x: 20.0
     position_y: 25.0
@@ -30,9 +34,75 @@ brick:
     orientation_w: 1.0
 
   - color: "orange"
+    sub_type: "uav"
     frame_id: "arena"
     position_x: 40.0
     position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - color: "red"
+    sub_type: "ugv"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - color: "green"
+    sub_type: "ugv"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 35.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - color: "blue"
+    sub_type: "ugv"
+    frame_id: "arena"
+    position_x: 20.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - color: "orange"
+    sub_type: "ugv"
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+wall:
+  - sub_type: "uav"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "ugv"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
     position_z: 0.1
     orientation_x: 0.0
     orientation_y: 0.0

@@ -67,13 +67,16 @@ void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 
 	switch(obj_type_)
 	{
-		case mbzirc_comm_objs::ObjectDetection::TYPE_BRICK:
-			item = "brick";
+		case mbzirc_comm_objs::Object::TYPE_PILE:
+			item = "pile";
 		break;
-		case mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE:
+		case mbzirc_comm_objs::Object::TYPE_WALL:
+			item = "wall";
+		break;
+		case mbzirc_comm_objs::Object::TYPE_PASSAGE:
 			item = "passage";
 		break;
-		case mbzirc_comm_objs::ObjectDetection::TYPE_FIRE:
+		case mbzirc_comm_objs::Object::TYPE_FIRE:
 			item = "fire";
 		break;
 		default:
@@ -84,33 +87,38 @@ void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 	{
 		for (size_t i = 0; i < yaml_config[item].size(); i++) 
 		{
-			mbzirc_comm_objs::ObjectDetection object;
+			mbzirc_comm_objs::ObjectDetection object_det;
 
 			// TODO: Check that expected fields do exist
-            object.header.stamp = ros::Time::now();
-            object.header.frame_id = yaml_config[item][i]["frame_id"].as<string>();
-            object.type = obj_type_;
+			
+            object_det.header.stamp = ros::Time::now();
+			// TODO: to arena
+            object_det.header.frame_id = yaml_config[item][i]["frame_id"].as<string>();
+            object_det.type = obj_type_;
+			// TODO: check subtype
+			int subtype = mbzirc_comm_objs::Object::SUBTYPE_UNKNOWN;
 
-			object.pose.pose.position.x = yaml_config[item][i]["position_x"].as<float>();
-            object.pose.pose.position.y = yaml_config[item][i]["position_y"].as<float>();;
-            object.pose.pose.position.z = yaml_config[item][i]["position_z"].as<float>();;
+			object_det.pose.pose.position.x = yaml_config[item][i]["position_x"].as<float>();
+            object_det.pose.pose.position.y = yaml_config[item][i]["position_y"].as<float>();
+            object_det.pose.pose.position.z = yaml_config[item][i]["position_z"].as<float>();
 
 			for(int j = 0; j < 6; j++)
 				for(int k = 0; k < 6; k++)
-					object.pose.covariance[j*6+k] = 0.0;
+					object_det.pose.covariance[j*6+k] = 0.0;
 	
 			// TODO: can w be computed automatically?
-			object.pose.pose.orientation.x = yaml_config[item][i]["orientation_x"].as<float>();
-			object.pose.pose.orientation.y = yaml_config[item][i]["orientation_y"].as<float>();
-			object.pose.pose.orientation.z = yaml_config[item][i]["orientation_z"].as<float>();
-			object.pose.pose.orientation.w = yaml_config[item][i]["orientation_w"].as<float>();
+			object_det.pose.pose.orientation.x = yaml_config[item][i]["orientation_x"].as<float>();
+			object_det.pose.pose.orientation.y = yaml_config[item][i]["orientation_y"].as<float>();
+			object_det.pose.pose.orientation.z = yaml_config[item][i]["orientation_z"].as<float>();
+			object_det.pose.pose.orientation.w = yaml_config[item][i]["orientation_w"].as<float>();
 
 			// TODO. if there is no color, UNKNOWN
-    		object.color = color_from_string(yaml_config[item][i]["color"].as<string>());
+    		object_det.color = color_from_string(yaml_config[item][i]["color"].as<string>());
     		
 			int new_target_id = track_id_count_++;
-			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
-			targets_[new_target_id]->initialize(&object);
+			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_, subtype);
+			targets_[new_target_id]->initialize(&object_det);
+			targets_[new_target_id]->setStatus(INACTIVE);
     	}
 	}
 }
@@ -122,7 +130,7 @@ void CentralizedEstimator::predict(double dt)
 {
 	for(auto it = targets_.begin(); it != targets_.end(); ++it)
 	{
-		if((it->second)->getStatus() != CAUGHT && (it->second)->getStatus() != DEPLOYED)
+		if((it->second)->getStatus() == ACTIVE)
 			(it->second)->predict(dt);
 	}
 }
@@ -144,7 +152,8 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 	{
 		bool target_valid = true;
 
-		if((it->second)->getStatus() != CAUGHT && (it->second)->getStatus() != DEPLOYED && (it->second)->getStatus() != LOST)
+		// Try to associate detections with active and inactive targets
+		if( (it->second)->getStatus() != LOST )
 		{
 			valid_targets.push_back((it->second)->getId());
 			n_valid_targets++;
@@ -221,6 +230,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			#endif
 
 			targets_[valid_targets[best_pair.first]]->update(z_list[best_pair.second]);
+			targets_[valid_targets[best_pair.first]]->setStatus(ACTIVE);		// In case it was not active
 		}
 		else
 		{
@@ -287,7 +297,7 @@ vector<int> CentralizedEstimator::getActiveTargets()
 
 	for(auto it = targets_.begin(); it != targets_.end(); ++it)
 	{
-		if( (it->second)->getStatus() != LOST && (it->second)->getStatus() != CAUGHT && (it->second)->getStatus() != DEPLOYED && (it->second)->getStatus() != FAILED )
+		if( (it->second)->getStatus() == ACTIVE)
 		{
 			targets_ids.push_back((it->second)->getId());
 		}
@@ -298,14 +308,14 @@ vector<int> CentralizedEstimator::getActiveTargets()
 
 /** \brief Return information from a target
 \param target_id Identifier of the target
-\param x Position of the target
-\param y Position of the target
-\param z Position of the target
+\param position Position of the target
+\param scale Scale of the target
 \param Status Status of the target 
 \param color Color of the target
+\param subtype Subtype of the target
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, ObjectStatus &status, int &color)
+bool CentralizedEstimator::getTargetInfo(int target_id, vector<double> &position, vector<double> &scale, ObjectStatus &status, int &color, int &subtype)
 {
 	bool found = false;
 
@@ -313,9 +323,11 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, do
 	if(it != targets_.end())
 	{
 		found = true;
-		targets_[target_id]->getPose(x, y, z);
+		position = targets_[target_id]->getPose();
+		scale = targets_[target_id]->getScale();
 		status = targets_[target_id]->getStatus();
 		color = targets_[target_id]->getColor();
+		subtype = targets_[target_id]->getSubtype();
 	}
 	
 	return found;
@@ -323,13 +335,12 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, do
 
 /** \brief Return position information from a target
 \param target_id Identifier of the target
-\param x Position of the target
-\param y Position of the target
-\param z Position of the target
+\param position Position of the target
+\param orientation Orientation of the target
 \param covariance Covariance matrix for position
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, vector<vector<double> > &covariances)
+bool CentralizedEstimator::getTargetInfo(int target_id, vector<double> &position, vector<double> &orientation, vector<vector<double> > &covariances)
 {
 	bool found = false;
 
@@ -337,35 +348,9 @@ bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, do
 	if(it != targets_.end())
 	{
 		found = true;
-		targets_[target_id]->getPose(x, y, z);
+		position = targets_[target_id]->getPose();
+		orientation = targets_[target_id]->getOrientation();
 		covariances = targets_[target_id]->getCov();
-	}
-	
-	return found;
-}
-
-/** \brief Return position and velocity information from a target
-\param target_id Identifier of the target
-\param x Position of the target
-\param y Position of the target
-\param z Position of the target
-\param covariance Covariance matrix for position
-\param vx Velocity of the target
-\param vy Velocity of the target
-\param vz Velocity of the target
-\return True if the target was found 
-*/
-bool CentralizedEstimator::getTargetInfo(int target_id, double &x, double &y, double &z, vector<vector<double> > &covariances, double &vx, double &vy, double &vz)
-{
-	bool found = false;
-
-	auto it = targets_.find(target_id);
-	if(it != targets_.end())
-	{
-		found = true;
-		targets_[target_id]->getPose(x, y, z);
-		covariances = targets_[target_id]->getCov();
-		targets_[target_id]->getVelocity(vx, vy, vz);
 	}
 	
 	return found;
@@ -398,9 +383,11 @@ void CentralizedEstimator::removeLostTargets()
 
 	while(it != targets_.end())
 	{		
-		if( ((it->second)->getStatus() == LOST) 
-		|| ((it->second)->isStatic() == false && (it->second)->lastUpdateTime() > lost_th_ && (it->second)->getUpdateCount() < min_update_count_) 
-		|| ((it->second)->isStatic() == true && (it->second)->lastUpdateTime() > lost_th_ && (it->second)->getUpdateCount() < min_update_count_) )
+		if( (it->second)->getStatus() == ACTIVE && (it->second)->lastUpdateTime() > lost_th_ && (it->second)->getUpdateCount() < min_update_count_) 
+		{
+			(it->second)->setStatus(LOST);
+		}
+		if( (it->second)->getStatus() == LOST )
 		{
 			delete(it->second);
 			it = targets_.erase(it);
@@ -423,40 +410,31 @@ void CentralizedEstimator::printTargetsInfo()
 
 		switch((it->second)->getStatus())
 		{
-			case UNASSIGNED:
-			cout << "Status: " << "UNASSIGNED. "; 
+			case INACTIVE:
+			cout << "Status: " << "INACTIVE. "; 
 			break;
-			case ASSIGNED:
-			cout << "Status: " << "ASSIGNED. "; 
-			break;
-			case CAUGHT:
-			cout << "Status: " << "CAUGHT. "; 
-			break;
-			case DEPLOYED:
-			cout << "Status: " << "DEPLOYED. "; 
+			case ACTIVE:
+			cout << "Status: " << "ACTIVE. "; 
 			break;
 			case LOST:
-			cout << "Status: " << "LOST. ";
-			break;
-			case FAILED:
-			cout << "Status: " << "FAILED. ";
+			cout << "Status: " << "LOST. "; 
 			break;
 			default:
 			cout << "Status: " << "ERROR. ";
 		}
 
-		if( (it->second)->getStatus() != LOST && (it->second)->getStatus() != CAUGHT && (it->second)->getStatus() != DEPLOYED )
+		if( (it->second)->getStatus() == ACTIVE )
 		{
-			double x, y, z, vx, vy, vz;
+			vector<double> position, scale;
 			vector<vector<double> > cov;
 			vector<double> color_probs;
 
-			(it->second)->getPose(x,y,z);
-			(it->second)->getVelocity(vx,vy,vz);
+			position = (it->second)->getPose();
+			scale = (it->second)->getScale();
 			cov = (it->second)->getCov();
 			color_probs = (it->second)->getFactorProbs(0);
 
-			cout << "Position: " << x << "," << y << "," << z << ". Velocity: " << vx << "," << vy << "," << vz << ". Covariances: " << cov[0][0] << " " << cov[0][1] << " " << cov[0][2] << "; " << cov[1][0] << " " << cov[1][1] << " " << cov[1][2] << "; " << cov[2][0] << " " << cov[2][1] << " " << cov[2][2] << "." << endl;
+			cout << "Position: " << position[0] << "," << position[1] << "," << position[2] << ". Scale: " << scale[0] << "," << scale[1] << "," << scale[2] << ". Covariances: " << cov[0][0] << " " << cov[0][1] << " " << cov[0][2] << "; " << cov[1][0] << " " << cov[1][1] << " " << cov[1][2] << "; " << cov[2][0] << " " << cov[2][1] << " " << cov[2][2] << "." << endl;
 			cout << "Color: ";
 			switch((it->second)->getColor())
 			{

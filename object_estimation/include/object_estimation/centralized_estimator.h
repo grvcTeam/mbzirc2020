@@ -52,9 +52,8 @@ public:
 
 	int getNumTargets();
 	std::vector<int> getActiveTargets();
-	bool getTargetInfo(int target_id, double &x, double &y, double &z, ObjectStatus &status, int &color);
-	bool getTargetInfo(int target_id, double &x, double &y, double &z, std::vector<std::vector<double> > &covariances);
-	bool getTargetInfo(int target_id, double &x, double &y, double &z, std::vector<std::vector<double> > &covariances, double &vx, double &vy, double &vz);
+	bool getTargetInfo(int target_id, std::vector<double> &position, std::vector<double> &orientation, std::vector<std::vector<double> > &covariances);
+	bool getTargetInfo(int target_id, std::vector<double> &position, std::vector<double> &scale, ObjectStatus &status, int &color, int &subtype);
 	bool setTargetStatus(int target_id, ObjectStatus status);
 	void removeLostTargets();
 	void printTargetsInfo();

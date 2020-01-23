@@ -221,23 +221,14 @@ protected:
 
         switch(req.object_status)
         {
-            case mbzirc_comm_objs::SetObjectStatus::Request::UNASSIGNED:
-            object_status = UNASSIGNED;
+            case mbzirc_comm_objs::SetObjectStatus::Request::INACTIVE:
+            object_status = INACTIVE;
             break;
-            case mbzirc_comm_objs::SetObjectStatus::Request::ASSIGNED:
-            object_status = ASSIGNED;
-            break;
-            case mbzirc_comm_objs::SetObjectStatus::Request::CAUGHT:
-            object_status = CAUGHT;
-            break;
-            case mbzirc_comm_objs::SetObjectStatus::Request::DEPLOYED:
-            object_status = DEPLOYED;
+            case mbzirc_comm_objs::SetObjectStatus::Request::ACTIVE:
+            object_status = ACTIVE;
             break;
             case mbzirc_comm_objs::SetObjectStatus::Request::LOST:
             object_status = LOST;
-            break;
-            case mbzirc_comm_objs::SetObjectStatus::Request::FAILED:
-            object_status = FAILED;
             break;
             default:
             ROS_ERROR("Not valid object status for assignment.");
@@ -285,36 +276,43 @@ protected:
     */
     void publishObjects(int obj_type)
     {
-        ObjectDetectionList list;
+        ObjectList list;
         vector<vector<double> > covariances;
-        double x, y, z, vx, vy, vz;
+        vector<double> position;
+        vector<double> orientation;
+        vector<double> scale;
         ObjectStatus target_status;
-        int target_color;
+        int target_color, target_subtype;
 
         // Get ids to plot active targets
         vector<int> active_targets = estimators_[obj_type]->getActiveTargets();
 
-        list.agent_id = "-1";
         list.stamp = ros::Time::now();
 
         for(int i = 0; i < active_targets.size(); i++)
         {
-            if(estimators_[obj_type]->getTargetInfo(active_targets[i], x, y, z, covariances, vx, vy, vz))
+            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, orientation, covariances))
             {
-                estimators_[obj_type]->getTargetInfo(active_targets[i], x, y, z, target_status, target_color);
+                estimators_[obj_type]->getTargetInfo(active_targets[i], position, scale, target_status, target_color, target_subtype);
 
-                ObjectDetection object;
+                Object object;
 
                 object.header.stamp = ros::Time::now();
-                object.header.frame_id = "/map";    // TODO: /game?
+                object.header.frame_id = "/arena";  
                 object.type = obj_type;
+                object.sub_type = target_subtype;
                 object.color = target_color;
-
-                object.pose.pose.position.x = x;
-                object.pose.pose.position.y = y;
-                object.pose.pose.position.z = z;
-
-                // TODO. Get orientation
+                object.scale.x = scale[0];
+                object.scale.y = scale[1];
+                object.scale.z = scale[2];
+                object.pose.pose.position.x = position[0];
+                object.pose.pose.position.y = position[1];
+                object.pose.pose.position.z = position[2];
+                object.pose.pose.orientation.x = orientation[0];
+                object.pose.pose.orientation.y = orientation[1];
+                object.pose.pose.orientation.z = orientation[2];
+                object.pose.pose.orientation.w = orientation[3];
+                
                 for(int row = 0; row < 3; row++)
                     for(int col = 0; col < 3; col++)
                         object.pose.covariance[row*6 + col] = covariances[row][col];
@@ -340,18 +338,19 @@ protected:
         vector<double> w(2);
         vector<double> v(4);
         vector<vector<double> > covariances;
+        vector<double> position, orientation, scale;
         double a, b, c, yaw, x, y, z, vx, vy, vz;
         ObjectStatus target_status;
-        int target_color;
+        int target_color, target_subtype;
 
         // Get ids to plot active targets
         vector<int> active_targets = estimators_[obj_type]->getActiveTargets();
 
         for(int i = 0; i < active_targets.size(); i++)
         {
-            if(estimators_[obj_type]->getTargetInfo(active_targets[i], x, y, z, covariances, vx, vy, vz))
+            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, orientation, covariances))
             {
-                estimators_[obj_type]->getTargetInfo(active_targets[i], x, y, z, target_status, target_color);
+                estimators_[obj_type]->getTargetInfo(active_targets[i], position, scale, target_status, target_color, target_subtype);
 
                 if(covariances[0][0] == 0.0 && covariances[1][1] == 0.0 && covariances[2][2] == 0.0)
                 {    
@@ -412,7 +411,7 @@ protected:
                 }
             
                 // Set the frame ID and timestamp
-                marker.header.frame_id = "/map";    // TODO: /game?
+                marker.header.frame_id = "/arena"; 
                 marker.header.stamp = curr_time;
 
                 // Set the namespace and id for this marker.  This serves to create a unique ID    
@@ -435,9 +434,9 @@ protected:
                 marker.lifetime = ros::Duration(1.0);
 
                 // Set the central pose of the marker. This is a full 6DOF pose relative to the frame/time specified in the header    
-                marker.pose.position.x = x;
-                marker.pose.position.y = y;
-                marker.pose.position.z = z;
+                marker.pose.position.x = position[0];
+                marker.pose.position.y = position[1];
+                marker.pose.position.z = position[2];
                 
                 tf2::Quaternion q;
                 q.setRPY(0.0,0.0,yaw);
@@ -449,36 +448,31 @@ protected:
                 marker.ns = "target_id";
                 marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
                 marker.text = to_string(active_targets[i]);
-                marker.pose.position.x = x + 1.0;
-                marker.pose.position.y = y + 1.0;
-                marker.pose.position.z = z + 1.0;    
+                marker.pose.position.x = position[0] + 1.0;
+                marker.pose.position.y = position[1] + 1.0;
+                marker.pose.position.z = position[2] + 1.0;    
                 marker.scale.z = 1.0;
                 
                 marker_array.markers.push_back(marker);
 
-                /*
-                if(obj_type == ObjectDetection::TYPE_DRONE)
+                if(obj_type == Object::TYPE_PILE || obj_type == Object::TYPE_WALL || obj_type == Object::TYPE_PASSAGE )
                 {
-                    // Plot velocity
-                    marker.ns = "velocity";
+                    // Plot orientation
+                    marker.ns = "orientation";
                     marker.type = visualization_msgs::Marker::ARROW;    
-                    marker.scale.x = sqrt(vx*vx+vy*vy+vz*vz);
-                    marker.scale.y = 0.1;    
-                    marker.scale.z = 0.1;
-                    marker.pose.position.x = x;
-                    marker.pose.position.y = y;
-                    marker.pose.position.z = z;    
-                
-                    if(marker.scale.x != 0.0)
-                    {
-                        tf2::Quaternion q;
-                        q.setRPY(0.0,atan2(vz,sqrt(vx*vx+vy*vy)),atan2(vy,vx));
-                        marker.pose.orientation = tf2::toMsg(q);
-                    }
-                    
+                    marker.scale.x = 3.0;
+                    marker.scale.y = 0.2;    
+                    marker.scale.z = 0.2;
+                    marker.pose.position.x = position[0];
+                    marker.pose.position.y = position[1];
+                    marker.pose.position.z = position[2];    
+                    marker.pose.orientation.x = orientation[0];
+                    marker.pose.orientation.y = orientation[1];
+                    marker.pose.orientation.z = orientation[2];
+                    marker.pose.orientation.w = orientation[3];
+                 
                     marker_array.markers.push_back(marker);
                 }
-                */
             }
             else
                 ROS_ERROR("Object ID not found");

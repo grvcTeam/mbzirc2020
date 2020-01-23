@@ -1,5 +1,39 @@
+# Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the facades, but only active per trial.
+fire:
+  
+  - sub_type: "facadefire"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "facadefire"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "facadefire"
+    frame_id: "arena"
+    position_x: 30.0
+    position_y: 15.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
 passage:
-  - frame_id: "arena"
+  - sub_type: "ground"
+    frame_id: "arena"
     position_x: 30.0
     position_y: 15.0
     position_z: 0.1
@@ -8,7 +42,8 @@ passage:
     orientation_z: 0.0
     orientation_w: 1.0
     
-  - frame_id: "arena"
+  - sub_type: "ground"
+    frame_id: "arena"
     position_x: 30.0
     position_y: 35.0
     position_z: 0.1
@@ -17,7 +52,8 @@ passage:
     orientation_z: 0.0
     orientation_w: 1.0
 
-  - frame_id: "arena"
+  - sub_type: "ground" 
+    frame_id: "arena"
     position_x: 20.0
     position_y: 25.0
     position_z: 0.1
@@ -26,7 +62,178 @@ passage:
     orientation_z: 0.0
     orientation_w: 1.0
 
-  - frame_id: "arena"
+  - sub_type: "ground"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "ground"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "first"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
+    position_x: 40.0
+    position_y: 25.0
+    position_z: 0.1
+    orientation_x: 0.0
+    orientation_y: 0.0
+    orientation_z: 0.0
+    orientation_w: 1.0
+
+  - sub_type: "second"  
+    frame_id: "arena"
     position_x: 40.0
     position_y: 25.0
     position_z: 0.1

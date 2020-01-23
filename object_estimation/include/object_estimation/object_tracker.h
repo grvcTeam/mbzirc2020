@@ -29,12 +29,13 @@
 #define OBJECT_TRACKER_H_
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
+#include <mbzirc_comm_objs/Object.h>
 #include <object_estimation/timer.hpp>
 
 #include <vector>
 #include <Eigen/Eigen>
 
-enum ObjectStatus {UNASSIGNED, ASSIGNED, CAUGHT, DEPLOYED, LOST, FAILED, N_STATUS};
+enum ObjectStatus {INACTIVE, ACTIVE, LOST, N_STATUS};
 enum Factor {COLOR};
     
 /** \brief This class implements a stochastic filter for an object. 
@@ -49,6 +50,7 @@ class ObjectTracker
 {
 public:
 	ObjectTracker(int id, int type);
+	ObjectTracker(int id, int type, int subtype);
 	~ObjectTracker();
 
 	void initialize(mbzirc_comm_objs::ObjectDetection* z);
@@ -58,13 +60,15 @@ public:
 	double getDistance(mbzirc_comm_objs::ObjectDetection* z);
 	double lastUpdateTime();
 	int getUpdateCount();
-	void getPose(double &x, double &y, double &z);
-	void getVelocity(double &vx, double &vy, double &vz);
-	void getOrientation(double &qx, double &qy, double &qz, double &qw);
+	std::vector<double> getPose();
+	std::vector<double> getScale();
+	std::vector<double> getVelocity();
+	std::vector<double> getOrientation();
 	std::vector<std::vector<double> > getCov();
 	int getNumFactors();
 	std::vector<double> getFactorProbs(int factor);
 
+	int getSubtype();
 	ObjectStatus getStatus();
 	void setStatus(ObjectStatus status);
 	int getId();
@@ -76,6 +80,7 @@ protected:
 	int update_count_;				/// Counter with the number of updates
 	int id_;						/// Target identifier
 	int obj_type_;					/// Object type
+	int obj_subtype_;				/// Object subtype
 	bool is_static_;				/// It indicates whether the target is static/dynamic
 	ObjectStatus status_;			/// Current status
 
@@ -87,6 +92,7 @@ protected:
 	Eigen::MatrixXd pose_;
 	Eigen::MatrixXd pose_cov_;
 	Eigen::MatrixXd orientation_;
+	std::vector<double> scale_;
 
 };
 

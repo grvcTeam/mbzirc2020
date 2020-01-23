@@ -12,7 +12,7 @@
 	<rosparam param="object_types">["pile","wall"]</rosparam>
 	<!-- <rosparam param="object_types">["fire","passage"]</rosparam> -->	
 	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
-	<param name="a_priori_info" value="true" />
+	<param name="a_priori_info" value="false" />
 	<param name="conf_file" value="conf_ch2.yaml" />
 	<!-- <param name="conf_file" value="conf_ch3.yaml" /> -->
 
