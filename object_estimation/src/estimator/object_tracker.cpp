@@ -46,6 +46,7 @@ ObjectTracker::ObjectTracker(int id, int type)
 	obj_subtype_ = mbzirc_comm_objs::Object::SUBTYPE_UNKNOWN;
 
 	is_static_ = true;
+	fixed_pose_ = false;
 		
 	status_ = ACTIVE;
 
@@ -70,6 +71,7 @@ ObjectTracker::ObjectTracker(int id, int type, int subtype)
 	obj_subtype_ = subtype;
 
 	is_static_ = true;
+	fixed_pose_ = false;
 		
 	status_ = ACTIVE;
 
@@ -85,6 +87,91 @@ ObjectTracker::ObjectTracker(int id, int type, int subtype)
 /// Destructor
 ObjectTracker::~ObjectTracker()
 {
+}
+
+/**
+\brief Initialize the filter. 
+\param node YAML node with initial information
+*/
+void ObjectTracker::initialize(YAML::Node node)
+{
+	if(node["sub_type"])
+		obj_subtype_ = subtype_from_string(node["sub_type"].as<string>());
+			
+	if(node["frame_id"] && node["position_x"] && node["orientation_x"])
+	{
+		fixed_pose_ = true;
+
+		double x,y,z,qx,qy,qz,qw;
+		x = node["position_x"].as<float>();
+		y = node["position_y"].as<float>();
+		z = node["position_z"].as<float>();
+		qx = node["orientation_x"].as<float>();
+		qy = node["orientation_y"].as<float>();
+		qz = node["orientation_z"].as<float>();
+		qw = node["orientation_w"].as<float>();
+
+		// TODO: Check frame of measurement first and transform to arena
+
+		// Setup state vector
+		pose_.setZero(6, 1);
+		pose_(0,0) = x;
+		pose_(1,0) = y;
+		pose_(2,0) = z;
+		pose_(3,0) = 0.0;
+		pose_(4,0) = 0.0;
+		pose_(5,0) = 0.0;
+
+		// Setup cov matrix
+		pose_cov_.setIdentity(6, 6);
+		for(int i = 0; i < 6; i++)
+			for(int j = 0; j < 6; j++)
+				pose_cov_(i,j) = 0.0;
+
+		orientation_(0,0) = qx;
+		orientation_(1,0) = qy;
+		orientation_(2,0) = qz;
+		orientation_(3,0) = qw;
+
+		int color;
+
+		if(node["color"])
+    		color = color_from_string(node["color"].as<string>());
+		else
+			color = ObjectDetection::COLOR_UNKNOWN;
+		
+		
+		// Init and update factored belief 
+		for(int fact = 0; fact < fact_bel_.size(); fact++)
+		{
+			switch(fact)
+			{
+				case COLOR:
+
+				double prob_z, total_prob = 0.0;
+
+				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+				{
+					if(color == ObjectDetection::COLOR_UNKNOWN)
+						fact_bel_[COLOR][i] = 1.0/ObjectDetection::NCOLORS;
+					else if(color == i)
+						fact_bel_[COLOR][i] = 1.0;
+					else
+						fact_bel_[COLOR][i] = 0.0;
+				}
+					
+				break;			
+			}
+		}
+
+		// Update timer
+		update_timer_.reset();
+		update_count_ = 0;
+	}
+	else
+	{
+		cout << "No frame ID or postion/orientation available in config file." << endl;
+	}
 }
 
 /**
@@ -509,4 +596,76 @@ int ObjectTracker::getColor()
 
 	return color;
 }
+
+/** \brief Tranform string to color value
+\param color String with color
+*/
+int ObjectTracker::color_from_string(const string& color) {
+    int out_color;
+    switch(color[0]) {
+        case 'r':
+            out_color = ObjectDetection::COLOR_RED;
+            break;
+        case 'g':
+            out_color = ObjectDetection::COLOR_GREEN;
+            break;
+        case 'b':
+            out_color = ObjectDetection::COLOR_BLUE;
+            break;
+        case 'o':
+            out_color = ObjectDetection::COLOR_ORANGE;
+            break;
+        default:
+        cout << "Unknown color " << color.c_str() << endl;
+            out_color = ObjectDetection::COLOR_UNKNOWN;
+    }
+    return out_color;
+}
+
+/** \brief Tranform string to subtype value
+\param subtype String with subtype
+*/
+int ObjectTracker::subtype_from_string(const string& subtype) {
+    int out_subtype;
+    if(subtype == "uav") 
+	{
+		out_subtype = Object::SUBTYPE_UAV;
+	}
+	else if(subtype == "ugv") 
+	{
+		out_subtype = Object::SUBTYPE_UGV;
+	}
+	else if(subtype == "infire") 
+	{
+		out_subtype = Object::SUBTYPE_INFIRE;
+	}
+	else if(subtype == "facadefire") 
+	{
+		out_subtype = Object::SUBTYPE_FACADEFIRE;
+	}
+	else if(subtype == "outfire") 
+	{
+		out_subtype = Object::SUBTYPE_OUTFIRE;
+	}
+	else if(subtype == "ground") 
+	{
+		out_subtype = Object::SUBTYPE_GROUND;
+	}
+	else if(subtype == "first") 
+	{
+		out_subtype = Object::SUBTYPE_FIRST;
+	}
+	else if(subtype == "second") 
+	{
+		out_subtype = Object::SUBTYPE_SECOND;
+	}
+	else
+	{
+		cout << "Unknown subtype " << subtype.c_str() << endl;
+        out_subtype = Object::SUBTYPE_UNKNOWN;
+	}
+	 
+    return out_subtype;
+}
+
 

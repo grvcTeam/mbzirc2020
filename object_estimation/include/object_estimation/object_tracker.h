@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <Eigen/Eigen>
+#include <yaml-cpp/yaml.h>
 
 enum ObjectStatus {INACTIVE, ACTIVE, LOST, N_STATUS};
 enum Factor {COLOR};
@@ -54,6 +55,7 @@ public:
 	~ObjectTracker();
 
 	void initialize(mbzirc_comm_objs::ObjectDetection* z);
+	void initialize(YAML::Node node);
 	void predict(double dt);
 	bool update(mbzirc_comm_objs::ObjectDetection* z);
 	double getLikelihood(mbzirc_comm_objs::ObjectDetection* z);
@@ -74,6 +76,8 @@ public:
 	int getId();
 	int getColor();
 	bool isStatic();
+	int color_from_string(const std::string& color);
+	int subtype_from_string(const std::string& subtype);
 	
 protected:
 	Timer update_timer_;			/// Timer for last update
@@ -93,6 +97,7 @@ protected:
 	Eigen::MatrixXd pose_cov_;
 	Eigen::MatrixXd orientation_;
 	std::vector<double> scale_;
+	bool fixed_pose_;				/// Do not update pose when True
 
 };
 

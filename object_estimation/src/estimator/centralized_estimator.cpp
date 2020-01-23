@@ -83,42 +83,14 @@ void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 		cout << "There is no a priori information for objects of this type" << endl;
 	}
 
-	if(!item.empty())
+	if(yaml_config[item])
 	{
 		for (size_t i = 0; i < yaml_config[item].size(); i++) 
 		{
-			mbzirc_comm_objs::ObjectDetection object_det;
-
-			// TODO: Check that expected fields do exist
-			
-            object_det.header.stamp = ros::Time::now();
-			// TODO: to arena
-            object_det.header.frame_id = yaml_config[item][i]["frame_id"].as<string>();
-            object_det.type = obj_type_;
-			// TODO: check subtype
-			int subtype = mbzirc_comm_objs::Object::SUBTYPE_UNKNOWN;
-
-			object_det.pose.pose.position.x = yaml_config[item][i]["position_x"].as<float>();
-            object_det.pose.pose.position.y = yaml_config[item][i]["position_y"].as<float>();
-            object_det.pose.pose.position.z = yaml_config[item][i]["position_z"].as<float>();
-
-			for(int j = 0; j < 6; j++)
-				for(int k = 0; k < 6; k++)
-					object_det.pose.covariance[j*6+k] = 0.0;
-	
-			// TODO: can w be computed automatically?
-			object_det.pose.pose.orientation.x = yaml_config[item][i]["orientation_x"].as<float>();
-			object_det.pose.pose.orientation.y = yaml_config[item][i]["orientation_y"].as<float>();
-			object_det.pose.pose.orientation.z = yaml_config[item][i]["orientation_z"].as<float>();
-			object_det.pose.pose.orientation.w = yaml_config[item][i]["orientation_w"].as<float>();
-
-			// TODO. if there is no color, UNKNOWN
-    		object_det.color = color_from_string(yaml_config[item][i]["color"].as<string>());
-    		
 			int new_target_id = track_id_count_++;
-			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_, subtype);
-			targets_[new_target_id]->initialize(&object_det);
+			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
 			targets_[new_target_id]->setStatus(INACTIVE);
+			targets_[new_target_id]->initialize(yaml_config[item][i]);
     	}
 	}
 }
@@ -471,32 +443,4 @@ void CentralizedEstimator::printTargetsInfo()
 		}
 		cout << endl;
 	}
-}
-
-/** \brief Tranform string to color value
-*/
-int CentralizedEstimator::color_from_string(const string& color) {
-    int out_color;
-    switch(color[0]) {
-        case 'R':
-		case 'r':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_RED;
-            break;
-        case 'G':
-		case 'g':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;
-            break;
-        case 'B':
-		case 'b':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_BLUE;
-            break;
-        case 'O':
-		case 'o':
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
-            break;
-        default:
-        cout << "Unknown color " << color.c_str() << endl;
-            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
-    }
-    return out_color;
 }
