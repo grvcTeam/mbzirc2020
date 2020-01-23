@@ -47,6 +47,8 @@ static void on_max_V_thresh_trackbar(int, void *) {
   cv::setTrackbarPos("Max V", window_detection_name, range.max_HSV[2]);
 }
 
+HSVDetectionConfig detection_config;
+
 int main(int argc, char** argv) {
 
   ros::init(argc, argv, "hsv_detection_node");
@@ -69,15 +71,22 @@ int main(int argc, char** argv) {
   cv::createTrackbar("Min V", window_detection_name, &range.min_HSV[2], MAX_VALUE_V, on_min_V_thresh_trackbar);
   cv::createTrackbar("Max V", window_detection_name, &range.max_HSV[2], MAX_VALUE_V, on_max_V_thresh_trackbar);
 
+  /// Create Erosion Trackbar
+  cv::createTrackbar("E-type: 0:R 1:C 2:E", window_detection_name, &detection_config.erosion_params.type, ED_MAX_TYPE_COUNT);
+  cv::createTrackbar("E-size: 2n+1", window_detection_name, &detection_config.erosion_params.size, ED_MAX_KERNEL_SIZE);
+
+  // /// Create Dilation Trackbar
+  cv::createTrackbar("D-type: 0:R 1:C 2:E", window_detection_name, &detection_config.dilation_params.type, ED_MAX_TYPE_COUNT);
+  cv::createTrackbar("D-size: 2n+1", window_detection_name, &detection_config.dilation_params.size, ED_MAX_KERNEL_SIZE);
+
   HSVDetection detection;
-  HSVDetectionConfig detection_config;
 //   detection_config.saturation_threshold = 128.0;
 //   detection_config.likelihood_threshold = 96.0;
 //   detection_config.min_area = 2.0;
 //   detection_config.poly_epsilon = 3.0;
 //   detection.setConfig(detection_config);
 //   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
-  // detection.addDetector("test", range, cvScalar(255, 0, 0));
+  // detection.addDetector("red", range, cvScalar(255, 0, 0));
 //   detection.addDetector("green", histogram_folder + "green.yaml", cvScalar(255, 0, 255));
 //   detection.addDetector("blue", histogram_folder + "blue.yaml", cvScalar(0, 255, 255));
 //   detection.addDetector("orange", histogram_folder + "orange.yaml", cvScalar(255, 0, 0));
@@ -107,10 +116,11 @@ int main(int argc, char** argv) {
       // inRange(frame_HSV, cv::Scalar(range.min_HSV[0], range.min_HSV[1], range.min_HSV[2]), cv::Scalar(range.max_HSV[0], range.max_HSV[1], range.max_HSV[2]), frame_threshold);
 
       // Pass frame to the hsv-model-based tracker:
-      detection.addDetector("test", range, cvScalar(255, 0, 0));
+      detection.addDetector("test", range, cvScalar(0, 255, 0));
+      detection.setConfig(detection_config);
       detection.setFrame(cv_ptr->image);
-      detection.detect("test");
-      cv_ptr->image = detection.getDetection();  // debug!
+      detection.detect("test", true);
+      //cv_ptr->image = detection.getDetection();  // debug!
 
     //   std::vector<HSVItem> detected = detection.detectAll(true);
       // Print detected items:

@@ -12,6 +12,24 @@
 #define MAX_VALUE_H 180  // 180 = 360/2
 #define MAX_VALUE_S 255
 #define MAX_VALUE_V 255
+#define ED_MAX_TYPE_COUNT 2
+#define ED_MAX_KERNEL_SIZE 21
+
+struct ErosionDilationParams {
+  int type = 0;
+  int size = 0;
+
+  cv::Mat getAsElement() {
+    int out_type;
+    switch (type) {
+      case 0: out_type = cv::MORPH_RECT; break;
+      case 1: out_type = cv::MORPH_CROSS; break;
+      case 2: out_type = cv::MORPH_ELLIPSE; break;
+      default: throw std::runtime_error("Unexpected erosion type!");
+    }
+    return getStructuringElement(out_type, cv::Size(2*size + 1, 2*size + 1), cv::Point(size, size));
+  }
+};
 
 struct HSVRange {
 	int min_HSV[3] = {0, 0, 0};
@@ -32,10 +50,10 @@ struct HSVItem {
 };
 
 struct HSVDetectionConfig {
-	double saturation_threshold = 128.0;
-	double likelihood_threshold = 96.0;
 	double min_area = 2.0;
 	double poly_epsilon = 3.0;
+	ErosionDilationParams erosion_params;
+	ErosionDilationParams dilation_params;
 };
 
 class HSVDetection {
@@ -109,18 +127,9 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 	// Detect the object based on HSV Range Values
 	inRange(hsv_, range_[_id].getMin(), range_[_id].getMax(), in_range_);
 
-	// Smooth likelihood image...
-	// cv::medianBlur(likelihood_, smoothed_, 3);
-	// cv::threshold(smoothed_, segmented_, config_.likelihood_threshold, 255, CV_THRESH_BINARY);  // .. and segment it.
-    // mask = cv2.erode(mask, None, iterations=2)
-    // mask = cv2.dilate(mask, None, iterations=2)
-
-    // ## BEGIN - draw rotated rectangle
-    // rect = cv2.minAreaRect(c)
-    // box = cv2.boxPoints(rect)
-    // box = np.int0(box)
-    // cv2.drawContours(image,[box],0,(0,191,255),2)
-    // ## END - draw rotated rectangle
+	// Smooth image...
+	erode(in_range_, in_range_, config_.erosion_params.getAsElement());
+	dilate(in_range_, in_range_, config_.dilation_params.getAsElement());
 
 	// Find contours
   	std::vector<std::vector<cv::Point>> contours;
@@ -131,26 +140,32 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 	char count_text[33];
   	for (int i = 0; i < contours.size(); i++) {
 
-		cv::RotatedRect rect = minAreaRect(contours[i]);
-		// cv::Mat polygon;
-		// cv::approxPolyDP(cv::Mat(contours[i]), polygon, config_.poly_epsilon, true);
-		// double area = fabs(cv::contourArea(polygon));
-		// if (area < config_.min_area) { continue; }
+		// cv::RotatedRect rect = minAreaRect(contours[i]);
+		cv::Mat polygon;
+		cv::approxPolyDP(cv::Mat(contours[i]), polygon, config_.poly_epsilon, true);
+		double area = fabs(cv::contourArea(polygon));
+		if (area < config_.min_area) { continue; }
 
-		// CvMoments moments = cv::moments(polygon);
-		// cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
-		// double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
-		// double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
-		// double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
-		// double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
+		CvMoments moments = cv::moments(polygon);
+		cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
+		double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
+		double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
+		double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
+		double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
 
-		// if (_draw) {
-		// 	cv::Scalar colour = colour_[_id];
-		// 	cv::circle(frame_, centroid, 4, colour, -1);
-		// 	sprintf(count_text, "%d", i);
-		// 	cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
-		// 	cv::drawContours(frame_, contours, i, colour, 1);
-		// }
+		if (_draw) {
+		 	cv::Scalar colour = colour_[_id];
+			cv::circle(frame_, centroid, 4, colour, -1);
+			sprintf(count_text, "%d", i);
+			cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
+			cv::drawContours(frame_, contours, i, colour, 1);
+			// Draw rect:
+			// cv::Point2f vertices[4];
+			// rect.points(vertices);
+			// for (int i = 0; i < 4; i++) {
+			// 	line(frame_, vertices[i], vertices[(i+1)%4], colour, 2);
+			// }
+		}
 
 		// HSVItem item;
 		// item.detector_id = _id;
