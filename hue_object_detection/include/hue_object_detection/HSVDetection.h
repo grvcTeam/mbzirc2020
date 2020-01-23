@@ -138,9 +138,10 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 
   	/// Draw contours and generate HSVItems
 	char count_text[33];
+	int valid_index = 0;
   	for (int i = 0; i < contours.size(); i++) {
 
-		// cv::RotatedRect rect = minAreaRect(contours[i]);
+		cv::RotatedRect rect = minAreaRect(contours[i]);  // TODO: best solution?
 		cv::Mat polygon;
 		cv::approxPolyDP(cv::Mat(contours[i]), polygon, config_.poly_epsilon, true);
 		double area = fabs(cv::contourArea(polygon));
@@ -156,15 +157,15 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 		if (_draw) {
 		 	cv::Scalar colour = colour_[_id];
 			cv::circle(frame_, centroid, 4, colour, -1);
-			sprintf(count_text, "%d", i);
+			sprintf(count_text, "%d", valid_index++);
 			cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
 			cv::drawContours(frame_, contours, i, colour, 1);
 			// Draw rect:
-			// cv::Point2f vertices[4];
-			// rect.points(vertices);
-			// for (int i = 0; i < 4; i++) {
-			// 	line(frame_, vertices[i], vertices[(i+1)%4], colour, 2);
-			// }
+			cv::Point2f vertices[4];
+			rect.points(vertices);
+			for (int j = 0; j < 4; j++) {
+				line(frame_, vertices[j], vertices[(j+1)%4], colour, 2);
+			}
 		}
 
 		// HSVItem item;

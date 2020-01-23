@@ -15,6 +15,7 @@
 
 // Globals:
 std::string window_detection_name = "Object Detection";
+HSVDetectionConfig detection_config;
 HSVRange range;
 
 static void on_min_H_thresh_trackbar(int, void *) {
@@ -47,8 +48,6 @@ static void on_max_V_thresh_trackbar(int, void *) {
   cv::setTrackbarPos("Max V", window_detection_name, range.max_HSV[2]);
 }
 
-HSVDetectionConfig detection_config;
-
 int main(int argc, char** argv) {
 
   ros::init(argc, argv, "hsv_detection_node");
@@ -80,16 +79,14 @@ int main(int argc, char** argv) {
   cv::createTrackbar("D-size: 2n+1", window_detection_name, &detection_config.dilation_params.size, ED_MAX_KERNEL_SIZE);
 
   HSVDetection detection;
-//   detection_config.saturation_threshold = 128.0;
-//   detection_config.likelihood_threshold = 96.0;
-//   detection_config.min_area = 2.0;
-//   detection_config.poly_epsilon = 3.0;
+  detection_config.min_area = 2.0;
+  detection_config.poly_epsilon = 3.0;
 //   detection.setConfig(detection_config);
-//   std::string histogram_folder = ros::package::getPath("hue_object_detection") + "/config/";
-  // detection.addDetector("red", range, cvScalar(255, 0, 0));
-//   detection.addDetector("green", histogram_folder + "green.yaml", cvScalar(255, 0, 255));
-//   detection.addDetector("blue", histogram_folder + "blue.yaml", cvScalar(0, 255, 255));
-//   detection.addDetector("orange", histogram_folder + "orange.yaml", cvScalar(255, 0, 0));
+//   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
+//   detection.addDetector("red", red_range, cvScalar(255, 0, 0));
+//   detection.addDetector("green", green_range, cvScalar(255, 0, 255));
+//   detection.addDetector("blue", blue_range, cvScalar(0, 255, 255));
+//   detection.addDetector("orange", blue_range, cvScalar(255, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
     // TODO(performance): If camera info is constant, having a subscriber is overkill
@@ -106,7 +103,7 @@ int main(int argc, char** argv) {
 
   cv::Mat frame_HSV, frame_threshold;
 
-  ros::Rate rate(10);  // [Hz] TODO: Tune!
+  ros::Rate rate(20);  // [Hz] TODO: Tune!
   while (ros::ok()) {
     if (image_converter.hasNewImage()) {
       cv_bridge::CvImagePtr cv_ptr = image_converter.getCvImagePtr();
