@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 <sdf version="1.4" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+<xacro:include filename="$(find challenge_worlds)/urdf/vertical_fire_holder.xacro" />
 <!-- Global yaw: to change the global position of all the objects in the world -->
 <xacro:arg name="arena_yaw" default="0"/>
 <xacro:property name="yaw" value="$(arg arena_yaw)"/>
@@ -9,10 +10,32 @@
 <xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
 <xacro:property name="f2" value="${[36,17,0,0]}"/> 
 <xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
-<xacro:property name="f4a" value="${[35, 15, 2, 0]}"/>
-<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/> 
+<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/>
+
+<xacro:property name="f4a" value="${[37.5,25,5.3, 3.1416]}"/>
+<xacro:property name="f4b" value="${[36, 15, 5.3, 0]}"/>
+<xacro:property name="f4c" value="${[30, 20.5, 5.3, -1.570795]}"/>
+<xacro:property name="f4d" value="${[40, 20.3, 5.5, 1.570795]}"/>
+<xacro:property name="f4e" value="${[41.3, 25, 2, 3.1416]}"/>
+
+<xacro:property name="f5a" value="${[35, 25, 7.5, 3.1416]}"/>
+<xacro:property name="f5b" value="${[38.7, 15, 8.25, 0]}"/>
+<xacro:property name="f5c" value="${[30, 23, 9.2, -1.570795]}"/>
+<xacro:property name="f5d" value="${[40, 23.5, 9.2, 1.570795]}"/>
+
+<xacro:property name="f6a" value="${[36.5, 25, 10.3, 3.1416]}"/>
+<xacro:property name="f6b" value="${[31.3, 15, 11.25, 0]}"/>
+<xacro:property name="f6c" value="${[30, 16.3, 12, -1.570795]}"/>
+<xacro:property name="f6d" value="${[40, 16.3, 12.5, 1.570795]}"/>
+
+<xacro:property name="f7" value="${[15,10,0,0]}"/>
+<xacro:property name="f8" value="${[20,40,0,-1.570795]}"/>
+ 
 <xacro:property name="b" value="${[30,25,0,4.7124]}"/> 
 <xacro:property name="g" value="${[30,25,0,0]}"/> 
+
+
+
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
    <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
@@ -23,31 +46,66 @@
       </include>
       <pose frame=''>${g[0]*cos(yaw)-g[1]*sin(yaw)} ${g[0]*sin(yaw)+g[1]*cos(yaw)} ${g[2]} 0 0 ${g[3]+yaw} </pose>
     </model>
-    <model name="cubewithflames_1">
+
+    
+    <vertical_fire_holder pose="${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw}" id="f4a" on="True" />
+    <vertical_fire_holder pose="${f4b[0]*cos(yaw)-f4b[1]*sin(yaw)} ${f4b[0]*sin(yaw)+f4b[1]*cos(yaw)} ${f4b[2]} 0 0 ${f4b[3]+yaw}" id="f4b" on="True" />
+    <vertical_fire_holder pose="${f4c[0]*cos(yaw)-f4c[1]*sin(yaw)} ${f4c[0]*sin(yaw)+f4c[1]*cos(yaw)} ${f4c[2]} 0 0 ${f4c[3]+yaw}" id="f4c" on="True" />
+    <vertical_fire_holder pose="${f4d[0]*cos(yaw)-f4d[1]*sin(yaw)} ${f4d[0]*sin(yaw)+f4d[1]*cos(yaw)} ${f4d[2]} 0 0 ${f4d[3]+yaw}" id="f4d" on="True" />
+    <vertical_fire_holder pose="${f4e[0]*cos(yaw)-f4e[1]*sin(yaw)} ${f4e[0]*sin(yaw)+f4e[1]*cos(yaw)} ${f4e[2]} 0 0 ${f4e[3]+yaw}" id="f4e" on="True" />
+
+    <vertical_fire_holder pose="${f5a[0]*cos(yaw)-f5a[1]*sin(yaw)} ${f5a[0]*sin(yaw)+f5a[1]*cos(yaw)} ${f5a[2]} 0 0 ${f5a[3]+yaw}" id="f5a" on="True" />
+    <vertical_fire_holder pose="${f5b[0]*cos(yaw)-f5b[1]*sin(yaw)} ${f5b[0]*sin(yaw)+f5b[1]*cos(yaw)} ${f5b[2]} 0 0 ${f5b[3]+yaw}" id="f5b" on="True" />
+    <vertical_fire_holder pose="${f5c[0]*cos(yaw)-f5c[1]*sin(yaw)} ${f5c[0]*sin(yaw)+f5c[1]*cos(yaw)} ${f5c[2]} 0 0 ${f5c[3]+yaw}" id="f5c" on="True" />
+    <vertical_fire_holder pose="${f5d[0]*cos(yaw)-f5d[1]*sin(yaw)} ${f5d[0]*sin(yaw)+f5d[1]*cos(yaw)} ${f5d[2]} 0 0 ${f5d[3]+yaw}" id="f5d" on="True" />
+
+    <vertical_fire_holder pose="${f6a[0]*cos(yaw)-f6a[1]*sin(yaw)} ${f6a[0]*sin(yaw)+f6a[1]*cos(yaw)} ${f6a[2]} 0 0 ${f6a[3]+yaw}" id="f6a" on="True" />
+    <vertical_fire_holder pose="${f6b[0]*cos(yaw)-f6b[1]*sin(yaw)} ${f6b[0]*sin(yaw)+f6b[1]*cos(yaw)} ${f6b[2]} 0 0 ${f6b[3]+yaw}" id="f6b" on="True" />
+    <vertical_fire_holder pose="${f6c[0]*cos(yaw)-f6c[1]*sin(yaw)} ${f6c[0]*sin(yaw)+f6c[1]*cos(yaw)} ${f6c[2]} 0 0 ${f6c[3]+yaw}" id="f6c" on="True" />
+    <vertical_fire_holder pose="${f6d[0]*cos(yaw)-f6d[1]*sin(yaw)} ${f6d[0]*sin(yaw)+f6d[1]*cos(yaw)} ${f6d[2]} 0 0 ${f6d[3]+yaw}" id="f6d" on="True" />
+
+    <model name="outdoor_fire_holder_1">
+      <include>
+        <uri>model://outdoor_fire_holder</uri>
+      </include>
+      <pose frame=''>${f7[0]*cos(yaw)-f7[1]*sin(yaw)} ${f7[0]*sin(yaw)+f7[1]*cos(yaw)} ${f7[2]} 0 0 ${f7[3]+yaw} </pose>
+    </model>
+    <model name="outdoor_fire_holder_2">
+      <include>
+        <uri>model://outdoor_fire_holder</uri>
+      </include>
+      <pose frame=''>${f8[0]*cos(yaw)-f8[1]*sin(yaw)} ${f8[0]*sin(yaw)+f8[1]*cos(yaw)} ${f8[2]} 0 0 ${f8[3]+yaw} </pose>
+    </model>
+
+    <!-- <model name="cubewithflames_1">
       <include>
         <uri>model://cubewithflames</uri>
       </include>
       <pose frame=''>${f1[0]*cos(yaw)-f1[1]*sin(yaw)} ${f1[0]*sin(yaw)+f1[1]*cos(yaw)} ${f1[2]} 0 0 ${f1[3]+yaw} </pose>
-    </model>
+    </model> -->
+    
     <model name="cubewithflames_2">
       <include>
       <uri>model://cubewithflames</uri>
       </include>
       <pose frame=''>${f2[0]*cos(yaw)-f2[1]*sin(yaw)} ${f2[0]*sin(yaw)+f2[1]*cos(yaw)} ${f2[2]} 0 0 ${f2[3]+yaw} </pose>
     </model>
-    <model name="cubewithflames_3">
+
+    <!-- <model name="cubewithflames_3">
       <include>
         <uri>model://cubewithflames</uri>
       </include>
       <pose frame=''>${f3[0]*cos(yaw)-f3[1]*sin(yaw)} ${f3[0]*sin(yaw)+f3[1]*cos(yaw)} ${f3[2]} 0 0 ${f3[3]+yaw} </pose>
-    </model>
-    <model name="f4a">
+    </model> -->
+
+    <!-- <model name="f4a">
       <include>
         <uri>model://vertical_fire_holder</uri>
       </include>
       <pose frame=''>${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw} </pose>
       <static>true</static>
-    </model>
+    </model> -->
+
     <model name="cubewithflames_5">
       <include>
         <uri>model://cubewithflames</uri>
@@ -145,6 +203,8 @@
         </noise>
       </vertical>
     </plugin>
+
+    <plugin name="factory" filename="libdroplet_factory.so"/>
 
    </world>
 </sdf>

@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   uav_abstraction_layer
   ual_backend_mavros
+  ual_backend_gazebo_light
   mbzirc_comm_objs
   handy_tools
   message_generation
@@ -20,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   moveit_ros_planning_interface
+  fire_extinguisher
+  scan_passage_detection
 )
 
 ## System dependencies are found with CMake's conventions
@@ -81,13 +84,13 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   actionlib_msgs
-   std_msgs
-   geometry_msgs
-   nav_msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   actionlib_msgs
+#   std_msgs
+#   geometry_msgs
+#   nav_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -171,6 +174,7 @@ add_dependencies(ugv_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 # )
 target_link_libraries(uav_action_server
   ${catkin_LIBRARIES}
+  yaml-cpp
 )
 target_link_libraries(ugv_action_server
   ${catkin_LIBRARIES}

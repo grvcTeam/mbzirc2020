@@ -8,6 +8,7 @@ ros-kinetic-industrial-msgs
 ros-kinetic-realsense2-camera
 ros-kinetic-ddynamic-reconfigure
 ros-kinetic-teraranger
+ros-kinetic-teraranger-array
 ros-kinetic-brics-actuator
 ros-kinetic-dwa-local-planner
 ros-kinetic-move-base
@@ -18,3 +19,4 @@ ros-kinetic-geodesy
 ros-kinetic-joy
 ros-kinetic-hector-slam
 libeigen3-dev
+

@@ -50,8 +50,14 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>mbzirc_comm_objs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>handy_tools</build_depend>
   <build_export_depend>mbzirc_comm_objs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>handy_tools</build_export_depend>
   <exec_depend>mbzirc_comm_objs</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>handy_tools</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

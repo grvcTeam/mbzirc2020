@@ -3,7 +3,8 @@
 #include <geometry_msgs/Point.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
-// #include <mbzirc_comm_objs/DetectTypes.h>
+#include <mbzirc_comm_objs/WallList.h>
+#include <scan_passage_detection/wall_utils.h>
 #include <random_numbers/random_numbers.h>
 
 struct LineModel {
@@ -153,6 +154,7 @@ public:
     PassageDetectionNode() {
         marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
         sensed_pub_ = n_.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 3);
+        walls_pub_ = n_.advertise<mbzirc_comm_objs::WallList>("walls", 3);
         scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
     }
 
@@ -185,6 +187,7 @@ public:
             return;
         }
 
+        mbzirc_comm_objs::WallList wall_list;
         mbzirc_comm_objs::ObjectDetectionList object_list;
         visualization_msgs::MarkerArray marker_array;
         for (int i = 0; i < max_line_count; i++) {
@@ -194,8 +197,9 @@ public:
                 continue;
             }
             std_msgs::ColorRGBA color = colorFromIndex(i);
-            marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
-            marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
+            // marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
+            // marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
+            auto start = line.inliers[0];
             for (int j = 0; j < line.inliers.size()-1; j++) {
                 float delta_x = line.inliers[j+1].x - line.inliers[j].x;
                 float delta_y = line.inliers[j+1].y - line.inliers[j].y;
@@ -232,19 +236,31 @@ public:
                     object.scale.z = 0.1;
                     object.color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;  // TODO!
                     object_list.objects.push_back(object);
+
+                    wall_list.walls.push_back(fromPoints(start, line.inliers[j]));
+                    start = line.inliers[j+1];
                 }
             }
+            wall_list.walls.push_back(fromPoints(start, line.inliers[line.inliers.size()-1]));
             points = line.outliers;
             if (points.size() < min_points_size) { break; }
         }
+        wall_list.header.frame_id = _msg->header.frame_id;
+        wall_list.header.stamp = _msg->header.stamp;
+
+        for (int i = 0; i < wall_list.walls.size(); i++) {
+            marker_array.markers.push_back(getLineMarker(wall_list.walls[i], _msg->header.frame_id, colorFromIndex(i), i));
+        }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
         sensed_pub_.publish(object_list);
+        walls_pub_.publish(wall_list);
     }
 
 protected:
     ros::NodeHandle n_;
     ros::Publisher marker_pub_;
     ros::Publisher sensed_pub_;
+    ros::Publisher walls_pub_;
     ros::Subscriber scan_sub_;
     random_numbers::RandomNumberGenerator random_;
 };

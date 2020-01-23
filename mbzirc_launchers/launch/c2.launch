@@ -36,7 +36,7 @@
         <arg name="y" value="20"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="light"/>
+        <arg name="ual_backend" value="gazebo_light"/>
     </include>
 
     <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
@@ -48,10 +48,10 @@
         <arg name="y" value="20"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="light"/>
+        <arg name="ual_backend" value="gazebo_light"/>
     </include>
 
 
-    <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/>
+    <!-- <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/> -->
 
 </launch>
