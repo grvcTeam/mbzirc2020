@@ -13,7 +13,7 @@
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
 
-<!-- The following is the geometric expresion for an non-axis rotation -->
+<!-- The following is the geometric expresion for a non-axis rotation -->
     <!-- X'-x= (X-x)*cos(yaw)-(Y-y)*sin(yaw) -->
     <!-- Y'-y= (X-x)*sin(yaw)+(Y-y)*cos(yaw)  -->
 
