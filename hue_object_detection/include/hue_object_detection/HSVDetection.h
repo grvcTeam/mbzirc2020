@@ -12,10 +12,10 @@
 #define MAX_VALUE_H 180  // 180 = 360/2
 #define MAX_VALUE_S 255
 #define MAX_VALUE_V 255
-#define ED_MAX_TYPE_COUNT 2
-#define ED_MAX_KERNEL_SIZE 21
+#define KERNEL_MAX_TYPE_COUNT 2
+#define KERNEL_MAX_SIZE 21
 
-struct ErosionDilationParams {
+struct Kernel {
   int type = 0;
   int size = 0;
 
@@ -25,7 +25,7 @@ struct ErosionDilationParams {
       case 0: out_type = cv::MORPH_RECT; break;
       case 1: out_type = cv::MORPH_CROSS; break;
       case 2: out_type = cv::MORPH_ELLIPSE; break;
-      default: throw std::runtime_error("Unexpected erosion type!");
+      default: throw std::runtime_error("Unexpected kernel type!");
     }
     return getStructuringElement(out_type, cv::Size(2*size + 1, 2*size + 1), cv::Point(size, size));
   }
@@ -41,10 +41,11 @@ struct HSVRange {
 
 struct HSVItem {
 	std::string detector_id;
-	cv::Point centroid;
-	double area;
-	double perimeter;
-	double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
+	cv::RotatedRect rectangle;
+	// cv::Point centroid;
+	// double area;
+	// double perimeter;
+	// double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
 	// contour;
 	// bool cliped = false;
 };
@@ -52,8 +53,7 @@ struct HSVItem {
 struct HSVDetectionConfig {
 	double min_area = 2.0;
 	double poly_epsilon = 3.0;
-	ErosionDilationParams erosion_params;
-	ErosionDilationParams dilation_params;
+	Kernel kernel;
 };
 
 class HSVDetection {
@@ -128,8 +128,7 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 	inRange(hsv_, range_[_id].getMin(), range_[_id].getMax(), in_range_);
 
 	// Smooth image...
-	erode(in_range_, in_range_, config_.erosion_params.getAsElement());
-	dilate(in_range_, in_range_, config_.dilation_params.getAsElement());
+	morphologyEx(in_range_, in_range_, cv::MORPH_OPEN, config_.kernel.getAsElement());
 
 	// Find contours
   	std::vector<std::vector<cv::Point>> contours;
@@ -141,25 +140,25 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 	int valid_index = 0;
   	for (int i = 0; i < contours.size(); i++) {
 
-		cv::RotatedRect rect = minAreaRect(contours[i]);  // TODO: best solution?
 		cv::Mat polygon;
 		cv::approxPolyDP(cv::Mat(contours[i]), polygon, config_.poly_epsilon, true);
 		double area = fabs(cv::contourArea(polygon));
 		if (area < config_.min_area) { continue; }
 
-		CvMoments moments = cv::moments(polygon);
-		cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
-		double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
-		double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
-		double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
-		double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
+		cv::RotatedRect rect = minAreaRect(polygon);  // TODO: contours[i]? polygon?
+		// CvMoments moments = cv::moments(polygon);
+		// cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
+		// double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
+		// double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
+		// double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
+		// double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
 
 		if (_draw) {
 		 	cv::Scalar colour = colour_[_id];
 			// cv::circle(frame_, centroid, 4, colour, -1);
 			// sprintf(count_text, "%d", valid_index++);
 			// cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
-			cv::drawContours(frame_, contours, i, colour, 1);
+			cv::drawContours(frame_, polygon, -1, colour, 3);
 			// Draw rect:
 			cv::circle(frame_, rect.center, 4, colour, -1);
 			sprintf(count_text, "%d", valid_index++);
@@ -171,25 +170,26 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 			}
 		}
 
-		// HSVItem item;
-		// item.detector_id = _id;
+		HSVItem item;
+		item.detector_id = _id;
+		item.rectangle = rect;
 		// item.centroid = centroid;
 		// item.area = area;
 		// item.perimeter = cv::arcLength(polygon, true);
 		// item.orientation = theta;
-		// item_list.push_back(item);
+		item_list.push_back(item);
      }
 
 	return item_list;
 }
 
 std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
-	// std::vector<HSVItem> final_list;
-	// for (std::map<std::string, cv::Mat>::iterator it = range_.begin(); it != range_.end(); ++it) {
-  	// 	std::vector<HSVItem> partial_list = detect(it->first, _draw);
-	// 	final_list.insert(final_list.end(), partial_list.begin(), partial_list.end());
-	// }
-	// return final_list;
+	std::vector<HSVItem> final_list;
+	for (auto it = range_.begin(); it != range_.end(); ++it) {
+  		std::vector<HSVItem> partial_list = detect(it->first, _draw);
+		final_list.insert(final_list.end(), partial_list.begin(), partial_list.end());
+	}
+	return final_list;
 }
 
 #endif  // HSV_DETECTION_H

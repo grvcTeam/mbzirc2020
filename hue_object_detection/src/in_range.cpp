@@ -15,7 +15,6 @@
 
 // Globals:
 std::string window_detection_name = "Object Detection";
-HSVDetectionConfig detection_config;
 HSVRange range;
 
 static void on_min_H_thresh_trackbar(int, void *) {
@@ -70,17 +69,19 @@ int main(int argc, char** argv) {
   cv::createTrackbar("Min V", window_detection_name, &range.min_HSV[2], MAX_VALUE_V, on_min_V_thresh_trackbar);
   cv::createTrackbar("Max V", window_detection_name, &range.max_HSV[2], MAX_VALUE_V, on_max_V_thresh_trackbar);
 
-  /// Create Erosion Trackbar
-  cv::createTrackbar("E-type: 0:R 1:C 2:E", window_detection_name, &detection_config.erosion_params.type, ED_MAX_TYPE_COUNT);
-  cv::createTrackbar("E-size: 2n+1", window_detection_name, &detection_config.erosion_params.size, ED_MAX_KERNEL_SIZE);
+  HSVDetectionConfig detection_config;
+  int min_area = std::round(detection_config.min_area);
+  int poly_epsilon = std::round(detection_config.poly_epsilon);
 
-  // /// Create Dilation Trackbar
-  cv::createTrackbar("D-type: 0:R 1:C 2:E", window_detection_name, &detection_config.dilation_params.type, ED_MAX_TYPE_COUNT);
-  cv::createTrackbar("D-size: 2n+1", window_detection_name, &detection_config.dilation_params.size, ED_MAX_KERNEL_SIZE);
+  /// Create Kernel trackbar
+  cv::createTrackbar("K-type: 0:R 1:C 2:E", window_detection_name, &detection_config.kernel.type, KERNEL_MAX_TYPE_COUNT);
+  cv::createTrackbar("K-size: 2n+1", window_detection_name, &detection_config.kernel.size, KERNEL_MAX_SIZE);
+
+  /// Create min_area and poly_epsilon trackbars
+  cv::createTrackbar("Min area", window_detection_name, &min_area, 306081/2);  // TODO: Depends on resolution
+  cv::createTrackbar("Epsilon", window_detection_name, &poly_epsilon, 640/4);  // TODO: Depends on resolution
 
   HSVDetection detection;
-  detection_config.min_area = 2.0;
-  detection_config.poly_epsilon = 3.0;
 //   detection.setConfig(detection_config);
 //   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
 //   detection.addDetector("red", red_range, cvScalar(255, 0, 0));
@@ -101,7 +102,7 @@ int main(int argc, char** argv) {
 //   tf2_ros::TransformListener tf_listener(tf_buffer);
 //   const tf2::Matrix3x3 link_to_cv(0,-1,0, 0,0,-1, 1,0,0);
 
-  cv::Mat frame_HSV, frame_threshold;
+  // cv::Mat frame_HSV, frame_threshold;
 
   ros::Rate rate(20);  // [Hz] TODO: Tune!
   while (ros::ok()) {
@@ -114,6 +115,8 @@ int main(int argc, char** argv) {
 
       // Pass frame to the hsv-model-based tracker:
       detection.addDetector("test", range, cvScalar(0, 255, 0));
+      detection_config.min_area = min_area;
+      detection_config.poly_epsilon = poly_epsilon;
       detection.setConfig(detection_config);
       detection.setFrame(cv_ptr->image);
       detection.detect("test", true);
