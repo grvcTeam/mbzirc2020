@@ -13,6 +13,7 @@ uint8 TYPE_DRONE   = 2
 uint8 TYPE_BRICK   = 3
 uint8 TYPE_FIRE    = 4
 uint8 TYPE_PASSAGE = 5
+uint8 TYPE_BRICK_TRACK = 6
 
 uint8 COLOR_UNKNOWN = 0
 uint8 COLOR_RED     = 1
