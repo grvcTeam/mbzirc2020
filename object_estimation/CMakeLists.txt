@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   mbzirc_comm_objs
   visualization_msgs
   tf2
+  tf2_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,7 +109,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES object_estimator
-  CATKIN_DEPENDS mbzirc_comm_objs roscpp visualization_msgs tf2 roslib
+  CATKIN_DEPENDS mbzirc_comm_objs roscpp visualization_msgs tf2 tf2_ros roslib
   DEPENDS eigen 
 )
 

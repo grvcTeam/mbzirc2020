@@ -7,12 +7,14 @@
 #include <mbzirc_comm_objs/Object.h>
 #include <mbzirc_comm_objs/ObjectList.h>
 #include <mbzirc_comm_objs/SetObjectStatus.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <visualization_msgs/MarkerArray.h>
 #include <tf2/utils.h>
 
 using namespace std;
 using namespace mbzirc_comm_objs;
+using namespace geometry_msgs;
 
 class Estimator {
 public:
@@ -156,6 +158,28 @@ protected:
             {
                 ObjectDetection* detection_p = new ObjectDetection();
                 *detection_p = msg->objects[j];
+
+                // Transform to arena
+                if (detection_p->header.frame_id != "arena") 
+                {
+                    TransformStamped transformToArena;
+                    string pose_frame = detection_p->header.frame_id;
+
+                    if ( cached_transforms_.find(pose_frame) == cached_transforms_.end() ) {
+                        
+                        tf2_ros::Buffer tfBuffer;
+                        tf2_ros::TransformListener tfListener(tfBuffer);
+                        transformToArena = tfBuffer.lookupTransform("arena", pose_frame, ros::Time(0), ros::Duration(1.0));
+                        cached_transforms_[pose_frame] = transformToArena; // Save transform in cache
+                    } else {
+                        // found in cache
+                        transformToArena = cached_transforms_[pose_frame];
+                    }
+                    
+                    tf2::doTransform(detection_p->pose.pose, detection_p->pose.pose, transformToArena);
+                    detection_p->header.frame_id = "arena";
+                }
+
                 candidates_[detector_type][uav].push_back(detection_p);
             }
         }
@@ -298,7 +322,7 @@ protected:
                 Object object;
 
                 object.header.stamp = ros::Time::now();
-                object.header.frame_id = "/arena";  
+                object.header.frame_id = "arena";  
                 object.type = obj_type;
                 object.sub_type = target_subtype;
                 object.color = target_color;
@@ -538,6 +562,9 @@ protected:
     ros::Publisher markers_pub_;
     ros::ServiceServer set_object_status_srv_;
     vector<ros::Subscriber> sensed_sub_;
+
+    /// TF transforms
+    map<string, geometry_msgs::TransformStamped> cached_transforms_;
 
     /// Candidates queues with object detections, one per detector and UAV
 	map<int, map<string, vector<ObjectDetection *> > > candidates_;

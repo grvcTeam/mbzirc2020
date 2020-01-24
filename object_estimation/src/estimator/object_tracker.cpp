@@ -103,7 +103,7 @@ void ObjectTracker::initialize(YAML::Node node)
 		status_ = ACTIVE;
 	}
 					
-	if(node["frame_id"] && node["position_x"] && node["orientation_x"])
+	if(node["frame_id"] && node["frame_id"].as<string>() == "arena" && node["position_x"] && node["orientation_x"])
 	{
 		fixed_pose_ = true;
 
@@ -115,8 +115,6 @@ void ObjectTracker::initialize(YAML::Node node)
 		qy = node["orientation_y"].as<float>();
 		qz = node["orientation_z"].as<float>();
 		qw = node["orientation_w"].as<float>();
-
-		// TODO: Check frame of measurement first and transform to arena
 
 		// Setup state vector
 		pose_.setZero(6, 1);
@@ -137,59 +135,58 @@ void ObjectTracker::initialize(YAML::Node node)
 		orientation_(1,0) = qy;
 		orientation_(2,0) = qz;
 		orientation_(3,0) = qw;
-
-		int color;
-
-		if(node["color"])
-		{
-			color = color_from_string(node["color"].as<string>());
-			fixed_color_ = true;
-		}
-    	
-		else
-			color = ObjectDetection::COLOR_UNKNOWN;
-		
-		
-		// Init and update factored belief 
-		for(int fact = 0; fact < fact_bel_.size(); fact++)
-		{
-			switch(fact)
-			{
-				case COLOR:
-
-				double prob_z, total_prob = 0.0;
-
-				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
-				{
-					if(color == ObjectDetection::COLOR_UNKNOWN)
-						fact_bel_[COLOR][i] = 1.0/ObjectDetection::NCOLORS;
-					else if(color == i)
-						fact_bel_[COLOR][i] = 1.0;
-					else
-						fact_bel_[COLOR][i] = 0.0;
-				}
-					
-				break;			
-			}
-		}
-
-		if(node["scale_x"] && node["scale_y"] && node["scale_z"])
-		{
-			scale_.resize(3);
-			scale_[0] = node["scale_x"].as<float>();
-			scale_[1] = node["scale_y"].as<float>();
-			scale_[2] = node["scale_z"].as<float>();
-			fixed_scale_ = true;
-		}
-
-		// Update timer
-		update_timer_.reset();
-		update_count_ = 0;
 	}
 	else
 	{
-		cout << "No frame ID or postion/orientation available in config file." << endl;
+		cout << "No frame ID or postion/orientation available in config file. Frame ID should be arena" << endl;
 	}
+
+	int color;
+
+	if(node["color"])
+	{
+		color = color_from_string(node["color"].as<string>());
+		fixed_color_ = true;
+	}
+    	
+	else
+		color = ObjectDetection::COLOR_UNKNOWN;
+		
+	// Init and update factored belief 
+	for(int fact = 0; fact < fact_bel_.size(); fact++)
+	{
+		switch(fact)
+		{
+			case COLOR:
+
+			double prob_z, total_prob = 0.0;
+
+			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+			{
+				if(color == ObjectDetection::COLOR_UNKNOWN)
+					fact_bel_[COLOR][i] = 1.0/ObjectDetection::NCOLORS;
+				else if(color == i)
+					fact_bel_[COLOR][i] = 1.0;
+				else
+					fact_bel_[COLOR][i] = 0.0;
+			}
+					
+			break;			
+		}
+	}
+
+	if(node["scale_x"] && node["scale_y"] && node["scale_z"])
+	{
+		scale_.resize(3);
+		scale_[0] = node["scale_x"].as<float>();
+		scale_[1] = node["scale_y"].as<float>();
+		scale_[2] = node["scale_z"].as<float>();
+		fixed_scale_ = true;
+	}
+
+	// Update timer
+	update_timer_.reset();
+	update_count_ = 0;
 }
 
 /**
@@ -198,8 +195,6 @@ void ObjectTracker::initialize(YAML::Node node)
 */
 void ObjectTracker::initialize(ObjectDetection* z)
 {
-	// TODO: Check frame of measurement first and transform to expected
-
 	// Setup state vector
 	pose_.setZero(6, 1);
 	pose_(0,0) = z->pose.pose.position.x;
@@ -300,8 +295,6 @@ void ObjectTracker::predict(double dt)
 */
 bool ObjectTracker::update(ObjectDetection* z)
 {
-	// TODO: Check frame of measurement first and transform to expected
-
 	// Update factored belief 
 	for(int fact = 0; fact < fact_bel_.size(); fact++)
 	{
@@ -388,8 +381,6 @@ Compute the likelihood of an observation with current belief. Based on Mahalanob
 */
 double ObjectTracker::getLikelihood(ObjectDetection* z)
 {
-
-	// TODO: Check frame of measurement first and transform to expected
 	double distance;
 
 	// Compute update jacobian

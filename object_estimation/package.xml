@@ -38,6 +38,7 @@
   <depend>mbzirc_comm_objs</depend>
   <depend>visualization_msgs</depend>
   <depend>tf2</depend>
+  <depend>tf2_ros</depend>
   <depend>roscpp</depend>
   <depend>yaml-cpp</depend>
   <depend>eigen</depend>
