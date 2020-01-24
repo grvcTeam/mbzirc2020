@@ -1,7 +1,7 @@
 # Data from Thermal Camera Detection
 uint8 camera_direction
-int height  # image resolution
-int width   # image resolution
+uint8 height  # image resolution
+uint8 width   # image resolution
 float32 x_center
 float32 y_center
 float32 height_from_center
