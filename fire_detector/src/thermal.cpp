@@ -20,6 +20,7 @@ using namespace cv;
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/DetectTypes.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <math.h>
 
 float temp_matrix[32][32];
 int maxim;
@@ -85,7 +86,8 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     int gray_im[32][32];
     int f=0;
     int cx[20],cy[20];
-
+    float im_center_x=x_size/2;
+    float im_center_y=y_size/2;
     // Variables to calculate relative position of the fire
     int image_center_x=y_size/2;
     int image_center_y=x_size/2;
@@ -102,6 +104,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     mbzirc_comm_objs::ObjectDetectionList rec_list;
     mbzirc_comm_objs::ObjectDetection rec_object;
     cv::Mat image_gray;
+    cv::Mat image_color;
     cv::Mat therm(cv::Size(x_size,y_size), CV_8UC1);
     uint8_t *initial_therm_ptr = therm.data;
     uint8_t *current_therm_ptr;
@@ -132,12 +135,21 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         
         std::vector<std::vector<cv::Point> > outline;
         std::vector<std::vector<cv::Point> > rect;
-        Point pt1,pt2;
+        Point pt1,pt2,center,sum;
+        center.x=image_center_y;
+        center.y=image_center_x;
         cv::findContours(therm,outline,CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE);
         std::vector<cv::Moments> mu(outline.size());
         std::vector<cv::Point2f> mc(outline.size());
+        cv::cvtColor(therm,image_color,CV_GRAY2BGR);
+
+
+        float distance;
+        float x_comp;
+        float y_comp;
 
         // Routine to detect fire in the image
+         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
         if (maxim>thermal_threshold){
             detection=1;
             // Calculating moments and centers in the fire
@@ -147,17 +159,50 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                 mc[d]=Point2f(mu[d].m10/mu[d].m00 , mu[d].m01/mu[d].m00);
                 cx[d]=mu[d].m10/mu[d].m00;
                 cy[d]=mu[d].m01/mu[d].m00;
+                // 
+            
+ 
                 // Painting a rectangle in the fire
                 Rect rect=boundingRect(outline[d]);
-                pt1.x=rect.x;
-                pt1.y=rect.y;
-                pt2.x=rect.x+rect.width;
-                pt2.y=rect.y+rect.height;
-                rectangle(therm,pt1,pt2,CV_RGB(0,255,0),1);
+                // cout<<outline[d]<<endl;
+                // cout<<rect.y/20<<endl;
+                // cout<<rect.height/20<<endl;
+                // cout<<rect.width/20<<endl;
+                // cout<<"----"<<endl;
+                // pt1.x=rect.x;
+                // pt1.y=rect.y;
+                // pt2.x=rect.x+rect.width;
+                // pt2.y=rect.y+rect.height;
+                // rectangle(image_color,pt1,pt2,CV_RGB(0,255,0),1);
+                circle(image_color,mc[d],2,CV_RGB(0,255,0),1,16,0);
                 // circle(therm,mc[d],5,CV_RGB(255,255,255),-1);
             }
+            for (d=0;d<outline.size();d++)
+            {
+                sum.x=cx[d]+sum.x;
+                sum.y=cy[d]+sum.y;
+                if (d==outline.size()-1){
+                    sum.y=sum.y/outline.size();
+                    sum.x=sum.x/outline.size();
+                    circle(image_color,sum,70,CV_RGB(0,255,0),1,16,0);
+                    circle(image_color,sum,3,CV_RGB(0,255,0),1,16,0);
+                    line(image_color,center,sum,CV_RGB(0,255,0),1,16,0);
+
+                    x_comp=center.y-sum.y;
+                    y_comp=(center.x-sum.x)*-1;
+                    distance=sqrt(x_comp*x_comp+y_comp*y_comp);
+                    // std::string x_dis = std::to_string(x_comp);
+                    // std::string y_dis = std::to_string(y_comp);
+                    // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
+                    // cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
+                }
+
+
+            }
+            
       
         }
+       
 
         // Displaying images on screen 
         string nombre="Thermal";
@@ -168,14 +213,14 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         string nombre_dos="B&W";
         cv::namedWindow(nombre_dos);
         cv::moveWindow(nombre_dos,565,0);
-        cv::flip(therm,therm,0);
-        cv::rotate(therm,therm,cv::ROTATE_90_COUNTERCLOCKWISE);
-        cv::imshow(nombre_dos, therm);
+        cv::flip(image_color,image_color,0);
+        cv::rotate(image_color,image_color,cv::ROTATE_90_COUNTERCLOCKWISE);
+        cv::imshow(nombre_dos, image_color);
         cv::waitKey(3);
 
         // COnverting image to msg 
         header = msg->header; 
-        img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC1, therm);
+        img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC3, image_color);
         pub.publish(img_bridge.toImageMsg());
 
         // Publish a msg whenever a fire is detected every 10 frames
@@ -185,31 +230,33 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         {
             // If a fire is detected
             cout<<"Fire_detected"<<endl;
-            detection=0;
+            std::string x_dis = std::to_string(x_comp);
+            std::string y_dis = std::to_string(y_comp);
+            // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
+            cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
             detection_sampling=0;
             last_detection=last_detection+1;
-            z=0;
-            // Routine to display a ObjectDetection msg for every fire detected in the image
-            while (z<outline.size())
-            {
+            
                 // Calculating the relative fire position toward the image center
-                relative_pose_x=x_pose+((y_size-cy[z])-image_center_x)*pixel_to_m;
-                relative_pose_y=y_pose+((x_size-cx[z])-image_center_y)*pixel_to_m;
-                rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
-                rec_object.relative_position.x=relative_pose_x;
-                rec_object.relative_position.y=relative_pose_y;
-                rec_object.pose.pose=pos.pose;
-                // Publishing the Object 
-                rec_list.objects.push_back(rec_object);
-                pub_msg.publish(rec_list);
-                z=z+1;
-            }
+            // Relative position in pixels toward the center of the image
+            relative_pose_x=x_comp;
+            relative_pose_y=y_comp;
+            rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
+            rec_object.image_espec.width_from_center=relative_pose_x;
+            rec_object.image_espec.height_from_center=relative_pose_y;
+            rec_object.image_espec.x_center=center.x;
+            rec_object.image_espec.y_center=center.y;
+            rec_object.pose.pose=pos.pose;
+             // Publishing the Object 
+            rec_list.objects.push_back(rec_object);
+            pub_msg.publish(rec_list);
+            detection=0;
             last_detection=detection;
         }
         else 
         {
             last_detection=0;
-            cout<<"Waiting"<<endl;
+            cout<<"."<<endl;
         }
         last_detection=detection;
         

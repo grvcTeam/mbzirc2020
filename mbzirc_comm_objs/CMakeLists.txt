@@ -52,6 +52,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    ActuatorsData.msg
    Wall.msg
    WallList.msg
+   ThermalImage.msg
  )
 
 ## Generate services in the 'srv' folder
