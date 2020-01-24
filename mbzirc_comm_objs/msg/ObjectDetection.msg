@@ -5,6 +5,7 @@ float32 relative_yaw                   # Detected object relative yaw (w.r.t det
 geometry_msgs/Vector3 scale            # Detected object size
 uint8 type                             # Detected object type (see TYPE_* constants below)
 uint8 color                            # Detected object color (see COLOR_* constats below)
+ThermalImage image_espec 
 
 uint8 TYPE_UNKNOWN = 0
 uint8 TYPE_BALL    = 1
@@ -12,6 +13,7 @@ uint8 TYPE_DRONE   = 2
 uint8 TYPE_BRICK   = 3
 uint8 TYPE_FIRE    = 4
 uint8 TYPE_PASSAGE = 5
+uint8 TYPE_BRICK_TRACK = 6
 
 uint8 COLOR_UNKNOWN = 0
 uint8 COLOR_RED     = 1
