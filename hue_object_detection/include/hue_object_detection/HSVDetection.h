@@ -156,11 +156,14 @@ std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
 
 		if (_draw) {
 		 	cv::Scalar colour = colour_[_id];
-			cv::circle(frame_, centroid, 4, colour, -1);
-			sprintf(count_text, "%d", valid_index++);
-			cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
+			// cv::circle(frame_, centroid, 4, colour, -1);
+			// sprintf(count_text, "%d", valid_index++);
+			// cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
 			cv::drawContours(frame_, contours, i, colour, 1);
 			// Draw rect:
+			cv::circle(frame_, rect.center, 4, colour, -1);
+			sprintf(count_text, "%d", valid_index++);
+			cv::putText(frame_, count_text, rect.center, CV_FONT_HERSHEY_PLAIN, 1, colour);
 			cv::Point2f vertices[4];
 			rect.points(vertices);
 			for (int j = 0; j < 4; j++) {

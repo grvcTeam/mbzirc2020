@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
 
 //   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hsv_detection", true, window_detection_name);
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_rect_color", "hsv_detection", true, window_detection_name);  // TODO: image_raw vs image_rect_color
 //   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
 
   // Trackbars to set thresholds for HSV values
