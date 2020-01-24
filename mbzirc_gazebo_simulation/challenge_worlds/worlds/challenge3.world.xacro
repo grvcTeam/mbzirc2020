@@ -7,34 +7,60 @@
 <xacro:property name="yaw" value="$(arg arena_yaw)"/>
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
-<xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
+<!-- <xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
 <xacro:property name="f2" value="${[36,17,0,0]}"/> 
 <xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
-<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/>
+<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/> -->
 
-<xacro:property name="f4a" value="${[37.5,25,5.3, 3.1416]}"/>
-<xacro:property name="f4b" value="${[36, 15, 5.3, 0]}"/>
-<xacro:property name="f4c" value="${[30, 20.5, 5.3, -1.570795]}"/>
-<xacro:property name="f4d" value="${[40, 20.3, 5.5, 1.570795]}"/>
-<xacro:property name="f4e" value="${[41.3, 25, 2, 3.1416]}"/>
+<xacro:property name="f4ap" value="${[b[0]+0,b[1]+7.5,b[2]+5.3, -1.57]}"/>
+<xacro:property name="f4a" value="${[(f4ap[0]-b[0])*cos(b[3])-(f4ap[1]-b[1])*sin(b[3])+b[0],(f4ap[0]-b[0])*sin(b[3])+(f4ap[1]-b[1])*cos(b[3])+b[1],f4ap[2],f4ap[3]+b[3]]}"/>
 
-<xacro:property name="f5a" value="${[35, 25, 7.5, 3.1416]}"/>
-<xacro:property name="f5b" value="${[38.7, 15, 8.25, 0]}"/>
-<xacro:property name="f5c" value="${[30, 23, 9.2, -1.570795]}"/>
-<xacro:property name="f5d" value="${[40, 23.5, 9.2, 1.570795]}"/>
+<xacro:property name="f4bp" value="${[b[0]+10, b[1]+6, b[2]+5.3, 1.57]}"/>
+<xacro:property name="f4b" value="${[(f4bp[0]-b[0])*cos(b[3])-(f4bp[1]-b[1])*sin(b[3])+b[0],(f4bp[0]-b[0])*sin(b[3])+(f4bp[1]-b[1])*cos(b[3])+b[1],f4bp[2],f4bp[3]+b[3]]}"/>
 
-<xacro:property name="f6a" value="${[36.5, 25, 10.3, 3.1416]}"/>
-<xacro:property name="f6b" value="${[31.3, 15, 11.25, 0]}"/>
-<xacro:property name="f6c" value="${[30, 16.3, 12, -1.570795]}"/>
-<xacro:property name="f6d" value="${[40, 16.3, 12.5, 1.570795]}"/>
+<xacro:property name="f4cp" value="${[b[0]+4.5, b[1]+0, b[2]+5.3, 0]}"/>
+<xacro:property name="f4c" value="${[(f4cp[0]-b[0])*cos(b[3])-(f4cp[1]-b[1])*sin(b[3])+b[0],(f4cp[0]-b[0])*sin(b[3])+(f4cp[1]-b[1])*cos(b[3])+b[1],f4cp[2],f4cp[3]+b[3]]}"/>
+
+<xacro:property name="f4dp" value="${[b[0]+4.7, b[1]+10, b[2]+5.5, -3.1416]}"/>
+<xacro:property name="f4d" value="${[(f4dp[0]-b[0])*cos(b[3])-(f4dp[1]-b[1])*sin(b[3])+b[0],(f4dp[0]-b[0])*sin(b[3])+(f4dp[1]-b[1])*cos(b[3])+b[1],f4dp[2],f4dp[3]+b[3]]}"/>
+
+<xacro:property name="f4ep" value="${[b[0]+0, b[1]+11.3, b[2]+2, -1.57]}"/>
+<xacro:property name="f4e" value="${[(f4ep[0]-b[0])*cos(b[3])-(f4ep[1]-b[1])*sin(b[3])+b[0],(f4ep[0]-b[0])*sin(b[3])+(f4ep[1]-b[1])*cos(b[3])+b[1],f4ep[2],f4ep[3]+b[3]]}"/>
+
+
+<xacro:property name="f5ap" value="${[b[0]+0, b[1]+5, b[2]+7.5, -1.57]}"/>
+<xacro:property name="f5a" value="${[(f5ap[0]-b[0])*cos(b[3])-(f5ap[1]-b[1])*sin(b[3])+b[0],(f5ap[0]-b[0])*sin(b[3])+(f5ap[1]-b[1])*cos(b[3])+b[1],f5ap[2],f5ap[3]+b[3]]}"/>
+
+<xacro:property name="f5bp" value="${[b[0]+10, b[1]+8.7, b[2]+8.25, 1.57]}"/>
+<xacro:property name="f5b" value="${[(f5bp[0]-b[0])*cos(b[3])-(f5bp[1]-b[1])*sin(b[3])+b[0],(f5bp[0]-b[0])*sin(b[3])+(f5bp[1]-b[1])*cos(b[3])+b[1],f5bp[2],f5bp[3]+b[3]]}"/>
+
+<xacro:property name="f5cp" value="${[b[0]+2, b[1]+0, b[2]+9.2, 0]}"/>
+<xacro:property name="f5c" value="${[(f5cp[0]-b[0])*cos(b[3])-(f5cp[1]-b[1])*sin(b[3])+b[0],(f5cp[0]-b[0])*sin(b[3])+(f5cp[1]-b[1])*cos(b[3])+b[1],f5cp[2],f5cp[3]+b[3]]}"/>
+
+<xacro:property name="f5dp" value="${[b[0]+1.5, b[1]+10, b[2]+9.2, 3.1416]}"/>
+<xacro:property name="f5d" value="${[(f5dp[0]-b[0])*cos(b[3])-(f5dp[1]-b[1])*sin(b[3])+b[0],(f5dp[0]-b[0])*sin(b[3])+(f5dp[1]-b[1])*cos(b[3])+b[1],f5dp[2],f5dp[3]+b[3]]}"/>
+
+
+<xacro:property name="f6ap" value="${[b[0]+0, b[1]+6.5, b[2]+10.3, -1.57]}"/>
+<xacro:property name="f6a" value="${[(f6ap[0]-b[0])*cos(b[3])-(f6ap[1]-b[1])*sin(b[3])+b[0],(f6ap[0]-b[0])*sin(b[3])+(f6ap[1]-b[1])*cos(b[3])+b[1],f6ap[2],f6ap[3]+b[3]]}"/>
+
+<xacro:property name="f6bp" value="${[b[0]+10, b[1]+1.3, b[2]+11.25, 1.57]}"/>
+<xacro:property name="f6b" value="${[(f6bp[0]-b[0])*cos(b[3])-(f6bp[1]-b[1])*sin(b[3])+b[0],(f6bp[0]-b[0])*sin(b[3])+(f6bp[1]-b[1])*cos(b[3])+b[1],f6bp[2],f6bp[3]+b[3]]}"/>
+
+<xacro:property name="f6cp" value="${[b[0]+8.7, b[1]+0, b[2]+12, 0]}"/>
+<xacro:property name="f6c" value="${[(f6cp[0]-b[0])*cos(b[3])-(f6cp[1]-b[1])*sin(b[3])+b[0],(f6cp[0]-b[0])*sin(b[3])+(f6cp[1]-b[1])*cos(b[3])+b[1],f6cp[2],f6cp[3]+b[3]]}"/>
+
+<xacro:property name="f6dp" value="${[b[0]+8.7, b[1]+10, b[2]+12.5, 3.1416]}"/>
+<xacro:property name="f6d" value="${[(f6dp[0]-b[0])*cos(b[3])-(f6dp[1]-b[1])*sin(b[3])+b[0],(f6dp[0]-b[0])*sin(b[3])+(f6dp[1]-b[1])*cos(b[3])+b[1],f6dp[2],f6dp[3]+b[3]]}"/>
+
 
 <xacro:property name="f7" value="${[15,10,0,0]}"/>
 <xacro:property name="f8" value="${[20,40,0,-1.570795]}"/>
  
-<xacro:property name="b" value="${[30,25,0,4.7124]}"/> 
+<xacro:property name="b" value="${[30,25,0,0]}"/> 
 <xacro:property name="g" value="${[30,25,0,0]}"/> 
 
-
+<!-- 4.7124 -->
 
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
@@ -84,12 +110,12 @@
       <pose frame=''>${f1[0]*cos(yaw)-f1[1]*sin(yaw)} ${f1[0]*sin(yaw)+f1[1]*cos(yaw)} ${f1[2]} 0 0 ${f1[3]+yaw} </pose>
     </model> -->
     
-    <model name="cubewithflames_2">
+    <!-- <model name="cubewithflames_2">
       <include>
       <uri>model://cubewithflames</uri>
       </include>
       <pose frame=''>${f2[0]*cos(yaw)-f2[1]*sin(yaw)} ${f2[0]*sin(yaw)+f2[1]*cos(yaw)} ${f2[2]} 0 0 ${f2[3]+yaw} </pose>
-    </model>
+    </model> -->
 
     <!-- <model name="cubewithflames_3">
       <include>
@@ -106,12 +132,13 @@
       <static>true</static>
     </model> -->
 
-    <model name="cubewithflames_5">
+    <!-- <model name="cubewithflames_5">
       <include>
         <uri>model://cubewithflames</uri>
       </include>
       <pose frame=''>${f5[0]*cos(yaw)-f5[1]*sin(yaw)} ${f5[0]*sin(yaw)+f5[1]*cos(yaw)} ${f5[2]} 0 0 ${f5[3]+yaw} </pose>
-    </model>
+    </model> -->
+
     <model name="building">
       <include>
         <uri>model://BuildingC3</uri>
