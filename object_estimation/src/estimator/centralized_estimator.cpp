@@ -308,11 +308,11 @@ bool CentralizedEstimator::getTargetInfo(int target_id, vector<double> &position
 /** \brief Return position information from a target
 \param target_id Identifier of the target
 \param position Position of the target
-\param orientation Orientation of the target
+\param orientation Yaw orientation of the target
 \param covariance Covariance matrix for position
 \return True if the target was found 
 */
-bool CentralizedEstimator::getTargetInfo(int target_id, vector<double> &position, vector<double> &orientation, vector<vector<double> > &covariances)
+bool CentralizedEstimator::getTargetInfo(int target_id, vector<double> &position, double &orientation, vector<vector<double> > &covariances)
 {
 	bool found = false;
 

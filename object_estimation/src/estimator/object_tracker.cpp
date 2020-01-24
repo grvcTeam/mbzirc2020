@@ -27,6 +27,7 @@
 
 
 #include <object_estimation/object_tracker.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #define VEL_NOISE_VAR 0.2 
 #define COLOR_DETECTOR_PD 0.9
@@ -47,6 +48,8 @@ ObjectTracker::ObjectTracker(int id, int type)
 
 	is_static_ = true;
 	fixed_pose_ = false;
+	fixed_color_ = false;
+	fixed_scale_ = false;
 		
 	status_ = ACTIVE;
 
@@ -55,7 +58,7 @@ ObjectTracker::ObjectTracker(int id, int type)
 
 	pose_ = Eigen::MatrixXd::Zero(6,1);
 	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
-	orientation_ = Eigen::MatrixXd::Zero(4,1);
+	
 	scale_.resize(3);
 }
 
@@ -72,6 +75,8 @@ ObjectTracker::ObjectTracker(int id, int type, int subtype)
 
 	is_static_ = true;
 	fixed_pose_ = false;
+	fixed_color_ = false;
+	fixed_scale_ = false;
 		
 	status_ = ACTIVE;
 
@@ -80,7 +85,7 @@ ObjectTracker::ObjectTracker(int id, int type, int subtype)
 
 	pose_ = Eigen::MatrixXd::Zero(6,1);
 	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
-	orientation_ = Eigen::MatrixXd::Zero(4,1);
+	
 	scale_.resize(3);
 }
 
@@ -103,19 +108,16 @@ void ObjectTracker::initialize(YAML::Node node)
 		status_ = ACTIVE;
 	}
 					
-	if(node["frame_id"] && node["frame_id"].as<string>() == "arena" && node["position_x"] && node["orientation_x"])
+	if(node["frame_id"] && node["frame_id"].as<string>() == "arena" && node["position_x"] && node["yaw"])
 	{
 		fixed_pose_ = true;
 
-		double x,y,z,qx,qy,qz,qw;
+		double x,y,z,yaw;
 		x = node["position_x"].as<float>();
 		y = node["position_y"].as<float>();
 		z = node["position_z"].as<float>();
-		qx = node["orientation_x"].as<float>();
-		qy = node["orientation_y"].as<float>();
-		qz = node["orientation_z"].as<float>();
-		qw = node["orientation_w"].as<float>();
-
+		yaw = node["yaw"].as<float>();
+		
 		// Setup state vector
 		pose_.setZero(6, 1);
 		pose_(0,0) = x;
@@ -131,10 +133,7 @@ void ObjectTracker::initialize(YAML::Node node)
 			for(int j = 0; j < 6; j++)
 				pose_cov_(i,j) = 0.0;
 
-		orientation_(0,0) = qx;
-		orientation_(1,0) = qy;
-		orientation_(2,0) = qz;
-		orientation_(3,0) = qw;
+		yaw_ = yaw;
 	}
 	else
 	{
@@ -214,10 +213,16 @@ void ObjectTracker::initialize(ObjectDetection* z)
 	pose_cov_(4,4) = VEL_NOISE_VAR;
 	pose_cov_(5,5) = VEL_NOISE_VAR;
 
-	orientation_(0,0) = z->pose.pose.orientation.x;
-	orientation_(1,0) = z->pose.pose.orientation.y;
-	orientation_(2,0) = z->pose.pose.orientation.z;
-	orientation_(3,0) = z->pose.pose.orientation.w;
+	double roll, pitch, yaw;
+	tf2::Quaternion q;
+	tf2::fromMsg(z->pose.pose.orientation,q);
+	tf2::Matrix3x3 Rot_matrix(q);
+	Rot_matrix.getRPY(roll,pitch,yaw);
+	yaw_ = yaw;
+
+	scale_[0] = z->scale.x;
+	scale_[1] = z->scale.y;
+	scale_[3] = z->scale.z;
 
 	// Init and update factored belief 
 	for(int fact = 0; fact < fact_bel_.size(); fact++)
@@ -250,8 +255,6 @@ void ObjectTracker::initialize(ObjectDetection* z)
 			break;			
 		}
 	}
-
-	// TODO scale
 
 	// Update timer
 	update_timer_.reset();
@@ -296,78 +299,93 @@ void ObjectTracker::predict(double dt)
 bool ObjectTracker::update(ObjectDetection* z)
 {
 	// Update factored belief 
-	for(int fact = 0; fact < fact_bel_.size(); fact++)
+	if(!fixed_color_)
 	{
-		switch(fact)
+		for(int fact = 0; fact < fact_bel_.size(); fact++)
 		{
-			case COLOR:
-
-			double prob_z, total_prob = 0.0;
-
-			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+			switch(fact)
 			{
-				if(z->color == ObjectDetection::COLOR_UNKNOWN)
-					prob_z = 1.0;
-				if(z->color == i)
-					prob_z = COLOR_DETECTOR_PD;
-				else
-					prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+				case COLOR:
 
-				fact_bel_[COLOR][i] *= prob_z;
-				total_prob += fact_bel_[COLOR][i];
+				double prob_z, total_prob = 0.0;
+
+				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+				{
+					if(z->color == ObjectDetection::COLOR_UNKNOWN)
+						prob_z = 1.0;
+					if(z->color == i)
+						prob_z = COLOR_DETECTOR_PD;
+					else
+						prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+
+					fact_bel_[COLOR][i] *= prob_z;
+					total_prob += fact_bel_[COLOR][i];
+				}
+				
+				// Normalize
+				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+				{
+					fact_bel_[COLOR][i] /= total_prob;
+				}	
+
+				break;			
 			}
-			
-			// Normalize
-			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
-			{
-				fact_bel_[COLOR][i] /= total_prob;
-			}	
-
-			break;			
 		}
 	}
 	
-	// Compute update jacobian
-	Eigen::Matrix<double, 3, 6> H;
-	H.setZero(3, 6);
-	H(0,0) = 1.0;
-	H(1,1) = 1.0;
-	H(2,2) = 1.0;
-		
-	// Compute update noise matrix
-	Eigen::Matrix<double, 3, 3> R;
-	for(int i = 0; i < 3; i++)
-		for(int j = 0; j < 3; j++)
-			R(i,j) = z->pose.covariance[i*6+j];
-		
-	// Calculate innovation matrix
-	Eigen::Matrix<double, 3, 3> S;
-	S = H*pose_cov_*H.transpose() + R;
-		
-	// Calculate kalman gain
-	Eigen::Matrix<double, 6, 3> K;
-	K = pose_cov_*H.transpose()*S.inverse();
-		
-	// Calculate innovation vector
-	Eigen::Matrix<double, 3, 1> y;
-	y = H*pose_;
-	y(0,0) = z->pose.pose.position.x - y(0,0);
-	y(1,0) = z->pose.pose.position.y - y(1,0);
-	y(2,0) = z->pose.pose.position.z - y(2,0);
-		
-	// Calculate new state vector
-	pose_ = pose_ + K*y;
-		
-	// Calculate new cov matrix
-	Eigen::Matrix<double, 6, 6> I;
-	I.setIdentity(6, 6);
-	pose_cov_ = (I - K*H)*pose_cov_;
+	if(!fixed_pose_)
+	{
+		// Compute update jacobian
+		Eigen::Matrix<double, 3, 6> H;
+		H.setZero(3, 6);
+		H(0,0) = 1.0;
+		H(1,1) = 1.0;
+		H(2,2) = 1.0;
+			
+		// Compute update noise matrix
+		Eigen::Matrix<double, 3, 3> R;
+		for(int i = 0; i < 3; i++)
+			for(int j = 0; j < 3; j++)
+				R(i,j) = z->pose.covariance[i*6+j];
+			
+		// Calculate innovation matrix
+		Eigen::Matrix<double, 3, 3> S;
+		S = H*pose_cov_*H.transpose() + R;
+			
+		// Calculate kalman gain
+		Eigen::Matrix<double, 6, 3> K;
+		K = pose_cov_*H.transpose()*S.inverse();
+			
+		// Calculate innovation vector
+		Eigen::Matrix<double, 3, 1> y;
+		y = H*pose_;
+		y(0,0) = z->pose.pose.position.x - y(0,0);
+		y(1,0) = z->pose.pose.position.y - y(1,0);
+		y(2,0) = z->pose.pose.position.z - y(2,0);
+			
+		// Calculate new state vector
+		pose_ = pose_ + K*y;
+			
+		// Calculate new cov matrix
+		Eigen::Matrix<double, 6, 6> I;
+		I.setIdentity(6, 6);
+		pose_cov_ = (I - K*H)*pose_cov_;
 
-	// TODO: Include orientation in the KF
-	orientation_(0,0) = z->pose.pose.orientation.x;
-	orientation_(1,0) = z->pose.pose.orientation.y;
-	orientation_(2,0) = z->pose.pose.orientation.z;
-	orientation_(3,0) = z->pose.pose.orientation.w;
+		// TODO: Include orientation in the KF
+		double roll, pitch, yaw;
+		tf2::Quaternion q;
+		tf2::fromMsg(z->pose.pose.orientation,q);
+		tf2::Matrix3x3 Rot_matrix(q);
+		Rot_matrix.getRPY(roll,pitch,yaw);
+		yaw_ = yaw;
+
+	}
+	
+	// TODO: update scale
+	if(!fixed_scale_)
+	{
+
+	}
 
 	// Update timer
 	update_timer_.reset();
@@ -497,16 +515,11 @@ vector<double> ObjectTracker::getVelocity()
 }
 
 /** \brief Return orientation information from the target
-\return Quaterion 
+\return Orientation 
 */
-vector<double> ObjectTracker::getOrientation()
+double ObjectTracker::getOrientation()
 {
-	vector<double> q;
-	q.resize(4);
-	q[0] = orientation_(0,0);
-	q[1] = orientation_(1,0);
-	q[2] = orientation_(2,0);
-	q[3] = orientation_(3,0);
+	return yaw_;
 }
 
 /** \brief Return covariance matrix from the target position

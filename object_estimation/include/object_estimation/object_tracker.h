@@ -65,7 +65,7 @@ public:
 	std::vector<double> getPose();
 	std::vector<double> getScale();
 	std::vector<double> getVelocity();
-	std::vector<double> getOrientation();
+	double getOrientation();
 	std::vector<std::vector<double> > getCov();
 	int getNumFactors();
 	std::vector<double> getFactorProbs(int factor);
@@ -92,10 +92,10 @@ protected:
 	std::vector<std::vector<double> > fact_bel_;	
 	
 	/// State vector: [x (m), y (m), z(m), vx (m/s), vy (m/s), vz (m/s)]
-	/// Orientation as quaternion
+	/// Orientation as yaw
 	Eigen::MatrixXd pose_;
 	Eigen::MatrixXd pose_cov_;
-	Eigen::MatrixXd orientation_;
+	double yaw_;
 	std::vector<double> scale_;
 
 	/// Do not update when True

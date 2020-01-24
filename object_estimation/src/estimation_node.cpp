@@ -303,7 +303,7 @@ protected:
         ObjectList list;
         vector<vector<double> > covariances;
         vector<double> position;
-        vector<double> orientation;
+        double obj_yaw;
         vector<double> scale;
         ObjectStatus target_status;
         int target_color, target_subtype;
@@ -315,7 +315,7 @@ protected:
 
         for(int i = 0; i < active_targets.size(); i++)
         {
-            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, orientation, covariances))
+            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, obj_yaw, covariances))
             {
                 estimators_[obj_type]->getTargetInfo(active_targets[i], position, scale, target_status, target_color, target_subtype);
 
@@ -332,10 +332,9 @@ protected:
                 object.pose.pose.position.x = position[0];
                 object.pose.pose.position.y = position[1];
                 object.pose.pose.position.z = position[2];
-                object.pose.pose.orientation.x = orientation[0];
-                object.pose.pose.orientation.y = orientation[1];
-                object.pose.pose.orientation.z = orientation[2];
-                object.pose.pose.orientation.w = orientation[3];
+                tf2::Quaternion q;
+                q.setRPY(0.0,0.0,obj_yaw);
+                object.pose.pose.orientation = tf2::toMsg(q);
                 
                 for(int row = 0; row < 3; row++)
                     for(int col = 0; col < 3; col++)
@@ -362,8 +361,9 @@ protected:
         vector<double> w(2);
         vector<double> v(4);
         vector<vector<double> > covariances;
-        vector<double> position, orientation, scale;
-        double a, b, c, yaw, x, y, z, vx, vy, vz;
+        vector<double> position, scale;
+        double obj_yaw;
+        double a, b, c, cov_yaw, x, y, z, vx, vy, vz;
         ObjectStatus target_status;
         int target_color, target_subtype;
 
@@ -372,7 +372,7 @@ protected:
 
         for(int i = 0; i < active_targets.size(); i++)
         {
-            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, orientation, covariances))
+            if(estimators_[obj_type]->getTargetInfo(active_targets[i], position, obj_yaw, covariances))
             {
                 estimators_[obj_type]->getTargetInfo(active_targets[i], position, scale, target_status, target_color, target_subtype);
 
@@ -382,7 +382,7 @@ protected:
                     a = 0.5;
                     b = 0.5;
                     c = 0.5;
-                    yaw = 0.0;
+                    cov_yaw = 0.0;
                 }
                 else
                 {
@@ -393,7 +393,7 @@ protected:
                     a = sqrt(fabs(w[0]));
                     b = sqrt(fabs(w[1]));
                     c = 4*covariances[2][2];
-                    yaw = atan2(v[1],v[0]);        
+                    cov_yaw = atan2(v[1],v[0]);        
                 }
                 
                 // Fill in marker
@@ -463,7 +463,7 @@ protected:
                 marker.pose.position.z = position[2];
                 
                 tf2::Quaternion q;
-                q.setRPY(0.0,0.0,yaw);
+                q.setRPY(0.0,0.0, cov_yaw);
                 marker.pose.orientation = tf2::toMsg(q);
 
                 marker_array.markers.push_back(marker);
@@ -489,12 +489,11 @@ protected:
                     marker.scale.z = 0.2;
                     marker.pose.position.x = position[0];
                     marker.pose.position.y = position[1];
-                    marker.pose.position.z = position[2];    
-                    marker.pose.orientation.x = orientation[0];
-                    marker.pose.orientation.y = orientation[1];
-                    marker.pose.orientation.z = orientation[2];
-                    marker.pose.orientation.w = orientation[3];
-                 
+                    marker.pose.position.z = position[2];
+                    tf2::Quaternion q_aux;
+                    q_aux.setRPY(0.0,0.0, obj_yaw);
+                    marker.pose.orientation = tf2::toMsg(q_aux);    
+                    
                     marker_array.markers.push_back(marker);
                 }
             }
