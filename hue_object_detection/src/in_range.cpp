@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
 
 //   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 10);
-  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_rect_color", "hsv_detection", true, window_detection_name);  // TODO: image_raw vs image_rect_color
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hsv_detection", true, window_detection_name);  // TODO: image_raw vs image_rect_color
 //   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
 
   // Trackbars to set thresholds for HSV values
@@ -127,13 +127,10 @@ int main(int argc, char** argv) {
       detection_config.poly_epsilon = poly_epsilon;
       detection.setConfig(detection_config);
       detection.setFrame(cv_ptr->image);
+      // detection.detect("test", true);
+      // detection.detect("white", true);
+      // detection.detectAll(true);
       detection.track("test", true);
-      // detection.detect(cv_ptr->image, "test", true);
-      // detection.detect(cv_ptr->image, "white", true);
-      // detection.detectAll(cv_ptr->image, true);
-      // cv::Mat hsv;
-      // cvtColor(cv_ptr->image, hsv, cv::COLOR_BGR2HSV);
-      // detection.detect(hsv, "test");
 
       //cv_ptr->image = detection.getDetection();  // debug!
 

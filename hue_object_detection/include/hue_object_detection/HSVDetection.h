@@ -16,19 +16,19 @@
 #define KERNEL_MAX_SIZE 21
 
 struct Kernel {
-  int type = 0;
-  int size = 0;
+    int type = 0;
+    int size = 0;
 
-  cv::Mat getAsElement() {
-    int out_type;
-    switch (type) {
-      case 0: out_type = cv::MORPH_RECT; break;
-      case 1: out_type = cv::MORPH_CROSS; break;
-      case 2: out_type = cv::MORPH_ELLIPSE; break;
-      default: throw std::runtime_error("Unexpected kernel type!");
+    cv::Mat getAsElement() {
+        int out_type;
+        switch (type) {
+          case 0: out_type = cv::MORPH_RECT; break;
+          case 1: out_type = cv::MORPH_CROSS; break;
+          case 2: out_type = cv::MORPH_ELLIPSE; break;
+          default: throw std::runtime_error("Unexpected kernel type!");
+        }
+        return getStructuringElement(out_type, cv::Size(2*size + 1, 2*size + 1), cv::Point(size, size));
     }
-    return getStructuringElement(out_type, cv::Size(2*size + 1, 2*size + 1), cv::Point(size, size));
-  }
 };
 
 struct HSVRange {
@@ -64,12 +64,11 @@ public:
     void setFrame(cv::Mat& _frame);
     std::vector<HSVItem> detect(const std::string _id, bool _draw = false);
     std::vector<HSVItem> detectAll(bool _draw = false);
-
     std::vector<HSVItem> track(const std::string _id, bool _draw = false);
-    cv::Mat getDetection() { return in_range_; }  // Debug!
 
 private:
-    std::vector<HSVItem> detectPipeline(const std::string _id, const cv::Mat& _src, cv::Mat& _visual, bool _draw = false);
+    std::vector<HSVItem> detectPipeline(const std::string _id, const cv::Mat& _src, bool _draw = false);
+    void drawRotatedRect(const cv::RotatedRect& _r, int _index, cv::Scalar _colour);
     std::map<std::string, HSVRange> range_;
     std::map<std::string, cv::Scalar> colour_;
 
@@ -100,7 +99,7 @@ void HSVDetection::addDetector(const std::string _id, const HSVRange _range, cv:
     colour_[_id] = _contour_colour;
 }
 
-void HSVDetection::setFrame(cv::Mat& _frame) {
+inline void HSVDetection::setFrame(cv::Mat& _frame) {
     if (_frame.empty()) {
         ROS_WARN("HSVDetection::setFrame: frame is empty!");
         return;
@@ -115,19 +114,32 @@ void HSVDetection::setFrame(cv::Mat& _frame) {
     frame_ = _frame;
 }
 
-std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const cv::Mat& _src, cv::Mat& _visual, bool _draw) {
-     std::vector<HSVItem> item_list;
+inline void HSVDetection::drawRotatedRect(const cv::RotatedRect& _r, int _index, cv::Scalar _colour) {
+    char count_text[32];
+    sprintf(count_text, "%d", _index);
+    cv::circle(frame_, _r.center, 4, _colour, -1);
+    cv::putText(frame_, count_text, _r.center, CV_FONT_HERSHEY_PLAIN, 1, _colour);
+    cv::Point2f vertices[4];  // TODO: draw function
+    _r.points(vertices);
+    for (int i = 0; i < 4; i++) {
+        line(frame_, vertices[i], vertices[(i+1)%4], _colour, 2);
+    }
+}
+
+// TODO: Not the most elegant solution...
+std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const cv::Mat& _src, bool _draw) {
+
     if (range_.count(_id) == 0) {
         ROS_WARN("HSVDetection::detectPipeline: id [%s] not found!", _id.c_str());
-        return item_list;
+        return std::vector<HSVItem>();
     }
     if (_src.empty()) {
         ROS_WARN("HSVDetection::detectPipeline: source is empty!");
-        return item_list;
+        return std::vector<HSVItem>();
     }
 
     // Detect the object based on HSV Range Values
-    cv::Mat in_range = cv::Mat(capture_size_, CV_8UC1);
+    cv::Mat in_range;
     inRange(_src, range_[_id].getMin(), range_[_id].getMax(), in_range);
 
     // Smooth image...
@@ -139,8 +151,8 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
     findContours(in_range, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
     /// Draw contours and generate HSVItems
-    char count_text[33];
     int valid_index = 0;
+    std::vector<HSVItem> item_list;
     for (int i = 0; i < contours.size(); i++) {
 
         cv::Mat polygon;
@@ -158,19 +170,12 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
 
         if (_draw) {
              cv::Scalar colour = colour_[_id];
-            // cv::circle(_visual, centroid, 4, colour, -1);
+            // cv::circle(frame_, centroid, 4, colour, -1);
             // sprintf(count_text, "%d", valid_index++);
-            // cv::putText(_visual, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
-            cv::drawContours(_visual, polygon, -1, colour, 3);
-            // Draw rect:
-            cv::circle(_visual, rect.center, 4, colour, -1);
-            sprintf(count_text, "%d", valid_index++);
-            cv::putText(_visual, count_text, rect.center, CV_FONT_HERSHEY_PLAIN, 1, colour);
-            cv::Point2f vertices[4];  // TODO: draw function
-            rect.points(vertices);
-            for (int j = 0; j < 4; j++) {
-                line(_visual, vertices[j], vertices[(j+1)%4], colour, 2);
-            }
+            // cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
+            cv::drawContours(frame_, contours, i, colour, 1);
+            cv::drawContours(frame_, polygon, -1, colour, 3);
+            drawRotatedRect(rect, valid_index++, colour);
         }
 
         HSVItem item;
@@ -186,11 +191,11 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
     return item_list;   
 }
 
-std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
-    return detectPipeline(_id, hsv_, frame_, _draw);
+inline std::vector<HSVItem> HSVDetection::detect(const std::string _id, bool _draw) {
+    return detectPipeline(_id, hsv_, _draw);
 }
 
-std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
+inline std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
     std::vector<HSVItem> final_list;
     for (auto it = range_.begin(); it != range_.end(); ++it) {
           std::vector<HSVItem> partial_list = detect(it->first, _draw);
@@ -201,14 +206,11 @@ std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
 
 std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
 
-    std::vector<HSVItem> item_list;
-    std::vector<HSVItem> detected = detect(_id, _draw);  // TODO: draw?
-    if (detected.size() == 0) { return item_list; }
-
-    cv::Size hsv_size = hsv_.size();
-    // cv::Point2f target_point = cv::Point2f(0.5 * hsv_size.width, 0.5 * hsv_size.height);
+    std::vector<HSVItem> detected = detect(_id, true);
+    if (detected.size() == 0) { return std::vector<HSVItem>(); }
 
     HSVItem closest;
+    cv::Size hsv_size = hsv_.size();
     float min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
     for (auto item: detected) {
         // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", item.rectangle.angle, item.rectangle.center.x, item.rectangle.center.y, item.rectangle.size.width, item.rectangle.size.height);
@@ -221,28 +223,45 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
             closest = item;
         }
     }
+    std::vector<HSVItem> track_list;
+    track_list.push_back(closest);
     // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", closest.rectangle.angle, closest.rectangle.center.x, closest.rectangle.center.y, closest.rectangle.size.width, closest.rectangle.size.height);
 
     cv::Rect roi = closest.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
     closest.cropped = (closest.rectangle.boundingRect() != roi);
-    if ((roi.width <= 0) || (roi.height <= 0)) { return item_list; }
-    if (_draw) {
-        rectangle(frame_, closest.rectangle.boundingRect(), colour_[_id]);
-    }
-
+    if ((roi.width <= 0) || (roi.height <= 0)) { return track_list; }  // TODO: Should be an error?
     // ROS_ERROR("(x, y) = (%d, %d), (w, h) = (%d, %d)", roi.x, roi.y, roi.width, roi.height);
 
     // range_["white"] is mandatory here!
     if (range_.count("white") == 0) {
         ROS_WARN("HSVDetection::track: id [white] not found!");
-        return item_list;
+        return track_list;
     }
     cv::Mat hsv_roi = hsv_(roi);
-    cv::Mat in_range_roi;
+    std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
+    // cv::Mat in_range_roi;
 
-    std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, frame_, _draw);
+    HSVItem largest_white;
+    float max_area = 0;
+    for (auto item: white_list) {
+        float area = item.rectangle.size.width * item.rectangle.size.height;
+        if (area > max_area) {
+            max_area = area;
+            largest_white = item;
+        }
+    }
+    // Traslate largest_white out of ROI:
+    largest_white.rectangle.center.x += roi.x;
+    largest_white.rectangle.center.y += roi.y;
+    track_list.push_back(largest_white);
 
-    return item_list;
+    if (_draw) {
+        rectangle(frame_, closest.rectangle.boundingRect(), colour_[_id]);
+        // drawRotatedRect(closest.rectangle, 0, colour_[_id]);
+        drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
+    }
+
+    return track_list;
 }
 
 #endif  // HSV_DETECTION_H
