@@ -1,13 +1,12 @@
 #ifndef HSV_DETECTION_H
 #define HSV_DETECTION_H
 
+#include <ros/console.h>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/core/core.hpp>
+#include <iostream>
 #include <vector>
 #include <map>
-
-#include <opencv2/imgproc.hpp>
-#include <ros/console.h>
-#include <iostream>
 
 #define MAX_VALUE_H 180  // 180 = 360/2
 #define MAX_VALUE_S 255
@@ -105,13 +104,8 @@ inline void HSVDetection::setFrame(cv::Mat& _frame) {
         ROS_WARN("HSVDetection::setFrame: frame is empty!");
         return;
     }
-
-    // Set capture size
     setImageSize(_frame.size());
-
-    // Transform to HSV space...
     cvtColor(_frame, hsv_, cv::COLOR_BGR2HSV);
-
     frame_ = _frame;
 }
 
@@ -244,7 +238,6 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", closest.rectangle.angle, closest.rectangle.center.x, closest.rectangle.center.y, closest.rectangle.size.width, closest.rectangle.size.height);
 
     cv::Rect roi = closest.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
-    // closest.cropped = (closest.rectangle.boundingRect() != roi);
     if ((roi.width <= 0) || (roi.height <= 0)) { return track_list; }  // TODO: Should be an error?
     // ROS_ERROR("(x, y) = (%d, %d), (w, h) = (%d, %d)", roi.x, roi.y, roi.width, roi.height);
 
@@ -255,7 +248,6 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     }
     cv::Mat hsv_roi = hsv_(roi);
     std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
-    // cv::Mat in_range_roi;
 
     HSVItem largest_white;
     float max_area = 0;
