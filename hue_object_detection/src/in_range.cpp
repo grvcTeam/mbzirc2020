@@ -82,6 +82,14 @@ int main(int argc, char** argv) {
   cv::createTrackbar("Epsilon", window_detection_name, &poly_epsilon, 640/4);  // TODO: Depends on resolution
 
   HSVDetection detection;
+  HSVRange white_range;
+  white_range.min_HSV[0] = 0;
+  white_range.min_HSV[1] = 0;
+  white_range.min_HSV[2] = 140;
+  white_range.max_HSV[0] = 180;
+  white_range.max_HSV[1] = 52;
+  white_range.max_HSV[2] = 234;
+  detection.addDetector("white", white_range, cvScalar(0, 0, 0));
 //   detection.setConfig(detection_config);
 //   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
 //   detection.addDetector("red", red_range, cvScalar(255, 0, 0));
@@ -119,7 +127,14 @@ int main(int argc, char** argv) {
       detection_config.poly_epsilon = poly_epsilon;
       detection.setConfig(detection_config);
       detection.setFrame(cv_ptr->image);
-      detection.detect("test", true);
+      detection.track("test", true);
+      // detection.detect(cv_ptr->image, "test", true);
+      // detection.detect(cv_ptr->image, "white", true);
+      // detection.detectAll(cv_ptr->image, true);
+      // cv::Mat hsv;
+      // cvtColor(cv_ptr->image, hsv, cv::COLOR_BGR2HSV);
+      // detection.detect(hsv, "test");
+
       //cv_ptr->image = detection.getDetection();  // debug!
 
     //   std::vector<HSVItem> detected = detection.detectAll(true);
