@@ -96,6 +96,7 @@ protected:
 	Eigen::MatrixXd pose_;
 	Eigen::MatrixXd pose_cov_;
 	double yaw_;
+	double yaw_cov_;
 	std::vector<double> scale_;
 
 	/// Do not update when True

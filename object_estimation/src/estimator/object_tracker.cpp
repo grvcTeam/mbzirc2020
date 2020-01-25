@@ -31,6 +31,7 @@
 
 #define VEL_NOISE_VAR 0.2 
 #define COLOR_DETECTOR_PD 0.9
+#define COV_YAW 0.03
 #define MIN_COLOR_DISTANCE 0.15
 
 using namespace std;
@@ -134,6 +135,7 @@ void ObjectTracker::initialize(YAML::Node node)
 				pose_cov_(i,j) = 0.0;
 
 		yaw_ = yaw;
+		cov_yaw_ = 0.0;
 	}
 	else
 	{
@@ -219,6 +221,7 @@ void ObjectTracker::initialize(ObjectDetection* z)
 	tf2::Matrix3x3 Rot_matrix(q);
 	Rot_matrix.getRPY(roll,pitch,yaw);
 	yaw_ = yaw;
+	cov_yaw_ = COV_YAW;
 
 	scale_[0] = z->scale.x;
 	scale_[1] = z->scale.y;
@@ -371,14 +374,15 @@ bool ObjectTracker::update(ObjectDetection* z)
 		I.setIdentity(6, 6);
 		pose_cov_ = (I - K*H)*pose_cov_;
 
-		// TODO: Include orientation in the KF
+		// KF for the yaw orientation
 		double roll, pitch, yaw;
 		tf2::Quaternion q;
 		tf2::fromMsg(z->pose.pose.orientation,q);
 		tf2::Matrix3x3 Rot_matrix(q);
 		Rot_matrix.getRPY(roll,pitch,yaw);
-		yaw_ = yaw;
-
+		
+		yaw_ = yaw_ + (cov_yaw_/(cov_yaw_ + COV_YAW))*(yaw-yaw_);
+		cov_yaw_ = (COV_YAW/(cov_yaw_ + COV_YAW))*cov_yaw_;
 	}
 	
 	// TODO: update scale
