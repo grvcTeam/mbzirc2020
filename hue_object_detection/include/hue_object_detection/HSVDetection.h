@@ -141,7 +141,21 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
 
     // Detect the object based on HSV Range Values
     cv::Mat in_range;
-    inRange(_src, range_[_id].getMin(), range_[_id].getMax(), in_range);
+    if (range_[_id].min_HSV[0] >= range_[_id].max_HSV[0]) {
+        HSVRange lo, hi;
+        lo = range_[_id];
+        lo.min_HSV[0] = 0;
+        lo.max_HSV[0] = range_[_id].max_HSV[0];
+        hi = range_[_id];
+        hi.min_HSV[0] = range_[_id].min_HSV[0];
+        hi.max_HSV[0] = MAX_VALUE_H;
+        cv::Mat in_range_lo, in_range_hi;
+        inRange(_src, lo.getMin(), lo.getMax(), in_range_lo);
+        inRange(_src, hi.getMin(), hi.getMax(), in_range_hi);
+        in_range = in_range_lo + in_range_hi;
+    } else {
+        inRange(_src, range_[_id].getMin(), range_[_id].getMax(), in_range);
+    }
 
     // Smooth image...
     morphologyEx(in_range, in_range, cv::MORPH_OPEN, config_.kernel.getAsElement());

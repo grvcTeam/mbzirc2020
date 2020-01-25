@@ -62,8 +62,8 @@ int main(int argc, char** argv) {
 //   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
 
   // Trackbars to set thresholds for HSV values
-  cv::createTrackbar("Min H", window_detection_name, &range.min_HSV[0], MAX_VALUE_H, on_min_H_thresh_trackbar);
-  cv::createTrackbar("Max H", window_detection_name, &range.max_HSV[0], MAX_VALUE_H, on_max_H_thresh_trackbar);
+  cv::createTrackbar("Min H*", window_detection_name, &range.min_HSV[0], MAX_VALUE_H);  //, on_min_H_thresh_trackbar);
+  cv::createTrackbar("Max H*", window_detection_name, &range.max_HSV[0], MAX_VALUE_H);  //, on_max_H_thresh_trackbar);
   cv::createTrackbar("Min S", window_detection_name, &range.min_HSV[1], MAX_VALUE_S, on_min_S_thresh_trackbar);
   cv::createTrackbar("Max S", window_detection_name, &range.max_HSV[1], MAX_VALUE_S, on_max_S_thresh_trackbar);
   cv::createTrackbar("Min V", window_detection_name, &range.min_HSV[2], MAX_VALUE_V, on_min_V_thresh_trackbar);
