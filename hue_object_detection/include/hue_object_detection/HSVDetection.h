@@ -69,6 +69,7 @@ public:
 private:
     std::vector<HSVItem> detectPipeline(const std::string _id, const cv::Mat& _src, bool _draw = false);
     void drawRotatedRect(const cv::RotatedRect& _r, int _index, cv::Scalar _colour);
+    bool is_cropped(const cv::RotatedRect& _r);
     std::map<std::string, HSVRange> range_;
     std::map<std::string, cv::Scalar> colour_;
 
@@ -181,6 +182,7 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         HSVItem item;
         item.detector_id = _id;
         item.rectangle = rect;
+        item.cropped = is_cropped(rect);
         // item.centroid = centroid;
         // item.area = area;
         // item.perimeter = cv::arcLength(polygon, true);
@@ -228,7 +230,7 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", closest.rectangle.angle, closest.rectangle.center.x, closest.rectangle.center.y, closest.rectangle.size.width, closest.rectangle.size.height);
 
     cv::Rect roi = closest.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
-    closest.cropped = (closest.rectangle.boundingRect() != roi);
+    // closest.cropped = (closest.rectangle.boundingRect() != roi);
     if ((roi.width <= 0) || (roi.height <= 0)) { return track_list; }  // TODO: Should be an error?
     // ROS_ERROR("(x, y) = (%d, %d), (w, h) = (%d, %d)", roi.x, roi.y, roi.width, roi.height);
 
@@ -253,6 +255,7 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     // Traslate largest_white out of ROI:
     largest_white.rectangle.center.x += roi.x;
     largest_white.rectangle.center.y += roi.y;
+    largest_white.cropped = is_cropped(largest_white.rectangle);
     track_list.push_back(largest_white);
 
     if (_draw) {
@@ -262,6 +265,13 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     }
 
     return track_list;
+}
+
+inline bool HSVDetection::is_cropped(const cv::RotatedRect& _r) {
+    auto bb = _r.boundingRect();
+    if ((bb.x <= 0) || (bb.y <= 0)) { return true; }
+    if (((bb.x + bb.width) >= capture_size_.width) || ((bb.y + bb.height) >= capture_size_.height)) { return true; }
+    return false;
 }
 
 #endif  // HSV_DETECTION_H

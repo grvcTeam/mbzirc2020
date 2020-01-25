@@ -85,10 +85,10 @@ int main(int argc, char** argv) {
   HSVRange white_range;
   white_range.min_HSV[0] = 0;
   white_range.min_HSV[1] = 0;
-  white_range.min_HSV[2] = 140;
+  white_range.min_HSV[2] = 150;
   white_range.max_HSV[0] = 180;
-  white_range.max_HSV[1] = 52;
-  white_range.max_HSV[2] = 234;
+  white_range.max_HSV[1] = 58;
+  white_range.max_HSV[2] = 255;
   detection.addDetector("white", white_range, cvScalar(0, 0, 0));
 //   detection.setConfig(detection_config);
 //   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
@@ -130,7 +130,12 @@ int main(int argc, char** argv) {
       // detection.detect("test", true);
       // detection.detect("white", true);
       // detection.detectAll(true);
-      detection.track("test", true);
+      std::vector<HSVItem> tracked = detection.track("test", true);
+      for (int i = 0; i < tracked.size(); i++) {
+        auto bb = tracked[i].rectangle.boundingRect();
+       	printf("[%d] Tracking[%s]: (%f, %f), [%f, %f], %fº%s\n", i, tracked[i].detector_id.c_str(), tracked[i].rectangle.center.x, tracked[i].rectangle.center.y, tracked[i].rectangle.size.width, tracked[i].rectangle.size.height, tracked[i].rectangle.angle, tracked[i].cropped? ", cropped!": "");
+        // printf("[%s]: bb.x + bb.width = %d, bb.y + bb.height = %d\n", tracked[i].detector_id.c_str(), bb.x + bb.width, bb.y + bb.height);
+      }
 
       //cv_ptr->image = detection.getDetection();  // debug!
 
