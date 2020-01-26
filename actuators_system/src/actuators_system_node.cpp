@@ -116,13 +116,13 @@ int main(int argc, char** argv) {
     serial_port::lock(serial_port);
 
     Framer framer;
-    ros::ServiceServer set_pwm_service = n.advertiseService("set_pwm", set_pwm);
-    ros::ServiceServer set_digital_service = n.advertiseService("set_digital", set_digital);
+    ros::ServiceServer set_pwm_service = n.advertiseService("actuators_system/raw/set_pwm", set_pwm);
+    ros::ServiceServer set_digital_service = n.advertiseService("actuators_system/raw/set_digital", set_digital);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
     deframer.connect(&board_output_reader);
-    ros::Publisher actuators_data_pub = n.advertise<mbzirc_comm_objs::ActuatorsData>("actuators_data", 10);
+    ros::Publisher actuators_data_pub = n.advertise<mbzirc_comm_objs::ActuatorsData>("actuators_system/raw/actuators_data", 10);
 
     ros::Rate rate(10);  // [Hz]
     while (ros::ok()) {
