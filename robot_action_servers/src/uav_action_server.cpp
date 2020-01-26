@@ -288,7 +288,7 @@ public:
     // unsigned tries_counter = 0;  // TODO: as feedback?
     ros::Duration timeout(CANDIDATE_TIMEOUT);
     ros::Rate loop_rate(CATCHING_LOOP_RATE);
-    while (true) {
+    while (ros::ok()) {
       ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
       // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
 
