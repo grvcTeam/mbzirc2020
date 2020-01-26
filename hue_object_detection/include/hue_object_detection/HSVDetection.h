@@ -42,7 +42,7 @@ struct HSVItem {
     std::string detector_id;
     cv::RotatedRect rectangle;
     // cv::Point centroid;  // from contour, not very reliable!
-    double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
+    // double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
     bool cropped = false;
 };
 
@@ -190,15 +190,17 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         if (area < config_.min_area) { continue; }
 
         cv::RotatedRect rect = sanitizeRotatedRect(minAreaRect(polygon));  // TODO: contours[i]? polygon?
-        CvMoments moments = cv::moments(polygon);
-        cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
-        double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
-        double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
-        double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
-        double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
+        // CvMoments moments = cv::moments(polygon);
+        // cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
+        // double mu20_prime = moments.mu20 / moments.m00;
+        // double mu02_prime = moments.mu02 / moments.m00;
+        // double mu11_prime = moments.mu11 / moments.m00;
+        // double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
 
         if (_draw) {
             cv::Scalar colour = colour_[_id];
+            CvMoments moments = cv::moments(polygon);
+            cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
             cv::circle(frame_, centroid, 4, colour, 1);
             cv::drawContours(frame_, contours, i, colour, 1);
             cv::drawContours(frame_, polygon, -1, colour, 3);
@@ -210,7 +212,7 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         item.rectangle = rect;
         item.cropped = is_cropped(rect);
         // item.centroid = centroid;
-        item.orientation = theta;
+        // item.orientation = theta;
         item_list.push_back(item);
      }
 

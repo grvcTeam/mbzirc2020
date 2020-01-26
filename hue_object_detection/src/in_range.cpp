@@ -95,8 +95,6 @@ int main(int argc, char** argv) {
       // detection.detectAll(true);
       HSVTrackingPair tracked = detection.track("test", true);
       tracked.print();
-      // printf("[colour] orientation = %lf\n", tracked.colour_item.orientation*180/M_PI - 90);
-      // printf("[white] orientation = %lf\n", tracked.white_item.orientation*180/M_PI - 90);
 
       // draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
