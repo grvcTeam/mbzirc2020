@@ -24,6 +24,7 @@
 #include <mbzirc_comm_objs/SetPWM.h>
 #include <mbzirc_comm_objs/SetDigital.h>
 #include <mbzirc_comm_objs/ActuatorsData.h>
+#include <std_srvs/Trigger.h>
 
 #include <handy_tools/serial_port.h>
 #include <actuators_system/arduino/ssfp.h>
@@ -61,6 +62,24 @@ bool set_digital(mbzirc_comm_objs::SetDigital::Request  &req, mbzirc_comm_objs::
 
     input_mutex.lock();
     board_input.digital_out_0 = req.value;
+    input_mutex.unlock();
+    return true;
+}
+
+bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1500;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1800;  // TODO: From config file?
+    }
     input_mutex.unlock();
     return true;
 }
@@ -118,6 +137,8 @@ int main(int argc, char** argv) {
     Framer framer;
     ros::ServiceServer set_pwm_service = n.advertiseService("actuators_system/raw/set_pwm", set_pwm);
     ros::ServiceServer set_digital_service = n.advertiseService("actuators_system/raw/set_digital", set_digital);
+    ros::ServiceServer open_gripper_service = n.advertiseService("actuators_system/open_gripper", open_gripper);
+    ros::ServiceServer close_gripper_service = n.advertiseService("actuators_system/close_gripper", close_gripper);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
