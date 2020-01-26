@@ -41,13 +41,32 @@ struct HSVRange {
 struct HSVItem {
     std::string detector_id;
     cv::RotatedRect rectangle;
-    // cv::Point centroid;
-    // double area;
-    // double perimeter;
-    // double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
-    // contour;
+    // cv::Point centroid;  // from contour, not very reliable!
+    double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
     bool cropped = false;
 };
+
+struct HSVTrackingPair {
+    HSVItem colour_item;
+    HSVItem white_item;
+
+    void print() {
+        printf("[%s]: (%f, %f), [%f, %f], %fº%s\n", colour_item.detector_id.c_str(), colour_item.rectangle.center.x, colour_item.rectangle.center.y, colour_item.rectangle.size.width, colour_item.rectangle.size.height, colour_item.rectangle.angle, colour_item.cropped? ", cropped!": "");
+        printf("[%s]: (%f, %f), [%f, %f], %fº%s\n", white_item.detector_id.c_str(), white_item.rectangle.center.x, white_item.rectangle.center.y, white_item.rectangle.size.width, white_item.rectangle.size.height, white_item.rectangle.angle, white_item.cropped? ", cropped!": "");
+    }
+};
+
+// TODO: Give consistency to rectangle sizes and orientation
+cv::RotatedRect sanitizeRotatedRect(const cv::RotatedRect& _rect) {
+    cv::RotatedRect out = _rect;
+    if (_rect.size.height < _rect.size.width) {
+        out.size.height = _rect.size.width;
+        out.size.width  = _rect.size.height;
+        out.angle = _rect.angle + 90;
+    }
+
+    return out;
+}
 
 struct HSVDetectionConfig {
     double min_area = 2.0;
@@ -63,7 +82,8 @@ public:
     void setFrame(cv::Mat& _frame);
     std::vector<HSVItem> detect(const std::string _id, bool _draw = false);
     std::vector<HSVItem> detectAll(bool _draw = false);
-    std::vector<HSVItem> track(const std::string _id, bool _draw = false);
+
+    HSVTrackingPair track(const std::string _id, bool _draw = false);
 
 private:
     std::vector<HSVItem> detectPipeline(const std::string _id, const cv::Mat& _src, bool _draw = false);
@@ -169,19 +189,17 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         double area = fabs(cv::contourArea(polygon));
         if (area < config_.min_area) { continue; }
 
-        cv::RotatedRect rect = minAreaRect(polygon);  // TODO: contours[i]? polygon?
-        // CvMoments moments = cv::moments(polygon);
-        // cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
-        // double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
-        // double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
-        // double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
-        // double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
+        cv::RotatedRect rect = sanitizeRotatedRect(minAreaRect(polygon));  // TODO: contours[i]? polygon?
+        CvMoments moments = cv::moments(polygon);
+        cv::Point centroid = cv::Point(cvRound(moments.m10/moments.m00), cvRound(moments.m01/moments.m00));
+        double mu20_prime = moments.mu20 / moments.m00;  // mu00 = m00
+        double mu02_prime = moments.mu02 / moments.m00;  // mu00 = m00
+        double mu11_prime = moments.mu11 / moments.m00;  // mu00 = m00
+        double theta = 0.5 * atan2(2.0 * mu11_prime, mu20_prime - mu02_prime);
 
         if (_draw) {
-             cv::Scalar colour = colour_[_id];
-            // cv::circle(frame_, centroid, 4, colour, -1);
-            // sprintf(count_text, "%d", valid_index++);
-            // cv::putText(frame_, count_text, centroid, CV_FONT_HERSHEY_PLAIN, 1, colour);
+            cv::Scalar colour = colour_[_id];
+            cv::circle(frame_, centroid, 4, colour, 1);
             cv::drawContours(frame_, contours, i, colour, 1);
             cv::drawContours(frame_, polygon, -1, colour, 3);
             drawRotatedRect(rect, valid_index++, colour);
@@ -192,9 +210,7 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         item.rectangle = rect;
         item.cropped = is_cropped(rect);
         // item.centroid = centroid;
-        // item.area = area;
-        // item.perimeter = cv::arcLength(polygon, true);
-        // item.orientation = theta;
+        item.orientation = theta;
         item_list.push_back(item);
      }
 
@@ -214,42 +230,39 @@ inline std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
     return final_list;
 }
 
-std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
+HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
 
     std::vector<HSVItem> detected = detect(_id, true);
-    if (detected.size() == 0) { return std::vector<HSVItem>(); }
+    if (detected.size() == 0) { return HSVTrackingPair(); }
 
-    HSVItem closest;
+    HSVItem closest_colour;
     cv::Size hsv_size = hsv_.size();
     float min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
     for (auto item: detected) {
-        // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", item.rectangle.angle, item.rectangle.center.x, item.rectangle.center.y, item.rectangle.size.width, item.rectangle.size.height);
-        // ROS_ERROR("hsv_size = (%d, %d)", hsv_size.width, hsv_size.height);
         float dx = fabs(hsv_size.width/2  - item.rectangle.center.x);
         float dy = fabs(hsv_size.height/2 - item.rectangle.center.y);
         float sq_distance = dx*dx + dy*dy;
         if (sq_distance < min_sq_distance) {
             min_sq_distance = sq_distance;
-            closest = item;
+            closest_colour = item;
         }
     }
-    std::vector<HSVItem> track_list;
-    track_list.push_back(closest);
-    // ROS_ERROR("angle = %f, center = (%f, %f), size = (%f, %f)", closest.rectangle.angle, closest.rectangle.center.x, closest.rectangle.center.y, closest.rectangle.size.width, closest.rectangle.size.height);
+    HSVTrackingPair tracking_pair;
+    tracking_pair.colour_item = closest_colour;
 
-    cv::Rect roi = closest.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
-    if ((roi.width <= 0) || (roi.height <= 0)) { return track_list; }  // TODO: Should be an error?
+    cv::Rect roi = closest_colour.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
+    if ((roi.width <= 0) || (roi.height <= 0)) { return tracking_pair; }  // TODO: Should be an error?
     // ROS_ERROR("(x, y) = (%d, %d), (w, h) = (%d, %d)", roi.x, roi.y, roi.width, roi.height);
 
     // range_["white"] is mandatory here!
     if (range_.count("white") == 0) {
         ROS_WARN("HSVDetection::track: id [white] not found!");
-        return track_list;
+        return tracking_pair;
     }
     cv::Mat hsv_roi = hsv_(roi);
     std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
 
-    HSVItem largest_white;
+    HSVItem largest_white;  // TODO: Use closest white to ROI center instead (orange!)
     float max_area = 0;
     for (auto item: white_list) {
         float area = item.rectangle.size.width * item.rectangle.size.height;
@@ -262,15 +275,15 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
     largest_white.rectangle.center.x += roi.x;
     largest_white.rectangle.center.y += roi.y;
     largest_white.cropped = is_cropped(largest_white.rectangle);
-    track_list.push_back(largest_white);
+    tracking_pair.white_item = largest_white;
 
     if (_draw) {
-        rectangle(frame_, closest.rectangle.boundingRect(), colour_[_id]);
-        // drawRotatedRect(closest.rectangle, 0, colour_[_id]);
+        rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
+        // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
         drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
     }
 
-    return track_list;
+    return tracking_pair;
 }
 
 inline bool HSVDetection::is_cropped(const cv::RotatedRect& _r) {

@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
 
   std::string camera_url;
-  ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
+  ros::param::param<std::string>("~camera_url", camera_url, "camera/color");  // camera_0 (sim), camera/color (real)
   ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hsv_detection", true, window_detection_name);  // TODO: image_raw vs image_rect_color
 
   // Trackbars to set thresholds for HSV values
@@ -93,12 +93,10 @@ int main(int argc, char** argv) {
       // detection.detect("test", true);
       // detection.detect("white", true);
       // detection.detectAll(true);
-      std::vector<HSVItem> tracked = detection.track("test", true);
-      for (int i = 0; i < tracked.size(); i++) {
-        auto bb = tracked[i].rectangle.boundingRect();
-       	printf("[%d] Tracking[%s]: (%f, %f), [%f, %f], %fº%s\n", i, tracked[i].detector_id.c_str(), tracked[i].rectangle.center.x, tracked[i].rectangle.center.y, tracked[i].rectangle.size.width, tracked[i].rectangle.size.height, tracked[i].rectangle.angle, tracked[i].cropped? ", cropped!": "");
-        // printf("[%s]: bb.x + bb.width = %d, bb.y + bb.height = %d\n", tracked[i].detector_id.c_str(), bb.x + bb.width, bb.y + bb.height);
-      }
+      HSVTrackingPair tracked = detection.track("test", true);
+      tracked.print();
+      // printf("[colour] orientation = %lf\n", tracked.colour_item.orientation*180/M_PI - 90);
+      // printf("[white] orientation = %lf\n", tracked.white_item.orientation*180/M_PI - 90);
 
       // draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
