@@ -74,7 +74,6 @@ void ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 //  Routine to process the image and determine if there is fire and where
 void image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
-    
     int thermal_threshold=70;  //Thermal threshold to detect fire, 70 degrees recomended
 
     //Index and size of the thermal window displayed
@@ -199,7 +198,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
 
 
             }
-            
+        
       
         }
        
@@ -242,10 +241,10 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             relative_pose_x=x_comp;
             relative_pose_y=y_comp;
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
-            rec_object.image_espec.width_from_center=relative_pose_x;
-            rec_object.image_espec.height_from_center=relative_pose_y;
-            rec_object.image_espec.x_center=center.x;
-            rec_object.image_espec.y_center=center.y;
+            rec_object.image_detection.width=relative_pose_x;
+            rec_object.image_detection.height=relative_pose_y;
+            rec_object.image_detection.u=center.x;
+            rec_object.image_detection.v=center.y;
             rec_object.pose.pose=pos.pose;
              // Publishing the Object 
             rec_list.objects.push_back(rec_object);

@@ -51,7 +51,6 @@ class ObjectTracker
 {
 public:
 	ObjectTracker(int id, int type);
-	ObjectTracker(int id, int type, int subtype);
 	~ObjectTracker();
 
 	void initialize(mbzirc_comm_objs::ObjectDetection* z);
@@ -60,6 +59,7 @@ public:
 	bool update(mbzirc_comm_objs::ObjectDetection* z);
 	double getLikelihood(mbzirc_comm_objs::ObjectDetection* z);
 	double getDistance(mbzirc_comm_objs::ObjectDetection* z);
+	void computeSubtype(YAML::Node &scenario_info);
 	double lastUpdateTime();
 	int getUpdateCount();
 	std::vector<double> getPose();
@@ -76,10 +76,13 @@ public:
 	int getId();
 	int getColor();
 	bool isStatic();
+	
+protected:
+
 	int color_from_string(const std::string& color);
 	int subtype_from_string(const std::string& subtype);
 	
-protected:
+
 	Timer update_timer_;			/// Timer for last update
 	int update_count_;				/// Counter with the number of updates
 	int id_;						/// Target identifier
@@ -102,8 +105,8 @@ protected:
 	/// Do not update when True
 	bool fixed_pose_;
 	bool fixed_color_;
-	bool fixed_scale_;				
-
+	bool fixed_scale_;
+	bool fixed_subtype_;				
 };
 
 #endif

@@ -45,39 +45,13 @@ ObjectTracker::ObjectTracker(int id, int type)
 {
 	id_ = id;
 	obj_type_ = type;
-	obj_subtype_ = mbzirc_comm_objs::Object::SUBTYPE_UNKNOWN;
+	obj_subtype_ = Object::SUBTYPE_UNKNOWN;
 
 	is_static_ = true;
 	fixed_pose_ = false;
 	fixed_color_ = false;
 	fixed_scale_ = false;
-		
-	status_ = ACTIVE;
-
-	fact_bel_.resize(1);
-	fact_bel_[COLOR].resize(ObjectDetection::NCOLORS);
-
-	pose_ = Eigen::MatrixXd::Zero(6,1);
-	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
-	
-	scale_.resize(3);
-}
-
-/** Constructor
-\param id Identifier
-\param type Type of object
-\param subtype Subtype of object
-*/
-ObjectTracker::ObjectTracker(int id, int type, int subtype)
-{
-	id_ = id;
-	obj_type_ = type;
-	obj_subtype_ = subtype;
-
-	is_static_ = true;
-	fixed_pose_ = false;
-	fixed_color_ = false;
-	fixed_scale_ = false;
+	fixed_subtype_ = false;
 		
 	status_ = ACTIVE;
 
@@ -102,7 +76,10 @@ ObjectTracker::~ObjectTracker()
 void ObjectTracker::initialize(YAML::Node node)
 {
 	if(node["sub_type"])
+	{
 		obj_subtype_ = subtype_from_string(node["sub_type"].as<string>());
+		fixed_subtype_ = true;
+	}
 
 	if(node["status"] && node["status"].as<string>() == "active" )
 	{
@@ -135,7 +112,7 @@ void ObjectTracker::initialize(YAML::Node node)
 				pose_cov_(i,j) = 0.0;
 
 		yaw_ = yaw;
-		cov_yaw_ = 0.0;
+		yaw_cov_ = 0.0;
 	}
 	else
 	{
@@ -195,7 +172,7 @@ void ObjectTracker::initialize(YAML::Node node)
 \param z Initial observation
 */
 void ObjectTracker::initialize(ObjectDetection* z)
-{
+{	
 	// Setup state vector
 	pose_.setZero(6, 1);
 	pose_(0,0) = z->pose.pose.position.x;
@@ -221,7 +198,7 @@ void ObjectTracker::initialize(ObjectDetection* z)
 	tf2::Matrix3x3 Rot_matrix(q);
 	Rot_matrix.getRPY(roll,pitch,yaw);
 	yaw_ = yaw;
-	cov_yaw_ = COV_YAW;
+	yaw_cov_ = COV_YAW;
 
 	scale_[0] = z->scale.x;
 	scale_[1] = z->scale.y;
@@ -338,42 +315,49 @@ bool ObjectTracker::update(ObjectDetection* z)
 	
 	if(!fixed_pose_)
 	{
-		// Compute update jacobian
-		Eigen::Matrix<double, 3, 6> H;
-		H.setZero(3, 6);
-		H(0,0) = 1.0;
-		H(1,1) = 1.0;
-		H(2,2) = 1.0;
-			
-		// Compute update noise matrix
-		Eigen::Matrix<double, 3, 3> R;
-		for(int i = 0; i < 3; i++)
-			for(int j = 0; j < 3; j++)
-				R(i,j) = z->pose.covariance[i*6+j];
-			
-		// Calculate innovation matrix
-		Eigen::Matrix<double, 3, 3> S;
-		S = H*pose_cov_*H.transpose() + R;
-			
-		// Calculate kalman gain
-		Eigen::Matrix<double, 6, 3> K;
-		K = pose_cov_*H.transpose()*S.inverse();
-			
-		// Calculate innovation vector
-		Eigen::Matrix<double, 3, 1> y;
-		y = H*pose_;
-		y(0,0) = z->pose.pose.position.x - y(0,0);
-		y(1,0) = z->pose.pose.position.y - y(1,0);
-		y(2,0) = z->pose.pose.position.z - y(2,0);
-			
-		// Calculate new state vector
-		pose_ = pose_ + K*y;
-			
-		// Calculate new cov matrix
-		Eigen::Matrix<double, 6, 6> I;
-		I.setIdentity(6, 6);
-		pose_cov_ = (I - K*H)*pose_cov_;
-
+		if(z->type == ObjectDetection::TYPE_BRICK)
+		{
+			// TODO Clustering
+		}
+		else
+		{
+			// Compute update jacobian
+			Eigen::Matrix<double, 3, 6> H;
+			H.setZero(3, 6);
+			H(0,0) = 1.0;
+			H(1,1) = 1.0;
+			H(2,2) = 1.0;
+				
+			// Compute update noise matrix
+			Eigen::Matrix<double, 3, 3> R;
+			for(int i = 0; i < 3; i++)
+				for(int j = 0; j < 3; j++)
+					R(i,j) = z->pose.covariance[i*6+j];
+				
+			// Calculate innovation matrix
+			Eigen::Matrix<double, 3, 3> S;
+			S = H*pose_cov_*H.transpose() + R;
+				
+			// Calculate kalman gain
+			Eigen::Matrix<double, 6, 3> K;
+			K = pose_cov_*H.transpose()*S.inverse();
+				
+			// Calculate innovation vector
+			Eigen::Matrix<double, 3, 1> y;
+			y = H*pose_;
+			y(0,0) = z->pose.pose.position.x - y(0,0);
+			y(1,0) = z->pose.pose.position.y - y(1,0);
+			y(2,0) = z->pose.pose.position.z - y(2,0);
+				
+			// Calculate new state vector
+			pose_ = pose_ + K*y;
+				
+			// Calculate new cov matrix
+			Eigen::Matrix<double, 6, 6> I;
+			I.setIdentity(6, 6);
+			pose_cov_ = (I - K*H)*pose_cov_;
+		}
+		
 		// KF for the yaw orientation
 		double roll, pitch, yaw;
 		tf2::Quaternion q;
@@ -381,14 +365,22 @@ bool ObjectTracker::update(ObjectDetection* z)
 		tf2::Matrix3x3 Rot_matrix(q);
 		Rot_matrix.getRPY(roll,pitch,yaw);
 		
-		yaw_ = yaw_ + (cov_yaw_/(cov_yaw_ + COV_YAW))*(yaw-yaw_);
-		cov_yaw_ = (COV_YAW/(cov_yaw_ + COV_YAW))*cov_yaw_;
+		yaw_ = yaw_ + (yaw_cov_/(yaw_cov_ + COV_YAW))*(yaw-yaw_);
+		yaw_cov_ = (COV_YAW/(yaw_cov_ + COV_YAW))*yaw_cov_;
 	}
 	
-	// TODO: update scale
 	if(!fixed_scale_)
 	{
-
+		if(z->type == ObjectDetection::TYPE_BRICK)
+		{
+			// TODO Clustering
+		}
+		else
+		{
+			scale_[0] = z->scale.x;
+			scale_[1] = z->scale.y;
+			scale_[2] = z->scale.z;
+		}
 	}
 
 	// Update timer
@@ -462,6 +454,78 @@ double ObjectTracker::getDistance(ObjectDetection* z)
 	dz = pose_(2,0) - z->pose.pose.position.z;
 
 	return sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+/**
+Compute the subtype of the object. 
+\param scenario_info Structure with information from the scenario
+*/
+void ObjectTracker::computeSubtype(YAML::Node &scenario_info)
+{
+	if(!fixed_subtype_)
+	{
+		switch (obj_type_)
+		{
+		case Object::TYPE_PILE:
+			if(scale_[1]/scale_[0] <= 0.25)
+				obj_subtype_ = Object::SUBTYPE_UAV;
+			else
+				obj_subtype_ = Object::SUBTYPE_UGV;
+			
+			break;
+		case Object::TYPE_WALL:
+			if( scale_[1]/scale_[0] < 0.5)
+				obj_subtype_ = Object::SUBTYPE_UAV;
+			else
+				obj_subtype_ = Object::SUBTYPE_UGV;
+			
+			break;
+		case Object::TYPE_FIRE:
+			
+			if(scenario_info.size())
+			{
+				double x_min = scenario_info["x_min"].as<float>();
+				double x_max = scenario_info["x_max"].as<float>();
+				double y_min = scenario_info["y_min"].as<float>();
+				double y_max = scenario_info["x_max"].as<float>();
+				
+				if(x_min+1  <= pose_(0,0) && pose_(0,0) <= x_max-1 
+				&& y_min+1  <= pose_(1,0) && pose_(1,0) <= y_max-1)
+
+					obj_subtype_ = Object::SUBTYPE_INFIRE;
+				
+				else if( pose_(0,0) <= x_min-2.0 || x_max+2.0 <= pose_(0,0) 
+				|| pose_(1,0) <= y_min-2.0 || y_max+2.0 <= pose_(1,0))
+
+					obj_subtype_ = Object::SUBTYPE_OUTFIRE;
+				
+				else
+					obj_subtype_ = Object::SUBTYPE_FACADEFIRE;
+			}
+			else
+				obj_subtype_ = Object::SUBTYPE_UNKNOWN;
+
+			break;
+		case Object::TYPE_PASSAGE:
+
+			if(scenario_info.size())
+			{
+				double first_height = scenario_info["first_floor"].as<float>();
+				double second_height = scenario_info["second_floor"].as<float>();
+
+				if(pose_(2,0) <= first_height)
+					obj_subtype_ = Object::SUBTYPE_GROUND;
+				else if(first_height  <= pose_(2,0) && pose_(2,0) <= second_height)
+					obj_subtype_ = Object::SUBTYPE_FIRST;
+				else 
+					obj_subtype_ = Object::SUBTYPE_SECOND;
+			}
+			else
+				obj_subtype_ = Object::SUBTYPE_UNKNOWN;	
+
+			break;
+		}
+	}
 }
 
 /**

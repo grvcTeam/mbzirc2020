@@ -93,6 +93,9 @@ void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 			targets_[new_target_id]->initialize(yaml_config[item][i]);
     	}
 	}
+
+	if(yaml_config["building"])
+		scenario_info_ = yaml_config["building"];
 }
 
 /** Prediction step for all targets
@@ -345,6 +348,14 @@ bool CentralizedEstimator::setTargetStatus(int target_id, ObjectStatus status)
 	}
 	
 	return found;
+}
+
+/** Compute subtypes for targets
+*/
+void CentralizedEstimator::computeSubtypesTargets()
+{
+	for(auto it = targets_.begin(); it != targets_.end(); ++it)
+		(it->second)->computeSubtype(scenario_info_);
 }
 
 /** Remove lost targets

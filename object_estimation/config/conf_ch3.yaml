@@ -1,4 +1,18 @@
 # Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the facades, but only active per trial.
+arena:
+  x_min:
+  x_max:
+  y_min:
+  y_max:
+
+building:
+  x_min:
+  x_max:
+  y_min:
+  y_max:
+  first_floor:
+  second_floor:
+
 fire:
   
   - sub_type: "facadefire"

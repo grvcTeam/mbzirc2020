@@ -21,6 +21,7 @@ public:
     Estimator() {
 
         iteration_counter_ = 0;
+        arena_limits_ = false;
 
         double frequency;
         bool a_priori_info;
@@ -55,7 +56,8 @@ public:
         if(a_priori_info)
         {
             string config_folder = ros::package::getPath("object_estimation") + "/config/";
-            conf_file = config_folder + conf_file;  
+            conf_file = config_folder + conf_file;
+            setArenaLimits(conf_file);  
         }
 
         if (frequency <= 0) {
@@ -130,6 +132,24 @@ public:
 
 protected:
 
+    /** \brief Take arena limits from config file
+    \param conf_file Name of configuration file 
+    */
+    void setArenaLimits(string conf_file)
+    {
+        YAML::Node yaml_config = YAML::LoadFile(conf_file);
+        
+        if(yaml_config["arena"])
+        {
+            x_min_ = yaml_config["arena"]["x_min"].as<float>();
+            x_max_ = yaml_config["arena"]["x_max"].as<float>();
+            y_min_ = yaml_config["arena"]["y_min"].as<float>();
+            y_max_ = yaml_config["arena"]["y_max"].as<float>();
+
+            arena_limits_ = true;
+        }
+    }
+
     /** \brief Callback to receive object detections
     */
     void updateCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) 
@@ -180,7 +200,10 @@ protected:
                     detection_p->header.frame_id = "arena";
                 }
 
-                candidates_[detector_type][uav].push_back(detection_p);
+                if(!arena_limits_ || (x_min_ <= detection_p->pose.pose.position.x && detection_p->pose.pose.position.x <= x_max_ 
+                && y_min_ <= detection_p->pose.pose.position.y && detection_p->pose.pose.position.y <= y_max_ ) )
+                    
+                    candidates_[detector_type][uav].push_back(detection_p);
             }
         }
         else
@@ -220,6 +243,7 @@ protected:
                 }    
             }
             
+            est_ptr->computeSubtypesTargets();
             est_ptr->removeLostTargets();
             
             publishObjects(obj_type);
@@ -554,6 +578,13 @@ protected:
     int iteration_counter_;
     bool visualization_;        /// Activate to publish markers
     double delay_max_;          /// Maximum delay allowed for object detections
+
+    /// Arena limits
+    double x_min_;
+    double x_max_;
+    double y_min_;
+    double y_max_;
+    bool arena_limits_;
 
     /// Timer, publishers and subscribers
     ros::Timer estimation_timer_;

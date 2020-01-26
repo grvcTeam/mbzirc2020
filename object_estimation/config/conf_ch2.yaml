@@ -1,4 +1,10 @@
 # Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the piles, but only active per trial.
+arena:
+  x_min:
+  x_max:
+  y_min:
+  y_max:
+
 pile:
   - color: "red"
     sub_type: "uav"

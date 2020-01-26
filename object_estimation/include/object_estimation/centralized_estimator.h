@@ -31,7 +31,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
-
+#include <yaml-cpp/yaml.h>
 #include <object_estimation/object_tracker.h>
 
 /** \brief This class implements a centralized filter for all the objects in MBZIRC challenge.
@@ -55,6 +55,7 @@ public:
 	bool getTargetInfo(int target_id, std::vector<double> &position, double &orientation, std::vector<std::vector<double> > &covariances);
 	bool getTargetInfo(int target_id, std::vector<double> &position, std::vector<double> &scale, ObjectStatus &status, int &color, int &subtype);
 	bool setTargetStatus(int target_id, ObjectStatus status);
+	void computeSubtypesTargets();
 	void removeLostTargets();
 	void printTargetsInfo();
 
@@ -68,6 +69,7 @@ protected:
 	double lost_th_;							/// Maximum time threshold to lose target
 	int min_update_count_;						/// Minimum update counter to consider target consistent
 	int track_id_count_;						/// Counter of tracks identifiers
+	YAML::Node scenario_info_;					/// Scenario information
 };
 
 #endif
