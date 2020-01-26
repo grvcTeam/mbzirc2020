@@ -278,6 +278,8 @@ void ObjectTracker::predict(double dt)
 */
 bool ObjectTracker::update(ObjectDetection* z)
 {
+	double x_scale, y_scale;
+
 	// Update factored belief 
 	if(!fixed_color_)
 	{
@@ -312,12 +314,23 @@ bool ObjectTracker::update(ObjectDetection* z)
 			}
 		}
 	}
-	
+
 	if(!fixed_pose_)
 	{
 		if(z->type == ObjectDetection::TYPE_BRICK)
 		{
-			// TODO Clustering
+			double detection_radius = 0.5 * std::max(fabs(z->scale.x), fabs(z->scale.y));
+            double object_radius = 0.5 * std::max(fabs(scale_[0]), fabs(scale_[0]));
+            double x_max = std::max(z->pose.pose.position.x + detection_radius, pose_(0,0) + object_radius);
+            double y_max = std::max(z->pose.pose.position.y + detection_radius, pose_(1,0) + object_radius);
+            double x_min = std::min(z->pose.pose.position.x - detection_radius, pose_(0,0) - object_radius);
+        	double y_min = std::min(z->pose.pose.position.y - detection_radius, pose_(1,0) - object_radius);
+
+            x_scale = x_max - x_min;
+            y_scale = y_max - y_min;
+            
+            pose_(0,0) = x_min + 0.5 * x_scale;
+            pose_(1,0) = y_min + 0.5 * y_scale;
 		}
 		else
 		{
@@ -368,18 +381,19 @@ bool ObjectTracker::update(ObjectDetection* z)
 		yaw_ = yaw_ + (yaw_cov_/(yaw_cov_ + COV_YAW))*(yaw-yaw_);
 		yaw_cov_ = (COV_YAW/(yaw_cov_ + COV_YAW))*yaw_cov_;
 	}
-	
+
 	if(!fixed_scale_)
 	{
 		if(z->type == ObjectDetection::TYPE_BRICK)
 		{
-			// TODO Clustering
+			scale_[0] = x_scale;
+			scale_[1] = y_scale;
 		}
 		else
 		{
 			scale_[0] = z->scale.x;
 			scale_[1] = z->scale.y;
-			scale_[2] = z->scale.z;
+			scale_[2] = z->scale.z;	
 		}
 	}
 
