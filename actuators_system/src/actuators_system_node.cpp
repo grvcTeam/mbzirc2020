@@ -84,6 +84,24 @@ bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
     return true;
 }
 
+bool release_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1662;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool grasp_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 998;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
 mbzirc_comm_objs::ActuatorsData from_board_output(const BoardOutput& board_output) {
     mbzirc_comm_objs::ActuatorsData actuators_data;
     actuators_data.digital_reading[0] = board_output.digital_in_0;
@@ -139,6 +157,8 @@ int main(int argc, char** argv) {
     ros::ServiceServer set_digital_service = n.advertiseService("actuators_system/raw/set_digital", set_digital);
     ros::ServiceServer open_gripper_service = n.advertiseService("actuators_system/open_gripper", open_gripper);
     ros::ServiceServer close_gripper_service = n.advertiseService("actuators_system/close_gripper", close_gripper);
+    ros::ServiceServer release_blanket_service = n.advertiseService("actuators_system/release_blanket", release_blanket);
+    ros::ServiceServer grasp_blanket_service = n.advertiseService("actuators_system/grasp_blanket", grasp_blanket);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
