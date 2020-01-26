@@ -24,8 +24,8 @@ uint16_t loop_count = 0;
 
 Servo servo[5];
 uint16_t pwm[5] = {INI_SERVO_PWM, INI_SERVO_PWM, INI_SERVO_PWM, INI_SERVO_PWM, INI_SERVO_PWM};
-uint16_t pwm_min[5] = { 900,  900,  550,  900,  900};
-uint16_t pwm_max[5] = {2100, 2100, 2400, 2100, 2100};
+uint16_t pwm_min[5] = { 900,  900,  900,  900,  900};
+uint16_t pwm_max[5] = {2100, 2100, 2100, 2100, 2100};
 
 void setup() {
 
