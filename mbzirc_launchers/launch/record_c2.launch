@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="bag_dir" default="/home/grvc/bags"/> 
+    <arg name="bag_name" default="MBZIRC_C2"/>
+    <arg name="robot_ns" default="/mbzirc2020_1"/>
+
+    <node pkg="rosbag" type="record" name="rosbag_record_uav" output="screen"
+          args="record -o $(arg bag_dir)/$(arg bag_name) 
+
+          $(arg robot_ns)/camera/color/image_raw
+          $(arg robot_ns)/camera/color/image_rect_color
+          $(arg robot_ns)/camera/color/camera_info
+          $(arg robot_ns)/camera/aligned_depth_to_color/image_raw
+          $(arg robot_ns)/camera/aligned_depth_to_color/camera_info
+
+          $(arg robot_ns)/sf11
+
+          $(arg robot_ns)/ual/pose
+          $(arg robot_ns)/mavros/global_position/global
+
+          /tf_static
+          /tf"
+    />
+
+</launch>
