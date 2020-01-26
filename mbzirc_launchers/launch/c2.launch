@@ -17,12 +17,23 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="30 25 0 0 0 0 arena wall" />
 
-    <node name="target_estimator" pkg="target_estimation" type="estimation_node" output="screen">
-        <param name="frequency" value="1.0"/>
-        <param name="estimator" value="a_priori_info"/>
-        <!-- <param name="estimator" value="simple_clustering"/> -->
-        <param name="robot_ns" value="$(arg robot_model)"/>
-    </node>
+    <node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
+
+	<param name="frequency" value="1.0"/>
+	<param name="robot_ns" value="$(arg robot_model)"/>
+	<param name="visualization" value="false" />
+
+	<rosparam param="object_types">["pile","wall"]</rosparam>	
+	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
+	<param name="a_priori_info" value="true" />
+	<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
+	
+	<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
+	<rosparam param="association_th">[10.0,4.0]</rosparam>
+	<param name="min_update_count" value="5" />
+	<param name="delay_max" value="2.0" />          <!-- in seconds -->
+	        
+     </node>
 
     <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
 

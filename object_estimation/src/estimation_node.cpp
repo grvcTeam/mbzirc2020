@@ -36,7 +36,7 @@ public:
         ros::param::param<string>("~robot_ns", robot_ns, "mbzirc2020");
         ros::param::param<vector<string> >("~object_types", object_types, vector<string>());
         ros::param::param<bool>("~a_priori_info", a_priori_info, false);
-        ros::param::param<string>("~conf_file", conf_file, "conf.yaml");
+        ros::param::param<string>("~conf_file", conf_file, "config/conf.yaml");
         ros::param::param<bool>("~visualization", visualization_, false);
         ros::param::param<vector<string> >("~uav_ids", uav_ids_, vector<string>());
         
@@ -55,8 +55,6 @@ public:
 
         if(a_priori_info)
         {
-            string config_folder = ros::package::getPath("object_estimation") + "/config/";
-            conf_file = config_folder + conf_file;
             setArenaLimits(conf_file);  
         }
 

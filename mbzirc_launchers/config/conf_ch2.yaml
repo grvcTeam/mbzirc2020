@@ -1,0 +1,69 @@
+# Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the piles, but only active per trial.
+arena:
+  x_min:
+  x_max:
+  y_min:
+  y_max:
+
+#pile:
+#  - color: "red"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+    
+#  - color: "green"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 35.0
+#    position_z: 0.1
+#    yaw: 0.0
+    
+    
+#  - color: "red"
+#    sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+        
+#wall:
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+  
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+  
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+    
+#  - sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
+    
