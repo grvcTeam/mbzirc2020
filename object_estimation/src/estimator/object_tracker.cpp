@@ -33,6 +33,7 @@
 #define COLOR_DETECTOR_PD 0.9
 #define COV_YAW 0.03
 #define MIN_COLOR_DISTANCE 0.15
+#define MAX_ANGLE_DISTANCE M_PI/4.0
 
 using namespace std;
 using namespace mbzirc_comm_objs;
@@ -393,8 +394,21 @@ bool ObjectTracker::update(ObjectDetection* z)
 		tf2::fromMsg(z->pose.pose.orientation,q);
 		tf2::Matrix3x3 Rot_matrix(q);
 		Rot_matrix.getRPY(roll,pitch,yaw);
-		
-		yaw_ = yaw_ + (yaw_cov_/(yaw_cov_ + COV_YAW))*(yaw-yaw_);
+
+		double diff_angle = yaw - yaw_;
+		if(diff_angle > M_PI)
+			diff_angle -= 2*M_PI;
+		else if(diff_angle < -M_PI)
+			diff_angle += 2*M_PI;
+
+		yaw_ = yaw_ + (yaw_cov_/(yaw_cov_ + COV_YAW))*(diff_angle);
+
+		if(yaw_ > M_PI)
+			yaw_ -= 2*M_PI;
+		else if(yaw_ < -M_PI)
+			yaw_ += 2*M_PI;
+
+
 		yaw_cov_ = (COV_YAW/(yaw_cov_ + COV_YAW))*yaw_cov_;
 	}
 
@@ -431,7 +445,7 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 	{
 		double prob_z, prob_color = 0.0;
 
-		// TODO. Distance to borders instead of to centroid
+		// TODO. Distance to borders instead of to centroid?
 		distance = getDistance(z);
 
 		for(int i = 0; i < ObjectDetection::NCOLORS; i++)
@@ -449,7 +463,30 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 	}
 	else if(obj_type_ == Object::TYPE_WALL)
 	{
+		if( (obj_subtype_ == Object::SUBTYPE_UAV && z->type != ObjectDetection::TYPE_UCHANNEL)
+		|| (obj_subtype_ == Object::SUBTYPE_UGV && z->type != ObjectDetection::TYPE_LWALL) )
+			distance = -1;
 
+		else
+		{
+			distance = getDistance(z);
+
+			double roll, pitch, yaw;
+			tf2::Quaternion q;
+			tf2::fromMsg(z->pose.pose.orientation,q);
+			tf2::Matrix3x3 Rot_matrix(q);
+			Rot_matrix.getRPY(roll,pitch,yaw);
+
+			double diff_angle = yaw_-yaw;
+			if(diff_angle > M_PI)
+				diff_angle -= 2*M_PI;
+			else if(diff_angle < -M_PI)
+				diff_angle += 2*M_PI;
+			
+			// Angle distance close to PI or zero are acceptable 
+			if(fabs(diff_angle) > MAX_ANGLE_DISTANCE && fabs(diff_angle) < M_PI-MAX_ANGLE_DISTANCE)
+				distance = -1;
+		}
 	}	
 	else		
 	{
