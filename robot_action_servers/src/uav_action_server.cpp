@@ -35,6 +35,7 @@
 #include <mbzirc_comm_objs/GripperAttached.h>
 #include <mbzirc_comm_objs/Magnetize.h>
 #include <mbzirc_comm_objs/WallList.h>
+#include <std_srvs/Trigger.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -254,8 +255,9 @@ public:
 
     ros::NodeHandle nh;
     ros::Subscriber sensed_sub_ = nh.subscribe("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
-    ros::Subscriber attached_sub_ = nh.subscribe("attached", 1, &UalActionServer::attachedCallback, this);
-    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");
+    ros::Subscriber attached_sub_ = nh.subscribe("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
+    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: New naming!
+    ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,6 +291,13 @@ public:
     while (true) {
       ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
       // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
+
+      if (pick_server_.isPreemptRequested()) {
+        ual_->setPose(ual_->pose());
+        pick_server_.setPreempted();
+        return;
+      }
+
 
       geometry_msgs::Point target_position = matched_candidate_.relative_position;
       if (since_last_candidate < timeout) {
@@ -367,6 +376,12 @@ public:
       // TODO: Look for equivalent!
       // if (catching_device_->switchIsPressed()) {
       if (gripper_attached_) {
+        std_srvs::Trigger dummy;
+        close_gripper_client.call(dummy);
+        sleep(0.5);  // TODO: sleep?
+        auto up_pose = ual_->pose();
+        up_pose.pose.position.z += 2.0;  // TODO: Up?
+        ual_->setPose(up_pose);
         pick_server_.setSucceeded(result);
         break;
       }

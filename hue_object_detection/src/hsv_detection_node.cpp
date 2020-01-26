@@ -13,6 +13,7 @@
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/DetectTypes.h>
 
+// TODO: Add new color: white!
 // TODO: Move to some kind of utils lib, as it is repeated
 int color_from_string(const std::string& color) {
     int out_color;
@@ -118,14 +119,51 @@ RealWorldRect fromCvRotatedRect(const cv::RotatedRect& _rect, const CameraParame
 
 mbzirc_comm_objs::ObjectDetectionList fromHSVTrackingPair(const HSVTrackingPair& _hsv_tracking_pair, const CameraParameters& _camera) {
 
+  // TODO: repeated!
+  const tf2::Matrix3x3 Rt = _camera.R.transpose();
+  tf2::Vector3 T_world = Rt * _camera.T;
+
   double estimated_z = 0.2;  // Estimated height of bricks (TODO: use rgbd camera?)
 
-  RealWorldRect colour_real = fromCvRotatedRect(_hsv_tracking_pair.colour_item.rectangle, _camera, estimated_z);
-  RealWorldRect white_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, estimated_z);
+  RealWorldRect rect_real;
+  std::string tracked_color;
+  if (!_hsv_tracking_pair.colour_item.cropped) {
+    rect_real = fromCvRotatedRect(_hsv_tracking_pair.colour_item.rectangle, _camera, estimated_z);
+    tracked_color = _hsv_tracking_pair.colour_item.detector_id;
+  } else if (!_hsv_tracking_pair.white_item.cropped) {
+    rect_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, estimated_z);
+    tracked_color = _hsv_tracking_pair.white_item.detector_id;
+  } else {
+    rect_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, estimated_z);
+    tracked_color = _hsv_tracking_pair.white_item.detector_id;
+    // TODO: estimate white center from edge position and color
+  }
 
   mbzirc_comm_objs::ObjectDetectionList object_list;
   mbzirc_comm_objs::ObjectDetection object;
+  object.header.frame_id = "map";  // TODO: arena? NO, it would affect relative measures too
+  object.header.stamp = ros::Time::now();
+  object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK_TRACK;
+
+  object.relative_position = rect_real.center;
+  object.pose.pose.position.x = object.relative_position.x - T_world[0];
+  object.pose.pose.position.y = object.relative_position.y - T_world[1];
+  object.pose.pose.position.z = object.relative_position.z - T_world[2];
+
+  object.relative_yaw = rect_real.yaw;
+  object.pose.pose.orientation.x = 0;
+  object.pose.pose.orientation.y = 0;
+  object.pose.pose.orientation.z = sin(0.5*object.relative_yaw);
+  object.pose.pose.orientation.w = cos(0.5*object.relative_yaw);
+  object.pose.covariance[0] = 0.01;
+  object.pose.covariance[7] = 0.01;
+  object.pose.covariance[14] = 0.01;
+
+  object.scale = rect_real.size;
+  object.color = color_from_string(tracked_color);
   object_list.objects.push_back(object);
+  // std::cout << object << '\n';
+
   return object_list;
 }
 
@@ -136,7 +174,7 @@ bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
   res.success = true;
   return true;
 }
-/*
+
 void draw_hud(cv_bridge::CvImagePtr _ptr) {
   if (!_ptr || _ptr->image.empty()) {
     return;
@@ -148,7 +186,7 @@ void draw_hud(cv_bridge::CvImagePtr _ptr) {
   cv::line(_ptr->image, cvPoint(0, half_height), cvPoint(image_size.width, half_height), color);
   cv::line(_ptr->image, cvPoint(half_width, 0), cvPoint(half_width, image_size.height), color);
 }
-*/
+
 int main(int argc, char** argv) {
 
   ros::init(argc, argv, "hsv_detection_node");
@@ -165,7 +203,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
 
   HSVDetectionConfig detection_config;
-  detection_config.min_area = 100;
+  detection_config.min_area = 2;
   detection_config.poly_epsilon = 5;
   detection_config.kernel.type = 0;
   detection_config.kernel.size = 1;
@@ -175,10 +213,10 @@ int main(int argc, char** argv) {
 
   HSVRange red_range;
   red_range.min_HSV[0] = 0;
-  red_range.min_HSV[1] = 0;
+  red_range.min_HSV[1] = 123;
   red_range.min_HSV[2] = 150;
-  red_range.max_HSV[0] = 180;
-  red_range.max_HSV[1] = 58;
+  red_range.max_HSV[0] = 123;
+  red_range.max_HSV[1] = 255;
   red_range.max_HSV[2] = 255;
   detection.addDetector("red", red_range, cvScalar(0, 255, 0));
 
@@ -224,10 +262,10 @@ int main(int argc, char** argv) {
       //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
       // }
 
-      HSVTrackingPair tracked = detection.track("test", true);
+      HSVTrackingPair tracked = detection.track("red", true);
       tracked.print();
 
-      // draw_hud(cv_ptr);
+      draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
 
       try {
@@ -236,7 +274,7 @@ int main(int argc, char** argv) {
         tf2::fromMsg(camera_link_tf, camera_link_tf2);
         camera.R = link_to_cv * camera_link_tf2.getBasis();
         camera.T = link_to_cv * camera_link_tf2.getOrigin();
-        // sensed_pub.publish(trackedFromHSVItem(tracked, camera));  // TODO: Also detected!
+        sensed_pub.publish(fromHSVTrackingPair(tracked, camera));  // TODO: Also detected!
 
       } catch (tf2::TransformException &e) {
         ROS_WARN("%s", e.what());
