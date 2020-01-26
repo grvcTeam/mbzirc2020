@@ -278,7 +278,8 @@ void ObjectTracker::predict(double dt)
 */
 bool ObjectTracker::update(ObjectDetection* z)
 {
-	double x_scale, y_scale;
+	double x_scale = -1; 
+	double y_scale = -1;
 
 	// Update factored belief 
 	if(!fixed_color_)
@@ -320,17 +321,32 @@ bool ObjectTracker::update(ObjectDetection* z)
 		if(z->type == ObjectDetection::TYPE_BRICK)
 		{
 			double detection_radius = 0.5 * std::max(fabs(z->scale.x), fabs(z->scale.y));
-            double object_radius = 0.5 * std::max(fabs(scale_[0]), fabs(scale_[0]));
-            double x_max = std::max(z->pose.pose.position.x + detection_radius, pose_(0,0) + object_radius);
-            double y_max = std::max(z->pose.pose.position.y + detection_radius, pose_(1,0) + object_radius);
-            double x_min = std::min(z->pose.pose.position.x - detection_radius, pose_(0,0) - object_radius);
-        	double y_min = std::min(z->pose.pose.position.y - detection_radius, pose_(1,0) - object_radius);
+            
+			// Transform detection to pile frame, fuse the cluster there and transform back to arena. 
+			tf2::Vector3 detection_center;
+			fromMsg(z->pose.pose.position,detection_center);
+
+			tf2::Vector3 pile_center(pose_(0,0), pose_(1,0), pose_(2,0));
+			tf2::Quaternion q;
+			q.setRPY(0.0,0.0,yaw_);
+
+			tf2::Transform tf_pile_to_arena(q, pile_center);
+			
+			detection_center = tf_pile_to_arena.inverse()*detection_center;
+
+            double x_max = std::max(detection_center.getX() + detection_radius, scale_[0]/2.0);
+            double y_max = std::max(detection_center.getY() + detection_radius, scale_[1]/2.0);
+            double x_min = std::min(detection_center.getX() - detection_radius, -scale_[0]/2.0);
+        	double y_min = std::min(detection_center.getY() - detection_radius, -scale_[1]/2.0);
 
             x_scale = x_max - x_min;
             y_scale = y_max - y_min;
             
-            pose_(0,0) = x_min + 0.5 * x_scale;
-            pose_(1,0) = y_min + 0.5 * y_scale;
+			pile_center.setValue(x_min + 0.5 * x_scale, y_min + 0.5 * y_scale, pose_(2,0));
+			pile_center = tf_pile_to_arena*pile_center;
+
+            pose_(0,0) = pile_center.getX();
+            pose_(1,0) = pile_center.getY();
 		}
 		else
 		{
@@ -402,6 +418,47 @@ bool ObjectTracker::update(ObjectDetection* z)
 	update_count_++;
 }
     
+/**
+Compute the distance of an observation with current belief. Depending on object type. 
+\param z Observation. 
+\return Distance measurement
+*/
+double ObjectTracker::getAssociationDistance(ObjectDetection* z)
+{
+	double distance;
+
+	if(obj_type_ == Object::TYPE_PILE)
+	{
+		double prob_z, prob_color = 0.0;
+
+		// TODO. Distance to borders instead of to centroid
+		distance = getDistance(z);
+
+		for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+		{
+			if(z->color == i)
+				prob_z = COLOR_DETECTOR_PD;
+			else
+				prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+
+			prob_color += fact_bel_[COLOR][i]*prob_z;
+		}
+
+		if(prob_color < MIN_COLOR_DISTANCE)
+			distance = -1;	
+	}
+	else if(obj_type_ == Object::TYPE_WALL)
+	{
+
+	}	
+	else		
+	{
+		distance = getDistance(z);
+	}
+		
+	return distance;
+}
+
 /**
 Compute the likelihood of an observation with current belief. Based on Mahalanobis distance. 
 \param z Observation. 

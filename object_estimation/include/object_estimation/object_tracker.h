@@ -57,6 +57,7 @@ public:
 	void initialize(YAML::Node node);
 	void predict(double dt);
 	bool update(mbzirc_comm_objs::ObjectDetection* z);
+	double getAssociationDistance(mbzirc_comm_objs::ObjectDetection* z);
 	double getLikelihood(mbzirc_comm_objs::ObjectDetection* z);
 	double getDistance(mbzirc_comm_objs::ObjectDetection* z);
 	void computeSubtype(YAML::Node &scenario_info);

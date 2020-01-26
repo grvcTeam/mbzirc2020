@@ -146,7 +146,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 		{
 			if(target_valid)
 			{		
-				likelihood = (it->second)->getLikelihood(z_list[i]);
+				likelihood = (it->second)->getAssociationDistance(z_list[i]);
 				t_distances.push_back(likelihood);
 			}
 			else
@@ -227,7 +227,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			{
 				if(valid_candidates[i] != -1)
 				{		
-					likelihood = targets_[new_target_id]->getLikelihood(z_list[i]);
+					likelihood = targets_[new_target_id]->getAssociationDistance(z_list[i]);
 					t_distances.push_back(likelihood);
 				}
 				else

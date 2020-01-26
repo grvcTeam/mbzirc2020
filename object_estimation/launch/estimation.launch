@@ -17,7 +17,7 @@
 	<!-- <param name="conf_file" value="conf_ch3.yaml" /> -->
 
 	<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
-	<param name="association_th" value="6.0" />
+	<rosparam param="association_th">[6.0,6.0]</rosparam>
 	<param name="min_update_count" value="5" />
 	<param name="delay_max" value="2.0" />          <!-- in seconds -->
 	        

@@ -28,9 +28,9 @@ public:
         string conf_file;
         string robot_ns;
         vector<string> object_types;
+        vector<double> association_th;
+        double lost_time_th, min_update_count;
         
-        double lost_time_th, min_update_count, association_th;
-
         // Get parameters
         ros::param::param<double>("~frequency", frequency, 1.0);
         ros::param::param<string>("~robot_ns", robot_ns, "mbzirc2020");
@@ -42,7 +42,7 @@ public:
         
         ros::param::param<double>("~lost_time_th", lost_time_th, 20.0);
         ros::param::param<double>("~min_update_count", min_update_count, 0.0);
-        ros::param::param<double>("~association_th", association_th, 6.0);
+        ros::param::param<vector<double> >("~association_th", association_th, vector<double>(object_types.size(),6.0));
         ros::param::param<double>("~delay_max", delay_max_, 2.0);
 
         n_uavs_ = uav_ids_.size();
@@ -91,7 +91,7 @@ public:
                 ROS_WARN("Object type repeated.");
             else
             {
-                estimators_[type] = new CentralizedEstimator(type, association_th, lost_time_th, min_update_count);
+                estimators_[type] = new CentralizedEstimator(type, association_th[i], lost_time_th, min_update_count);
                 detectors_[type] = detectors;
 
                 if(a_priori_info)
