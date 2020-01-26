@@ -6,9 +6,9 @@
 #define PERIOD_IN_MS 20
 #define INI_SERVO_PWM 1500
 
-#define PIN_PWM_0   9
+#define PIN_PWM_0   5
 #define PIN_PWM_1   6
-#define PIN_PWM_2   5
+#define PIN_PWM_2   9
 #define PIN_PWM_3  10
 #define PIN_PWM_4  11
 
