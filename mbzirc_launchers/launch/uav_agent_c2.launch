@@ -22,7 +22,9 @@
     args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena -ual_backend=gazebo_light"/>
 
     <include if="$(eval ual_backend == 'mavros')" file="$(find px4_bringup)/launch/spawn_robot.launch">
-        <arg name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'sim')" name="mode" value="sitl"/>
+        <arg if="$(eval mode == 'real')" name="mode" value="custom"/>
+        <arg if="$(eval mode == 'real')" name="fcu_url" value="serial:///dev/pixhawk:921600"/>
         <arg name="description_package" value="uavs_description"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="id" value="$(arg agent_id)"/>
@@ -32,6 +34,7 @@
         <arg name="z" value="$(arg z)"/>
         <arg name="yaw" value="$(arg yaw)"/>
         <arg name="frame_id" value="arena"/>
+        <arg name="append_xacro_args" value="challenge=2"/>
         <arg name="rtcm_topic" value="/rtcm_stream"/>
     </include>
 
