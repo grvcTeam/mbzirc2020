@@ -1,0 +1,89 @@
+<?xml version='1.0'?>
+
+<model name="kinect_standalone">
+     <link name='link_kinect'>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.073 0.276 0.072</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://kinect/meshes/kinect.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        </link>
+
+      <gazebo reference="link_kinect">
+             
+      <sensor name='camera_kinect' type='depth'>
+        <update_rate>20</update_rate>
+        <camera name='__default__'>
+          <horizontal_fov>1.0472</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.5</near>
+            <far>15</far>
+          </clip>
+        </camera>
+        <plugin name='camera_plugin' filename='libgazebo_ros_openni_kinect.so'>
+          <baseline>0.2</baseline>
+          <alwaysOn>1</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>camera_kinect</cameraName>
+          <imageTopicName>depth/image_raw</imageTopicName>
+          <cameraInfoTopicName>depth/camera_info</cameraInfoTopicName>
+          <depthImageTopicName>depth/depth_image_raw</depthImageTopicName>
+          <depthImageInfoTopicName>depth/camera_info_depth</depthImageInfoTopicName>
+          <pointCloudTopicName>depth/pointsCloud</pointCloudTopicName>
+          <frameName>/link_kinect</frameName>
+          <pointCloudCutoff>0.05</pointCloudCutoff>
+          <distortionK1>0</distortionK1>
+          <distortionK2>0</distortionK2>
+          <distortionK3>0</distortionK3>
+          <distortionT1>0</distortionT1>
+          <distortionT2>0</distortionT2>
+          <CxPrime>0</CxPrime>
+          <Cx>0</Cx>
+          <Cy>0</Cy>
+          <focalLength>0</focalLength>
+          <hackBaseline>0</hackBaseline>
+        </plugin>
+      </sensor>
+      </gazebo>
+    
+     
+</model>
