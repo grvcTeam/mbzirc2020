@@ -49,6 +49,7 @@ struct HSVItem {
 struct HSVTrackingPair {
     HSVItem colour_item;
     HSVItem white_item;
+    bool is_valid = false;
 
     void print() {
         printf("[%s]: (%f, %f), [%f, %f], %fº%s\n", colour_item.detector_id.c_str(), colour_item.rectangle.center.x, colour_item.rectangle.center.y, colour_item.rectangle.size.width, colour_item.rectangle.size.height, colour_item.rectangle.angle, colour_item.cropped? ", cropped!": "");
@@ -259,6 +260,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     // range_["white"] is mandatory here!
     if (range_.count("white") == 0) {
         ROS_WARN("HSVDetection::track: id [white] not found!");
+        tracking_pair.is_valid = true;
         return tracking_pair;
     }
     cv::Mat hsv_roi = hsv_(roi);
@@ -285,6 +287,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
     }
 
+    tracking_pair.is_valid = true;
     return tracking_pair;
 }
 

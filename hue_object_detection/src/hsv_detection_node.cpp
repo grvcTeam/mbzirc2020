@@ -34,6 +34,10 @@ int color_from_string(const std::string& color) {
         case 'o':
             out_color = mbzirc_comm_objs::ObjectDetection::COLOR_ORANGE;
             break;
+        case 'W':
+        case 'w':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_WHITE;
+            break;
         default:
         ROS_ERROR("Unknown color %s", color.c_str());
             out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
@@ -110,7 +114,7 @@ RealWorldRect fromCvRotatedRect(const cv::RotatedRect& _rect, const CameraParame
   out.size.x = pixel_to_metric_x * _rect.size.width;
   out.size.y = pixel_to_metric_y * _rect.size.height;
   out.size.z = _estimated_z;
-  // object.color = color_from_string(item.detector_id);
+  // out.color = color_from_string(item.detector_id);
   // object_list.objects.push_back(object);
   // std::cout << object << '\n';
 
@@ -263,7 +267,6 @@ int main(int argc, char** argv) {
       // }
 
       HSVTrackingPair tracked = detection.track("red", true);
-      tracked.print();
 
       draw_hud(cv_ptr);
       image_converter.publish(cv_ptr);  // TODO: Optional!
@@ -274,8 +277,10 @@ int main(int argc, char** argv) {
         tf2::fromMsg(camera_link_tf, camera_link_tf2);
         camera.R = link_to_cv * camera_link_tf2.getBasis();
         camera.T = link_to_cv * camera_link_tf2.getOrigin();
-        sensed_pub.publish(fromHSVTrackingPair(tracked, camera));  // TODO: Also detected!
-
+        if (tracked.is_valid) {
+          tracked.print();
+          sensed_pub.publish(fromHSVTrackingPair(tracked, camera));  // TODO: Also detected!
+        }
       } catch (tf2::TransformException &e) {
         ROS_WARN("%s", e.what());
         continue;
