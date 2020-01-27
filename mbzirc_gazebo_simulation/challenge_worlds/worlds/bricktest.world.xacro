@@ -17,7 +17,7 @@
     <!-- X'-x= (X-x)*cos(yaw)-(Y-y)*sin(yaw) -->
     <!-- Y'-y= (X-x)*sin(yaw)+(Y-y)*cos(yaw)  -->
 
-<xacro:property name="ground" value="${[30,25,0,0]}"/>
+<xacro:property name="ground" value="${[0,0,0,0]}"/>
 
 <xacro:property name="kinect" value="${[0,0,2,0]}"/>
 <!-- UAV BRICKS Location -->
