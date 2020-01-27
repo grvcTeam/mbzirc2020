@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<sdf version="1.6" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<xacro:include filename="$(find challenge_worlds)/models/ground_plane_asfalt/ground_plane_asfalt.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_red_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_blue_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_green_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/single_orange_brick.xacro" />
+<xacro:include filename="$(find challenge_worlds)/urdf/kinect_standalone.xacro" />
+
+<!-- Global yaw: to change the global position of all the objects in the world -->
+<xacro:arg name="arena_yaw" default="0"/>
+<xacro:property name="yaw" value="$(arg arena_yaw)"/>
+<!-- Properties for every object in the world -->
+ <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
+
+<!-- The following is the geometric expresion for a non-axis rotation -->
+    <!-- X'-x= (X-x)*cos(yaw)-(Y-y)*sin(yaw) -->
+    <!-- Y'-y= (X-x)*sin(yaw)+(Y-y)*cos(yaw)  -->
+
+<xacro:property name="ground" value="${[30,25,0,0]}"/>
+
+<xacro:property name="kinect" value="${[0,0,2,0]}"/>
+<!-- UAV BRICKS Location -->
+<xacro:property name="red01" value="${[0,0,0,0]}"/>
+<xacro:property name="green01" value="${[1,0,0,0]}"/>
+<xacro:property name="blue01" value="${[2,0,0,0]}"/>
+<xacro:property name="orange01" value="${[3,0,0,0]}"/>
+
+  <world name="default">
+    <!-- GRIPPER PLUGIN TO AVOID THE NEED OF COLLISIONS -->
+    <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <ground_plane_asfalt arena_yaw="${yaw}" pose="${ground[0]*cos(yaw)-ground[1]*sin(yaw)} ${ground[0]*sin(yaw)+ground[1]*cos(yaw)} ${ground[2]} 0 0 ${ground[3]+yaw}" material="mbzirc/Asfalt" />
+
+    <!-- UAV BRICKS -->
+    <single_red_brick id="Red_brick_01" pose="${red01[0]} ${red01[1]} ${red01[2]} 0 0 ${red01[3]}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
+    <single_blue_brick id="Blue_brick_01" pose="${blue01[0]} ${blue01[1]} ${blue01[2]} 0 0 ${blue01[3]}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
+    <single_green_brick id="Green_brick_01" pose="${green01[0]} ${green01[1]} ${green01[2]} 0 0 ${green01[3]}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
+    <single_orange_brick id="Orange_brick_01" pose="${orange01[0]} ${orange01[1]} ${orange01[2]} 0 0 ${orange01[3]}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" />
+
+    <kinect_standalone pose="${kinect[0]} ${kinect[1]} ${kinect[2]} 0 1.57 ${kinect[3]}" />
+
+</world>
+</sdf>
