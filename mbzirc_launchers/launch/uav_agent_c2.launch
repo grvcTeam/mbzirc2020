@@ -52,7 +52,8 @@
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
-      <param name="camera_url" value="camera_0" />
+      <param if="$(eval mode == 'sim')" name="camera_url" value="camera_0" />
+      <param if="$(eval mode == 'real')" name="camera_url" value="camera/color" />
     </node>
 
     <node if="$(eval mode == 'real')" name="actuators" pkg="actuators_system" type="actuators_system_node">
