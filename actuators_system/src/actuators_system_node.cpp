@@ -70,7 +70,7 @@ bool set_digital(mbzirc_comm_objs::SetDigital::Request  &req, mbzirc_comm_objs::
 bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     for (int i = 0; i < 5; i++) {
-        board_input.pwm[i] = 1500;  // TODO: From config file?
+        board_input.pwm[i] = 1800;  // TODO: From config file?
     }
     input_mutex.unlock();
     return true;
@@ -79,7 +79,7 @@ bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response 
 bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     for (int i = 0; i < 5; i++) {
-        board_input.pwm[i] = 1800;  // TODO: From config file?
+        board_input.pwm[i] = 1500;  // TODO: From config file?
     }
     input_mutex.unlock();
     return true;
