@@ -1,5 +1,10 @@
 std_msgs/Header header
 geometry_msgs/PoseWithCovariance pose  # Detected object pose (in header.frame_id coordinates)
+                                       # Coordinate systems in the object center except for L wall.
+                                       # Passage orientation should be pointing into the window. Y axis aligns with window width.
+                                       # Bricks, x axis aligns with shortest dimension.
+                                       # L-shaped wall. xy axis in the down-left corner, with the x east and the y north.
+                                       # U-channel: orientation between [-pi/2,pi/2]. Y axis aligns with longest channel size 
 geometry_msgs/Point relative_position  # Detected object relative position (w.r.t detector device, e.g: camera)
 float32 relative_yaw                   # Detected object relative yaw (w.r.t detector device, e.g: camera)
 geometry_msgs/Vector3 scale            # Detected object size
