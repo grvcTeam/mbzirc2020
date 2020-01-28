@@ -46,6 +46,7 @@
 #include <ual_backend_mavros/ual_backend_mavros.h>
 #include <ual_backend_gazebo_light/ual_backend_gazebo_light.h>
 #include <uav_abstraction_layer/State.h>
+#include <uav_abstraction_layer/posePID.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
 #include <fire_extinguisher/fire_data.h>
@@ -259,10 +260,20 @@ public:
 
     ros::NodeHandle nh;
     ros::Subscriber sensed_sub_ = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
+    ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
     ros::Subscriber attached_sub_ = nh.subscribe("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
     ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: New naming!
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
+
+    bool has_sf11_range;
+    for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
+      has_sf11_range = (sf11_range_.header.seq != 0);
+      if (has_sf11_range) {
+        break;
+      }
+      ros::Duration(0.1).sleep();
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // TODO: Tune!
@@ -274,9 +285,45 @@ public:
     #define MAX_DELTA_Z 0.5  // [m] --> [m/s]
     #define MAX_AVG_XY_ERROR 0.3  // [m]
 
-    grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);  // TODO: class members? 
-    grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
-    grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
+    grvc::ual::PIDParams pid_x;
+    pid_x.kp = 0.4;
+    pid_x.ki = 0.02;
+    pid_x.kd = 0.0;
+    pid_x.min_sat = -2.0;
+    pid_x.max_sat = 2.0;
+    pid_x.min_wind = -2.0;
+    pid_x.max_wind = 2.0;
+
+    grvc::ual::PIDParams pid_y;
+    pid_y.kp = 0.4;
+    pid_y.ki = 0.02;
+    pid_y.kd = 0.0;
+    pid_y.min_sat = -2.0;
+    pid_y.max_sat = 2.0;
+    pid_y.min_wind = -2.0;
+    pid_y.max_wind = 2.0;
+
+    grvc::ual::PIDParams pid_z;
+    pid_z.kp = 0.4;
+    pid_z.ki = 0.02;
+    pid_z.kd = 0.0;
+    pid_z.min_sat = -2.0;
+    pid_z.max_sat = 2.0;
+    pid_z.min_wind = -2.0;
+    pid_z.max_wind = 2.0;
+
+    grvc::ual::PIDParams pid_yaw;
+    pid_yaw.kp = 0.4;
+    pid_yaw.ki = 0.02;
+    pid_yaw.kd = 0.0;
+    pid_yaw.min_sat = -2.0;
+    pid_yaw.max_sat = 2.0;
+    pid_yaw.min_wind = -2.0;
+    pid_yaw.max_wind = 2.0;
+    pid_yaw.is_angular = true;
+
+    grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
+    // pose_pid.enableRosInterface("pick_control");
 
     // TODO: Magnetize catching device
     // catching_device_->setMagnetization(true);
@@ -302,6 +349,8 @@ public:
         return;
       }
 
+      bool so_far = (sf11_range_.range > 1.5);
+
       // TODO: Fix tf mess and tf_prefix as a parameter!
       // if (!tf_buffer_.canTransform("mbzirc2020_1/camera_color_optical_frame", "mbzirc2020_1/gripper_link", ros::Time(0))) {
       //   ROS_ERROR("Cannot transform!");
@@ -311,18 +360,34 @@ public:
       // current_pose.pose = matched_candidate_.pose.pose;
       // geometry_msgs::PoseStamped target_pose;
       // tf_buffer_.transform(current_pose, target_pose, "mbzirc2020_1/gripper_link", ros::Time(0), "mbzirc2020_1/camera_color_optical_frame");
-      geometry_msgs::Pose target_pose;
-      tf2::doTransform(matched_candidate_.pose.pose, target_pose, camera_to_gripper);
+      geometry_msgs::PoseStamped reference_pose;
+      reference_pose.header.stamp = ros::Time::now();
+      reference_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+      if (so_far) {
+        // TODO!
+        reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
+        reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
+        reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
+        reference_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
+        reference_pose.pose.orientation.z = -reference_pose.pose.orientation.z;  // Change sign!
+      } else {
+        tf2::doTransform(matched_candidate_.pose.pose, reference_pose.pose, camera_to_gripper);
+        reference_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+        reference_pose.pose.orientation.x = 0;
+        reference_pose.pose.orientation.y = 0;
+        reference_pose.pose.orientation.z = 0;
+        reference_pose.pose.orientation.w = 1;  // TODO!
+      }
 
-      // geometry_msgs::Point target_position = target_pose.pose.position;
-      geometry_msgs::Point target_position = target_pose.position;
+      geometry_msgs::Point current_position = reference_pose.pose.position;
+      // geometry_msgs::Point target_position = target_pose.position;
       // tf2_geometry_msgs::do_transform(matched_candidate_.pose.pose.position, target_position, camera_to_gripper);
 
       if (since_last_candidate < timeout) {
         // x-y-control: in candidateCallback
         // z-control: descend
-        ROS_ERROR("target: [%lf, %lf, %lf]", target_position.x, target_position.y, target_position.z);
-        double xy_error = sqrt(target_position.x*target_position.x + target_position.y*target_position.y);
+        ROS_ERROR("current: [%lf, %lf, %lf]", current_position.x, current_position.y, current_position.z);
+        double xy_error = sqrt(current_position.x*current_position.x + current_position.y*current_position.y);  // TODO: sqrt?
         history_xy_errors.push(xy_error);
         double min_xy_error, avg_xy_error, max_xy_error;
         history_xy_errors.get_stats(min_xy_error, avg_xy_error, max_xy_error);
@@ -330,16 +395,20 @@ public:
         if (avg_xy_error > MAX_AVG_XY_ERROR) {
           avg_xy_error = MAX_AVG_XY_ERROR;
         }
-        target_position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
+        reference_pose.pose.position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
         // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
       } else {  // No fresh candidates (timeout)
         ROS_WARN("Candidates timeout!");
 
         // TODO: Push MAX_AVG_XY_ERROR into history_xy_errors
-        target_position.x = 0.0;
-        target_position.y = 0.0;
-        target_position.z = MAX_DELTA_Z;
+        reference_pose.pose.position.x = 0.0;
+        reference_pose.pose.position.y = 0.0;
+        reference_pose.pose.position.z = MAX_DELTA_Z;
+        reference_pose.pose.orientation.x = 0.0;
+        reference_pose.pose.orientation.y = 0.0;
+        reference_pose.pose.orientation.z = 0.0;
+        reference_pose.pose.orientation.w = 1.0;
 
         // // Go up in the same position.
         // grvc::ual::Waypoint up_waypoint = ual_.pose();
@@ -380,13 +449,18 @@ public:
         // }
       }
       // Send target_position  // TODO: find equivalent!
-      geometry_msgs::TwistStamped velocity;
-      velocity.header.stamp = ros::Time::now();
-      velocity.header.frame_id = "mbzirc2020_1/gripper_link";  // "map";
-      velocity.twist.linear.x = x_pid.control_signal(target_position.x, 1.0 / CATCHING_LOOP_RATE);
-      velocity.twist.linear.y = y_pid.control_signal(target_position.y, 1.0 / CATCHING_LOOP_RATE);
-      velocity.twist.linear.z = z_pid.control_signal(target_position.z, 1.0 / CATCHING_LOOP_RATE);
-      ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
+      geometry_msgs::PoseStamped current_pose;
+      current_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+      current_pose.header.stamp = ros::Time::now();
+      current_pose.pose.orientation.w = 1;
+      pose_pid.reference(reference_pose);
+      geometry_msgs::TwistStamped velocity = pose_pid.update(current_pose);
+
+      // velocity.twist.linear.x = x_pid.control_signal(target_position.x, 1.0 / CATCHING_LOOP_RATE);
+      // velocity.twist.linear.y = y_pid.control_signal(target_position.y, 1.0 / CATCHING_LOOP_RATE);
+      // velocity.twist.linear.z = z_pid.control_signal(target_position.z, 1.0 / CATCHING_LOOP_RATE);
+      // velocity.twist.angular.z = yaw_pid.control_signal(-yaw_error, 1.0 / CATCHING_LOOP_RATE);
+      // ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
       ual_->setVelocity(velocity);
       // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
@@ -398,12 +472,13 @@ public:
       if (gripper_attached_) {
         std_srvs::Trigger dummy;
         close_gripper_client.call(dummy);
-        sleep(0.5);  // TODO: sleep?
+        // sleep(0.1);  // TODO: sleep?
         auto up_pose = ual_->pose();
         up_pose.pose.position.z += 2.0;  // TODO: Up?
         ual_->setPose(up_pose);
         pick_server_.setSucceeded(result);
-        break;
+        return;
+        // break;
       }
 
       // If we're too high, give up TODO: use _goal.z?

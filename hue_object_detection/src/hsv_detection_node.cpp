@@ -144,6 +144,8 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
   } else {
     rect_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, _estimated_z);
+    rect_real.center.x = 0.0;  // TODO!
+    rect_real.center.y = 0.0;  // TODO!
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
     // TODO: estimate white center from edge position and color
   }
@@ -266,7 +268,7 @@ int main(int argc, char** argv) {
   // tf2_ros::TransformListener tf_listener(tf_buffer);
   // const tf2::Matrix3x3 link_to_cv(0,-1,0, 0,0,-1, 1,0,0);
 
-  ros::Rate rate(10);  // [Hz] TODO: Tune!
+  ros::Rate rate(20);  // [Hz] TODO: Tune!
   while (ros::ok()) {
     if (image_converter.hasNewImage()) {
       cv_bridge::CvImagePtr cv_ptr = image_converter.getCvImagePtr();
