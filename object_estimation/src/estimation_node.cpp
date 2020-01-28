@@ -23,6 +23,8 @@ public:
         iteration_counter_ = 0;
         arena_limits_ = false;
 
+        tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
+
         double frequency;
         bool a_priori_info;
         string conf_file;
@@ -126,6 +128,8 @@ public:
                 }
             }
 	    }
+
+        delete tf_listener_;
     }
 
 protected:
@@ -183,17 +187,16 @@ protected:
                     TransformStamped transformToArena;
                     string pose_frame = detection_p->header.frame_id;
 
-                    if ( cached_transforms_.find(pose_frame) == cached_transforms_.end() ) {
-                        
-                        tf2_ros::Buffer tfBuffer;
-                        tf2_ros::TransformListener tfListener(tfBuffer);
-                        transformToArena = tfBuffer.lookupTransform("arena", pose_frame, ros::Time(0), ros::Duration(1.0));
-                        cached_transforms_[pose_frame] = transformToArena; // Save transform in cache
-                    } else {
-                        // found in cache
-                        transformToArena = cached_transforms_[pose_frame];
+                    try
+                    {
+                        transformToArena = tf_buffer_.lookupTransform("arena", pose_frame, ros::Time(0), ros::Duration(1.0));
                     }
-                    
+                    catch (tf2::TransformException ex)
+                    {
+                        ROS_ERROR("%s",ex.what());
+                        ros::Duration(1.0).sleep();
+                    }
+
                     tf2::doTransform(detection_p->pose.pose, detection_p->pose.pose, transformToArena);
                     detection_p->header.frame_id = "arena";
                 }
@@ -593,6 +596,8 @@ protected:
 
     /// TF transforms
     map<string, geometry_msgs::TransformStamped> cached_transforms_;
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener* tf_listener_;
 
     /// Candidates queues with object detections, one per detector and UAV
 	map<int, map<string, vector<ObjectDetection *> > > candidates_;
