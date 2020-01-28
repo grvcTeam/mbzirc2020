@@ -69,6 +69,7 @@ protected:
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener *tf_listener_;
+  std::string tf_prefix_;
 
   grvc::ual::UAL *ual_;
   ros::Timer data_feed_timer_;
@@ -92,6 +93,8 @@ public:
 
     std::string ual_backend;
     ros::param::param<std::string>("~ual_backend", ual_backend, "mavros");
+    ros::param::param<std::string>("~tf_prefix", tf_prefix_, "default_prefix");
+
     grvc::ual::Backend *backend = nullptr;
     if (ual_backend == "dummy") {
       backend = new grvc::ual::BackendDummy();
@@ -253,7 +256,7 @@ public:
 
     geometry_msgs::TransformStamped camera_to_gripper;  // Constant!
     try {
-      camera_to_gripper = tf_buffer_.lookupTransform("mbzirc2020_1/gripper_link", "mbzirc2020_1/camera_color_optical_frame", ros::Time(0));  // TODO: tf_prefix paramterer!
+      camera_to_gripper = tf_buffer_.lookupTransform(tf_prefix_ + "/gripper_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
     } catch (tf2::TransformException &ex) {
       ROS_WARN("%s",ex.what());
     }
@@ -261,19 +264,24 @@ public:
     ros::NodeHandle nh;
     ros::Subscriber sensed_sub_ = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
     ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
-    ros::Subscriber attached_sub_ = nh.subscribe("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
+    ros::Subscriber attached_sub_ = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
     ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: New naming!
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
-    bool has_sf11_range;
-    for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
-      has_sf11_range = (sf11_range_.header.seq != 0);
-      if (has_sf11_range) {
-        break;
-      }
-      ros::Duration(0.1).sleep();
-    }
+    // bool has_tracked;
+    // bool has_sf11;
+    // bool has_gripper;
+    // for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
+    //   has_tracked = (matched_candidate_.header.seq != 0);
+    //   has_sf11 = (sf11_range_.header.seq != 0);
+    //   // has_gripper = (gripper_attached_.header.seq != 0);
+    //   has_gripper = true;  // TODO!
+    //   if (has_tracked && has_sf11 && has_gripper) {
+    //     break;
+    //   }
+    //   ros::Duration(0.1).sleep();
+    // }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // TODO: Tune!
@@ -362,7 +370,7 @@ public:
       // tf_buffer_.transform(current_pose, target_pose, "mbzirc2020_1/gripper_link", ros::Time(0), "mbzirc2020_1/camera_color_optical_frame");
       geometry_msgs::PoseStamped reference_pose;
       reference_pose.header.stamp = ros::Time::now();
-      reference_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+      reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
       if (so_far) {
         // TODO!
         reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
@@ -372,7 +380,7 @@ public:
         reference_pose.pose.orientation.z = -reference_pose.pose.orientation.z;  // Change sign!
       } else {
         tf2::doTransform(matched_candidate_.pose.pose, reference_pose.pose, camera_to_gripper);
-        reference_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+        reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
         reference_pose.pose.orientation.x = 0;
         reference_pose.pose.orientation.y = 0;
         reference_pose.pose.orientation.z = 0;
@@ -450,7 +458,7 @@ public:
       }
       // Send target_position  // TODO: find equivalent!
       geometry_msgs::PoseStamped current_pose;
-      current_pose.header.frame_id = "mbzirc2020_1/gripper_link";
+      current_pose.header.frame_id = tf_prefix_ + "/gripper_link";
       current_pose.header.stamp = ros::Time::now();
       current_pose.pose.orientation.w = 1;
       pose_pid.reference(reference_pose);

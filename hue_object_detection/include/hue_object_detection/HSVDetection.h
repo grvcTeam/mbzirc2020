@@ -41,8 +41,6 @@ struct HSVRange {
 struct HSVItem {
     std::string detector_id;
     cv::RotatedRect rectangle;
-    // cv::Point centroid;  // from contour, not very reliable!
-    // double orientation;  // wrt horizontal axis, cw-positive (wrt x-axis at cv_frame)
     bool cropped = false;
 };
 
@@ -135,7 +133,7 @@ inline void HSVDetection::drawRotatedRect(const cv::RotatedRect& _r, int _index,
     sprintf(count_text, "%d", _index);
     cv::circle(frame_, _r.center, 4, _colour, -1);
     cv::putText(frame_, count_text, _r.center, CV_FONT_HERSHEY_PLAIN, 1, _colour);
-    cv::Point2f vertices[4];  // TODO: draw function
+    cv::Point2f vertices[4];
     _r.points(vertices);
     for (int i = 0; i < 4; i++) {
         line(frame_, vertices[i], vertices[(i+1)%4], _colour, 2);
@@ -212,8 +210,6 @@ std::vector<HSVItem> HSVDetection::detectPipeline(const std::string _id, const c
         item.detector_id = _id;
         item.rectangle = rect;
         item.cropped = is_cropped(rect);
-        // item.centroid = centroid;
-        // item.orientation = theta;
         item_list.push_back(item);
      }
 

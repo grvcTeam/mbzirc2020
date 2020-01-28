@@ -51,8 +51,6 @@ int color_from_string(const std::string& color) {
 struct CameraParameters {
   std::string frame_id;
   tf2::Matrix3x3 K;
-  // tf2::Matrix3x3 R;
-  // tf2::Vector3 T;
 };
 
 struct RealWorldRect {
@@ -64,9 +62,6 @@ struct RealWorldRect {
 // TODO: Camera utils class?
 RealWorldRect fromCvRotatedRect(const cv::RotatedRect& _rect, const CameraParameters& _camera, double _estimated_z) {
 
-  // TODO(Geolocation): We end using only _camera.R.transpose()...
-  // const tf2::Matrix3x3 Rt = _camera.R.transpose();
-  // tf2::Vector3 T_world = Rt * _camera.T;
   tf2::Vector3 K_0 = _camera.K.getRow(0);
   tf2::Vector3 K_1 = _camera.K.getRow(1);
 
@@ -76,63 +71,25 @@ RealWorldRect fromCvRotatedRect(const cv::RotatedRect& _rect, const CameraParame
   ray[1] = aux;
   ray[2] = 1.0;
 
-  // tf2::Vector3 ray_world = Rt * ray;
-  // if (ray_world[2] == 0) {
-  //   ROS_WARN("geoLocate: ray_world[2] == 0");
-  //   return RealWorldRect();
-  // }
-
-  tf2::Vector3 ray_world = ray;
-
-  // mbzirc_comm_objs::ObjectDetection object;
-  // object.header.frame_id = "map";  // TODO: arena? NO, it would affect relative measures too
-  // object.header.stamp = ros::Time::now();
-  // object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK_TRACK;
-
   RealWorldRect out;
-  // The line equation is X = lambda * ray_world - T_world
+  // The line equation is X = lambda * ray_world
   // lambda can be set because the z is known (estimated)
-  double lambda = _estimated_z / ray_world[2];
-  out.center.x = lambda * ray_world[0];
-  out.center.y = lambda * ray_world[1];
-  out.center.z = lambda * ray_world[2];
+  double lambda = _estimated_z / ray[2];
+  out.center.x = lambda * ray[0];
+  out.center.y = lambda * ray[1];
+  out.center.z = lambda * ray[2];
+  out.yaw = _rect.angle * M_PI / 180.0;  // Conversion to rad
 
-  double orientation = _rect.angle * M_PI / 180.0;  // Conversion to rad
-  // tf2::Vector3 orientation_camera(cos(orientation), sin(orientation), 0);
-  // tf2::Vector3 orientation_world = _camera.R * orientation_camera;
-  // double theta_world = atan2(orientation_world[1], orientation_world[0]);
-  // printf("orientation_world = [%lf, %lf, %lf]\n", orientation_world[0], orientation_world[1], orientation_world[2]);
-  // printf("theta_world = %lf\n", theta_world);
-  out.yaw = orientation;
-  // object.pose.pose.orientation.x = 0;
-  // object.pose.pose.orientation.y = 0;
-  // object.pose.pose.orientation.z = sin(0.5*theta_world);
-  // object.pose.pose.orientation.w = cos(0.5*theta_world);
-  // object.pose.covariance[0] = 0.01;  // TODO: Covariance?
-  // object.pose.covariance[7] = 0.01;
-  // object.pose.covariance[14] = 0.01;
-
-  // Suppose item is a rectangle: P = 2 * (side_1 + side_2); A = side_1 * side_2
-  // side_i = (P ± sqrt(P*P - 16*A)) / 4
   double pixel_to_metric_x = lambda / K_0[0];
   double pixel_to_metric_y = lambda / K_1[1];
-  out.size.x = pixel_to_metric_x * _rect.size.width;
+  out.size.x = pixel_to_metric_x * _rect.size.width;  // TODO: as a function of color?
   out.size.y = pixel_to_metric_y * _rect.size.height;
   out.size.z = 0.2;
-  // out.color = color_from_string(item.detector_id);
-  // object_list.objects.push_back(object);
-  // std::cout << object << '\n';
 
   return out;
 }
 
 mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hsv_tracking_pair, const CameraParameters& _camera, double _estimated_z) {
-
-  // TODO: repeated!
-  // const tf2::Matrix3x3 Rt = _camera.R.transpose();
-  // tf2::Vector3 T_world = Rt * _camera.T;
-
-  // double estimated_z = 0.5;  // Estimated vertical distance to bricks (TODO: use sf11)
 
   RealWorldRect rect_real;
   std::string tracked_color;
@@ -156,12 +113,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   object.header.stamp = ros::Time::now();
   object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK_TRACK;
 
-  // object.relative_position = rect_real.center;
-  // object.pose.header.frame_id = "camera_link";  // TODO: camera_optical_frame
-  // object.pose.header.stamp = ros::Time::now();
   object.pose.pose.position = rect_real.center;
-
-  // object.relative_yaw = rect_real.yaw;
   object.pose.pose.orientation.x = 0;
   object.pose.pose.orientation.y = 0;
   object.pose.pose.orientation.z = sin(0.5*rect_real.yaw);
@@ -170,11 +122,8 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   object.pose.covariance[7] = 0.01;
   object.pose.covariance[14] = 0.01;
 
-  object.scale = rect_real.size;
+  object.scale = rect_real.size;  // TODO: As a function of color
   object.color = color_from_string(tracked_color);
-  // object_list.objects.push_back(object);
-  // std::cout << object << '\n';
-  // printf("pose: [%lf, %lf, %lf] (%lf)\n", object.pose.pose.position.x, object.pose.pose.position.y, object.pose.pose.position.z, rect_real.yaw);
 
   return object;
 }
@@ -211,13 +160,11 @@ int main(int argc, char** argv) {
 
   std::string tf_prefix;
   std::string camera_url;
-  ros::param::param<std::string>("~tf_prefix", tf_prefix, "mbzirc");
+  ros::param::param<std::string>("~tf_prefix", tf_prefix, "default_prefix");
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
-  // ros::param::param<std::string>("~camera_url", camera_url, "KINECT/camera_kinect/depth");
 
-  std::string window_detection_name = "HSV Detection";
   ros::Publisher tracked_pub = nh.advertise<mbzirc_comm_objs::ObjectDetection>("tracked_object", 1);
-  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hsv_detection", true, window_detection_name);  // TODO: image_raw vs image_rect_color
+  ImageConverter image_converter(camera_url + "/camera_info", camera_url + "/image_raw", "hsv_detection", false, "HSV Detection");  // TODO: image_raw vs image_rect_color
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &sf11RangeCallback);
 
@@ -261,12 +208,7 @@ int main(int argc, char** argv) {
   }
   CameraParameters camera;
   camera.K = image_converter.getCameraK();
-  // camera.frame_id = tf_prefix + "/camera_color_optical_frame";
-  camera.frame_id = "camera_color_optical_frame";
-
-  // tf2_ros::Buffer tf_buffer;
-  // tf2_ros::TransformListener tf_listener(tf_buffer);
-  // const tf2::Matrix3x3 link_to_cv(0,-1,0, 0,0,-1, 1,0,0);
+  camera.frame_id = tf_prefix + "/camera_color_optical_frame";
 
   ros::Rate rate(20);  // [Hz] TODO: Tune!
   while (ros::ok()) {
@@ -294,20 +236,6 @@ int main(int argc, char** argv) {
         tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));  // TODO: Also detected!
       }
 
-      // try {
-      //   geometry_msgs::TransformStamped camera_link_tf = tf_buffer.lookupTransform("camera_link", "map", ros::Time(0));
-      //   tf2::Stamped<tf2::Transform> camera_link_tf2;
-      //   tf2::fromMsg(camera_link_tf, camera_link_tf2);
-      //   camera.R = link_to_cv * camera_link_tf2.getBasis();
-      //   camera.T = link_to_cv * camera_link_tf2.getOrigin();
-      //   if (tracked.is_valid) {
-      //     tracked.print();
-      //     sensed_pub.publish(fromHSVTrackingPair(tracked, camera));  // TODO: Also detected!
-      //   }
-      // } catch (tf2::TransformException &e) {
-      //   ROS_WARN("%s", e.what());
-      //   continue;
-      // }
     }
     ros::spinOnce();
     rate.sleep();
