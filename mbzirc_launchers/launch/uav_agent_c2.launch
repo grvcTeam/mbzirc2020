@@ -15,8 +15,10 @@
     <param name="flight_level" value="$(arg flight_level)"/>  <!-- TODO: Makes no sense here! -->
 
     <!-- TODO: all transforms needed? -->  <!-- TODO: Use robot_description + state_publihser? -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 0 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0 0 -0.275 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_gripper_tf" args="0 0 -0.3 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/gripper_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.25 0 0.05 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+    <node if="$(eval mode == 'sim')" pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optcal_tf" args="0 0 0 0.5 -0.5 0.5 -0.5 $(arg robot_model)_$(arg agent_id)/camera_link $(arg robot_model)_$(arg agent_id)/camera_color_optical_frame" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_sf11_tf" args="-0.28 0.28 -0.05 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/sf11_link" />
 
     <node if="$(eval ual_backend == 'gazebo_light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
     args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena -ual_backend=gazebo_light"/>
@@ -70,16 +72,16 @@
       <param name="scan_mode"           type="string" value="Stability"/>
     </node> -->
 
-    <!-- <node if="$(eval mode == 'sim')" name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen">
+    <node if="$(eval mode == 'sim')" name="sf11" pkg="sf11_driver" type="sf11_sim_node" output="screen">
       <param name="frame_id" type="string" value="$(arg robot_model)_$(arg agent_id)/sf11_link"/>
-    </node> -->
+    </node>
 
-    <!-- <node if="$(eval mode == 'real')" name="sf11" pkg="sf11_driver" type="sf11_driver_node" output="screen">
+    <node if="$(eval mode == 'real')" name="sf11" pkg="sf11_driver" type="sf11_driver_node" output="screen">
       <param name="frame_id" type="string" value="$(arg robot_model)_$(arg agent_id)/sf11_link"/>
       <param name="serial_path" value="/dev/sf11"/>
       <param name="serial_baudrate" value="115200"/>
       <param name="publish_rate" value="20"/>
-    </node> -->
+    </node>
 
     <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
       <arg name="enable_pointcloud"   value="false"/>

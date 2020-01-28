@@ -65,11 +65,12 @@ int main(int argc, char** argv) {
   HSVDetection detection;
   HSVRange white_range;
   white_range.min_HSV[0] = 0;
-  white_range.min_HSV[1] = 0;
-  white_range.min_HSV[2] = 150;
   white_range.max_HSV[0] = 180;
+  white_range.min_HSV[1] = 0;
   white_range.max_HSV[1] = 58;
+  white_range.min_HSV[2] = 150;
   white_range.max_HSV[2] = 255;
+
   detection.addDetector("white", white_range, cvScalar(0, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {

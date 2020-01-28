@@ -140,7 +140,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/hue_object_detection_node.cpp)
 add_executable(train src/train.cpp)
-add_executable(detection_node src/detection_node.cpp src/HueDetection.cpp)
+# add_executable(detection_node src/detection_node.cpp src/HueDetection.cpp)
 add_executable(test_detect src/test_detect.cpp src/HueDetection.cpp)
 add_executable(in_range src/in_range.cpp)
 add_executable(hsv_detection_node src/hsv_detection_node.cpp)
@@ -154,7 +154,7 @@ add_executable(hsv_detection_node src/hsv_detection_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(detection_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(detection_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(train ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_detect ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(in_range ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -164,11 +164,11 @@ add_dependencies(hsv_detection_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(detection_node
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${OpenCV_LIBRARIES}
-)
+# target_link_libraries(detection_node
+#   ${catkin_LIBRARIES}
+#   ${OpenCV_LIBS}
+#   ${OpenCV_LIBRARIES}
+# )
 target_link_libraries(train
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}

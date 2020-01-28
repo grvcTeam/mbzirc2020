@@ -25,7 +25,7 @@
     <!-- Install magnetic gripper -->
     <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
     <xacro:magnetic_gripper parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
-      <origin xyz="0 0 -0.275" rpy="0 0 0" />
+      <origin xyz="0 0 -0.3" rpy="0 0 0" />
     </xacro:magnetic_gripper>
     <!-- Install camera facing down -->
     <xacro:camera_macro 
@@ -44,10 +44,29 @@
       enable_visual="true"
       >
       <box size="0.01 0.01 0.01"/>
-      <origin xyz="0 0 -0.295" rpy="0 1.57079632679 0" />
+      <origin xyz="0.25 0 0.05" rpy="0 1.57079632679 0" />
     </xacro:camera_macro>
+
+    <!-- Install laser scanner: altimeter -->
+    <xacro:laser_scanner
+      namespace="${namespace}"
+      id="1"
+      pub_topic="sf11_sim_as_scan"
+      tf="sf11_link"
+      parent_link="base_link"
+      update_rate="20"
+      sample_count="1"
+      angle_min="0"
+      angle_max="0"
+      range_min="0.10"
+      range_max="120.0"
+      range_res="0.01"
+      visualize="true"
+      >
+      <origin xyz="-0.28 0.28 -0.05" rpy="0 1.57 0" />
+    </xacro:laser_scanner>
   </xacro:if>
-  
+
 <!-- Install Teraranger Evo frontal -->
   <!-- <xacro:teraranger_macro
     namespace="${model_name}"

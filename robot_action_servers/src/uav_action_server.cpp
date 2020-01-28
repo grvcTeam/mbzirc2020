@@ -219,15 +219,12 @@ public:
     }
   }
 
-  void sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
-    float min_distance = 1e3;  // 1 Km
-    for (auto object: msg->objects) {
-      float distance = object.relative_position.x * object.relative_position.x + object.relative_position.y * object.relative_position.y;
-      if (distance < min_distance) {
-        min_distance = distance;
-        matched_candidate_ = object;  // TODO: Check also color is correct
-      }
+  void trackedObjectCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg) {
+    if (msg->type != mbzirc_comm_objs::ObjectDetection::TYPE_BRICK_TRACK) {
+      ROS_WARN("Expected TYPE_BRICK_TRACK!");
+      return;
     }
+    matched_candidate_ = *msg;  // TODO: Check also color is correct?
   }
 
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg) {
@@ -253,8 +250,15 @@ public:
       return;
     }
 
+    geometry_msgs::TransformStamped camera_to_gripper;  // Constant!
+    try {
+      camera_to_gripper = tf_buffer_.lookupTransform("mbzirc2020_1/gripper_link", "mbzirc2020_1/camera_color_optical_frame", ros::Time(0));  // TODO: tf_prefix paramterer!
+    } catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+    }
+
     ros::NodeHandle nh;
-    ros::Subscriber sensed_sub_ = nh.subscribe("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
+    ros::Subscriber sensed_sub_ = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
     ros::Subscriber attached_sub_ = nh.subscribe("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
     ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: New naming!
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
@@ -298,11 +302,26 @@ public:
         return;
       }
 
+      // TODO: Fix tf mess and tf_prefix as a parameter!
+      // if (!tf_buffer_.canTransform("mbzirc2020_1/camera_color_optical_frame", "mbzirc2020_1/gripper_link", ros::Time(0))) {
+      //   ROS_ERROR("Cannot transform!");
+      // }
+      // geometry_msgs::PoseStamped current_pose;
+      // current_pose.header.frame_id = "mbzirc2020_1/camera_color_optical_frame";
+      // current_pose.pose = matched_candidate_.pose.pose;
+      // geometry_msgs::PoseStamped target_pose;
+      // tf_buffer_.transform(current_pose, target_pose, "mbzirc2020_1/gripper_link", ros::Time(0), "mbzirc2020_1/camera_color_optical_frame");
+      geometry_msgs::Pose target_pose;
+      tf2::doTransform(matched_candidate_.pose.pose, target_pose, camera_to_gripper);
 
-      geometry_msgs::Point target_position = matched_candidate_.relative_position;
+      // geometry_msgs::Point target_position = target_pose.pose.position;
+      geometry_msgs::Point target_position = target_pose.position;
+      // tf2_geometry_msgs::do_transform(matched_candidate_.pose.pose.position, target_position, camera_to_gripper);
+
       if (since_last_candidate < timeout) {
         // x-y-control: in candidateCallback
         // z-control: descend
+        ROS_ERROR("target: [%lf, %lf, %lf]", target_position.x, target_position.y, target_position.z);
         double xy_error = sqrt(target_position.x*target_position.x + target_position.y*target_position.y);
         history_xy_errors.push(xy_error);
         double min_xy_error, avg_xy_error, max_xy_error;
@@ -363,10 +382,11 @@ public:
       // Send target_position  // TODO: find equivalent!
       geometry_msgs::TwistStamped velocity;
       velocity.header.stamp = ros::Time::now();
-      velocity.header.frame_id = "map";
+      velocity.header.frame_id = "mbzirc2020_1/gripper_link";  // "map";
       velocity.twist.linear.x = x_pid.control_signal(target_position.x, 1.0 / CATCHING_LOOP_RATE);
       velocity.twist.linear.y = y_pid.control_signal(target_position.y, 1.0 / CATCHING_LOOP_RATE);
       velocity.twist.linear.z = z_pid.control_signal(target_position.z, 1.0 / CATCHING_LOOP_RATE);
+      ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
       ual_->setVelocity(velocity);
       // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
