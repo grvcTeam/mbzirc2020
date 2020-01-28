@@ -4,6 +4,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/LaserScan.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -22,17 +23,21 @@ using namespace cv;
 #include <geometry_msgs/PoseStamped.h>
 #include <math.h>
 
-float temp_matrix[32][32];
-int maxim;
-ros::Publisher pub;
-ros::Publisher pub_msg;
-float x_pose, y_pose;
-geometry_msgs::PoseStamped pos;
+
 
 int detection_sampling=0;
 int z=0;
 int last_detection=0;
 int detection=0;
+int maxim;
+float temp_matrix[32][32];
+float x_pose, y_pose, z_pose;
+float laser_measurement;
+
+geometry_msgs::PoseStamped pos;
+std_msgs::Header header_pose;
+ros::Publisher pub;
+ros::Publisher pub_msg;
 
 
 // Routine to find fire in the image
@@ -61,21 +66,63 @@ void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
         }
     }
 }
-//  Routine to obtain data pose to create fire messages
+
+
+//  Routine to obtain data pose and header to create fire messages
 void ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 {
-    // Position in x,y,z
+    // Position in x,y,z    
+    header_pose=msg.header; 
+    // cout<<header_pose<<endl;
     x_pose=msg.pose.position.x;
     y_pose=msg.pose.position.y;
+    z_pose=msg.pose.position.z;
     pos.pose=msg.pose;
-    // cout<<x_pose<<endl;
+
 }
+
+//Routine to connect and obtain data from laser scanner and obtaining an average of the values
+void laser_measures(const sensor_msgs::LaserScan& msg)
+{
+    ros::NodeHandle t;
+    int angle_amplitude;
+    t.getParam("/thermal/angle_amplitude",angle_amplitude);
+    float range_min,range_max,increment_angle;
+    int cuentas=0,i=0;
+    int initial=360;
+    laser_measurement=0;
+    range_min=msg.range_min;
+    range_max=msg.range_max;
+    increment_angle=msg.angle_increment;
+
+    initial=initial-angle_amplitude;
+    // Reading every measure established and calculating the average
+    for (i=0;i<(angle_amplitude*2);i++)
+    {
+        if (msg.ranges[initial+i]>range_min and msg.ranges[initial+i]<range_max){
+            laser_measurement=msg.ranges[320+i]+laser_measurement;
+            cuentas=cuentas+1;
+        }
+    }
+    laser_measurement=laser_measurement/cuentas;
+    }
+
 
 //  Routine to process the image and determine if there is fire and where
 void image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
-    int thermal_threshold=70;  //Thermal threshold to detect fire, 70 degrees recomended
-
+    ros::NodeHandle t;
+    // Get parameters from launcher
+    int thermal_threshold;
+    int frame_number;
+    float sigma_x,sigma_y,sigma_z;
+    string mode;
+    t.getParam("/thermal/thermal_threshold",thermal_threshold);
+    t.getParam("/thermal/sampling",frame_number);    
+    t.getParam("/thermal/covariance_x",sigma_x);
+    t.getParam("/thermal/covariance_y",sigma_y);
+    t.getParam("/thermal/covariance_z",sigma_z);
+    t.getParam("/thermal/camera_config",mode);    
     //Index and size of the thermal window displayed
     int a=32*20,i=0,j=0,k=0;
     int x_size=32*20;
@@ -92,9 +139,6 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     int image_center_y=x_size/2;
     float relative_pose_x;
     float relative_pose_y;
-    // Pixel - metres equivalence
-    float pixel_to_m=0.0001;
-
     // Variables to port from msg to image and operate in opencv
     sensor_msgs::Image img_msg;
     std_msgs::Header header; 
@@ -142,11 +186,10 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         std::vector<cv::Point2f> mc(outline.size());
         cv::cvtColor(therm,image_color,CV_GRAY2BGR);
 
-
         float distance;
         float x_comp;
         float y_comp;
-
+        int radio=70;
         // Routine to detect fire in the image
          circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
         if (maxim>thermal_threshold){
@@ -158,23 +201,9 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                 mc[d]=Point2f(mu[d].m10/mu[d].m00 , mu[d].m01/mu[d].m00);
                 cx[d]=mu[d].m10/mu[d].m00;
                 cy[d]=mu[d].m01/mu[d].m00;
-                // 
-            
- 
                 // Painting a rectangle in the fire
                 Rect rect=boundingRect(outline[d]);
-                // cout<<outline[d]<<endl;
-                // cout<<rect.y/20<<endl;
-                // cout<<rect.height/20<<endl;
-                // cout<<rect.width/20<<endl;
-                // cout<<"----"<<endl;
-                // pt1.x=rect.x;
-                // pt1.y=rect.y;
-                // pt2.x=rect.x+rect.width;
-                // pt2.y=rect.y+rect.height;
-                // rectangle(image_color,pt1,pt2,CV_RGB(0,255,0),1);
                 circle(image_color,mc[d],2,CV_RGB(0,255,0),1,16,0);
-                // circle(therm,mc[d],5,CV_RGB(255,255,255),-1);
             }
             for (d=0;d<outline.size();d++)
             {
@@ -183,26 +212,16 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                 if (d==outline.size()-1){
                     sum.y=sum.y/outline.size();
                     sum.x=sum.x/outline.size();
-                    circle(image_color,sum,70,CV_RGB(0,255,0),1,16,0);
+                    circle(image_color,sum,radio,CV_RGB(0,255,0),1,16,0);
                     circle(image_color,sum,3,CV_RGB(0,255,0),1,16,0);
                     line(image_color,center,sum,CV_RGB(0,255,0),1,16,0);
 
                     x_comp=center.y-sum.y;
                     y_comp=(center.x-sum.x)*-1;
                     distance=sqrt(x_comp*x_comp+y_comp*y_comp);
-                    // std::string x_dis = std::to_string(x_comp);
-                    // std::string y_dis = std::to_string(y_comp);
-                    // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
-                    // cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
                 }
-
-
             }
-        
-      
         }
-       
-
         // Displaying images on screen 
         string nombre="Thermal";
         cv::namedWindow(nombre);
@@ -221,9 +240,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         header = msg->header; 
         img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC3, image_color);
         pub.publish(img_bridge.toImageMsg());
-
-        // Publish a msg whenever a fire is detected every 10 frames
-        int frame_number=10;
+        // Publish a msg whenever a fire is detected every X frames
         detection_sampling=detection_sampling+1;
         if (detection==1 and detection_sampling>=frame_number)
         {
@@ -235,18 +252,45 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
             detection_sampling=0;
             last_detection=last_detection+1;
-            
-                // Calculating the relative fire position toward the image center
-            // Relative position in pixels toward the center of the image
-            relative_pose_x=x_comp;
-            relative_pose_y=y_comp;
+            rec_object.header=header_pose;
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
-            rec_object.image_detection.width=relative_pose_x;
-            rec_object.image_detection.height=relative_pose_y;
-            rec_object.image_detection.u=center.x;
-            rec_object.image_detection.v=center.y;
-            rec_object.pose.pose=pos.pose;
-             // Publishing the Object 
+            rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
+            rec_object.pose.covariance={sigma_x,0,0,0,0,0,
+                                        0,sigma_y,0,0,0,0,
+                                        0,0,sigma_z,0,0,0,
+                                        0, 0, 0, 0, 0,  0,
+                                        0, 0, 0, 0, 0,  0,
+                                        0, 0, 0, 0, 0,  0};
+            rec_object.image_detection.img_height=y_size;
+            rec_object.image_detection.img_width=x_size;
+            rec_object.image_detection.v=y_comp;
+            rec_object.image_detection.u=x_comp;
+            rec_object.image_detection.height=radio/20;
+            rec_object.image_detection.width=y_size=radio/20;
+                
+            if (mode=="DOWNWARD")
+            {
+            //Thermal image fields
+            rec_object.image_detection.depth=sigma_z;
+            rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_DOWNWARD;
+            // Object Detection fields
+            rec_object.pose.pose.position.x=x_pose+sigma_x;
+            rec_object.pose.pose.position.y=y_pose+sigma_y;
+            rec_object.pose.pose.position.z=sigma_z;
+            rec_object.pose.pose.orientation=pos.pose.orientation;
+            }
+            else if (mode=="FORWARD")
+            {
+            //Thermal image fields
+            rec_object.image_detection.depth=laser_measurement;
+            rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_FORWARD;
+           //Object detection fields
+            rec_object.pose.pose.position.x=x_pose+sigma_x+laser_measurement;
+            rec_object.pose.pose.position.y=y_pose+sigma_y;
+            rec_object.pose.pose.position.z=z_pose;
+            rec_object.pose.pose.orientation=pos.pose.orientation;
+            }
+            // Publishing the Object    
             rec_list.objects.push_back(rec_object);
             pub_msg.publish(rec_list);
             detection=0;
@@ -273,13 +317,25 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
 // Routine to read data from teraranger topics and ual pose
 int main(int argc, char **argv)
 {
+    float thermal_thres;
+    string Position_topic,Laser_topic,Temp_topic,RGB_image_topic,Advertise_topic,Detection_list_topic;
+    int uav_id;
     ros::init(argc,argv,"Thermal_cam");
     ros::NodeHandle n;
-    ros::Subscriber sub = n.subscribe("teraranger_evo_thermal/raw_temp_array",10,thermal_data);
-    ros::Subscriber sub_dos = n.subscribe("teraranger_evo_thermal/rgb_image",10,image_operations);
-    ros::Subscriber sub_tres = n.subscribe("/ual/pose",10,ual_to_fire_position);
-    
-    pub = n.advertise<sensor_msgs::Image>("thermal_camera", 10);
-    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_detected",10);
+    n.getParam("/thermal/Position_topic",Position_topic);
+    n.getParam("/thermal/Laser_topic",Laser_topic);
+    n.getParam("/thermal/Temp_topic",Temp_topic);
+    n.getParam("/thermal/RGB_image_topic",RGB_image_topic);
+    n.getParam("/thermal/Advertise_topic",Advertise_topic);
+    n.getParam("/thermal/Detection_list_topic",Detection_list_topic);
+    n.getParam("/thermal/uav_id",uav_id);
+
+    ros::Subscriber sub = n.subscribe(Temp_topic,10,thermal_data);
+    ros::Subscriber sub_dos = n.subscribe(RGB_image_topic,10,image_operations);
+    ros::Subscriber sub_tres = n.subscribe(Position_topic,10,ual_to_fire_position);
+    ros::Subscriber sub_cuatro = n.subscribe(Laser_topic,10,laser_measures);
+   
+    pub = n.advertise<sensor_msgs::Image>(Advertise_topic, 10);
+    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>(Detection_list_topic,10);
     ros::spin();
 }
