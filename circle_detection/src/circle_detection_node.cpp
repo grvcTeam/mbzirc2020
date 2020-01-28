@@ -13,6 +13,7 @@
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <iostream>
+#include <string>
 
 // Typedef
 typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> ApproxTimeSyncPolicy;
@@ -20,7 +21,7 @@ typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sens
 class CircleDetector
 {
 public:
-    CircleDetector();
+    CircleDetector(const std::string &robot_ns, const int &uav_id);
     ~CircleDetector();
 private:
     void callbackDepthCameraInfo(const sensor_msgs::CameraInfoConstPtr &camera_info_ptr);
@@ -33,7 +34,9 @@ private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
 
-    std::string agent_id_;
+    int uav_id_;
+    std::string robot_ns_;
+    std::string tf_prefix_;
 
     // Hough Circles parameters
     double dp_; // Inverse ratio of accumulator resolution to image resolution. The greater the value, the lower the accu resolution
@@ -86,19 +89,21 @@ private:
 
 };
 
-CircleDetector::CircleDetector():
+CircleDetector::CircleDetector(const std::string &robot_ns, const int &uav_id):
 nh_(),
 pnh_("~"),
+uav_id_(uav_id),
+robot_ns_(robot_ns),
 image_transport_(nh_),
 publish_debug_images_(false),
 publish_debug_marker_(false),
 has_camera_info(false),
-depth_image_sub_(nh_, "camera/aligned_depth_to_color/image_raw", 1),
-color_image_sub_(nh_, "camera/color/image_raw", 1),
+depth_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/aligned_depth_to_color/image_raw", 1),
+color_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/color/image_raw", 1),
 sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
 {
     // Read parameters
-    pnh_.param<std::string>("agent_id", agent_id_, "default_agent");
+    pnh_.param<std::string>("tf_prefix", tf_prefix_, "mbzirc_2020");
     pnh_.param<bool>("publish_debug_marker", publish_debug_marker_, false);
     pnh_.param<bool>("publish_debug_images", publish_debug_images_, false);
     pnh_.param<double>("dp", dp_, 1);
@@ -108,16 +113,17 @@ sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
     pnh_.param<int>("min_radius", min_radius_, 0);
     pnh_.param<int>("max_radius", max_radius_, 0);
 
-    camera_info_sub_ = nh_.subscribe("camera/aligned_depth_to_color/camera_info", 1, &CircleDetector::callbackDepthCameraInfo, this);
+    std::string camera_info_topic = robot_ns + "_" + std::to_string(uav_id) + "/camera/aligned_depth_to_color/camera_info";
+    camera_info_sub_ = nh_.subscribe(camera_info_topic, 1, &CircleDetector::callbackDepthCameraInfo, this);
     //depth_image_sub_ = message_filters::Subscriber<sensor_msgs::Image>(nh, "depth_image_topic", 1);
     //color_image_sub_ = message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image_topic", 1);
     sync.registerCallback(boost::bind(&CircleDetector::callbackSyncColorDepth, this, _1, _2));
     
     if (publish_debug_marker_)
     {
-        circle_center_marker_pub_ = nh_.advertise<visualization_msgs::Marker>("circle_center_marker", 1);
+        circle_center_marker_pub_ = nh_.advertise<visualization_msgs::Marker>(robot_ns_ + "_" + std::to_string(uav_id) + "/circle_center_marker", 1);
         // Initialize circle_center_marker_
-        circle_center_marker_.header.frame_id = "camera_color_optical_frame";
+        circle_center_marker_.header.frame_id = tf_prefix_ + "_" + std::to_string(uav_id) + "/camera_color_optical_frame";
         circle_center_marker_.id = 1;
         circle_center_marker_.lifetime = ros::Duration(0);
         circle_center_marker_.ns = "circle_center";
@@ -132,14 +138,15 @@ sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
 
     if (publish_debug_images_)
     {
-        detected_circles_image_pub_ = image_transport_.advertise("detected_circles_image", 1); 
-        gaussian_blur_image_pub_ = image_transport_.advertise("gaussian_blur_image", 1);
-        canny_edge_image_pub_ = image_transport_.advertise("canny_edge_image", 1);
+        detected_circles_image_pub_ = image_transport_.advertise(robot_ns_ + "_" + std::to_string(uav_id) + "/detected_circles_image", 1); 
+        gaussian_blur_image_pub_ = image_transport_.advertise(robot_ns_ + "_" + std::to_string(uav_id) + "/gaussian_blur_image", 1);
+        canny_edge_image_pub_ = image_transport_.advertise(robot_ns_ + "_" + std::to_string(uav_id) + "/canny_edge_image", 1);
     }
 
-    object_detection_.type = object_detection_.TYPE_FIRE;
+    object_detection_.header.frame_id = "uav_" + std::to_string(uav_id) + "_camera_color_optical_frame";
+    object_detection_.type = object_detection_.TYPE_HOLE;
     object_detection_.color = object_detection_.COLOR_UNKNOWN;
-    object_detection_pub_ = nh_.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_ring_detected", 1);
+    object_detection_pub_ = nh_.advertise<mbzirc_comm_objs::ObjectDetectionList>(robot_ns + "_" + std::to_string(uav_id) + "/sensed_objects", 1);
 }
 
 CircleDetector::~CircleDetector()
@@ -164,6 +171,11 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
 {
     if (this->hasCameraInfo())
     {
+        if ( color_img_ptr->header.frame_id != (tf_prefix_ + "_" + std::to_string(uav_id_) + "/camera_color_optical_frame") ) 
+        {
+            ROS_WARN("Received camera frame doesn't match expected one");
+            return;
+        }
         // Convert from ROS image type to OpenCV
         cv_bridge::CvImagePtr color_image_cv = cv_bridge::toCvCopy(color_img_ptr, sensor_msgs::image_encodings::RGB8);
         cv_bridge::CvImagePtr depth_image_cv = cv_bridge::toCvCopy(depth_img_ptr, sensor_msgs::image_encodings::TYPE_16UC1);
@@ -218,7 +230,7 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
             object_detection_.header.stamp = color_img_ptr->header.stamp;
             object_detection_.header.frame_id = color_img_ptr->header.frame_id;
             object_detection_.pose.pose.position = circle_center_3D;
-            object_detection_.pose.pose.orientation.w = 1.0; // TODO: Calc orientation
+            //object_detection_.pose.pose.orientation.w = 1.0; // TODO: Calc orientation
             object_detection_list_.stamp = color_img_ptr->header.stamp;
             object_detection_.scale.x = object_detection_.scale.y = object_detection_.scale.z = radius;
             // TODO: Fill covariance
@@ -249,8 +261,12 @@ void CircleDetector::get3DPointCameraModel(geometry_msgs::Point &point, float &d
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "circle_detection_node");
-    CircleDetector circle_detector;
+    std::string robot_ns;
+    int uav_id;
 
+    ros::param::param<std::string>("robot_ns", robot_ns, "mbzirc_2020");
+    ros::param::param<int>("uav_id", uav_id, 1);
+    CircleDetector circle_detector(robot_ns, uav_id);
 
     ros::Rate rate(10);
     while(ros::ok())
