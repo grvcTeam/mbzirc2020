@@ -4,6 +4,7 @@ geometry_msgs/Vector3 scale            # Detected object size
 uint8 type                             # Object type (see TYPE_* constants below)
 uint8 sub_type                         # Object subtype (see SUBTYPE_* constants below)
 uint8 color                            # Object color (see COLOR_* constats below)
+uint16 id                              # Object identifier
 
 
 uint8 TYPE_PILE    = 0

@@ -55,6 +55,8 @@
   <build_export_depend>visualization_msgs</build_export_depend>
   <exec_depend>mbzirc_comm_objs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
+  <depend>roscpp</depend>
+  <depend>tf2</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -4,7 +4,7 @@ import copy
 import argparse
 import rospy
 from std_msgs.msg import ColorRGBA
-from mbzirc_comm_objs.msg import ObjectDetection, ObjectDetectionList
+from mbzirc_comm_objs.msg import ObjectDetection, ObjectDetectionList, Object, ObjectList
 from visualization_msgs.msg import Marker, MarkerArray
 
 # TODO: namespacing?

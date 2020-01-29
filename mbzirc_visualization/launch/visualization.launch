@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="ns" default="mbzirc2020" />
+
+
+	<node name="visualization_node" pkg="mbzirc_vizualization" type="visualizer_node" respawn="false" output="screen">
+
+	<param name="robot_ns" value="$(arg ns)"/>
+	<param name="object_topic" value="estimated_objects"/>
+	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
+
+    </node>
+
+</launch>
