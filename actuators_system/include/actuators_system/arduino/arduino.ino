@@ -73,8 +73,8 @@ BoardOutput board_output;
 Timer timer = Timer(PERIOD_IN_MS);
 
 Servo servo[5];
-uint16_t pwm_min[5] = { 900,  900,  900,  900,  900};
-uint16_t pwm_max[5] = {2100, 2100, 2100, 2100, 2100};
+uint16_t pwm_min[5] = { 500,  900,  900,  900,  900};
+uint16_t pwm_max[5] = {2500, 2100, 2100, 2100, 2100};
 
 void setup() {
 

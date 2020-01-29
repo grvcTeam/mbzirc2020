@@ -69,7 +69,7 @@ bool set_digital(mbzirc_comm_objs::SetDigital::Request  &req, mbzirc_comm_objs::
 
 bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
-    for (int i = 0; i < 5; i++) {
+    for (int i = 2; i < 5; i++) {
         board_input.pwm[i] = 1800;  // TODO: From config file?
     }
     input_mutex.unlock();
@@ -78,9 +78,23 @@ bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response 
 
 bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
-    for (int i = 0; i < 5; i++) {
+    for (int i = 2; i < 5; i++) {
         board_input.pwm[i] = 1500;  // TODO: From config file?
     }
+    input_mutex.unlock();
+    return true;
+}
+
+bool magnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.pwm[0] = 2500;  // TODO: From config file?
+    input_mutex.unlock();
+    return true;
+}
+
+bool demagnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.pwm[0] = 560;  // TODO: From config file?
     input_mutex.unlock();
     return true;
 }
@@ -99,6 +113,20 @@ bool grasp_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
     for (int i = 0; i < 5; i++) {
         board_input.pwm[i] = 998;  // TODO: From config file?
     }
+    input_mutex.unlock();
+    return true;
+}
+
+bool start_pump(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.digital_out_0 = true;  // TODO: From config file?
+    input_mutex.unlock();
+    return true;
+}
+
+bool stop_pump(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.digital_out_0 = false;  // TODO: From config file?
     input_mutex.unlock();
     return true;
 }
@@ -169,6 +197,10 @@ int main(int argc, char** argv) {
     ros::ServiceServer close_gripper_service = n.advertiseService("actuators_system/close_gripper", close_gripper);
     ros::ServiceServer release_blanket_service = n.advertiseService("actuators_system/release_blanket", release_blanket);
     ros::ServiceServer grasp_blanket_service = n.advertiseService("actuators_system/grasp_blanket", grasp_blanket);
+    ros::ServiceServer magnetize_gripper_service = n.advertiseService("actuators_system/magnetize_gripper", magnetize_gripper);
+    ros::ServiceServer demagnetize_gripper_service = n.advertiseService("actuators_system/demagnetize_gripper", demagnetize_gripper);
+    ros::ServiceServer start_pump_service = n.advertiseService("actuators_system/start_pump", start_pump);
+    ros::ServiceServer stop_pump_service = n.advertiseService("actuators_system/stop_pump", stop_pump);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
