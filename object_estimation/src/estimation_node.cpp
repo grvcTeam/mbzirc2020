@@ -67,7 +67,7 @@ public:
         ros::NodeHandle nh;
         estimation_timer_ = nh.createTimer(ros::Duration(1.0/frequency), &Estimator::estimateCallback, this);
 
-        for (int i = 0; i < n_uavs_ + 1; i++) {
+        for (int i = 0; i < n_uavs_; i++) {
             string sensed_topic = robot_ns + "_" + uav_ids_[i] + "/sensed_objects";
             sensed_sub_.push_back(nh.subscribe(sensed_topic, 1, &Estimator::updateCallback, this));
         }
@@ -282,7 +282,7 @@ protected:
     int obj_type_from_string(const string& type, vector<int> &detectors) 
     {
 
-        int obj_type = -1;
+        int obj_type;
         if(type == "pile")
         {
             obj_type = mbzirc_comm_objs::Object::TYPE_PILE;
@@ -306,7 +306,8 @@ protected:
         }
         else
         {
-                ROS_ERROR("Unknown object type %s", type.c_str());
+            obj_type = -1;
+            ROS_ERROR("Unknown object type %s", type.c_str());
         }
 
         return obj_type;

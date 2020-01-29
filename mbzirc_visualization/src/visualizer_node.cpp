@@ -102,7 +102,7 @@ Visualizer::Visualizer()
     // Subscriptions/publications
     ros::NodeHandle nh;
       
-    for (int i = 0; i < n_uavs_ + 1; i++) 
+    for (int i = 0; i < n_uavs_; i++) 
     {
         string sensed_topic = robot_ns + "_" + uav_ids_[i] + "/sensed_objects";
         string uav_topic = robot_ns + "_" + uav_ids_[i] + "/ual/pose";
