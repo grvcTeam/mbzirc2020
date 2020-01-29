@@ -1,6 +1,7 @@
 #ifndef HSV_DETECTION_H
 #define HSV_DETECTION_H
 
+#include <yaml-cpp/yaml.h>
 #include <ros/console.h>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core/core.hpp>
@@ -36,7 +37,21 @@ struct HSVRange {
 
     cv::Scalar getMin() { return cv::Scalar(min_HSV[0], min_HSV[1], min_HSV[2]); }
     cv::Scalar getMax() { return cv::Scalar(max_HSV[0], max_HSV[1], max_HSV[2]); }
+
+    void print() {
+        printf("[%d, %d][%d, %d][%d, %d]\n", min_HSV[0], max_HSV[0], min_HSV[1], max_HSV[1], min_HSV[2], max_HSV[2]);
+    }
 };
+
+void operator>>(const YAML::Node& _in, HSVRange& _range) {
+    // TODO: Check that expected fields do exist
+    _range.min_HSV[0] = _in["H_range"][0].as<int>();
+    _range.min_HSV[1] = _in["S_range"][0].as<int>();
+    _range.min_HSV[2] = _in["V_range"][0].as<int>();
+    _range.max_HSV[0] = _in["H_range"][1].as<int>();
+    _range.max_HSV[1] = _in["S_range"][1].as<int>();
+    _range.max_HSV[2] = _in["V_range"][1].as<int>();
+}
 
 struct HSVItem {
     std::string detector_id;
@@ -73,6 +88,14 @@ struct HSVDetectionConfig {
     double poly_epsilon = 3.0;
     Kernel kernel;
 };
+
+void operator>>(const YAML::Node& _in, HSVDetectionConfig& _config) {
+    // TODO: Check that expected fields do exist
+    _config.min_area     = _in["min_area"].as<double>();
+    _config.poly_epsilon = _in["poly_epsilon"].as<double>();
+    _config.kernel.type  = _in["kernel_type"].as<int>();
+    _config.kernel.size  = _in["kernel_size"].as<int>();
+}
 
 class HSVDetection {
 public:

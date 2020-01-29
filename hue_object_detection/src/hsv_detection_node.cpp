@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-// #include <ros/package.h>
+#include <ros/package.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <image_transport/image_transport.h>
@@ -218,37 +218,25 @@ int main(int argc, char** argv) {
   ros::ServiceServer types_server = nh.advertiseService("set_types", ChangeTypesCB);
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &sf11RangeCallback);
 
+  std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
+  std::string config_filename = config_folder + "hsv_config.yaml";  // TODO: From param?
+
+  YAML::Node config_yaml = YAML::LoadFile(config_filename);
+  std::map<std::string, HSVRange> range_map;
+  config_yaml["colors"]["red"]    >> range_map["red"];
+  config_yaml["colors"]["green"]  >> range_map["green"];
+  config_yaml["colors"]["blue"]   >> range_map["blue"];
+  config_yaml["colors"]["orange"] >> range_map["orange"];
+  config_yaml["colors"]["white"]  >> range_map["white"];
+
   HSVDetectionConfig detection_config;
-  detection_config.min_area = 2;
-  detection_config.poly_epsilon = 5;
-  detection_config.kernel.type = 0;
-  detection_config.kernel.size = 1;
+  config_yaml["detection_config"] >> detection_config;
+  // printf("config: %lf, %lf, %d, %d\n", detection_config.min_area, detection_config.poly_epsilon, detection_config.kernel.type, detection_config.kernel.size);
 
   HSVDetection detection;
   detection.setConfig(detection_config);
-
-  HSVRange red_range;
-  red_range.min_HSV[0] = 0;
-  red_range.max_HSV[0] = 17;
-  red_range.min_HSV[1] = 112;
-  red_range.max_HSV[1] = 255;
-  red_range.min_HSV[2] = 98;
-  red_range.max_HSV[2] = 255;
-  detection.addDetector("red", red_range, cvScalar(0, 255, 0));
-
-  HSVRange white_range;
-  white_range.min_HSV[0] = 0;
-  white_range.max_HSV[0] = 180;
-  white_range.min_HSV[1] = 0;
-  white_range.max_HSV[1] = 58;
-  white_range.min_HSV[2] = 150;
-  white_range.max_HSV[2] = 255;
-  detection.addDetector("white", white_range, cvScalar(0, 0, 0));
-//   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
-//   detection.addDetector("red", red_range, cvScalar(255, 0, 0));
-//   detection.addDetector("green", green_range, cvScalar(255, 0, 255));
-//   detection.addDetector("blue", blue_range, cvScalar(0, 255, 255));
-//   detection.addDetector("orange", blue_range, cvScalar(255, 0, 0));
+  detection.addDetector("red", range_map["red"], cvScalar(0, 255, 0));
+  detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
     // TODO(performance): If camera info is constant, having a subscriber is overkill

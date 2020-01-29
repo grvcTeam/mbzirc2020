@@ -183,11 +183,13 @@ target_link_libraries(in_range
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${OpenCV_LIBRARIES}
+  yaml-cpp
 )
 target_link_libraries(hsv_detection_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${OpenCV_LIBRARIES}
+  yaml-cpp
 )
 
 #############
