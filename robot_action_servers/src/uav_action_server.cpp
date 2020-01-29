@@ -334,7 +334,6 @@ public:
     // pose_pid.enableRosInterface("pick_control");
 
     // TODO: Magnetize catching device
-    // catching_device_->setMagnetization(true);
     mbzirc_comm_objs::Magnetize magnetize_srv;
     magnetize_srv.request.magnetize = true;
     if (!magnetize_client.call(magnetize_srv)) {
@@ -357,21 +356,12 @@ public:
         return;
       }
 
-      bool so_far = (sf11_range_.range > 1.5);
+      // bool so_far = (sf11_range_.range > 1.5);  // TODO: threshold!
 
-      // TODO: Fix tf mess and tf_prefix as a parameter!
-      // if (!tf_buffer_.canTransform("mbzirc2020_1/camera_color_optical_frame", "mbzirc2020_1/gripper_link", ros::Time(0))) {
-      //   ROS_ERROR("Cannot transform!");
-      // }
-      // geometry_msgs::PoseStamped current_pose;
-      // current_pose.header.frame_id = "mbzirc2020_1/camera_color_optical_frame";
-      // current_pose.pose = matched_candidate_.pose.pose;
-      // geometry_msgs::PoseStamped target_pose;
-      // tf_buffer_.transform(current_pose, target_pose, "mbzirc2020_1/gripper_link", ros::Time(0), "mbzirc2020_1/camera_color_optical_frame");
       geometry_msgs::PoseStamped reference_pose;
       reference_pose.header.stamp = ros::Time::now();
       reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      if (so_far) {
+      if (!matched_candidate_.is_cropped) {
         // TODO!
         reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
         reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
@@ -463,11 +453,6 @@ public:
       current_pose.pose.orientation.w = 1;
       pose_pid.reference(reference_pose);
       geometry_msgs::TwistStamped velocity = pose_pid.update(current_pose);
-
-      // velocity.twist.linear.x = x_pid.control_signal(target_position.x, 1.0 / CATCHING_LOOP_RATE);
-      // velocity.twist.linear.y = y_pid.control_signal(target_position.y, 1.0 / CATCHING_LOOP_RATE);
-      // velocity.twist.linear.z = z_pid.control_signal(target_position.z, 1.0 / CATCHING_LOOP_RATE);
-      // velocity.twist.angular.z = yaw_pid.control_signal(-yaw_error, 1.0 / CATCHING_LOOP_RATE);
       // ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
       ual_->setVelocity(velocity);

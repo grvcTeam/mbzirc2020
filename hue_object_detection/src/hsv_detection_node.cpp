@@ -139,6 +139,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
 
   RealWorldRect rect_real;
   std::string tracked_color;
+  // bool is_cropped = false;
   geometry_msgs::Point white_edge_center = fromCvPoint(_hsv_tracking_pair.white_edge_center, _camera, _estimated_z);
   if (!_hsv_tracking_pair.colour_item.cropped) {
     rect_real = fromCvRotatedRect(_hsv_tracking_pair.colour_item.rectangle, _camera, _estimated_z);
@@ -151,9 +152,9 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
     rect_real.center.x = white_edge_center.x;
     rect_real.center.y = white_edge_center.y + whiteHalfHeight(_hsv_tracking_pair.colour_item.detector_id);
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
+    // is_cropped = true;
   }
 
-  mbzirc_comm_objs::ObjectDetectionList object_list;
   mbzirc_comm_objs::ObjectDetection object;
   object.header.frame_id = _camera.frame_id;
   object.header.stamp = ros::Time::now();
@@ -171,6 +172,8 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   object.point_of_interest = white_edge_center;
   object.scale = rect_real.size;  // TODO: As a function of color
   object.color = color_from_string(tracked_color);
+  // object.is_cropped = is_cropped;
+  object.is_cropped = _hsv_tracking_pair.colour_item.cropped;
 
   return object;
 }
