@@ -1,0 +1,29 @@
+<!-- 
+The MIT License (MIT)
+Copyright (c) 2016 GRVC University of Seville
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+-->
+<launch>
+    <arg name="arena_yaw" default="0.0"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_camera_tf" args="0 0 0.7 0 1.57079632679 0 map camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optcal_tf" args="0 0 0 0.5 -0.5 0.5 -0.5 camera_link optical_link" />
+
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find challenge_worlds)" />
+
+    <node name="xacro" pkg="xacro" type="xacro"
+        args="--inorder -o $(find challenge_worlds)/worlds/bricktest.world $(find challenge_worlds)/worlds/bricktest.world.xacro arena_yaw:=$(arg arena_yaw)" />
+
+    <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
+        args="-physics=ode -world=$(find challenge_worlds)/worlds/bricktest.world
+			  -add_model_path=$(find challenge_worlds)/models:$(find challenge_worlds)/urdf:$(find mbzirc_gazebo_plugins)/urdf
+			  -description_package=uavs_description">
+        <rosparam param="sim_origin">[24.419822, 54.436295, 1.23]</rosparam>  <!-- [lat,lon,alt] -->
+    </node>
+
+</launch>

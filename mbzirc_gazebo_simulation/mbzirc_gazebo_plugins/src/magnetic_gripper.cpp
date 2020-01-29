@@ -135,7 +135,7 @@ void MagneticGripper::Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _s
 
   this->rosNode.reset(new ros::NodeHandle(robot_name));
   this->magnet_service = this->rosNode->advertiseService("magnetize", &MagneticGripper::magnetize, this);
-  this->attached_pub = this->rosNode->advertise<mbzirc_comm_objs::GripperAttached>("attached", 1, true);  // latch = true
+  this->attached_pub = this->rosNode->advertise<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, true);  // latch = true
   mbzirc_comm_objs::GripperAttached msg;
   msg.attached = false;
   this->attached_pub.publish(msg);

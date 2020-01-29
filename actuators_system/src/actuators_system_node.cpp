@@ -24,6 +24,8 @@
 #include <mbzirc_comm_objs/SetPWM.h>
 #include <mbzirc_comm_objs/SetDigital.h>
 #include <mbzirc_comm_objs/ActuatorsData.h>
+#include <mbzirc_comm_objs/GripperAttached.h>
+#include <std_srvs/Trigger.h>
 
 #include <handy_tools/serial_port.h>
 #include <actuators_system/arduino/ssfp.h>
@@ -63,6 +65,51 @@ bool set_digital(mbzirc_comm_objs::SetDigital::Request  &req, mbzirc_comm_objs::
     board_input.digital_out_0 = req.value;
     input_mutex.unlock();
     return true;
+}
+
+bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1800;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1500;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool release_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 1662;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool grasp_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 998;  // TODO: From config file?
+    }
+    input_mutex.unlock();
+    return true;
+}
+
+bool gripper_is_attached(const BoardOutput& board_output) {
+    // TODO: From config file?
+    if (!board_output.digital_in_0) { return true; }  // outputs are inverted!
+    if (!board_output.digital_in_1) { return true; }
+    if (!board_output.digital_in_2) { return true; }
+    if (!board_output.digital_in_3) { return true; }
+    return false;
 }
 
 mbzirc_comm_objs::ActuatorsData from_board_output(const BoardOutput& board_output) {
@@ -116,13 +163,19 @@ int main(int argc, char** argv) {
     serial_port::lock(serial_port);
 
     Framer framer;
-    ros::ServiceServer set_pwm_service = n.advertiseService("set_pwm", set_pwm);
-    ros::ServiceServer set_digital_service = n.advertiseService("set_digital", set_digital);
+    ros::ServiceServer set_pwm_service = n.advertiseService("actuators_system/raw/set_pwm", set_pwm);
+    ros::ServiceServer set_digital_service = n.advertiseService("actuators_system/raw/set_digital", set_digital);
+    ros::ServiceServer open_gripper_service = n.advertiseService("actuators_system/open_gripper", open_gripper);
+    ros::ServiceServer close_gripper_service = n.advertiseService("actuators_system/close_gripper", close_gripper);
+    ros::ServiceServer release_blanket_service = n.advertiseService("actuators_system/release_blanket", release_blanket);
+    ros::ServiceServer grasp_blanket_service = n.advertiseService("actuators_system/grasp_blanket", grasp_blanket);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
     deframer.connect(&board_output_reader);
-    ros::Publisher actuators_data_pub = n.advertise<mbzirc_comm_objs::ActuatorsData>("actuators_data", 10);
+    ros::Publisher actuators_data_pub = n.advertise<mbzirc_comm_objs::ActuatorsData>("actuators_system/raw/actuators_data", 10);
+    ros::Publisher gripper_attached_pub = n.advertise<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 10);
+    mbzirc_comm_objs::GripperAttached gripper_msg;
 
     ros::Rate rate(10);  // [Hz]
     while (ros::ok()) {
@@ -144,7 +197,7 @@ int main(int argc, char** argv) {
         if (board_output_reader.has_new_data) {
             board_output_reader.has_new_data = false;
             actuators_data_pub.publish(from_board_output(board_output_reader.data));
-            // board_output_reader.data.print();
+            gripper_msg.attached = gripper_is_attached(board_output_reader.data);
 
             if (board_output_reader.data.rx_error.crc)      { ROS_WARN("Deframer error at board side: crc"); }
             if (board_output_reader.data.rx_error.lost)     { ROS_WARN("Deframer error at board side: lost"); }
@@ -157,6 +210,7 @@ int main(int argc, char** argv) {
         size_t frame_size = framer.frame(aux_tx_buffer, msg_size, tx_buffer);
         write(serial_port, tx_buffer, frame_size);
 
+        gripper_attached_pub.publish(gripper_msg);
         ros::spinOnce();
         rate.sleep();
     }

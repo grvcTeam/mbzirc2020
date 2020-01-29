@@ -8,58 +8,50 @@
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
         <rosparam param="/use_sim_time">true</rosparam>
-        <include file="$(find challenge_worlds)/launch/challenge3.launch">
+        <include file="$(find challenge_worlds)/launch/bt.launch">
             <arg name="arena_yaw" value="$(arg arena_yaw)"/>
-        </include>    
+        </include>
     </group>
 
     <!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="arena_to_wall_tf" args="30 25 0 0 0 0 arena wall" />
 
-    <node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
-
-	<param name="frequency" value="1.0"/>
-	<param name="robot_ns" value="$(arg robot_model)"/>
-	
-	<rosparam param="object_types">["fire","passage"]</rosparam>	
-	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
-	<param name="a_priori_info" value="true" />
-	<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch3.yaml" />
-	
-	<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
-	<rosparam param="association_th">[4.0,4.0]</rosparam>
-	<param name="min_update_count" value="5" />
-	<param name="delay_max" value="2.0" />          <!-- in seconds -->
-	        
+    <node name="target_estimator" pkg="target_estimation" type="estimation_node" output="screen">
+        <param name="frequency" value="1.0"/>
+        <param name="estimator" value="a_priori_info"/>
+        <!-- <param name="estimator" value="simple_clustering"/> -->
+        <param name="robot_ns" value="$(arg robot_model)"/>
     </node>
 
     <!-- <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/> -->
 
     <!-- TODO:  All params from rosparam? -->
-    <include file="$(find mbzirc_launchers)/launch/uav_agent_c3.launch">
+    <!-- <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="1"/>
         <arg name="color" value="Orange"/>
-        <arg name="flight_level" value="5.0"/>
-        <arg name="x" value="45"/>
-        <arg name="y" value="10"/>
+        <arg name="flight_level" value="10.0"/>
+        <arg name="x" value="29"/>
+        <arg name="y" value="20"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="mavros"/>
-        <arg name="mode" value="$(arg mode)"/>
+        <arg name="ual_backend" value="gazebo_light"/>
     </include>
 
-    <!-- <include file="$(find mbzirc_launchers)/launch/uav_agent_c3.launch">
+    <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
         <arg name="color" value="Indigo"/>
         <arg name="flight_level" value="5.0"/>
-        <arg name="x" value="11"/>
-        <arg name="y" value="5"/>
+        <arg name="x" value="31"/>
+        <arg name="y" value="20"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="1.570796327"/>
-        <arg name="ual_backend" value="mavros"/>
-        <arg name="mode" value="$(arg mode)"/>
+        <arg name="ual_backend" value="gazebo_light"/>
     </include> -->
+
+
+    <!-- <include file="$(find mbzirc_launchers)/launch/ugv_agent_c2.launch"/> -->
 
 </launch>

@@ -27,13 +27,11 @@
 #define SERIAL_BAUDRATE 9600
 
 #define PERIOD_IN_MS 20
-#define MIN_SERVO_PWM 900
 #define INI_SERVO_PWM 1500
-#define MAX_SERVO_PWM 2100
 
-#define PIN_PWM_0   9
+#define PIN_PWM_0   5
 #define PIN_PWM_1   6
-#define PIN_PWM_2   5
+#define PIN_PWM_2   9
 #define PIN_PWM_3  10
 #define PIN_PWM_4  11
 
@@ -75,6 +73,8 @@ BoardOutput board_output;
 Timer timer = Timer(PERIOD_IN_MS);
 
 Servo servo[5];
+uint16_t pwm_min[5] = { 900,  900,  900,  900,  900};
+uint16_t pwm_max[5] = {2100, 2100, 2100, 2100, 2100};
 
 void setup() {
 
@@ -105,11 +105,11 @@ void setup() {
   board_output.input_echo = board_input_reader.data;
   board_output.rx_error = rx_error;
   
-  servo[0].attach(PIN_PWM_0, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  servo[1].attach(PIN_PWM_1, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  servo[2].attach(PIN_PWM_2, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  servo[3].attach(PIN_PWM_3, MIN_SERVO_PWM, MAX_SERVO_PWM);
-  servo[4].attach(PIN_PWM_4, MIN_SERVO_PWM, MAX_SERVO_PWM);
+  servo[0].attach(PIN_PWM_0, pwm_min[0], pwm_max[0]);
+  servo[1].attach(PIN_PWM_1, pwm_min[1], pwm_max[1]);
+  servo[2].attach(PIN_PWM_2, pwm_min[2], pwm_max[2]);
+  servo[3].attach(PIN_PWM_3, pwm_min[3], pwm_max[3]);
+  servo[4].attach(PIN_PWM_4, pwm_min[4], pwm_max[4]);
 
   timer.begin();
 }
