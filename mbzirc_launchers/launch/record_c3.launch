@@ -6,7 +6,7 @@
     <arg name="robot_ns" default="/mbzirc2020_1"/>
  
     <node pkg="rosbag" type="record" name="rosbag_record_uav" output="screen"
-          args="record -o $(arg bag_dir)/$(arg bag_name) 
+          args="-o $(arg bag_dir)/$(arg bag_name)
                 
           $(arg robot_ns)/camera/color/image_rect_color
           $(arg robot_ns)/camera/color/camera_info

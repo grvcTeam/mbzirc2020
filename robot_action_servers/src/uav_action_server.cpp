@@ -290,12 +290,12 @@ public:
     #define CANDIDATE_TIMEOUT 1.5  // [s]
     #define CATCHING_LOOP_RATE 10  // [Hz]
     #define AVG_XY_ERROR_WINDOW_SIZE 13
-    #define MAX_DELTA_Z 0.5  // [m] --> [m/s]
+    #define MAX_DELTA_Z 0.25  // [m] --> [m/s]
     #define MAX_AVG_XY_ERROR 0.3  // [m]
 
     grvc::ual::PIDParams pid_x;
-    pid_x.kp = 0.4;
-    pid_x.ki = 0.02;
+    pid_x.kp = 0.9;
+    pid_x.ki = 0.0;
     pid_x.kd = 0.0;
     pid_x.min_sat = -2.0;
     pid_x.max_sat = 2.0;
@@ -303,8 +303,8 @@ public:
     pid_x.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_y;
-    pid_y.kp = 0.4;
-    pid_y.ki = 0.02;
+    pid_y.kp = 0.9;
+    pid_y.ki = 0.0;
     pid_y.kd = 0.0;
     pid_y.min_sat = -2.0;
     pid_y.max_sat = 2.0;
@@ -312,8 +312,8 @@ public:
     pid_y.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_z;
-    pid_z.kp = 0.4;
-    pid_z.ki = 0.02;
+    pid_z.kp = 0.5;
+    pid_z.ki = 0.0;
     pid_z.kd = 0.0;
     pid_z.min_sat = -2.0;
     pid_z.max_sat = 2.0;
@@ -331,7 +331,7 @@ public:
     pid_yaw.is_angular = true;
 
     grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
-    // pose_pid.enableRosInterface("pick_control");
+    pose_pid.enableRosInterface("pick_control");
 
     // TODO: Magnetize catching device
     mbzirc_comm_objs::Magnetize magnetize_srv;
@@ -384,7 +384,7 @@ public:
       if (since_last_candidate < timeout) {
         // x-y-control: in candidateCallback
         // z-control: descend
-        ROS_ERROR("current: [%lf, %lf, %lf]", current_position.x, current_position.y, current_position.z);
+        // ROS_ERROR("current: [%lf, %lf, %lf]", current_position.x, current_position.y, current_position.z);
         double xy_error = sqrt(current_position.x*current_position.x + current_position.y*current_position.y);  // TODO: sqrt?
         history_xy_errors.push(xy_error);
         double min_xy_error, avg_xy_error, max_xy_error;

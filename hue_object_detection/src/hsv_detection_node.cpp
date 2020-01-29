@@ -265,8 +265,8 @@ int main(int argc, char** argv) {
 
       HSVTrackingPair tracked = detection.track("red", true);
 
-      draw_hud(cv_ptr);
-      image_converter.publish(cv_ptr);  // TODO: Optional!
+      // draw_hud(cv_ptr);
+      // image_converter.publish(cv_ptr);  // TODO: Optional!
 
       if (tracked.is_valid) {
         // tracked.print();
