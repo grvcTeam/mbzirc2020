@@ -89,6 +89,29 @@ RealWorldRect fromCvRotatedRect(const cv::RotatedRect& _rect, const CameraParame
   return out;
 }
 
+// TODO: Repeated code...
+geometry_msgs::Point fromCvPoint(const cv::Point2f& _point, const CameraParameters& _camera, double _estimated_z) {
+
+  tf2::Vector3 K_0 = _camera.K.getRow(0);
+  tf2::Vector3 K_1 = _camera.K.getRow(1);
+
+  tf2::Vector3 ray;
+  double aux = (_point.y - K_1[2]) / K_1[1];
+  ray[0] = (_point.x - K_0[2] - K_0[1] * aux) / K_0[0];
+  ray[1] = aux;
+  ray[2] = 1.0;
+
+  geometry_msgs::Point out;
+  // The line equation is X = lambda * ray_world
+  // lambda can be set because the z is known (estimated)
+  double lambda = _estimated_z / ray[2];
+  out.x = lambda * ray[0];
+  out.y = lambda * ray[1];
+  out.z = lambda * ray[2];
+
+  return out;
+}
+
 mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hsv_tracking_pair, const CameraParameters& _camera, double _estimated_z) {
 
   RealWorldRect rect_real;
@@ -122,6 +145,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   object.pose.covariance[7] = 0.01;
   object.pose.covariance[14] = 0.01;
 
+  object.point_of_interest = fromCvPoint(_hsv_tracking_pair.white_edge_center, _camera, _estimated_z);
   object.scale = rect_real.size;  // TODO: As a function of color
   object.color = color_from_string(tracked_color);
 

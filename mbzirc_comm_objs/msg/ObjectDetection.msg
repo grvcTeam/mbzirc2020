@@ -1,7 +1,8 @@
 std_msgs/Header header
 geometry_msgs/PoseWithCovariance pose  # Detected object pose (in header.frame_id coordinates)
-geometry_msgs/Point relative_position  # Detected object relative position (w.r.t detector device, e.g: camera)
-float32 relative_yaw                   # Detected object relative yaw (w.r.t detector device, e.g: camera)
+geometry_msgs/Point point_of_interest  # Detected point of interest (in header.frame_id coordinates)
+geometry_msgs/Point relative_position  # DEPRECATED!
+float32 relative_yaw                   # DEPRECATED!
 geometry_msgs/Vector3 scale            # Detected object size
 uint8 type                             # Detected object type (see TYPE_* constants below)
 uint8 color                            # Detected object color (see COLOR_* constats below)
