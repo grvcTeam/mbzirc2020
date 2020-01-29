@@ -47,6 +47,7 @@ struct HSVItem {
 struct HSVTrackingPair {
     HSVItem colour_item;
     HSVItem white_item;
+    cv::Point2f white_edge_center;
     bool is_valid = false;
 
     void print() {
@@ -277,13 +278,36 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     largest_white.cropped = is_cropped(largest_white.rectangle);
     tracking_pair.white_item = largest_white;
 
+    cv::Point2f white_vertices[4];
+    largest_white.rectangle.points(white_vertices);
+    float first_min  = hsv_size.width + hsv_size.width;
+    float second_min = hsv_size.width + hsv_size.width;
+    int first_min_index  = -1;
+    int second_min_index = -1;
+    for (int i = 0; i < 4 ; i ++) {
+        if (white_vertices[i].y < first_min) {
+            second_min = first_min;
+            second_min_index = first_min_index;
+            first_min = white_vertices[i].y;
+            first_min_index = i;
+        } else if (white_vertices[i].y < second_min) {
+            second_min = white_vertices[i].y;
+            second_min_index = i;
+        }
+    }
+    if (first_min_index >= 0 && second_min_index >= 0) {
+        tracking_pair.white_edge_center.x = 0.5 * (white_vertices[first_min_index].x + white_vertices[second_min_index].x);
+        tracking_pair.white_edge_center.y = 0.5 * (white_vertices[first_min_index].y + white_vertices[second_min_index].y);
+    }  // TODO: else?
+
     if (_draw) {
         rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
         // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
         drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
+        cv::circle(frame_, tracking_pair.white_edge_center, 5, colour_[_id], 1);
     }
 
-    tracking_pair.is_valid = true;
+    tracking_pair.is_valid = true;  // TODO: sure?
     return tracking_pair;
 }
 
