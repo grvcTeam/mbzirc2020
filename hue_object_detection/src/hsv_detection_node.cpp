@@ -112,10 +112,34 @@ geometry_msgs::Point fromCvPoint(const cv::Point2f& _point, const CameraParamete
   return out;
 }
 
+float whiteHalfHeight(const std::string& _color) {
+  float white_half_height;
+  switch (_color[0]) {
+  case 'r':
+    white_half_height = 0.1;
+    break;
+  case 'g':
+    white_half_height = 0.15;
+    break;
+  case 'b':
+    white_half_height = 0.15;
+    break;
+  case 'o':
+    white_half_height = 0.095;
+    break;
+  default:
+    white_half_height = 0;
+    ROS_WARN("Unexpected color: %s", _color.c_str());
+
+  }
+  return white_half_height;
+}
+
 mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hsv_tracking_pair, const CameraParameters& _camera, double _estimated_z) {
 
   RealWorldRect rect_real;
   std::string tracked_color;
+  geometry_msgs::Point white_edge_center = fromCvPoint(_hsv_tracking_pair.white_edge_center, _camera, _estimated_z);
   if (!_hsv_tracking_pair.colour_item.cropped) {
     rect_real = fromCvRotatedRect(_hsv_tracking_pair.colour_item.rectangle, _camera, _estimated_z);
     tracked_color = _hsv_tracking_pair.colour_item.detector_id;
@@ -124,10 +148,9 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
   } else {
     rect_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, _estimated_z);
-    rect_real.center.x = 0.0;  // TODO!
-    rect_real.center.y = 0.0;  // TODO!
+    rect_real.center.x = white_edge_center.x;
+    rect_real.center.y = white_edge_center.y + whiteHalfHeight(_hsv_tracking_pair.colour_item.detector_id);
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
-    // TODO: estimate white center from edge position and color
   }
 
   mbzirc_comm_objs::ObjectDetectionList object_list;
@@ -145,7 +168,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   object.pose.covariance[7] = 0.01;
   object.pose.covariance[14] = 0.01;
 
-  object.point_of_interest = fromCvPoint(_hsv_tracking_pair.white_edge_center, _camera, _estimated_z);
+  object.point_of_interest = white_edge_center;
   object.scale = rect_real.size;  // TODO: As a function of color
   object.color = color_from_string(tracked_color);
 
