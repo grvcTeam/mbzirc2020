@@ -120,6 +120,8 @@ private:
     cv::Size capture_size_;
 
     HSVDetectionConfig config_;
+    bool tracking_ = false;
+    cv::Point2f tracking_target_;
 };
 
 inline void HSVDetection::setImageSize(const cv::Size& _size) {
@@ -258,12 +260,18 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     std::vector<HSVItem> detected = detect(_id, true);
     if (detected.size() == 0) { return HSVTrackingPair(); }
 
-    HSVItem closest_colour;
     cv::Size hsv_size = hsv_.size();
+    if (!tracking_) {
+        tracking_target_.x = hsv_size.width / 2.0;
+        tracking_target_.y = hsv_size.height / 2.0;
+        tracking_ = true;
+    }
+
+    HSVItem closest_colour;
     float min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
     for (auto item: detected) {
-        float dx = fabs(hsv_size.width/2  - item.rectangle.center.x);
-        float dy = fabs(hsv_size.height/2 - item.rectangle.center.y);
+        float dx = fabs(tracking_target_.x - item.rectangle.center.x);
+        float dy = fabs(tracking_target_.y - item.rectangle.center.y);
         float sq_distance = dx*dx + dy*dy;
         if (sq_distance < min_sq_distance) {
             min_sq_distance = sq_distance;
@@ -272,6 +280,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     }
     HSVTrackingPair tracking_pair;
     tracking_pair.colour_item = closest_colour;
+    tracking_target_ = closest_colour.rectangle.center;
 
     cv::Rect roi = closest_colour.rectangle.boundingRect() & cv::Rect(0, 0, hsv_size.width, hsv_size.height);
     if ((roi.width <= 0) || (roi.height <= 0)) { return tracking_pair; }  // TODO: Should be an error?

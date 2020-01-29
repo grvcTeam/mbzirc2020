@@ -361,7 +361,7 @@ public:
       geometry_msgs::PoseStamped reference_pose;
       reference_pose.header.stamp = ros::Time::now();
       reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      if (!matched_candidate_.is_cropped) {
+      if (!matched_candidate_.is_cropped && (sf11_range_.range > 1.0)) {  // TODO: Threshold
         // TODO!
         reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
         reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
