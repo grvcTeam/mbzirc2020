@@ -85,7 +85,7 @@
     </node>
 
     <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
-      <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)"/>   
+      <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)/camera"/>
       <arg name="enable_pointcloud"   value="false"/>
 
       <arg name="enable_depth"        value="true"/>
