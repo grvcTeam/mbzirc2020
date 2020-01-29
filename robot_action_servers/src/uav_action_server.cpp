@@ -294,7 +294,7 @@ public:
     #define MAX_AVG_XY_ERROR 0.3  // [m]
 
     grvc::ual::PIDParams pid_x;
-    pid_x.kp = 0.9;
+    pid_x.kp = 0.82;
     pid_x.ki = 0.0;
     pid_x.kd = 0.0;
     pid_x.min_sat = -2.0;
@@ -303,7 +303,7 @@ public:
     pid_x.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_y;
-    pid_y.kp = 0.9;
+    pid_y.kp = 0.82;
     pid_y.ki = 0.0;
     pid_y.kd = 0.0;
     pid_y.min_sat = -2.0;
@@ -677,10 +677,50 @@ public:
       return;
     }
 
-    grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);
-    grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
-    grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
-    grvc::utils::PidController yaw_pid("yaw", 0.4, 0.02, 0);
+    grvc::ual::PIDParams pid_x;
+    pid_x.kp = 0.4;
+    pid_x.ki = 0.0;
+    pid_x.kd = 0.0;
+    pid_x.min_sat = -1.0;
+    pid_x.max_sat = 1.0;
+    pid_x.min_wind = -1.0;
+    pid_x.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_y;
+    pid_y.kp = 0.4;
+    pid_y.ki = 0.0;
+    pid_y.kd = 0.0;
+    pid_y.min_sat = -1.0;
+    pid_y.max_sat = 1.0;
+    pid_y.min_wind = -1.0;
+    pid_y.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_z;
+    pid_z.kp = 0.4;
+    pid_z.ki = 0.0;
+    pid_z.kd = 0.0;
+    pid_z.min_sat = -1.0;
+    pid_z.max_sat = 1.0;
+    pid_z.min_wind = -1.0;
+    pid_z.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_yaw;
+    pid_yaw.kp = 0.4;
+    pid_yaw.ki = 0.02;
+    pid_yaw.kd = 0.0;
+    pid_yaw.min_sat = -2.0;
+    pid_yaw.max_sat = 2.0;
+    pid_yaw.min_wind = -2.0;
+    pid_yaw.max_wind = 2.0;
+    pid_yaw.is_angular = true;
+
+    grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
+    pose_pid.enableRosInterface("extinguish_facade_control");
+
+    // grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);
+    // grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
+    // grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
+    // grvc::utils::PidController yaw_pid("yaw", 0.4, 0.02, 0);
 
     mbzirc_comm_objs::Wall fire_closest_wall = closestWall(target_fire.wall_list);
     mbzirc_comm_objs::Wall fire_largest_wall = largestWall(target_fire.wall_list);
@@ -747,13 +787,24 @@ public:
       double current_yaw = 2 * atan2(ual_pose.pose.orientation.z, ual_pose.pose.orientation.w);
       double yaw_error = fire_ual_yaw - current_yaw;
 
-      geometry_msgs::TwistStamped velocity;  // TODO: frame_id?
-      velocity.header.stamp = ros::Time::now();
-      velocity.header.frame_id = wall_list_.header.frame_id;
-      velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/EXTINGUISH_LOOP_RATE);
-      velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/EXTINGUISH_LOOP_RATE);
-      velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/EXTINGUISH_LOOP_RATE);
-      velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/EXTINGUISH_LOOP_RATE);
+      // geometry_msgs::TwistStamped velocity;  // TODO: frame_id?
+      // velocity.header.stamp = ros::Time::now();
+      // velocity.header.frame_id = wall_list_.header.frame_id;
+      geometry_msgs::PoseStamped error_pose;
+      error_pose.header.stamp = ros::Time::now();
+      error_pose.header.frame_id = wall_list_.header.frame_id;
+      error_pose.pose.position.x = -x_error;
+      error_pose.pose.position.y = -y_error;
+      error_pose.pose.position.z = z_error;
+      error_pose.pose.orientation.x = 0;
+      error_pose.pose.orientation.y = 0;
+      error_pose.pose.orientation.z = sin(0.5 * yaw_error);
+      error_pose.pose.orientation.w = cos(0.5 * yaw_error);
+      // velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/EXTINGUISH_LOOP_RATE);
+      // velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/EXTINGUISH_LOOP_RATE);
+      // velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/EXTINGUISH_LOOP_RATE);
+      // velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/EXTINGUISH_LOOP_RATE);
+      geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
 
       // std::cout << velocity << '\n';
       ual_->setVelocity(velocity);
