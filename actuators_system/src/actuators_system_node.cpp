@@ -117,6 +117,20 @@ bool grasp_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
     return true;
 }
 
+bool start_pump(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.digital_out_0 = true;  // TODO: From config file?
+    input_mutex.unlock();
+    return true;
+}
+
+bool stop_pump(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    board_input.digital_out_0 = false;  // TODO: From config file?
+    input_mutex.unlock();
+    return true;
+}
+
 bool gripper_is_attached(const BoardOutput& board_output) {
     // TODO: From config file?
     if (!board_output.digital_in_0) { return true; }  // outputs are inverted!
@@ -185,6 +199,8 @@ int main(int argc, char** argv) {
     ros::ServiceServer grasp_blanket_service = n.advertiseService("actuators_system/grasp_blanket", grasp_blanket);
     ros::ServiceServer magnetize_gripper_service = n.advertiseService("actuators_system/magnetize_gripper", magnetize_gripper);
     ros::ServiceServer demagnetize_gripper_service = n.advertiseService("actuators_system/demagnetize_gripper", demagnetize_gripper);
+    ros::ServiceServer start_pump_service = n.advertiseService("actuators_system/start_pump", start_pump);
+    ros::ServiceServer stop_pump_service = n.advertiseService("actuators_system/stop_pump", stop_pump);
 
     Deframer deframer;
     BoardOutputReader board_output_reader;
