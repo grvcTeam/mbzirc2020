@@ -21,7 +21,14 @@
           $(arg robot_ns)/sf11
 
           $(arg robot_ns)/ual/pose
+          $(arg robot_ns)/ual/state
+          $(arg robot_ns)/mavros/state
           $(arg robot_ns)/mavros/global_position/global
+          $(arg robot_ns)/mavros/local_position/pose
+          $(arg robot_ns)/mavros/local_position/velocity_body
+          $(arg robot_ns)/mavros/setpoint_position/local
+          $(arg robot_ns)/mavros/setpoint_velocity/cmd_vel
+          $(arg robot_ns)/mavros/rc/in
 
           /tf_static
           /tf"
