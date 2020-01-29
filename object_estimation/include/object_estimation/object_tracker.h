@@ -82,6 +82,10 @@ protected:
 
 	int color_from_string(const std::string& color);
 	int subtype_from_string(const std::string& subtype);
+	inline int factorIdToColor(int factor_id)
+	{
+		return factor_id + 1;
+	};
 	
 
 	Timer update_timer_;			/// Timer for last update

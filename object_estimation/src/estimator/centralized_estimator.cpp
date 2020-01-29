@@ -406,7 +406,8 @@ void CentralizedEstimator::printTargetsInfo()
 			cout << "Status: " << "ERROR. ";
 		}
 
-		if( (it->second)->getStatus() == ACTIVE )
+		//if( (it->second)->getStatus() == ACTIVE )
+		if( (it->second)->getStatus() == ACTIVE || (it->second)->getStatus() == INACTIVE )
 		{
 			vector<double> position, scale;
 			vector<vector<double> > cov;

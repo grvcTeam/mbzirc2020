@@ -144,7 +144,7 @@ void ObjectTracker::initialize(YAML::Node node)
 			{
 				if(color == ObjectDetection::COLOR_UNKNOWN)
 					fact_bel_[COLOR][i] = 1.0/ObjectDetection::NCOLORS;
-				else if(color == i)
+				else if(color == factorIdToColor(i))
 					fact_bel_[COLOR][i] = 1.0;
 				else
 					fact_bel_[COLOR][i] = 0.0;
@@ -218,7 +218,7 @@ void ObjectTracker::initialize(ObjectDetection* z)
 			{
 				if(z->color == ObjectDetection::COLOR_UNKNOWN)
 					prob_z = 1.0;
-				else if(z->color == i)
+				else if(z->color == factorIdToColor(i))
 					prob_z = COLOR_DETECTOR_PD;
 				else
 					prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
@@ -297,7 +297,7 @@ bool ObjectTracker::update(ObjectDetection* z)
 				{
 					if(z->color == ObjectDetection::COLOR_UNKNOWN)
 						prob_z = 1.0;
-					if(z->color == i)
+					if(z->color == factorIdToColor(i))
 						prob_z = COLOR_DETECTOR_PD;
 					else
 						prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
@@ -450,7 +450,7 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 
 		for(int i = 0; i < ObjectDetection::NCOLORS; i++)
 		{
-			if(z->color == i)
+			if(z->color == factorIdToColor(i))
 				prob_z = COLOR_DETECTOR_PD;
 			else
 				prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
@@ -535,7 +535,7 @@ double ObjectTracker::getLikelihood(ObjectDetection* z)
 
 	for(int i = 0; i < ObjectDetection::NCOLORS; i++)
 	{
-		if(z->color == i)
+		if(z->color == factorIdToColor(i))
 			prob_z = COLOR_DETECTOR_PD;
 		else
 			prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
@@ -664,6 +664,7 @@ vector<double> ObjectTracker::getPose()
 	p[0] = pose_(0,0);
 	p[1] = pose_(1,0);
 	p[2] = pose_(2,0);
+	return p;
 }
 
 /** \brief Return scale information from the target
@@ -676,6 +677,7 @@ vector<double> ObjectTracker::getScale()
 	s[0] = scale_[0];
 	s[1] = scale_[1];
 	s[2] = scale_[2];
+	return s;
 }
 
 /** \brief Return velocity information from the target
@@ -688,6 +690,7 @@ vector<double> ObjectTracker::getVelocity()
 	v[0] = pose_(3,0);
 	v[1] = pose_(4,0);
 	v[2] = pose_(5,0);
+	return v;
 }
 
 /** \brief Return orientation information from the target
@@ -790,7 +793,7 @@ int ObjectTracker::getColor()
 	}
 
 	if(max_prob > 1.0 - max_prob)
-		color = color_max;
+		color = factorIdToColor(color_max);
 	else
 		color = ObjectDetection::COLOR_UNKNOWN;
 

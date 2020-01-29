@@ -1,9 +1,9 @@
 # Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the piles, but only active per trial.
 arena:
-  x_min:
-  x_max:
-  y_min:
-  y_max:
+  x_min: 0.0
+  x_max: 50.0
+  y_min: 0.0
+  y_max: 40.0
 
 pile:
   - color: "red"
@@ -71,38 +71,38 @@ pile:
     yaw: 0.0
     
 wall:
-  - sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
   
-  - sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
   
-  - sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+# - sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - sub_type: "ugv"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
     
