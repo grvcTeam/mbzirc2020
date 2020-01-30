@@ -362,36 +362,36 @@ public:
 
       // bool so_far = (sf11_range_.range > 1.5);  // TODO: threshold!
       const float height_threshold = 0.7;
-      geometry_msgs::PoseStamped reference_pose;
-      reference_pose.header.stamp = ros::Time::now();
-      reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      geometry_msgs::Quaternion yaw_lock;
+      geometry_msgs::PoseStamped error_pose;
+      error_pose.header.stamp = ros::Time::now();
+      error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
+      // geometry_msgs::Quaternion yaw_lock;
       if (!matched_candidate_.is_cropped && (sf11_range_.range > height_threshold)) {  // TODO: Threshold
         // TODO!
-        reference_pose.pose.position.x = -matched_candidate_.point_of_interest.y;
-        reference_pose.pose.position.y = -matched_candidate_.point_of_interest.x;
-        reference_pose.pose.position.z = -matched_candidate_.point_of_interest.z;
+        error_pose.pose.position.x = -matched_candidate_.point_of_interest.y;
+        error_pose.pose.position.y = -matched_candidate_.point_of_interest.x;
+        error_pose.pose.position.z = -matched_candidate_.point_of_interest.z;
         // reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
         // reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
         // reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
-        reference_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
-        reference_pose.pose.orientation.z = -reference_pose.pose.orientation.z;  // Change sign!
-        yaw_lock = reference_pose.pose.orientation;
+        error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
+        error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // Change sign!
+        // yaw_lock = reference_pose.pose.orientation;
       } else {
-        tf2::doTransform(matched_candidate_.pose.pose, reference_pose.pose, camera_to_gripper);
-        reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-        // reference_pose.pose.orientation.x = 0;
-        // reference_pose.pose.orientation.y = 0;
-        // reference_pose.pose.orientation.z = 0;
-        // reference_pose.pose.orientation.w = 1;  // TODO!
-        reference_pose.pose.orientation = yaw_lock;
+        tf2::doTransform(matched_candidate_.pose.pose, error_pose.pose, camera_to_gripper);
+        error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
+        error_pose.pose.orientation.x = 0;
+        error_pose.pose.orientation.y = 0;
+        error_pose.pose.orientation.z = 0;
+        error_pose.pose.orientation.w = 1;  // TODO!
+        // reference_pose.pose.orientation = yaw_lock;
         float dz = fabs(height_threshold - sf11_range_.range);
-        reference_pose.pose.position.x = (1.0-dz) * reference_pose.pose.position.x - dz * matched_candidate_.point_of_interest.y;
-        reference_pose.pose.position.y = (1.0-dz) * reference_pose.pose.position.y - dz * matched_candidate_.point_of_interest.x;
-        reference_pose.pose.position.z = (1.0-dz) * reference_pose.pose.position.z - dz * matched_candidate_.point_of_interest.z;
+        error_pose.pose.position.x = (1.0-dz) * error_pose.pose.position.x - dz * matched_candidate_.point_of_interest.y;
+        error_pose.pose.position.y = (1.0-dz) * error_pose.pose.position.y - dz * matched_candidate_.point_of_interest.x;
+        error_pose.pose.position.z = (1.0-dz) * error_pose.pose.position.z - dz * matched_candidate_.point_of_interest.z;
       }
 
-      geometry_msgs::Point current_position = reference_pose.pose.position;
+      geometry_msgs::Point error_position = error_pose.pose.position;
       // geometry_msgs::Point target_position = target_pose.position;
       // tf2_geometry_msgs::do_transform(matched_candidate_.pose.pose.position, target_position, camera_to_gripper);
 
@@ -399,7 +399,7 @@ public:
         // x-y-control: in candidateCallback
         // z-control: descend
         // ROS_ERROR("current: [%lf, %lf, %lf]", current_position.x, current_position.y, current_position.z);
-        double xy_error = sqrt(current_position.x*current_position.x + current_position.y*current_position.y);  // TODO: sqrt?
+        double xy_error = sqrt(error_position.x*error_position.x + error_position.y*error_position.y);  // TODO: sqrt?
         history_xy_errors.push(xy_error);
         double min_xy_error, avg_xy_error, max_xy_error;
         history_xy_errors.get_stats(min_xy_error, avg_xy_error, max_xy_error);
@@ -407,20 +407,20 @@ public:
         if (avg_xy_error > MAX_AVG_XY_ERROR) {
           avg_xy_error = MAX_AVG_XY_ERROR;
         }
-        reference_pose.pose.position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
+        error_pose.pose.position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
         // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
       } else {  // No fresh candidates (timeout)
         ROS_WARN("Candidates timeout!");
 
         // TODO: Push MAX_AVG_XY_ERROR into history_xy_errors
-        reference_pose.pose.position.x = 0.0;
-        reference_pose.pose.position.y = 0.0;
-        reference_pose.pose.position.z = MAX_DELTA_Z;
-        reference_pose.pose.orientation.x = 0.0;
-        reference_pose.pose.orientation.y = 0.0;
-        reference_pose.pose.orientation.z = 0.0;
-        reference_pose.pose.orientation.w = 1.0;
+        error_pose.pose.position.x = 0.0;
+        error_pose.pose.position.y = 0.0;
+        error_pose.pose.position.z = MAX_DELTA_Z;
+        error_pose.pose.orientation.x = 0.0;
+        error_pose.pose.orientation.y = 0.0;
+        error_pose.pose.orientation.z = 0.0;
+        error_pose.pose.orientation.w = 1.0;
 
         // // Go up in the same position.
         // grvc::ual::Waypoint up_waypoint = ual_.pose();
@@ -461,12 +461,7 @@ public:
         // }
       }
       // Send target_position  // TODO: find equivalent!
-      geometry_msgs::PoseStamped current_pose;
-      current_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      current_pose.header.stamp = ros::Time::now();
-      current_pose.pose.orientation.w = 1;
-      pose_pid.reference(reference_pose);
-      geometry_msgs::TwistStamped velocity = pose_pid.update(current_pose);
+      geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
       // ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
       ual_->setVelocity(velocity);
