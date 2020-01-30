@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_model" default="mbzirc2020" />
+  <arg name="agent_id" default="1" />
+
+  <group ns="$(arg robot_model)_$(arg agent_id)">
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.25 0 0.05 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+
+    <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
+      <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
+      <param name="camera_url" value="camera_0" />
+      <param name="camera_url" value="camera/color" />
+    </node>
+
+    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+      <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)/camera"/>
+      <arg name="enable_pointcloud"   value="false"/>
+
+      <arg name="enable_depth"        value="true"/>
+      <arg name="enable_infra1"       value="true"/>
+      <arg name="enable_infra2"       value="true"/>
+
+      <arg name="enable_color"        value="true"/>
+      <arg name="color_width"         value="640"/>
+      <arg name="color_height"        value="480"/>
+    </include>
+  </group>
+</launch>

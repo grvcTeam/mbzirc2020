@@ -103,7 +103,7 @@ color_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/color/i
 sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
 {
     // Read parameters
-    pnh_.param<std::string>("tf_prefix", tf_prefix_, "mbzirc_2020");
+    pnh_.param<std::string>("tf_prefix", tf_prefix_, "mbzirc2020");
     pnh_.param<bool>("publish_debug_marker", publish_debug_marker_, false);
     pnh_.param<bool>("publish_debug_images", publish_debug_images_, false);
     pnh_.param<double>("dp", dp_, 1);
