@@ -365,6 +365,7 @@ public:
       geometry_msgs::PoseStamped reference_pose;
       reference_pose.header.stamp = ros::Time::now();
       reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
+      geometry_msgs::Quaternion yaw_lock;
       if (!matched_candidate_.is_cropped && (sf11_range_.range > height_threshold)) {  // TODO: Threshold
         // TODO!
         reference_pose.pose.position.x = -matched_candidate_.point_of_interest.y;
@@ -375,13 +376,15 @@ public:
         // reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
         reference_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
         reference_pose.pose.orientation.z = -reference_pose.pose.orientation.z;  // Change sign!
+        yaw_lock = reference_pose.pose.orientation;
       } else {
         tf2::doTransform(matched_candidate_.pose.pose, reference_pose.pose, camera_to_gripper);
         reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-        reference_pose.pose.orientation.x = 0;
-        reference_pose.pose.orientation.y = 0;
-        reference_pose.pose.orientation.z = 0;
-        reference_pose.pose.orientation.w = 1;  // TODO!
+        // reference_pose.pose.orientation.x = 0;
+        // reference_pose.pose.orientation.y = 0;
+        // reference_pose.pose.orientation.z = 0;
+        // reference_pose.pose.orientation.w = 1;  // TODO!
+        reference_pose.pose.orientation = yaw_lock;
         float dz = fabs(height_threshold - sf11_range_.range);
         reference_pose.pose.position.x = (1.0-dz) * reference_pose.pose.position.x - dz * matched_candidate_.point_of_interest.y;
         reference_pose.pose.position.y = (1.0-dz) * reference_pose.pose.position.y - dz * matched_candidate_.point_of_interest.x;
