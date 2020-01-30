@@ -54,8 +54,6 @@ ObjectTracker::ObjectTracker(int id, int type)
 	fixed_scale_ = false;
 	fixed_subtype_ = false;
 		
-	status_ = ACTIVE;
-
 	fact_bel_.resize(1);
 	fact_bel_[COLOR].resize(ObjectDetection::NCOLORS);
 
@@ -86,6 +84,8 @@ void ObjectTracker::initialize(YAML::Node node)
 	{
 		status_ = ACTIVE;
 	}
+	else 
+		status_ = INACTIVE;
 					
 	if(node["frame_id"] && node["frame_id"].as<string>() == "arena" && node["position_x"] && node["yaw"])
 	{
@@ -174,6 +174,8 @@ void ObjectTracker::initialize(YAML::Node node)
 */
 void ObjectTracker::initialize(ObjectDetection* z)
 {	
+	status_ = DETECTED;
+
 	// Setup state vector
 	pose_.setZero(6, 1);
 	pose_(0,0) = z->pose.pose.position.x;
@@ -652,6 +654,14 @@ Return the counter of updates.
 int ObjectTracker::getUpdateCount()
 {
 	return update_count_;
+}
+
+/**
+Reset the counter of updates. 
+*/
+void ObjectTracker::resetUpdateCount()
+{
+	update_count_ = 0;
 }
     
 /** \brief Return pose information from the target

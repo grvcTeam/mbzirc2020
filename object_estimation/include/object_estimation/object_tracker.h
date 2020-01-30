@@ -36,7 +36,7 @@
 #include <Eigen/Eigen>
 #include <yaml-cpp/yaml.h>
 
-enum ObjectStatus {INACTIVE, ACTIVE, LOST, N_STATUS};
+enum ObjectStatus {INACTIVE, ACTIVE, DETECTED, LOST, N_STATUS};
 enum Factor {COLOR};
     
 /** \brief This class implements a stochastic filter for an object. 
@@ -63,6 +63,7 @@ public:
 	void computeSubtype(YAML::Node &scenario_info);
 	double lastUpdateTime();
 	int getUpdateCount();
+	void resetUpdateCount();
 	std::vector<double> getPose();
 	std::vector<double> getScale();
 	std::vector<double> getVelocity();
