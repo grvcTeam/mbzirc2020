@@ -289,29 +289,54 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     // range_["white"] is mandatory here!
     if (range_.count("white") == 0) {
         ROS_WARN("HSVDetection::track: id [white] not found!");
-        tracking_pair.is_valid = true;
+        tracking_pair.is_valid = false;
         return tracking_pair;
     }
     cv::Mat hsv_roi = hsv_(roi);
     std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
+    if (white_list.size() == 0) {
+        // ROS_WARN("HSVDetection::track: white not found!");
+        tracking_pair.is_valid = false;
+        return tracking_pair;
+    }
 
-    HSVItem largest_white;  // TODO: Use closest white to ROI center instead (orange!)
-    float max_area = 0;
+    // HSVItem largest_white;
+    // float max_area = 0;
+    // for (auto item: white_list) {
+    //     float area = item.rectangle.size.width * item.rectangle.size.height;
+    //     if (area > max_area) {
+    //         max_area = area;
+    //         largest_white = item;
+    //     }
+    // }
+    // // Traslate largest_white out of ROI:
+    // largest_white.rectangle.center.x += roi.x;
+    // largest_white.rectangle.center.y += roi.y;
+    // largest_white.cropped = is_cropped(largest_white.rectangle);
+    // tracking_pair.white_item = largest_white;
+
+    // Use closest white to ROI center instead of largest(orange!)
+    cv::Size roi_size = hsv_roi.size();
+    HSVItem closest_white;
+    min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
     for (auto item: white_list) {
-        float area = item.rectangle.size.width * item.rectangle.size.height;
-        if (area > max_area) {
-            max_area = area;
-            largest_white = item;
+        float dx = fabs(roi_size.width  / 2.0 - item.rectangle.center.x);
+        float dy = fabs(roi_size.height / 2.0 - item.rectangle.center.y);
+        float sq_distance = dx*dx + dy*dy;
+        if (sq_distance < min_sq_distance) {
+            min_sq_distance = sq_distance;
+            closest_white = item;
         }
     }
-    // Traslate largest_white out of ROI:
-    largest_white.rectangle.center.x += roi.x;
-    largest_white.rectangle.center.y += roi.y;
-    largest_white.cropped = is_cropped(largest_white.rectangle);
-    tracking_pair.white_item = largest_white;
+    // Traslate closest_white out of ROI:
+    closest_white.rectangle.center.x += roi.x;
+    closest_white.rectangle.center.y += roi.y;
+    closest_white.cropped = is_cropped(closest_white.rectangle);
+    tracking_pair.white_item = closest_white;
 
     cv::Point2f white_vertices[4];
-    largest_white.rectangle.points(white_vertices);
+    // largest_white.rectangle.points(white_vertices);
+    closest_white.rectangle.points(white_vertices);
     float first_min  = hsv_size.width + hsv_size.width;
     float second_min = hsv_size.width + hsv_size.width;
     int first_min_index  = -1;
@@ -335,7 +360,8 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     if (_draw) {
         rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
         // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
-        drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
+        // drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
+        drawRotatedRect(closest_white.rectangle, -1, colour_[_id]);
         cv::circle(frame_, tracking_pair.white_edge_center, 5, colour_[_id], 1);
     }
 
