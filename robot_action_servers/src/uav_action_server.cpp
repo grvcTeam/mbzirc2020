@@ -291,7 +291,7 @@ public:
     #define CATCHING_LOOP_RATE 10  // [Hz]
     #define AVG_XY_ERROR_WINDOW_SIZE 13
     #define MAX_DELTA_Z 0.25  // [m] --> [m/s]
-    #define MAX_AVG_XY_ERROR 0.3  // [m]
+    #define MAX_AVG_XY_ERROR 0.2  // [m]
 
     grvc::ual::PIDParams pid_x;
     pid_x.kp = 0.82;
@@ -357,15 +357,18 @@ public:
       }
 
       // bool so_far = (sf11_range_.range > 1.5);  // TODO: threshold!
-
+      const float height_threshold = 0.7;
       geometry_msgs::PoseStamped reference_pose;
       reference_pose.header.stamp = ros::Time::now();
       reference_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      if (!matched_candidate_.is_cropped && (sf11_range_.range > 1.0)) {  // TODO: Threshold
+      if (!matched_candidate_.is_cropped && (sf11_range_.range > height_threshold)) {  // TODO: Threshold
         // TODO!
-        reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
-        reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
-        reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
+        reference_pose.pose.position.x = -matched_candidate_.point_of_interest.y;
+        reference_pose.pose.position.y = -matched_candidate_.point_of_interest.x;
+        reference_pose.pose.position.z = -matched_candidate_.point_of_interest.z;
+        // reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
+        // reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
+        // reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
         reference_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
         reference_pose.pose.orientation.z = -reference_pose.pose.orientation.z;  // Change sign!
       } else {
@@ -375,6 +378,10 @@ public:
         reference_pose.pose.orientation.y = 0;
         reference_pose.pose.orientation.z = 0;
         reference_pose.pose.orientation.w = 1;  // TODO!
+        float dz = fabs(height_threshold - sf11_range_.range);
+        reference_pose.pose.position.x = (1.0-dz) * reference_pose.pose.position.x - dz * matched_candidate_.point_of_interest.y;
+        reference_pose.pose.position.y = (1.0-dz) * reference_pose.pose.position.y - dz * matched_candidate_.point_of_interest.x;
+        reference_pose.pose.position.z = (1.0-dz) * reference_pose.pose.position.z - dz * matched_candidate_.point_of_interest.z;
       }
 
       geometry_msgs::Point current_position = reference_pose.pose.position;
