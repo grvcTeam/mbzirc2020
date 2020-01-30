@@ -6,69 +6,69 @@ arena:
   y_max: 40.0
 
 pile:
-  - color: "red"
-    sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "red"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "green"
-    sub_type: "uav"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 35.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "green"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 35.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "blue"
-    sub_type: "uav"
-    frame_id: "arena"
-    position_x: 20.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "blue"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 20.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "orange"
-    sub_type: "uav"
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "orange"
+#    sub_type: "uav"
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "red"
-    sub_type: "ugv"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "red"
+#    sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 15.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "green"
-    sub_type: "ugv"
-    frame_id: "arena"
-    position_x: 30.0
-    position_y: 35.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "green"
+#    sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 30.0
+#    position_y: 35.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "blue"
-    sub_type: "ugv"
-    frame_id: "arena"
-    position_x: 20.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "blue"
+#    sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 20.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
     
-  - color: "orange"
-    sub_type: "ugv"
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - color: "orange"
+#    sub_type: "ugv"
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
     
 wall:
 #  - sub_type: "uav"

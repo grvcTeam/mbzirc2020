@@ -17,170 +17,170 @@ fire:
   
   - sub_type: "facadefire"
     frame_id: "arena"
-    position_x: 30.0
-    position_y: 15.0
+    position_x: 20.0
+    position_y: 20.0
     position_z: 0.1
     yaw: 0.0
     
   - sub_type: "facadefire"
     frame_id: "arena"
-    position_x: 30.0
+    position_x: 25.0
     position_y: 15.0
-    position_z: 0.1
+    position_z: 5.1
     yaw: 0.0
     
   - sub_type: "facadefire"
     frame_id: "arena"
     position_x: 30.0
-    position_y: 15.0
-    position_z: 0.1
+    position_y: 20.0
+    position_z: 11.0
     yaw: 0.0
     
 passage:
   - sub_type: "ground"
     frame_id: "arena"
-    position_x: 30.0
+    position_x: 25.0
     position_y: 15.0
     position_z: 0.1
-    yaw: 0.0
+    yaw: 1.57
     
   - sub_type: "ground"
     frame_id: "arena"
-    position_x: 30.0
-    position_y: 35.0
-    position_z: 0.1
-    yaw: 0.0
-
-  - sub_type: "ground" 
-    frame_id: "arena"
-    position_x: 20.0
+    position_x: 25.0
     position_y: 25.0
     position_z: 0.1
-    yaw: 0.0
+    yaw: -1.57
 
-  - sub_type: "ground"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "ground" 
+#    frame_id: "arena"
+#    position_x: 20.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "ground"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "ground"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "ground"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
   - sub_type: "first"  
     frame_id: "arena"
-    position_x: 40.0
+    position_x: 25.0
     position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+    position_z: 6.0
+    yaw: -1.57
 
   - sub_type: "first"  
     frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+    position_x: 25.0
+    position_y: 15.0
+    position_z: 6.0
+    yaw: 1.57
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "first"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
-
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "first"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
   - sub_type: "second"  
     frame_id: "arena"
-    position_x: 40.0
+    position_x: 25.0
     position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+    position_z: 11.0
+    yaw: -1.57
 
   - sub_type: "second"  
     frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+    position_x: 25.0
+    position_y: 15.0
+    position_z: 11.0
+    yaw: 1.57
 
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
 
-  - sub_type: "second"  
-    frame_id: "arena"
-    position_x: 40.0
-    position_y: 25.0
-    position_z: 0.1
-    yaw: 0.0
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
+
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
+
+#  - sub_type: "second"  
+#    frame_id: "arena"
+#    position_x: 40.0
+#    position_y: 25.0
+#    position_z: 0.1
+#    yaw: 0.0
     

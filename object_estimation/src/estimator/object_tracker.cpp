@@ -203,7 +203,7 @@ void ObjectTracker::initialize(ObjectDetection* z)
 
 	scale_[0] = z->scale.x;
 	scale_[1] = z->scale.y;
-	scale_[3] = z->scale.z;
+	scale_[2] = z->scale.z;
 
 	// Init and update factored belief 
 	for(int fact = 0; fact < fact_bel_.size(); fact++)
@@ -575,14 +575,14 @@ void ObjectTracker::computeSubtype(YAML::Node &scenario_info)
 		switch (obj_type_)
 		{
 		case Object::TYPE_PILE:
-			if(scale_[1]/scale_[0] <= 0.25)
+			if(scale_[0]/scale_[1] <= 0.25)
 				obj_subtype_ = Object::SUBTYPE_UAV;
 			else
 				obj_subtype_ = Object::SUBTYPE_UGV;
 			
 			break;
 		case Object::TYPE_WALL:
-			if( scale_[1]/scale_[0] < 0.5)
+			if( scale_[0]/scale_[1] < 0.5)
 				obj_subtype_ = Object::SUBTYPE_UAV;
 			else
 				obj_subtype_ = Object::SUBTYPE_UGV;

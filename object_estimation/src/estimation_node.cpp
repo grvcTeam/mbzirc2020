@@ -151,7 +151,6 @@ protected:
     */
     void updateCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) 
     {
-
         double delay = (ros::Time::now() - msg->stamp).toSec();
 
         string uav = msg->agent_id;
@@ -241,11 +240,12 @@ protected:
             
             est_ptr->computeSubtypesTargets();
             est_ptr->removeLostTargets();
-            
+        
             publishObjects(obj_type);
-
             if(iteration_counter_ == 5)
+            {
                 est_ptr->printTargetsInfo();
+            }
         }
         		
         if(iteration_counter_ == 5)
