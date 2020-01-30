@@ -268,6 +268,9 @@ protected:
             case mbzirc_comm_objs::SetObjectStatus::Request::ACTIVE:
             object_status = ACTIVE;
             break;
+            case mbzirc_comm_objs::SetObjectStatus::Request::DETECTED:
+            object_status = DETECTED;
+            break;
             case mbzirc_comm_objs::SetObjectStatus::Request::LOST:
             object_status = LOST;
             break;
