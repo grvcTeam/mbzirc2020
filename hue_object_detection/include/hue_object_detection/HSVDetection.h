@@ -63,7 +63,8 @@ struct HSVTrackingPair {
     HSVItem colour_item;
     HSVItem white_item;
     cv::Point2f white_edge_center;
-    bool is_valid = false;
+    bool has_colour = false;
+    bool has_white = false;
 
     void print() {
         printf("[%s]: (%f, %f), [%f, %f], %fº%s\n", colour_item.detector_id.c_str(), colour_item.rectangle.center.x, colour_item.rectangle.center.y, colour_item.rectangle.size.width, colour_item.rectangle.size.height, colour_item.rectangle.angle, colour_item.cropped? ", cropped!": "");
@@ -267,6 +268,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         tracking_ = true;
     }
 
+    HSVTrackingPair tracking_pair;
     HSVItem closest_colour;
     float min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
     for (auto item: detected) {
@@ -276,9 +278,9 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         if (sq_distance < min_sq_distance) {
             min_sq_distance = sq_distance;
             closest_colour = item;
+            tracking_pair.has_colour = true;
         }
     }
-    HSVTrackingPair tracking_pair;
     tracking_pair.colour_item = closest_colour;
     tracking_target_ = closest_colour.rectangle.center;
 
@@ -289,14 +291,12 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     // range_["white"] is mandatory here!
     if (range_.count("white") == 0) {
         ROS_WARN("HSVDetection::track: id [white] not found!");
-        tracking_pair.is_valid = false;
         return tracking_pair;
     }
     cv::Mat hsv_roi = hsv_(roi);
     std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
     if (white_list.size() == 0) {
         // ROS_WARN("HSVDetection::track: white not found!");
-        tracking_pair.is_valid = false;
         return tracking_pair;
     }
 
@@ -326,6 +326,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         if (sq_distance < min_sq_distance) {
             min_sq_distance = sq_distance;
             closest_white = item;
+            tracking_pair.has_white = true;
         }
     }
     // Traslate closest_white out of ROI:
@@ -365,7 +366,6 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         cv::circle(frame_, tracking_pair.white_edge_center, 5, colour_[_id], 1);
     }
 
-    tracking_pair.is_valid = true;  // TODO: sure?
     return tracking_pair;
 }
 

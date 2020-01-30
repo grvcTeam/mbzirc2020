@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
       // draw_hud(cv_ptr);
       // image_converter.publish(cv_ptr);  // TODO: Optional!
 
-      if (tracked.is_valid) {
+      if (tracked.has_colour && tracked.has_white) {
         // tracked.print();
         double estimated_z = sf11_range.range - DELTA_H - 0.2;  // TODO: tf? CHECK!
         tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));  // TODO: Also detected!
