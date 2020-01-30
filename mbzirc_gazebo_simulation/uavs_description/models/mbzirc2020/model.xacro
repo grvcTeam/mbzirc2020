@@ -44,7 +44,7 @@
       enable_visual="true"
       >
       <box size="0.01 0.01 0.01"/>
-      <origin xyz="0.25 0 0.05" rpy="0 1.57079632679 0" />
+      <origin xyz="0.17 0 -0.16" rpy="0 1.57079632679 3.141592" />
     </xacro:camera_macro>
 
     <!-- Install laser scanner: altimeter -->
