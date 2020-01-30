@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_model" default="mbzirc2020" />
+  <arg name="agent_id" default="1" />
+
+  <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg robot_model)_$(arg agent_id)">
+    <arg name="mode" value="custom"/>
+    <arg name="fcu_url" value="serial:///dev/pixhawk:921600"/>
+    <arg name="id" value="$(arg agent_id)"/>
+    <arg name="rtcm_topic" value="/rtcm_stream"/>
+  </include>
+</launch>
