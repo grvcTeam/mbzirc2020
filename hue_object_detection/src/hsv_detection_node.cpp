@@ -209,19 +209,11 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
   return object_list;
 }
 
-enum Command {
-  NONE,
-  DETECT,
-  TRACK
-};
-Command g_command = DETECT;  // TODO: Global!
+uint8_t g_command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_NONE; 
 bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
                           mbzirc_comm_objs::DetectTypes::Response &res)
 {
-  for (auto type: req.types) {  // TODO: Order matters!
-    if (type == "brick")       { g_command = DETECT; }
-    if (type == "brick_track") { g_command = TRACK; }
-  }
+  g_command = req.command;
   res.success = true;
   return true;
 }
@@ -298,26 +290,31 @@ int main(int argc, char** argv) {
       detection.setFrame(cv_ptr->image);
       double estimated_z = sf11_range.range - DELTA_H - 0.2;  // TODO: tf? CHECK!
 
-      if (g_command == DETECT) {
-        // std::vector<HSVItem> detected = detection.detect("white", true);
-        std::vector<HSVItem> detected = detection.detectAll(true);
-        sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z));
-        // Print detected items:
-        // for (int i = 0; i < detected.size(); i++) {
-        //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
-        // }
-      }
+      switch (g_command) {
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT:
+        {
+          std::vector<HSVItem> detected = detection.detectAll(true);
+          sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z));
+          // Print detected items:
+          // for (int i = 0; i < detected.size(); i++) {
+          //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
+          // }
+          break;
+        }
 
-      if (g_command == TRACK) {
-        HSVTrackingPair tracked = detection.track("red", true);
-        if (tracked.has_colour && tracked.has_white) {
-          // tracked.print();
-          tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK:
+        {
+          HSVTrackingPair tracked = detection.track("red", true);
+          if (tracked.has_colour && tracked.has_white) {
+            // tracked.print();
+            tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));
+          }
+          break;
         }
       }
 
-      // draw_hud(cv_ptr);
-      // image_converter.publish(cv_ptr);  // TODO: Optional!
+      draw_hud(cv_ptr);
+      image_converter.publish(cv_ptr);  // TODO: Optional!
 
     }
     ros::spinOnce();
