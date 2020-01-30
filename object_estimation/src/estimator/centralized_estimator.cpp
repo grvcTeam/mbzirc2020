@@ -89,7 +89,6 @@ void CentralizedEstimator::initializeAPrioriInfo(string config_file)
 		{
 			int new_target_id = track_id_count_++;
 			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
-			targets_[new_target_id]->setStatus(INACTIVE);
 			targets_[new_target_id]->initialize(yaml_config[item][i]);
     	}
 	}
@@ -105,7 +104,7 @@ void CentralizedEstimator::predict(double dt)
 {
 	for(auto it = targets_.begin(); it != targets_.end(); ++it)
 	{
-		if((it->second)->getStatus() == ACTIVE)
+		if((it->second)->getStatus() == DETECTED)
 			(it->second)->predict(dt);
 	}
 }
@@ -205,7 +204,9 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			#endif
 
 			targets_[valid_targets[best_pair.first]]->update(z_list[best_pair.second]);
-			targets_[valid_targets[best_pair.first]]->setStatus(ACTIVE);		// In case it was not active
+
+			if(targets_[valid_targets[best_pair.first]]->getStatus() == INACTIVE)
+				targets_[valid_targets[best_pair.first]]->setStatus(ACTIVE);
 		}
 		else
 		{
@@ -272,7 +273,7 @@ vector<int> CentralizedEstimator::getActiveTargets()
 
 	for(auto it = targets_.begin(); it != targets_.end(); ++it)
 	{
-		if( (it->second)->getStatus() == ACTIVE)
+		if( (it->second)->getStatus() == ACTIVE || (it->second)->getStatus() == DETECTED )
 		{
 			targets_ids.push_back((it->second)->getId());
 		}
@@ -365,8 +366,13 @@ void CentralizedEstimator::removeLostTargets()
 	auto it = targets_.begin();
 
 	while(it != targets_.end())
-	{		
+	{	
 		if( (it->second)->getStatus() == ACTIVE && (it->second)->lastUpdateTime() > lost_th_ && (it->second)->getUpdateCount() < min_update_count_) 
+		{
+			(it->second)->setStatus(INACTIVE);
+			(it->second)->resetUpdateCount();
+		}	
+		if( (it->second)->getStatus() == DETECTED && (it->second)->lastUpdateTime() > lost_th_ && (it->second)->getUpdateCount() < min_update_count_) 
 		{
 			(it->second)->setStatus(LOST);
 		}
@@ -399,6 +405,9 @@ void CentralizedEstimator::printTargetsInfo()
 			case ACTIVE:
 			cout << "Status: " << "ACTIVE. "; 
 			break;
+			case DETECTED:
+			cout << "Status: " << "DETECTED. "; 
+			break;
 			case LOST:
 			cout << "Status: " << "LOST. "; 
 			break;
@@ -406,8 +415,7 @@ void CentralizedEstimator::printTargetsInfo()
 			cout << "Status: " << "ERROR. ";
 		}
 
-		//if( (it->second)->getStatus() == ACTIVE )
-		if( (it->second)->getStatus() == ACTIVE || (it->second)->getStatus() == INACTIVE )
+		if( (it->second)->getStatus() != LOST )
 		{
 			vector<double> position, scale;
 			vector<vector<double> > cov;

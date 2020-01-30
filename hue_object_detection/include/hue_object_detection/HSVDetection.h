@@ -338,24 +338,24 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
     cv::Point2f white_vertices[4];
     // largest_white.rectangle.points(white_vertices);
     closest_white.rectangle.points(white_vertices);
-    float first_min  = hsv_size.width + hsv_size.width;
-    float second_min = hsv_size.width + hsv_size.width;
-    int first_min_index  = -1;
-    int second_min_index = -1;
+    float first_max  = 0;
+    float second_max = 0;
+    int first_max_index  = -1;
+    int second_max_index = -1;
     for (int i = 0; i < 4 ; i ++) {
-        if (white_vertices[i].y < first_min) {
-            second_min = first_min;
-            second_min_index = first_min_index;
-            first_min = white_vertices[i].y;
-            first_min_index = i;
-        } else if (white_vertices[i].y < second_min) {
-            second_min = white_vertices[i].y;
-            second_min_index = i;
+        if (white_vertices[i].y > first_max) {
+            second_max = first_max;
+            second_max_index = first_max_index;
+            first_max = white_vertices[i].y;
+            first_max_index = i;
+        } else if (white_vertices[i].y > second_max) {
+            second_max = white_vertices[i].y;
+            second_max_index = i;
         }
     }
-    if (first_min_index >= 0 && second_min_index >= 0) {
-        tracking_pair.white_edge_center.x = 0.5 * (white_vertices[first_min_index].x + white_vertices[second_min_index].x);
-        tracking_pair.white_edge_center.y = 0.5 * (white_vertices[first_min_index].y + white_vertices[second_min_index].y);
+    if (first_max_index >= 0 && second_max_index >= 0) {
+        tracking_pair.white_edge_center.x = 0.5 * (white_vertices[first_max_index].x + white_vertices[second_max_index].x);
+        tracking_pair.white_edge_center.y = 0.5 * (white_vertices[first_max_index].y + white_vertices[second_max_index].y);
     }  // TODO: else?
 
     if (_draw) {
@@ -363,7 +363,7 @@ HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
         // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
         // drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
         drawRotatedRect(closest_white.rectangle, -1, colour_[_id]);
-        cv::circle(frame_, tracking_pair.white_edge_center, 5, colour_[_id], 1);
+        cv::circle(frame_, tracking_pair.white_edge_center, 6, colour_[_id], 1);
     }
 
     return tracking_pair;

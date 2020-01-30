@@ -37,7 +37,7 @@
     <node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/>
 
     <!-- TODO:  All params from rosparam? -->
-    <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
+    <include file="$(find mbzirc_launchers)/launch/c2/uav_agent_c2.launch">
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="1"/>
         <arg name="color" value="Orange"/>
@@ -50,7 +50,7 @@
         <arg name="mode" value="$(arg mode)"/>
     </include>
 
-    <!-- <include file="$(find mbzirc_launchers)/launch/uav_agent_c2.launch">
+    <!-- <include file="$(find mbzirc_launchers)/launch/c2/uav_agent_c2.launch">
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
         <arg name="color" value="Indigo"/>

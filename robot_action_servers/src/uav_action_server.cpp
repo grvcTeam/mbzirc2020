@@ -56,12 +56,12 @@
 #define Z_GIVE_UP_CATCHING 17.5  // TODO: From config file?
 #define Z_RETRY_CATCH 1.0
 #define CANDIDATE_TIMEOUT 1.5  // [s]
-#define CATCHING_LOOP_RATE 10  // [Hz]
+#define CATCHING_LOOP_RATE 20  // [Hz]
 #define GROUND_EXTINGUISH_LOOP_RATE 10  // [Hz]
 #define FACADE_EXTINGUISH_LOOP_RATE 20  // [Hz]
 #define AVG_XY_ERROR_WINDOW_SIZE 13
 #define AVG_Z_ERROR_WINDOW_SIZE 13
-#define MAX_DELTA_Z 0.25  // [m] --> [m/s]
+#define MAX_DELTA_Z 0.5  // [m] --> [m/s]
 #define MAX_AVG_XY_ERROR 0.2  // [m]
 #define MAX_AVG_Z_ERROR 0.2  // [m]
 #define RELEASE_Z_ERROR_THRESHOLD 0.1 // [m]
@@ -278,9 +278,9 @@ public:
       return;
     }
 
-    geometry_msgs::TransformStamped camera_to_gripper;  // Constant!
+    geometry_msgs::TransformStamped optical_to_camera_control;  // Constant!
     try {
-      camera_to_gripper = tf_buffer_.lookupTransform(tf_prefix_ + "/gripper_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
+      optical_to_camera_control = tf_buffer_.lookupTransform(tf_prefix_ + "/camera_control_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
     } catch (tf2::TransformException &ex) {
       ROS_WARN("%s",ex.what());
     }
@@ -289,8 +289,11 @@ public:
     ros::Subscriber sensed_sub_ = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
     ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
     ros::Subscriber attached_sub_ = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
-    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: New naming!
+    ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)
+    ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
+    ros::ServiceClient magnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/magnetize_gripper");
+    ros::ServiceClient demagnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/demagnetize_gripper");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
     // bool has_tracked;
@@ -353,7 +356,14 @@ public:
     mbzirc_comm_objs::Magnetize magnetize_srv;
     magnetize_srv.request.magnetize = true;
     if (!magnetize_client.call(magnetize_srv)) {
-      ROS_ERROR("Failed to call [magnetize] service");
+      ROS_ERROR("Failed to call (sim) magnetize service");
+    }
+    std_srvs::Trigger trigger;
+    if (!magnetize_gripper_client.call(trigger)) {
+      ROS_ERROR("Failed to call (real) magnetize gripper service");
+    }
+    if (!open_gripper_client.call(trigger)) {
+      ROS_ERROR("Failed to call (real) open gripper service");
     }
 
     grvc::utils::CircularBuffer history_xy_errors;
@@ -372,45 +382,27 @@ public:
         return;
       }
 
-      // bool so_far = (sf11_range_.range > 1.5);  // TODO: threshold!
-      const float height_threshold = 0.7;
+      const float height_threshold = 1.0;
+      geometry_msgs::PoseStamped white_edge_pose;
+      white_edge_pose.header = matched_candidate_.header;
+      white_edge_pose.pose.position = matched_candidate_.point_of_interest;
+      white_edge_pose.pose.orientation.z = 1;
+
       geometry_msgs::PoseStamped error_pose;
+      tf2::doTransform(white_edge_pose, error_pose, optical_to_camera_control);
       error_pose.header.stamp = ros::Time::now();
-      error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
-      // geometry_msgs::Quaternion yaw_lock;
-      if (!matched_candidate_.is_cropped && (sf11_range_.range > height_threshold)) {  // TODO: Threshold
-        // TODO!
-        error_pose.pose.position.x = -matched_candidate_.point_of_interest.y;
-        error_pose.pose.position.y = -matched_candidate_.point_of_interest.x;
-        error_pose.pose.position.z = -matched_candidate_.point_of_interest.z;
-        // reference_pose.pose.position.x = -matched_candidate_.pose.pose.position.y;
-        // reference_pose.pose.position.y = -matched_candidate_.pose.pose.position.x;
-        // reference_pose.pose.position.z = -matched_candidate_.pose.pose.position.z;
-        error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
-        error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // Change sign!
-        // yaw_lock = reference_pose.pose.orientation;
-      } else {
-        tf2::doTransform(matched_candidate_.pose.pose, error_pose.pose, camera_to_gripper);
-        error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
+      if (matched_candidate_.is_cropped || (sf11_range_.range < height_threshold)) {  // TODO: Threshold
         error_pose.pose.orientation.x = 0;
         error_pose.pose.orientation.y = 0;
         error_pose.pose.orientation.z = 0;
-        error_pose.pose.orientation.w = 1;  // TODO!
-        // reference_pose.pose.orientation = yaw_lock;
-        float dz = fabs(height_threshold - sf11_range_.range);
-        error_pose.pose.position.x = (1.0-dz) * error_pose.pose.position.x - dz * matched_candidate_.point_of_interest.y;
-        error_pose.pose.position.y = (1.0-dz) * error_pose.pose.position.y - dz * matched_candidate_.point_of_interest.x;
-        error_pose.pose.position.z = (1.0-dz) * error_pose.pose.position.z - dz * matched_candidate_.point_of_interest.z;
+        error_pose.pose.orientation.w = 1;  // TODO: absolute yaw lock
+      } else {
+        error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
+        error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // change sign!
       }
 
       geometry_msgs::Point error_position = error_pose.pose.position;
-      // geometry_msgs::Point target_position = target_pose.position;
-      // tf2_geometry_msgs::do_transform(matched_candidate_.pose.pose.position, target_position, camera_to_gripper);
-
       if (since_last_candidate < timeout) {
-        // x-y-control: in candidateCallback
-        // z-control: descend
-        // ROS_ERROR("current: [%lf, %lf, %lf]", current_position.x, current_position.y, current_position.z);
         double xy_error = sqrt(error_position.x*error_position.x + error_position.y*error_position.y);  // TODO: sqrt?
         history_xy_errors.push(xy_error);
         double min_xy_error, avg_xy_error, max_xy_error;
