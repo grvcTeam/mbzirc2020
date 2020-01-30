@@ -53,7 +53,19 @@
 #include <fire_extinguisher/fire_data.h>
 #include <scan_passage_detection/wall_utils.h>
 
-#define EXTINGUISH_LOOP_RATE 20  // [Hz]
+#define Z_GIVE_UP_CATCHING 17.5  // TODO: From config file?
+#define Z_RETRY_CATCH 1.0
+#define CANDIDATE_TIMEOUT 1.5  // [s]
+#define CATCHING_LOOP_RATE 10  // [Hz]
+#define GROUND_EXTINGUISH_LOOP_RATE 10  // [Hz]
+#define FACADE_EXTINGUISH_LOOP_RATE 20  // [Hz]
+#define AVG_XY_ERROR_WINDOW_SIZE 13
+#define AVG_Z_ERROR_WINDOW_SIZE 13
+#define MAX_DELTA_Z 0.25  // [m] --> [m/s]
+#define MAX_AVG_XY_ERROR 0.2  // [m]
+#define MAX_AVG_Z_ERROR 0.2  // [m]
+#define RELEASE_Z_ERROR_THRESHOLD 0.1 // [m]
+#define RELEASE_XY_ERROR_THRESHOLD 0.1 // [m]
 
 class UalActionServer {
 protected:
@@ -235,6 +247,14 @@ public:
     matched_candidate_ = *msg;  // TODO: Check also color is correct?
   }
 
+  void sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
+    for (auto obj : msg->objects) {
+      if (obj.color == mbzirc_comm_objs::ObjectDetection::COLOR_RED) {
+        matched_candidate_ = obj;
+      }
+    }
+  }
+
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg) {
     gripper_attached_ = msg->attached;
   }
@@ -289,14 +309,6 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // TODO: Tune!
-    #define Z_GIVE_UP_CATCHING 17.5  // TODO: From config file?
-    #define Z_RETRY_CATCH 1.0
-    #define CANDIDATE_TIMEOUT 1.5  // [s]
-    #define CATCHING_LOOP_RATE 10  // [Hz]
-    #define AVG_XY_ERROR_WINDOW_SIZE 13
-    #define MAX_DELTA_Z 0.25  // [m] --> [m/s]
-    #define MAX_AVG_XY_ERROR 0.2  // [m]
-
     grvc::ual::PIDParams pid_x;
     pid_x.kp = 0.82;
     pid_x.ki = 0.0;
@@ -735,7 +747,7 @@ public:
     mbzirc_comm_objs::Wall fire_largest_wall = largestWall(target_fire.wall_list);
     double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
 
-    ros::Rate loop_rate(EXTINGUISH_LOOP_RATE);
+    ros::Rate loop_rate(FACADE_EXTINGUISH_LOOP_RATE);
     while (ros::ok()) {
       if (extinguish_facade_fire_server_.isPreemptRequested()) {
         ual_->setPose(ual_->pose());
@@ -809,10 +821,10 @@ public:
       error_pose.pose.orientation.y = 0;
       error_pose.pose.orientation.z = sin(0.5 * yaw_error);
       error_pose.pose.orientation.w = cos(0.5 * yaw_error);
-      // velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/EXTINGUISH_LOOP_RATE);
-      // velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/EXTINGUISH_LOOP_RATE);
-      // velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/EXTINGUISH_LOOP_RATE);
-      // velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/EXTINGUISH_LOOP_RATE);
+      // velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
+      // velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
+      // velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
+      // velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
       geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
 
       // std::cout << velocity << '\n';
@@ -832,8 +844,18 @@ public:
       return;
     }
 
+    geometry_msgs::TransformStamped camera_to_gripper;  // Constant!
+    try {
+      camera_to_gripper = tf_buffer_.lookupTransform(tf_prefix_ + "/gripper_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
+    } catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+    }
+
     ros::NodeHandle nh;
+    ros::Subscriber sensed_sub_ = nh.subscribe("sensed_object", 1, &UalActionServer::sensedObjectCallback, this); // TODO: Change this for specific tracker
     ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
+    ros::ServiceClient release_blanket_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/release_blanket");
+    ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
     // TODO: Add other subscribers (e.g. fire estimation)
     // TODO: Markers?
     //ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
@@ -857,31 +879,31 @@ public:
     }
 
     grvc::ual::PIDParams pid_x;
-    pid_x.kp = 0.4;
+    pid_x.kp = 0.82;
     pid_x.ki = 0.0;
     pid_x.kd = 0.0;
-    pid_x.min_sat = -1.0;
-    pid_x.max_sat = 1.0;
-    pid_x.min_wind = -1.0;
-    pid_x.max_wind = 1.0;
+    pid_x.min_sat = -2.0;
+    pid_x.max_sat = 2.0;
+    pid_x.min_wind = -2.0;
+    pid_x.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_y;
-    pid_y.kp = 0.4;
+    pid_y.kp = 0.82;
     pid_y.ki = 0.0;
     pid_y.kd = 0.0;
-    pid_y.min_sat = -1.0;
-    pid_y.max_sat = 1.0;
-    pid_y.min_wind = -1.0;
-    pid_y.max_wind = 1.0;
+    pid_y.min_sat = -2.0;
+    pid_y.max_sat = 2.0;
+    pid_y.min_wind = -2.0;
+    pid_y.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_z;
-    pid_z.kp = 0.4;
+    pid_z.kp = 0.5;
     pid_z.ki = 0.0;
     pid_z.kd = 0.0;
-    pid_z.min_sat = -1.0;
-    pid_z.max_sat = 1.0;
-    pid_z.min_wind = -1.0;
-    pid_z.max_wind = 1.0;
+    pid_z.min_sat = -2.0;
+    pid_z.max_sat = 2.0;
+    pid_z.min_wind = -2.0;
+    pid_z.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_yaw;
     pid_yaw.kp = 0.4;
@@ -896,49 +918,77 @@ public:
     grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
     pose_pid.enableRosInterface("extinguish_ground_control");
 
-    // TODO: Get fire orientation from estimation
-    //double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
-
-    ros::Rate loop_rate(EXTINGUISH_LOOP_RATE);
+    grvc::utils::CircularBuffer history_xy_errors, history_z_errors;
+    history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
+    history_xy_errors.fill_with(MAX_AVG_XY_ERROR);
+    history_z_errors.set_size(AVG_Z_ERROR_WINDOW_SIZE);
+    history_z_errors.fill_with(MAX_AVG_Z_ERROR);
+    ros::Duration timeout(CANDIDATE_TIMEOUT);
+    ros::Rate loop_rate(GROUND_EXTINGUISH_LOOP_RATE);
     while (ros::ok()) {
       if (extinguish_ground_fire_server_.isPreemptRequested()) {
         ual_->setPose(ual_->pose());
         extinguish_ground_fire_server_.setPreempted();
         return;
       }
+      ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
+      // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
 
-      double x_error, y_error, z_error, yaw_error;
-
-      // TODO: Get z_error
-      //z_error = target_fire.sf11_range.range - sf11_range_.range;
-      // ROS_ERROR("z: %lf", z_error);
-
-      auto ual_pose = ual_->pose();
-      double current_yaw = 2 * atan2(ual_pose.pose.orientation.z, ual_pose.pose.orientation.w);
-      // TODO: Get yaw_error
-      //yaw_error = fire_ual_yaw - current_yaw;
-
-      // ----------------------------------------------------------//
-      // Put errors yo 0 until implementation is done (To be removed)
-      x_error = 0;
-      y_error = 0;
-      z_error = 0;
-      yaw_error = 0;
-      // ----------------------------------------------------------//
-
+      const float release_height = 1.5;
       geometry_msgs::PoseStamped error_pose;
+      tf2::doTransform(matched_candidate_.pose.pose, error_pose.pose, camera_to_gripper);
       error_pose.header.stamp = ros::Time::now();
-      // TODO: set frame
-      //error_pose.header.frame_id = XXX.header.frame_id;
-      error_pose.pose.position.x = -x_error;
-      error_pose.pose.position.y = -y_error;
-      error_pose.pose.position.z = z_error;
-      error_pose.pose.orientation.x = 0;
-      error_pose.pose.orientation.y = 0;
-      error_pose.pose.orientation.z = sin(0.5 * yaw_error);
-      error_pose.pose.orientation.w = cos(0.5 * yaw_error);
+      //error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
+      // TODO: Get fire orientation
+      error_pose.pose.orientation.x = 0.0;
+      error_pose.pose.orientation.y = 0.0;
+      error_pose.pose.orientation.z = 0.0;
+      error_pose.pose.orientation.w = 1.0;
+
+      geometry_msgs::Point error_position = error_pose.pose.position;
+
+      if (since_last_candidate < timeout) {
+        // x-y-control: in candidateCallback
+        // z-control: descend until release_height
+        double xy_error = sqrt(error_position.x*error_position.x + error_position.y*error_position.y);  // TODO: sqrt?
+        history_xy_errors.push(xy_error);
+        double min_xy_error, avg_xy_error, max_xy_error;
+        history_xy_errors.get_stats(min_xy_error, avg_xy_error, max_xy_error);
+        double z_error = release_height - sf11_range_.range;
+        history_z_errors.push(z_error);
+        double min_z_error, avg_z_error, max_z_error;
+        history_z_errors.get_stats(min_z_error, avg_z_error, max_z_error);
+
+        if (avg_xy_error > MAX_AVG_XY_ERROR) {
+          avg_xy_error = MAX_AVG_XY_ERROR;
+        }
+
+        // Check if we are in position to release
+        if (fabs(avg_z_error) < RELEASE_Z_ERROR_THRESHOLD && fabs(avg_xy_error) < RELEASE_XY_ERROR_THRESHOLD) {
+          std_srvs::Trigger trigger;
+          release_blanket_client.call(trigger);
+          ual_->setPose(ual_->pose());
+          extinguish_ground_fire_server_.setSucceeded(result);
+          return;
+        }
+        error_pose.pose.position.z = z_error * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
+        // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
+
+      } else {  // No fresh candidates (timeout)
+        ROS_WARN("Candidates timeout!");
+
+        // TODO: Push MAX_AVG_XY_ERROR into history_xy_errors
+        error_pose.pose.position.x = 0.0;
+        error_pose.pose.position.y = 0.0;
+        error_pose.pose.position.z = MAX_DELTA_Z;
+        error_pose.pose.orientation.x = 0.0;
+        error_pose.pose.orientation.y = 0.0;
+        error_pose.pose.orientation.z = 0.0;
+        error_pose.pose.orientation.w = 1.0;
+      }
+
       geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
-      //ual_->setVelocity(velocity); // TODO: Uncomment when implemented
+      ual_->setVelocity(velocity);
 
       loop_rate.sleep();
     }
