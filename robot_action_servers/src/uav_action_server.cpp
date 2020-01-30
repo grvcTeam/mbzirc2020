@@ -29,6 +29,7 @@
 #include <mbzirc_comm_objs/LandAction.h>
 #include <mbzirc_comm_objs/MoveInCirclesAction.h>
 #include <mbzirc_comm_objs/ExtinguishFacadeFireAction.h>
+#include <mbzirc_comm_objs/ExtinguishGroundFireAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -66,6 +67,7 @@ protected:
   actionlib::SimpleActionServer<mbzirc_comm_objs::LandAction> land_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::MoveInCirclesAction> move_in_circles_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishFacadeFireAction> extinguish_facade_fire_server_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishGroundFireAction> extinguish_ground_fire_server_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener *tf_listener_;
@@ -89,7 +91,8 @@ public:
     place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
     land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
     move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false),
-    extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false) {
+    extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false),
+    extinguish_ground_fire_server_(nh_, "extinguish_ground_fire_action", boost::bind(&UalActionServer::extinguishGroundFireCallback, this, _1), false) {
 
     std::string ual_backend;
     ros::param::param<std::string>("~ual_backend", ual_backend, "mavros");
@@ -121,6 +124,7 @@ public:
     land_server_.start();
     move_in_circles_server_.start();
     extinguish_facade_fire_server_.start();
+    extinguish_ground_fire_server_.start();
   }
 
   ~UalActionServer() {
@@ -815,6 +819,128 @@ public:
 
       // std::cout << velocity << '\n';
       ual_->setVelocity(velocity);
+
+      loop_rate.sleep();
+    }
+  }
+
+  void extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal) {
+    mbzirc_comm_objs::ExtinguishGroundFireFeedback feedback;
+    mbzirc_comm_objs::ExtinguishGroundFireResult result;
+
+    if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+      result.message = "UAL is not flying auto!";
+      extinguish_ground_fire_server_.setAborted(result);
+      return;
+    }
+
+    ros::NodeHandle nh;
+    ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
+    // TODO: Add other subscribers (e.g. fire estimation)
+    // TODO: Markers?
+    //ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+
+    bool has_sf11_range = false;
+    bool has_fire_estimation = false;
+    for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
+      has_sf11_range = (sf11_range_.header.seq != 0);
+      has_fire_estimation = true; // TODO: Add real condition
+      if (has_sf11_range && has_fire_estimation) {
+        break;
+      }
+      ros::Duration(0.1).sleep();
+    }
+    if (!has_sf11_range || !has_fire_estimation) {
+      result.message = "could not get valid: ";
+      if (!has_sf11_range) { result.message += "[sf11_range] "; }
+      if (!has_fire_estimation) { result.message += "[fire_estimation] "; }
+      extinguish_ground_fire_server_.setAborted(result);
+      return;
+    }
+
+    grvc::ual::PIDParams pid_x;
+    pid_x.kp = 0.4;
+    pid_x.ki = 0.0;
+    pid_x.kd = 0.0;
+    pid_x.min_sat = -1.0;
+    pid_x.max_sat = 1.0;
+    pid_x.min_wind = -1.0;
+    pid_x.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_y;
+    pid_y.kp = 0.4;
+    pid_y.ki = 0.0;
+    pid_y.kd = 0.0;
+    pid_y.min_sat = -1.0;
+    pid_y.max_sat = 1.0;
+    pid_y.min_wind = -1.0;
+    pid_y.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_z;
+    pid_z.kp = 0.4;
+    pid_z.ki = 0.0;
+    pid_z.kd = 0.0;
+    pid_z.min_sat = -1.0;
+    pid_z.max_sat = 1.0;
+    pid_z.min_wind = -1.0;
+    pid_z.max_wind = 1.0;
+
+    grvc::ual::PIDParams pid_yaw;
+    pid_yaw.kp = 0.4;
+    pid_yaw.ki = 0.02;
+    pid_yaw.kd = 0.0;
+    pid_yaw.min_sat = -2.0;
+    pid_yaw.max_sat = 2.0;
+    pid_yaw.min_wind = -2.0;
+    pid_yaw.max_wind = 2.0;
+    pid_yaw.is_angular = true;
+
+    grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
+    pose_pid.enableRosInterface("extinguish_ground_control");
+
+    // TODO: Get fire orientation from estimation
+    //double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
+
+    ros::Rate loop_rate(EXTINGUISH_LOOP_RATE);
+    while (ros::ok()) {
+      if (extinguish_ground_fire_server_.isPreemptRequested()) {
+        ual_->setPose(ual_->pose());
+        extinguish_ground_fire_server_.setPreempted();
+        return;
+      }
+
+      double x_error, y_error, z_error, yaw_error;
+
+      // TODO: Get z_error
+      //z_error = target_fire.sf11_range.range - sf11_range_.range;
+      // ROS_ERROR("z: %lf", z_error);
+
+      auto ual_pose = ual_->pose();
+      double current_yaw = 2 * atan2(ual_pose.pose.orientation.z, ual_pose.pose.orientation.w);
+      // TODO: Get yaw_error
+      //yaw_error = fire_ual_yaw - current_yaw;
+
+      // ----------------------------------------------------------//
+      // Put errors yo 0 until implementation is done (To be removed)
+      x_error = 0;
+      y_error = 0;
+      z_error = 0;
+      yaw_error = 0;
+      // ----------------------------------------------------------//
+
+      geometry_msgs::PoseStamped error_pose;
+      error_pose.header.stamp = ros::Time::now();
+      // TODO: set frame
+      //error_pose.header.frame_id = XXX.header.frame_id;
+      error_pose.pose.position.x = -x_error;
+      error_pose.pose.position.y = -y_error;
+      error_pose.pose.position.z = z_error;
+      error_pose.pose.orientation.x = 0;
+      error_pose.pose.orientation.y = 0;
+      error_pose.pose.orientation.z = sin(0.5 * yaw_error);
+      error_pose.pose.orientation.w = cos(0.5 * yaw_error);
+      geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
+      //ual_->setVelocity(velocity); // TODO: Uncomment when implemented
 
       loop_rate.sleep();
     }
