@@ -57,8 +57,15 @@ Then remove 'build' and 'devel' folders and compile the workspace. 'pcl_conversi
 For improving code performance and running speed, remember compiling in RELEASE mode:
 
 ```
-catkin_make -DCMAKE_BUILD_TYPE=Release
+catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
+
+And save them to be used for the next build:
+
+```
+catkin build --save-config --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+
 
 ## Run instructions
 
