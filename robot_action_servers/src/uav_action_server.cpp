@@ -34,6 +34,7 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 #include <mbzirc_comm_objs/GripperAttached.h>
+#include <mbzirc_comm_objs/DetectTypes.h>
 #include <mbzirc_comm_objs/Magnetize.h>
 #include <mbzirc_comm_objs/WallList.h>
 #include <std_srvs/Trigger.h>
@@ -294,6 +295,7 @@ public:
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
     ros::ServiceClient magnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/magnetize_gripper");
     ros::ServiceClient demagnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/demagnetize_gripper");
+    ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
     // bool has_tracked;
@@ -364,6 +366,13 @@ public:
     }
     if (!open_gripper_client.call(trigger)) {
       ROS_ERROR("Failed to call (real) open gripper service");
+    }
+    mbzirc_comm_objs::DetectTypes set_detection_srv;
+    set_detection_srv.request.types.push_back(_goal->color);
+    set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK;
+    // set_detection_srv.request.visualize = true;
+    if (!set_detection_client.call(set_detection_srv)) {
+      ROS_ERROR("Failed to call set detection service");
     }
 
     grvc::utils::CircularBuffer history_xy_errors;
