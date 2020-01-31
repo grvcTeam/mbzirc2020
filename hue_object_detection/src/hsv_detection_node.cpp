@@ -150,7 +150,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   } else {
     rect_real = fromCvRotatedRect(_hsv_tracking_pair.white_item.rectangle, _camera, _estimated_z);
     rect_real.center.x = white_edge_center.x;
-    rect_real.center.y = white_edge_center.y + whiteHalfHeight(_hsv_tracking_pair.colour_item.detector_id);
+    rect_real.center.y = white_edge_center.y - whiteHalfHeight(_hsv_tracking_pair.colour_item.detector_id);  // camera rotation!
     tracked_color = _hsv_tracking_pair.white_item.detector_id;
     is_cropped = true;
   }
