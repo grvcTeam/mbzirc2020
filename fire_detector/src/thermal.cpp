@@ -22,6 +22,7 @@ using namespace cv;
 #include <mbzirc_comm_objs/DetectTypes.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <math.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 
 
@@ -32,7 +33,9 @@ int detection=0;
 int maxim;
 float temp_matrix[32][32];
 float x_pose, y_pose, z_pose;
+float yaw;
 float laser_measurement;
+string uav_id;
 
 geometry_msgs::PoseStamped pos;
 std_msgs::Header header_pose;
@@ -77,6 +80,13 @@ void ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
     x_pose=msg.pose.position.x;
     y_pose=msg.pose.position.y;
     z_pose=msg.pose.position.z;
+    double roll_aux, pitch_aux, yaw_aux;
+	tf2::Quaternion q;
+	tf2::fromMsg(msg.pose.orientation,q);
+	tf2::Matrix3x3 Rot_matrix(q);
+	Rot_matrix.getRPY(roll_aux,pitch_aux,yaw_aux);
+
+    yaw = yaw_aux;
     pos.pose=msg.pose;
 
 }
@@ -146,7 +156,6 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvImageConstPtr cv_ptr;
     mbzirc_comm_objs::ObjectDetectionList rec_list;
     mbzirc_comm_objs::ObjectDetection rec_object;
-    cv::Mat image_gray;
     cv::Mat image_color;
     cv::Mat therm(cv::Size(x_size,y_size), CV_8UC1);
     uint8_t *initial_therm_ptr = therm.data;
@@ -156,7 +165,6 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     try{
         // Convert msg from ros topic to image 
         cv_ptr=cv_bridge::toCvCopy(msg,"8UC3");
-        cvtColor(cv_ptr->image,image_gray,CV_RGB2GRAY);
         // Routine to obtain a black & white filter, 
         // Black=there is no fire
         // White=pixel temperature is bigger than thermal threeshold 
@@ -252,32 +260,33 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
             detection_sampling=0;
             last_detection=last_detection+1;
-            rec_object.header=header_pose;
+            rec_object.header.stamp = ros::Time::now();
+            rec_object.header.frame_id = header_pose.frame_id;
+            
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
             rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
-            rec_object.pose.covariance={sigma_x,0,0,0,0,0,
-                                        0,sigma_y,0,0,0,0,
-                                        0,0,sigma_z,0,0,0,
+            rec_object.pose.covariance={sigma_x*sigma_x,0,0,0,0,0,
+                                        0,sigma_y*sigma_y,0,0,0,0,
+                                        0,0,sigma_z*sigma_z,0,0,0,
                                         0, 0, 0, 0, 0,  0,
                                         0, 0, 0, 0, 0,  0,
                                         0, 0, 0, 0, 0,  0};
-            rec_object.image_detection.img_height=y_size;
-            rec_object.image_detection.img_width=x_size;
-            rec_object.image_detection.v=y_comp;
-            rec_object.image_detection.u=x_comp;
-            rec_object.image_detection.height=radio/20;
-            rec_object.image_detection.width=y_size=radio/20;
-                
+            rec_object.image_detection.img_height=y_size/20.0;
+            rec_object.image_detection.img_width=x_size/20.0;
+            rec_object.image_detection.v=y_comp/20.0;
+            rec_object.image_detection.u=x_comp/20.0;
+            rec_object.image_detection.height=radio/20.0;
+            rec_object.image_detection.width=radio/20.0;
+
             if (mode=="DOWNWARD")
             {
             //Thermal image fields
-            rec_object.image_detection.depth=sigma_z;
+            rec_object.image_detection.depth=z_pose;
             rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_DOWNWARD;
             // Object Detection fields
-            rec_object.pose.pose.position.x=x_pose+sigma_x;
-            rec_object.pose.pose.position.y=y_pose+sigma_y;
-            rec_object.pose.pose.position.z=sigma_z;
-            rec_object.pose.pose.orientation=pos.pose.orientation;
+            rec_object.pose.pose.position.x=x_pose;
+            rec_object.pose.pose.position.y=y_pose;
+            rec_object.pose.pose.position.z=0.0;
             }
             else if (mode=="FORWARD")
             {
@@ -285,13 +294,16 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             rec_object.image_detection.depth=laser_measurement;
             rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_FORWARD;
            //Object detection fields
-            rec_object.pose.pose.position.x=x_pose+sigma_x+laser_measurement;
-            rec_object.pose.pose.position.y=y_pose+sigma_y;
+
+            
+            rec_object.pose.pose.position.x=x_pose+laser_measurement*cos(yaw);
+            rec_object.pose.pose.position.y=y_pose+laser_measurement*sin(yaw);
             rec_object.pose.pose.position.z=z_pose;
-            rec_object.pose.pose.orientation=pos.pose.orientation;
             }
             // Publishing the Object    
             rec_list.objects.push_back(rec_object);
+            rec_list.stamp = ros::Time::now();
+            rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
             detection=0;
             last_detection=detection;
@@ -319,7 +331,6 @@ int main(int argc, char **argv)
 {
     float thermal_thres;
     string Position_topic,Laser_topic,Temp_topic,RGB_image_topic,Advertise_topic,Detection_list_topic;
-    int uav_id;
     ros::init(argc,argv,"Thermal_cam");
     ros::NodeHandle n;
     n.getParam("/thermal/Position_topic",Position_topic);
