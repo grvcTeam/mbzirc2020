@@ -4,7 +4,8 @@
   <arg name="agent_id" default="1" />
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.17 0 -0.16 0 1.57079632679 3.141592 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_control_tf" args="0.17 0 -0.16 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_control_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_control_to_camera_tf" args="0 0 0 0 1.57079632679 3.141592 $(arg robot_model)_$(arg agent_id)/camera_control_link $(arg robot_model)_$(arg agent_id)/camera_link" />
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
