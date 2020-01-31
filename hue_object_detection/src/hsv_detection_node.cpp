@@ -269,6 +269,9 @@ int main(int argc, char** argv) {
   HSVDetection detection;
   detection.setConfig(detection_config);
   detection.addDetector("red", range_map["red"], cvScalar(0, 255, 0));
+  detection.addDetector("green", range_map["green"], cvScalar(255, 0, 0));
+  detection.addDetector("blue", range_map["blue"], cvScalar(255, 255, 0));
+  detection.addDetector("orange", range_map["orange"], cvScalar(0, 255, 255));
   detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
@@ -291,7 +294,7 @@ int main(int argc, char** argv) {
       double estimated_z = sf11_range.range - DELTA_H - 0.2;  // TODO: tf? CHECK!
 
       switch (g_detect_request.command) {
-        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT:
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT_ALL:
         {
           std::vector<HSVItem> detected = detection.detectAll(true);
           sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z));
@@ -302,15 +305,26 @@ int main(int argc, char** argv) {
           break;
         }
 
-        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK:
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK_BRICK:
         {
-          HSVTrackingPair tracked = detection.track("red", true);
+          if (g_detect_request.types.size() <= 0) {
+            ROS_ERROR("types is empty, nothing to track!");
+          }
+          std::string target = g_detect_request.types[0];  // We track first element
+          HSVTrackingPair tracked = detection.track(target, true);
           if (tracked.has_colour && tracked.has_white) {
             // tracked.print();
             tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));
           }
           break;
         }
+
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_STOP_TRACKING:
+        {
+          detection.stopTracking();
+          break;
+        }
+
       }
 
       if (g_detect_request.visualize) {

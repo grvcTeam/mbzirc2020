@@ -294,9 +294,9 @@ public:
     }
 
     ros::NodeHandle nh;
-    ros::Subscriber sensed_sub_ = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
+    ros::Subscriber sensed_sub = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
     ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
-    ros::Subscriber attached_sub_ = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
+    ros::Subscriber attached_sub = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
     ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)
     ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
     ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
@@ -377,7 +377,7 @@ public:
     }
     mbzirc_comm_objs::DetectTypes set_detection_srv;
     set_detection_srv.request.types.push_back(_goal->color);
-    set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK;
+    set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK_BRICK;
     set_detection_srv.request.visualize = false;
     if (!set_detection_client.call(set_detection_srv)) {
       ROS_ERROR("Failed to call set detection service");
@@ -396,7 +396,7 @@ public:
       if (pick_server_.isPreemptRequested()) {
         ual_->setPose(ual_->pose());
         pick_server_.setPreempted();
-        return;
+        break;
       }
 
       const float height_threshold = 1.0;
@@ -505,8 +505,7 @@ public:
         up_pose.pose.position.z += 2.0;  // TODO: Up?
         ual_->setPose(up_pose);
         pick_server_.setSucceeded(result);
-        return;
-        // break;
+        break;
       }
 
       // If we're too high, give up TODO: use _goal.z?
@@ -533,7 +532,10 @@ public:
     // ual_->takeOff(_goal->waypoint.pose.position.z - ual_->pose().pose.position.z, true);  // TODO: timeout? preempt?
     // ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
     // ual_->goToWaypoint(_goal->waypoint);  // TODO: timeout? preempt?
-    sensed_sub_.shutdown();
+    set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_STOP_TRACKING;
+    if (!set_detection_client.call(set_detection_srv)) {
+      ROS_ERROR("Failed to call set detection service");
+    }
   }
 
   void placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_goal) {
@@ -866,7 +868,7 @@ public:
     }
 
     ros::NodeHandle nh;
-    ros::Subscriber sensed_sub_ = nh.subscribe("sensed_object", 1, &UalActionServer::sensedObjectCallback, this); // TODO: Change this for specific tracker
+    ros::Subscriber sensed_sub = nh.subscribe("sensed_objects", 1, &UalActionServer::sensedObjectCallback, this); // TODO: Change this for specific tracker
     ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
     ros::ServiceClient release_blanket_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/release_blanket");
     ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?

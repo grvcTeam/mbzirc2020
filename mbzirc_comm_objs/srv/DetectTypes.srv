@@ -2,8 +2,10 @@ string[] types
 uint8 command
 bool visualize
 
-uint8 COMMAND_NONE   = 0
-uint8 COMMAND_DETECT = 1
-uint8 COMMAND_TRACK  = 2
+uint8 COMMAND_NONE           = 0
+uint8 COMMAND_DETECT_ALL     = 1
+uint8 COMMAND_TRACK_BRICK    = 2
+uint8 COMMAND_TRACK_FIRE     = 3
+uint8 COMMAND_STOP_TRACKING  = 4
 ---
 bool success

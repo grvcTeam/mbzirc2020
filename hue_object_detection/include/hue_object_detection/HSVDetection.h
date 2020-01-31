@@ -108,6 +108,7 @@ public:
     std::vector<HSVItem> detectAll(bool _draw = false);
 
     HSVTrackingPair track(const std::string _id, bool _draw = false);
+    void stopTracking() { tracking_ = false; }
 
 private:
     std::vector<HSVItem> detectPipeline(const std::string _id, const cv::Mat& _src, bool _draw = false);
