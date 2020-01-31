@@ -122,7 +122,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES robot_action_servers
    CATKIN_DEPENDS actionlib actionlib_msgs roscpp uav_abstraction_layer message_runtime mbzirc_comm_objs std_msgs geometry_msgs nav_msgs
 #  DEPENDS system_lib
@@ -135,7 +135,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -153,7 +153,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_action_servers_node.cpp)
-add_executable(uav_action_server src/uav_action_server.cpp)
+add_executable(uav_action_server src/uav_action_server.cpp src/uav_action_server_c2.cpp src/uav_action_server_c3.cpp)
 add_executable(ugv_action_server src/ugv_action_server.cpp)
 
 ## Rename C++ executable without prefix
