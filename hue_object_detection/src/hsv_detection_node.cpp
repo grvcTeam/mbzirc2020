@@ -209,11 +209,11 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
   return object_list;
 }
 
-uint8_t g_command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_NONE; 
+mbzirc_comm_objs::DetectTypes::Request g_detect_request;  // TODO: Global!
 bool ChangeTypesCB(mbzirc_comm_objs::DetectTypes::Request& req,
                           mbzirc_comm_objs::DetectTypes::Response &res)
 {
-  g_command = req.command;
+  g_detect_request = req;
   res.success = true;
   return true;
 }
@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
       detection.setFrame(cv_ptr->image);
       double estimated_z = sf11_range.range - DELTA_H - 0.2;  // TODO: tf? CHECK!
 
-      switch (g_command) {
+      switch (g_detect_request.command) {
         case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT:
         {
           std::vector<HSVItem> detected = detection.detectAll(true);
@@ -313,8 +313,10 @@ int main(int argc, char** argv) {
         }
       }
 
-      draw_hud(cv_ptr);
-      image_converter.publish(cv_ptr);  // TODO: Optional!
+      if (g_detect_request.visualize) {
+        draw_hud(cv_ptr);
+        image_converter.publish(cv_ptr);
+      }
 
     }
     ros::spinOnce();
