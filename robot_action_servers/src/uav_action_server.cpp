@@ -62,8 +62,8 @@
 #define FACADE_EXTINGUISH_LOOP_RATE 20  // [Hz]
 #define AVG_XY_ERROR_WINDOW_SIZE 13
 #define AVG_Z_ERROR_WINDOW_SIZE 13
-#define MAX_DELTA_Z 0.5  // [m] --> [m/s]
-#define MAX_AVG_XY_ERROR 0.2  // [m]
+#define MAX_DELTA_Z 0.6  // [m] --> [m/s]
+#define MAX_AVG_XY_ERROR 0.15  // [m]
 #define MAX_AVG_Z_ERROR 0.2  // [m]
 #define RELEASE_Z_ERROR_THRESHOLD 0.1 // [m]
 #define RELEASE_XY_ERROR_THRESHOLD 0.1 // [m]
@@ -322,7 +322,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // TODO: Tune!
     grvc::ual::PIDParams pid_x;
-    pid_x.kp = 0.82;
+    pid_x.kp = 0.92;
     pid_x.ki = 0.0;
     pid_x.kd = 0.0;
     pid_x.min_sat = -2.0;
@@ -331,7 +331,7 @@ public:
     pid_x.max_wind = 2.0;
 
     grvc::ual::PIDParams pid_y;
-    pid_y.kp = 0.82;
+    pid_y.kp = 0.92;
     pid_y.ki = 0.0;
     pid_y.kd = 0.0;
     pid_y.min_sat = -2.0;
@@ -350,7 +350,7 @@ public:
 
     grvc::ual::PIDParams pid_yaw;
     pid_yaw.kp = 0.4;
-    pid_yaw.ki = 0.02;
+    pid_yaw.ki = 0.04;
     pid_yaw.kd = 0.0;
     pid_yaw.min_sat = -2.0;
     pid_yaw.max_sat = 2.0;
@@ -378,7 +378,7 @@ public:
     mbzirc_comm_objs::DetectTypes set_detection_srv;
     set_detection_srv.request.types.push_back(_goal->color);
     set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK;
-    // set_detection_srv.request.visualize = true;
+    set_detection_srv.request.visualize = false;
     if (!set_detection_client.call(set_detection_srv)) {
       ROS_ERROR("Failed to call set detection service");
     }
@@ -500,7 +500,7 @@ public:
       if (gripper_attached_) {
         std_srvs::Trigger dummy;
         close_gripper_client.call(dummy);
-        // sleep(0.1);  // TODO: sleep?
+        sleep(0.4);  // TODO: sleep?
         auto up_pose = ual_->pose();
         up_pose.pose.position.z += 2.0;  // TODO: Up?
         ual_->setPose(up_pose);
