@@ -15,7 +15,7 @@
       <param name="uav_id" value="$(arg agent_id)"/>
       <param name="pose_frame_id" value="arena"/>
       <param name="home_pose_parent_frame" value="arena"/>
-      <param name="ual_backend" value="$(arg ual_backend)"/>
+      <param name="ual_backend" value="mavros"/>
       <param name="model_name" value="$(arg robot_model)_$(arg agent_id)"/>
       <rosparam param="home_pose" subst_value="True">[$(arg x), $(arg y), $(arg z)]</rosparam>
       <param name="position_th" value="1.00"/>
