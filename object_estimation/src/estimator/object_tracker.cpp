@@ -55,7 +55,7 @@ ObjectTracker::ObjectTracker(int id, int type)
 	fixed_subtype_ = false;
 		
 	fact_bel_.resize(1);
-	fact_bel_[COLOR].resize(ObjectDetection::NCOLORS);
+	fact_bel_[COLOR].resize(ObjectDetection::BRICK_COLORS);
 
 	pose_ = Eigen::MatrixXd::Zero(6,1);
 	pose_cov_ = Eigen::MatrixXd::Identity(6,6);
@@ -140,10 +140,10 @@ void ObjectTracker::initialize(YAML::Node node)
 
 			double prob_z, total_prob = 0.0;
 
-			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+			for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 			{
 				if(color == ObjectDetection::COLOR_UNKNOWN)
-					fact_bel_[COLOR][i] = 1.0/ObjectDetection::NCOLORS;
+					fact_bel_[COLOR][i] = 1.0/ObjectDetection::BRICK_COLORS;
 				else if(color == factorIdToColor(i))
 					fact_bel_[COLOR][i] = 1.0;
 				else
@@ -216,21 +216,21 @@ void ObjectTracker::initialize(ObjectDetection* z)
 
 			double prob_z, total_prob = 0.0;
 
-			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+			for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 			{
 				if(z->color == ObjectDetection::COLOR_UNKNOWN)
 					prob_z = 1.0;
 				else if(z->color == factorIdToColor(i))
 					prob_z = COLOR_DETECTOR_PD;
 				else
-					prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+					prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::BRICK_COLORS-1);
 
-				fact_bel_[COLOR][i] = (1.0/(ObjectDetection::NCOLORS))*prob_z;
+				fact_bel_[COLOR][i] = (1.0/(ObjectDetection::BRICK_COLORS))*prob_z;
 				total_prob += fact_bel_[COLOR][i];
 			}
 			
 			// Normalize
-			for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+			for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 			{
 				fact_bel_[COLOR][i] /= total_prob;
 			}	
@@ -295,21 +295,21 @@ bool ObjectTracker::update(ObjectDetection* z)
 
 				double prob_z, total_prob = 0.0;
 
-				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+				for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 				{
 					if(z->color == ObjectDetection::COLOR_UNKNOWN)
 						prob_z = 1.0;
 					if(z->color == factorIdToColor(i))
 						prob_z = COLOR_DETECTOR_PD;
 					else
-						prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+						prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::BRICK_COLORS-1);
 
 					fact_bel_[COLOR][i] *= prob_z;
 					total_prob += fact_bel_[COLOR][i];
 				}
 				
 				// Normalize
-				for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+				for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 				{
 					fact_bel_[COLOR][i] /= total_prob;
 				}	
@@ -450,12 +450,12 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 		// TODO. Distance to borders instead of to centroid?
 		distance = getDistance(z);
 
-		for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+		for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 		{
 			if(z->color == factorIdToColor(i))
 				prob_z = COLOR_DETECTOR_PD;
 			else
-				prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+				prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::BRICK_COLORS-1);
 
 			prob_color += fact_bel_[COLOR][i]*prob_z;
 		}
@@ -535,12 +535,12 @@ double ObjectTracker::getLikelihood(ObjectDetection* z)
 	
 	double prob_z, prob_color = 0.0;
 
-	for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+	for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 	{
 		if(z->color == factorIdToColor(i))
 			prob_z = COLOR_DETECTOR_PD;
 		else
-			prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::NCOLORS-1);
+			prob_z = (1.0 - COLOR_DETECTOR_PD)/(ObjectDetection::BRICK_COLORS-1);
 
 		prob_color += fact_bel_[COLOR][i]*prob_z;
 	}
@@ -793,7 +793,7 @@ int ObjectTracker::getColor()
 	double max_prob = -1.0;
 	int color, color_max;
 
-	for(int i = 0; i < ObjectDetection::NCOLORS; i++)
+	for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 	{
 		if(fact_bel_[COLOR][i] > max_prob)
 		{

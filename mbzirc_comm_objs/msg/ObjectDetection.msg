@@ -25,7 +25,7 @@ uint8 TYPE_FIRE        = 8
 uint8 TYPE_HOLE        = 9
 uint8 TYPE_PASSAGE     = 10
 
-int8  NCOLORS = 4
+int8  BRICK_COLORS = 4
 uint8 COLOR_UNKNOWN = 0
 uint8 COLOR_RED     = 1
 uint8 COLOR_GREEN   = 2
