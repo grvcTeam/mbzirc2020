@@ -433,7 +433,9 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
       if (fabs(avg_z_error) < RELEASE_Z_ERROR_THRESHOLD && fabs(avg_xy_error) < RELEASE_XY_ERROR_THRESHOLD) {
         std_srvs::Trigger trigger;
         release_blanket_client.call(trigger);
-        ual_->setPose(ual_->pose());
+        auto up_pose = ual_->pose();
+        up_pose.pose.position.z += 3.0;  // TODO: Value
+        ual_->setPose(up_pose);
         extinguish_ground_fire_server_.setSucceeded(result);
         break;
       }
