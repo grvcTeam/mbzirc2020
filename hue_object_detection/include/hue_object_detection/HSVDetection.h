@@ -283,6 +283,7 @@ std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
         }
     }
     tracking_list.push_back(closest_colour);
+    tracking_target_ = closest_colour.rectangle.center;
 
     if (_draw) {
         rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
