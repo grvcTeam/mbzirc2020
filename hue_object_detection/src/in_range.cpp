@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   cv::createTrackbar("K-size: 2n+1", window_detection_name, &detection_config.kernel.size, KERNEL_MAX_SIZE);
 
   /// Create min_area and poly_epsilon trackbars
-  cv::createTrackbar("Min area", window_detection_name, &min_area, 306081/2);  // TODO: Depends on resolution
+  cv::createTrackbar("Min area", window_detection_name, &min_area, 10000);  // TODO: Depends on resolution
   cv::createTrackbar("Epsilon", window_detection_name, &poly_epsilon, 640/4);  // TODO: Depends on resolution
 
   HSVDetection detection;
@@ -67,8 +67,8 @@ int main(int argc, char** argv) {
   white_range.min_HSV[0] = 0;
   white_range.max_HSV[0] = 180;
   white_range.min_HSV[1] = 0;
-  white_range.max_HSV[1] = 83;
-  white_range.min_HSV[2] = 91;
+  white_range.max_HSV[1] = 80;
+  white_range.min_HSV[2] = 200;
   white_range.max_HSV[2] = 255;
 
   detection.addDetector("white", white_range, cvScalar(0, 0, 0));
