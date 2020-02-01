@@ -102,7 +102,7 @@ bool demagnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Re
 bool release_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     for (int i = 0; i < 5; i++) {
-        board_input.pwm[i] = 1662;  // TODO: From config file?
+        board_input.pwm[i] = 2000;  // TODO: From config file?
     }
     input_mutex.unlock();
     return true;
@@ -111,7 +111,7 @@ bool release_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Respon
 bool grasp_blanket(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     for (int i = 0; i < 5; i++) {
-        board_input.pwm[i] = 998;  // TODO: From config file?
+        board_input.pwm[i] = 1350;  // TODO: From config file?
     }
     input_mutex.unlock();
     return true;
