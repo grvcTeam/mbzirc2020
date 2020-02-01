@@ -50,7 +50,6 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
   ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
   ros::ServiceClient magnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/magnetize_gripper");
-  ros::ServiceClient demagnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/demagnetize_gripper");
   ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
   ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
@@ -318,24 +317,83 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
   }
 
   ros::NodeHandle nh;
-  ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");
+  ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
+  ros::Subscriber attached_sub = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
+  ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)
+  ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
+  ros::ServiceClient demagnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/demagnetize_gripper");
+  ros::Duration(1.0).sleep();  // TODO: tune! needed for sub?
 
-  float z_offset = 0.6;  // TODO: offset in meters between uav and attached brick frames
-  geometry_msgs::PoseStamped in_wall_uav_pose = _goal->in_wall_brick_pose;
-  in_wall_uav_pose.pose.position.z += z_offset;
+  // float y_offset = 3.0;
+  // float z_offset = 0.6;  // TODO: offsets!
+  // geometry_msgs::PoseStamped next_to_wall_uav_pose = _goal->in_wall_brick_pose;
+  // next_to_wall_uav_pose.pose.position.z += y_offset;
+  // next_to_wall_uav_pose.pose.position.z += z_offset;
 
-  ROS_INFO("in_wall_uav_pose = [%s][%lf, %lf, %lf][%lf, %lf, %lf, %lf]", in_wall_uav_pose.header.frame_id.c_str(), \
-            in_wall_uav_pose.pose.position.x, in_wall_uav_pose.pose.position.y, in_wall_uav_pose.pose.position.z, \
-            in_wall_uav_pose.pose.orientation.x, in_wall_uav_pose.pose.orientation.y, in_wall_uav_pose.pose.orientation.z, in_wall_uav_pose.pose.orientation.w);
+  auto target_pose = ual_->pose();
+  // target_pose.pose.position.z;
+  float wall_yaw = 2 * atan2(target_pose.pose.orientation.z, target_pose.pose.orientation.w);
+  float step = 0.01;
+  float ux = -step * sin(wall_yaw);
+  float uy =  step * cos(wall_yaw);
+  float total_distance_travelled = 0.0;
+  float estimated_wall_width = 0.0;
 
-  ual_->goToWaypoint(in_wall_uav_pose, true);
-  ros::Duration(5.0).sleep();  // Give time to stabilize...
+  bool over_wall = false;
+  float last_sf11_range = sf11_range_.range;
 
-  mbzirc_comm_objs::Magnetize magnetize_srv;
-  magnetize_srv.request.magnetize = false;
-  if (!magnetize_client.call(magnetize_srv)) {
-    ROS_ERROR("Failed to call [magnetize] service");  // TODO: retry?
+  #define PLACING_LOOP_RATE 10
+  #define DELTA_H_THRESHOLD 1.0
+  ros::Rate loop_rate(PLACING_LOOP_RATE);
+  while (ros::ok()) {
+    if (place_server_.isPreemptRequested()) {
+      ual_->setPose(ual_->pose());
+      place_server_.setPreempted();
+      break;
+    }
+
+    target_pose.pose.position.x += ux;
+    target_pose.pose.position.y += uy;
+    ual_->setPose(target_pose);
+
+    float delta_h = sf11_range_.range - last_sf11_range;
+    last_sf11_range = sf11_range_.range;
+    if (!over_wall && (delta_h < -DELTA_H_THRESHOLD)) {
+      over_wall = true;
+    }
+
+    if (over_wall) {
+      estimated_wall_width += step;
+    }
+
+    if (over_wall && (estimated_wall_width > 0.3) && (sf11_range_.range > 1.7)) {  // TODO: values!
+      // Release!
+      ROS_ERROR("release!");
+      ual_->setPose(ual_->pose());
+      mbzirc_comm_objs::Magnetize magnetize_srv;
+      magnetize_srv.request.magnetize = false;
+      if (!magnetize_client.call(magnetize_srv)) {
+        ROS_ERROR("Failed to call (sim) demagnetize service");
+      }
+      std_srvs::Trigger trigger;
+      if (!demagnetize_gripper_client.call(trigger)) {
+        ROS_ERROR("Failed to call (real) demagnetize gripper service");
+      }
+      if (!open_gripper_client.call(trigger)) {
+        ROS_ERROR("Failed to call (real) open gripper service");
+      }
+      place_server_.setSucceeded(result);
+      break;
+    }
+
+    if (total_distance_travelled > 5.0) {  // TODO: value
+      ROS_WARN("Cannot find wall");
+      ual_->setPose(ual_->pose());
+      place_server_.setAborted(result);
+      break;
+    }
+
+    total_distance_travelled += step;
+    loop_rate.sleep();
   }
-
-  place_server_.setSucceeded(result);
 }
