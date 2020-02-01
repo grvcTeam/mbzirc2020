@@ -26,9 +26,9 @@ colors:
     V_range: [200, 255]
 
   fire:
-    H_range: [0, 17]
-    S_range: [112, 255]
-    V_range: [98, 255]
+    H_range: [140, 180]
+    S_range: [140, 255]
+    V_range: [140, 255]
 
 detection_config:
   min_area: 150.0
