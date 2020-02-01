@@ -42,6 +42,7 @@
 #include <mbzirc_comm_objs/WallList.h>
 #include <std_srvs/Trigger.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <sensor_msgs/Range.h>
