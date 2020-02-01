@@ -107,7 +107,8 @@ public:
     std::vector<HSVItem> detect(const std::string _id, bool _draw = false);
     std::vector<HSVItem> detectAll(bool _draw = false);
 
-    HSVTrackingPair track(const std::string _id, bool _draw = false);
+    std::vector<HSVItem> track(const std::string _id, bool _draw = false);
+    HSVTrackingPair trackBrick(const std::string _id, bool _draw = false);
     void stopTracking() { tracking_ = false; }
 
 private:
@@ -257,7 +258,40 @@ inline std::vector<HSVItem> HSVDetection::detectAll(bool _draw) {
     return final_list;
 }
 
-HSVTrackingPair HSVDetection::track(const std::string _id, bool _draw) {
+std::vector<HSVItem> HSVDetection::track(const std::string _id, bool _draw) {
+
+    std::vector<HSVItem> detected = detect(_id, true);
+    if (detected.size() == 0) { return std::vector<HSVItem>(); }
+
+    cv::Size hsv_size = hsv_.size();
+    if (!tracking_) {
+        tracking_target_.x = hsv_size.width / 2.0;
+        tracking_target_.y = hsv_size.height / 2.0;
+        tracking_ = true;
+    }
+
+    std::vector<HSVItem> tracking_list;
+    HSVItem closest_colour;
+    float min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
+    for (auto item: detected) {
+        float dx = fabs(tracking_target_.x - item.rectangle.center.x);
+        float dy = fabs(tracking_target_.y - item.rectangle.center.y);
+        float sq_distance = dx*dx + dy*dy;
+        if (sq_distance < min_sq_distance) {
+            min_sq_distance = sq_distance;
+            closest_colour = item;
+        }
+    }
+    tracking_list.push_back(closest_colour);
+
+    if (_draw) {
+        rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
+    }
+
+    return tracking_list;
+}
+
+HSVTrackingPair HSVDetection::trackBrick(const std::string _id, bool _draw) {
 
     std::vector<HSVItem> detected = detect(_id, true);
     if (detected.size() == 0) { return HSVTrackingPair(); }

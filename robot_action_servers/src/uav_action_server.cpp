@@ -183,7 +183,7 @@ void UalActionServer::goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_go
   }
 }
 
-void UalActionServer::trackedObjectCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg) {
+void UalActionServer::trackedBrickCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg) {
   if (msg->type != mbzirc_comm_objs::ObjectDetection::TYPE_BRICK_TRACK) {
     ROS_WARN("Expected TYPE_BRICK_TRACK!");
     return;
@@ -191,13 +191,21 @@ void UalActionServer::trackedObjectCallback(const mbzirc_comm_objs::ObjectDetect
   matched_candidate_ = *msg;  // TODO: Check also color is correct?
 }
 
-void UalActionServer::sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
-  for (auto obj : msg->objects) {
-    if (obj.color == mbzirc_comm_objs::ObjectDetection::COLOR_RED) {
-      matched_candidate_ = obj;
-    }
+void UalActionServer::trackedFireCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg) {
+  if (msg->type != mbzirc_comm_objs::ObjectDetection::TYPE_FIRE) {
+    ROS_WARN("Expected TYPE_FIRE!");
+    return;
   }
+  matched_candidate_ = *msg;
 }
+
+// void UalActionServer::sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
+//   for (auto obj : msg->objects) {
+//     if (obj.color == mbzirc_comm_objs::ObjectDetection::COLOR_RED) {
+//       matched_candidate_ = obj;
+//     }
+//   }
+// }
 
 void UalActionServer::sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg) {
   sf11_range_ = *msg;

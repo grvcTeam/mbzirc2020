@@ -43,7 +43,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   }
 
   ros::NodeHandle nh;
-  ros::Subscriber sensed_sub = nh.subscribe("tracked_object", 1, &UalActionServer::trackedObjectCallback, this);
+  ros::Subscriber tracked_sub = nh.subscribe("tracked_object", 1, &UalActionServer::trackedBrickCallback, this);
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::Subscriber attached_sub = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
   ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)

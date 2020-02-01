@@ -67,8 +67,8 @@ int main(int argc, char** argv) {
   white_range.min_HSV[0] = 0;
   white_range.max_HSV[0] = 180;
   white_range.min_HSV[1] = 0;
-  white_range.max_HSV[1] = 58;
-  white_range.min_HSV[2] = 150;
+  white_range.max_HSV[1] = 83;
+  white_range.min_HSV[2] = 91;
   white_range.max_HSV[2] = 255;
 
   detection.addDetector("white", white_range, cvScalar(0, 0, 0));
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
       // detection.detect("test", true);
       // detection.detect("white", true);
       // detection.detectAll(true);
-      HSVTrackingPair tracked = detection.track("test", true);
+      HSVTrackingPair tracked = detection.trackBrick("test", true);
       tracked.print();
 
       // draw_hud(cv_ptr);

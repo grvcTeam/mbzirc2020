@@ -32,3 +32,4 @@ uint8 COLOR_GREEN   = 2
 uint8 COLOR_BLUE    = 3
 uint8 COLOR_ORANGE  = 4
 uint8 COLOR_WHITE   = 5
+uint8 COLOR_FIRE    = 6

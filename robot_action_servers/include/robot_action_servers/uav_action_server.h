@@ -109,7 +109,8 @@ public:
   void takeOffCallback(const mbzirc_comm_objs::TakeOffGoalConstPtr &_goal);
   void landCallback(const mbzirc_comm_objs::LandGoalConstPtr &_goal);
   void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal);
-  void trackedObjectCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg);
+  void trackedBrickCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg);
+  void trackedFireCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg);
   void sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg);
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg);
   void sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg);

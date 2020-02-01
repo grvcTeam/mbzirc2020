@@ -40,6 +40,10 @@ int color_from_string(const std::string& color) {
         case 'w':
             out_color = mbzirc_comm_objs::ObjectDetection::COLOR_WHITE;
             break;
+        case 'F':
+        case 'f':
+            out_color = mbzirc_comm_objs::ObjectDetection::COLOR_FIRE;
+            break;
         default:
         ROS_ERROR("Unknown color %s", color.c_str());
             out_color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
@@ -178,7 +182,7 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   return object;
 }
 
-mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>& _hsv_item_list, const CameraParameters& _camera, double _estimated_z) {
+mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>& _hsv_item_list, const CameraParameters& _camera, double _estimated_z, uint8_t _type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) {
 
   mbzirc_comm_objs::ObjectDetectionList object_list;
 
@@ -188,7 +192,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
     mbzirc_comm_objs::ObjectDetection object;
     object.header.frame_id = _camera.frame_id;
     object.header.stamp = ros::Time::now();
-    object.type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK;
+    object.type = _type;
 
     object.pose.pose.position = rect_real.center;
     object.pose.pose.orientation.x = 0;
@@ -261,6 +265,7 @@ int main(int argc, char** argv) {
   config_yaml["colors"]["blue"]   >> range_map["blue"];
   config_yaml["colors"]["orange"] >> range_map["orange"];
   config_yaml["colors"]["white"]  >> range_map["white"];
+  config_yaml["colors"]["fire"]  >> range_map["fire"];
 
   HSVDetectionConfig detection_config;
   config_yaml["detection_config"] >> detection_config;
@@ -273,6 +278,7 @@ int main(int argc, char** argv) {
   detection.addDetector("blue", range_map["blue"], cvScalar(255, 255, 0));
   detection.addDetector("orange", range_map["orange"], cvScalar(0, 255, 255));
   detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
+  detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));  // TODO: Only for C3!
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
     // TODO(performance): If camera info is constant, having a subscriber is overkill
@@ -311,10 +317,24 @@ int main(int argc, char** argv) {
             ROS_ERROR("types is empty, nothing to track!");
           }
           std::string target = g_detect_request.types[0];  // We track first element
-          HSVTrackingPair tracked = detection.track(target, true);
+          HSVTrackingPair tracked = detection.trackBrick(target, true);
           if (tracked.has_colour && tracked.has_white) {
             // tracked.print();
             tracked_pub.publish(fromHSVTrackingPair(tracked, camera, estimated_z));
+          }
+          break;
+        }
+
+        case mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK_FIRE:
+        {
+          if (g_detect_request.types.size() <= 0) {
+            ROS_ERROR("types is empty, nothing to track!");
+          }
+          std::string target = g_detect_request.types[0];  // We track first element (should be color fire!)
+          std::vector<HSVItem> tracked = detection.track(target, true);
+          if (tracked.size() > 0) {
+            mbzirc_comm_objs::ObjectDetectionList object_list = fromHSVItemList(tracked, camera, estimated_z, mbzirc_comm_objs::ObjectDetection::TYPE_FIRE);
+            tracked_pub.publish(object_list.objects[0]);
           }
           break;
         }

@@ -306,9 +306,10 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   }
 
   ros::NodeHandle nh;
-  ros::Subscriber sensed_sub = nh.subscribe("sensed_objects", 1, &UalActionServer::sensedObjectCallback, this); // TODO: Change this for specific tracker
+  ros::Subscriber sensed_sub = nh.subscribe("tracked_object", 1, &UalActionServer::trackedFireCallback, this);
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::ServiceClient release_blanket_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/release_blanket");
+  ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
   ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
   // TODO: Add other subscribers (e.g. fire estimation)
   // TODO: Markers?
@@ -371,6 +372,14 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
 
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_ground_control");
+
+  mbzirc_comm_objs::DetectTypes set_detection_srv;
+  set_detection_srv.request.types.push_back("fire");
+  set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK_FIRE;
+  set_detection_srv.request.visualize = true;
+  if (!set_detection_client.call(set_detection_srv)) {
+    ROS_ERROR("Failed to call set detection service");
+  }
 
   grvc::utils::CircularBuffer history_xy_errors, history_z_errors;
   history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);

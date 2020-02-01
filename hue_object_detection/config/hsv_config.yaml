@@ -11,9 +11,9 @@ colors:
     V_range: [90, 255]
 
   blue:
-    H_range: [95, 145]
-    S_range: [143, 255]
-    V_range: [90, 255]
+    H_range: [74, 148]
+    S_range: [128, 255]
+    V_range: [130, 255]
 
   orange:
     H_range: [15, 35]
@@ -24,6 +24,11 @@ colors:
     H_range: [0, 180]
     S_range: [0, 58]
     V_range: [150, 255]
+
+  fire:
+    H_range: [0, 17]
+    S_range: [112, 255]
+    V_range: [98, 255]
 
 detection_config:
   min_area: 2.0
