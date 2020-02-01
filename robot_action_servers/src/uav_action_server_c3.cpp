@@ -337,37 +337,37 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   pid_x.kp = 0.82;
   pid_x.ki = 0.0;
   pid_x.kd = 0.0;
-  pid_x.min_sat = -2.0;
-  pid_x.max_sat = 2.0;
-  pid_x.min_wind = -2.0;
-  pid_x.max_wind = 2.0;
+  pid_x.min_sat = -0.5;
+  pid_x.max_sat = 0.5;
+  pid_x.min_wind = -0.5;
+  pid_x.max_wind = 0.5;
 
   grvc::ual::PIDParams pid_y;
   pid_y.kp = 0.82;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
-  pid_y.min_sat = -2.0;
-  pid_y.max_sat = 2.0;
-  pid_y.min_wind = -2.0;
-  pid_y.max_wind = 2.0;
+  pid_y.min_sat = -0.5;
+  pid_y.max_sat = 0.5;
+  pid_y.min_wind = -0.5;
+  pid_y.max_wind = 0.5;
 
   grvc::ual::PIDParams pid_z;
   pid_z.kp = 0.5;
   pid_z.ki = 0.0;
   pid_z.kd = 0.0;
-  pid_z.min_sat = -2.0;
-  pid_z.max_sat = 2.0;
-  pid_z.min_wind = -2.0;
-  pid_z.max_wind = 2.0;
+  pid_z.min_sat = -0.5;
+  pid_z.max_sat = 0.5;
+  pid_z.min_wind = -0.5;
+  pid_z.max_wind = 0.5;
 
   grvc::ual::PIDParams pid_yaw;
   pid_yaw.kp = 0.4;
   pid_yaw.ki = 0.02;
   pid_yaw.kd = 0.0;
-  pid_yaw.min_sat = -2.0;
-  pid_yaw.max_sat = 2.0;
-  pid_yaw.min_wind = -2.0;
-  pid_yaw.max_wind = 2.0;
+  pid_yaw.min_sat = -0.5;
+  pid_yaw.max_sat = 0.5;
+  pid_yaw.min_wind = -0.5;
+  pid_yaw.max_wind = 0.5;
   pid_yaw.is_angular = true;
 
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
@@ -392,14 +392,17 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
     if (extinguish_ground_fire_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
       extinguish_ground_fire_server_.setPreempted();
-      return;
+      break;
     }
     ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
     // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
 
     const float release_height = 1.5;
+    geometry_msgs::PoseStamped fire_pose;
+    fire_pose.header = matched_candidate_.header;
+    fire_pose.pose = matched_candidate_.pose.pose;
     geometry_msgs::PoseStamped error_pose;
-    tf2::doTransform(matched_candidate_.pose.pose, error_pose.pose, camera_to_gripper);
+    tf2::doTransform(fire_pose, error_pose, camera_to_gripper);
     error_pose.header.stamp = ros::Time::now();
     //error_pose.header.frame_id = tf_prefix_ + "/gripper_link";
     // TODO: Get fire orientation
@@ -432,7 +435,7 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
         release_blanket_client.call(trigger);
         ual_->setPose(ual_->pose());
         extinguish_ground_fire_server_.setSucceeded(result);
-        return;
+        break;
       }
       error_pose.pose.position.z = z_error * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
       // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
@@ -454,5 +457,11 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
     ual_->setVelocity(velocity);
 
     loop_rate.sleep();
+  }
+
+  set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_STOP_TRACKING;
+  set_detection_srv.request.visualize = true;
+  if (!set_detection_client.call(set_detection_srv)) {
+    ROS_ERROR("Failed to call set detection service");
   }
 }
