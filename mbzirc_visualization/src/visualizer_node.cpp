@@ -113,7 +113,7 @@ Visualizer::Visualizer()
 
     object_sub_ = nh.subscribe(object_topic, 1, &Visualizer::objectsReceived, this);
 
-    arena_pub_ = nh.advertise<visualization_msgs::Marker>("mbzirc_markers/scenario", 0);
+    arena_pub_ = nh.advertise<visualization_msgs::Marker>("mbzirc_markers/arena", 0);
     uavs_pub_ = nh.advertise<visualization_msgs::MarkerArray>("mbzirc_markers/uavs", 0);
     sensed_pub_ = nh.advertise<visualization_msgs::MarkerArray>("mbzirc_markers/object_detections", 1);
     objects_pub_ = nh.advertise<visualization_msgs::MarkerArray>("mbzirc_markers/objects", 1);
@@ -181,7 +181,7 @@ std_msgs::ColorRGBA Visualizer::getColor(int color)
         break;
         default:
         col.r = 0.0;
-        col.g = 0.0;
+        col.g = 1.0;
         col.b = 0.0;
         break;
     }
@@ -376,8 +376,6 @@ void Visualizer::publishMarkers()
                     marker.pose.position.x += 1.0;
                     marker.pose.position.y += 1.0;
                     marker.pose.position.z += 1.0;
-                    marker.scale.x = 1.0;
-                    marker.scale.y = 1.0;
                     marker.scale.z = 1.0;
 
                     // white
@@ -440,7 +438,7 @@ void Visualizer::publishMarkers()
 
                 a = sqrt(fabs(w[0]));
                 b = sqrt(fabs(w[1]));
-                c = 4*obj.pose.covariance[14];
+                c = obj.pose.covariance[14];
                 cov_yaw = atan2(v[1],v[0]);        
             }
             
@@ -464,28 +462,6 @@ void Visualizer::publishMarkers()
 
             object_markers.markers.push_back(marker);
 
-            // Plot object ID
-            marker.ns = "object_id" + obj.type;
-            marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-            
-            if(obj.type == Object::TYPE_PILE)
-                marker.text = "P ";
-            else if(obj.type == Object::TYPE_WALL)
-                marker.text = "W ";
-            else if(obj.type == Object::TYPE_FIRE)
-                marker.text = "F ";
-            else if(obj.type == Object::TYPE_PASSAGE)
-                marker.text = "PS ";
-
-            marker.text += to_string(obj.id);
-     
-            marker.pose.position.x += 1.0;
-            marker.pose.position.y += 1.0;
-            marker.pose.position.z += 1.0;    
-            marker.scale.z = 1.0;
-                
-            object_markers.markers.push_back(marker);
-
             if(obj.type == Object::TYPE_PILE || obj.type == Object::TYPE_WALL || obj.type == Object::TYPE_PASSAGE )
             {
                 // Plot orientation
@@ -498,6 +474,32 @@ void Visualizer::publishMarkers()
                     
                 object_markers.markers.push_back(marker);
             }
+
+            // Plot object ID
+            marker.ns = "object_id" + obj.type;
+            marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+            
+            if(obj.type == Object::TYPE_PILE)
+                marker.text = "P";
+            else if(obj.type == Object::TYPE_WALL)
+                marker.text = "W";
+            else if(obj.type == Object::TYPE_FIRE)
+                marker.text = "F";
+            else if(obj.type == Object::TYPE_PASSAGE)
+                marker.text = "PS";
+
+            marker.text += to_string(obj.id);
+     
+            marker.pose.position.x += 1.0;
+            marker.pose.position.y += 1.0;
+            marker.pose.position.z += 1.0;    
+            marker.scale.z = 1.0;
+
+            marker.color.r = 1.0;
+            marker.color.g = 1.0;
+            marker.color.b = 1.0; 
+                
+            object_markers.markers.push_back(marker);
         }
 
         objects_pub_.publish(object_markers);
@@ -513,13 +515,20 @@ int main(int argc, char** argv)
     Visualizer vis; 
 
     ros::Rate loop(30);
-
-    vis.publishArena();
+    int cont = 0;
 
     while(ros::ok())
     {
         ros::spinOnce();
         vis.publishMarkers();
+
+        cont++;
+        if(cont == 30)
+        {
+            vis.publishArena();
+            cont = 0;
+        }
+
         loop.sleep();
     }
 }
