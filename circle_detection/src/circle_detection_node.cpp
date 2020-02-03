@@ -99,7 +99,7 @@ publish_debug_images_(false),
 publish_debug_marker_(false),
 has_camera_info(false),
 depth_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/aligned_depth_to_color/image_raw", 1),
-color_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/color/image_raw", 1),
+color_image_sub_(nh_, robot_ns + "_" + std::to_string(uav_id) + "/camera/color/image_rect_color", 1),
 sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
 {
     // Read parameters
@@ -224,6 +224,7 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
             get3DPointCameraModel(circle_center_3D, circle_center_depth, center.y, center.x);
             if (publish_debug_marker_)
             {
+                circle_center_marker_.header.stamp = color_img_ptr->header.stamp;
                 circle_center_marker_.pose.position = circle_center_3D;
                 circle_center_marker_pub_.publish(circle_center_marker_);
             }
@@ -264,7 +265,7 @@ int main(int argc, char** argv)
     std::string robot_ns;
     int uav_id;
 
-    ros::param::param<std::string>("robot_ns", robot_ns, "mbzirc_2020");
+    ros::param::param<std::string>("robot_ns", robot_ns, "mbzirc2020");
     ros::param::param<int>("uav_id", uav_id, 1);
     CircleDetector circle_detector(robot_ns, uav_id);
 
