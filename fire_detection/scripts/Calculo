@@ -1,0 +1,25 @@
+TOpic raw_temp_array => eje x - 32 
+			eje y - 32
+      ptat => data 
+
+      rgb_image => 
+
+
+/teraranger_evo_thermal/raw_temp_array (std_msgs/Float64MultiArray)
+Provides an array of thermal value
+
+/teraranger_evo_thermal/rgb_image (sensor_msgs/Image)
+Provide a color mapped image of sensor output
+
+/teraranger_evo_thermal/ptat (std_msgs/Float64)
+Provide the internal temperature of the sensor
+
+
+
+[label: "x-axis"
+size: 32
+stride: 1, 
+label: "y-axis"
+size: 32
+stride: 1]
+

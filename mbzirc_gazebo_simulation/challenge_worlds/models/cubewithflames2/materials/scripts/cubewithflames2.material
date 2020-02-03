@@ -1,0 +1,38 @@
+material fireflame
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.7 0.1 0.1 1.000000
+
+      texture_unit
+      {
+        texture fireflame.png
+        scale 0.008 0.008
+        
+      }
+    }
+  }
+}
+
+material building_floor
+{
+  receive_shadows on
+
+  technique
+  {
+    pass
+    {
+      ambient 0.5 0.5 0.5 1.000000
+
+      texture_unit
+      {
+        texture building_floor.jpg
+        scale 0.08 0.08
+      }
+    }
+  }
+}
