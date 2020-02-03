@@ -2,12 +2,13 @@
 <sdf version='1.6'>
 <model name="single_red_brick">
   <link name="Red_brick_random_link">
+  <pose frame=''>0 0 0.1 0 -0 0</pose>
         <inertial> 
 		  <mass>1</mass>
           <inertia> 
-			<ixx>${(1.0/12.0)*1*(pow(0.2,2)+pow(0.2,2))}</ixx> <ixy>0</ixy> 
-			<ixz>0</ixz> <iyy>${(1.0/12.0)*1*(pow(0.3,2)+pow(0.2,2))}</iyy> 
-			<iyz>0</iyz> <izz>${(1.0/12.0)*1*(pow(0.3,2)+pow(0.2,2))}</izz> 
+			<ixx>0.01083330</ixx> <ixy>0</ixy> 
+			<ixz>0</ixz> <iyy>0.00666667</iyy> 
+			<iyz>0</iyz> <izz>0.01083330</izz> 
 		  </inertia>
         </inertial>
     <visual name="visual">
@@ -18,18 +19,40 @@
 		</script> 
 	  </material>
       <geometry>
-        <mesh>
+        <!-- <mesh>
             <uri>model://single_red_brick/meshes/Brick_RibShape_Red_redux.stl</uri>
             <scale>0.01 0.01 0.01</scale>
-        </mesh>
+        </mesh> -->
+        <box>
+                  <size>0.2 0.3 0.2</size>
+                </box>
       </geometry>
     </visual>
+
+    <visual name="visual FM plate">
+            <pose>0 0 0.1 0 -0 0</pose>
+		      <material> 
+			    <script>
+				  <uri>gazebo.material</uri>
+				  <name>Gazebo/White</name>
+			    </script> 
+		      </material>
+              <geometry>
+                <box>
+                  <size>0.150 0.200 0.001</size>
+                </box>
+              </geometry>
+            </visual>
+
     <collision name="collision">
       <geometry>
-        <mesh>
+        <!-- <mesh>
             <uri>model://single_red_brick/meshes/Brick_RibShape_Red_redux.stl</uri>
             <scale>0.01 0.01 0.01</scale>
-        </mesh>
+        </mesh> -->
+                <box>
+                  <size>0.2 0.3 0.2</size>
+                </box>
       </geometry>
     </collision>
   </link>

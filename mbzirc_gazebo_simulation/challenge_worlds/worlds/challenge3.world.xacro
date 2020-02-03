@@ -54,11 +54,11 @@
 <xacro:property name="f6d" value="${[(f6dp[0]-b[0])*cos(b[3])-(f6dp[1]-b[1])*sin(b[3])+b[0],(f6dp[0]-b[0])*sin(b[3])+(f6dp[1]-b[1])*cos(b[3])+b[1],f6dp[2],f6dp[3]+b[3]]}"/>
 
 
-<xacro:property name="f7" value="${[15,10,0,0]}"/>
-<xacro:property name="f8" value="${[20,40,0,-1.570795]}"/>
+<xacro:property name="f7" value="${[30,10,0,0]}"/>
+<xacro:property name="f8" value="${[10,40,0,-1.570795]}"/>
  
-<xacro:property name="b" value="${[30,25,0,0]}"/> 
-<xacro:property name="g" value="${[30,25,0,0]}"/> 
+<xacro:property name="b" value="${[20,23,0,0]}"/> 
+<xacro:property name="g" value="${[25,30,0,0]}"/> 
 
 <!-- 4.7124 -->
 
