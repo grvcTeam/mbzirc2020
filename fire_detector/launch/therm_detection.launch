@@ -8,11 +8,11 @@
     <!-- NODE  -->
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
     <!-- Fire and sampling -->
-	<param name="thermal_threshold" value="70" />
+	<param name="thermal_threshold" value="60" />
     <param name="sampling" value="24" />
     <!-- Laser angle amplitude: 1 grade = 4 point -->
     <!-- Incrementing 1 grade means an arc of 2 grades -->
-    <param name="angle_amplitude" value="8" />
+    <param name="angle_amplitude" value="20" />
     
     <!-- Covariance -->
     <param name="covariance_x" value="1.5"/>
@@ -22,10 +22,10 @@
     <param name="camera_config" value="FORWARD"/>
     <!-- Topic name list -->
     <!-- Subscribers -->
-    <param name="Position_topic" value="ual/pose"/>
+    <param name="Position_topic" value="$(arg prefix)_$(arg uav_id)/ual/pose"/>
     <param name="Laser_topic" value="$(arg prefix)_$(arg uav_id)/scan"/>
-    <param name="Temp_topic" value="teraranger_evo_thermal/raw_temp_array"/>
-    <param name="RGB_image_topic" value="teraranger_evo_thermal/rgb_image"/>
+    <param name="Temp_topic" value="$(arg prefix)_$(arg uav_id)/teraranger_evo_thermal/raw_temp_array"/>
+    <param name="RGB_image_topic" value="$(arg prefix)_$(arg uav_id)/teraranger_evo_thermal/rgb_image"/>
     <!-- Publishers -->
     <param name="Advertise_topic" value="$(arg prefix)_$(arg uav_id)/thermal_camera"/>
     <param name="Detection_list_topic" value="$(arg prefix)_$(arg uav_id)/fire_detection"/>

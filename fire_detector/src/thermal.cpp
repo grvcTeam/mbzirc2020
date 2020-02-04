@@ -110,7 +110,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
     for (i=0;i<(angle_amplitude*2);i++)
     {
         if (msg.ranges[initial+i]>range_min and msg.ranges[initial+i]<range_max){
-            laser_measurement=msg.ranges[320+i]+laser_measurement;
+            laser_measurement=msg.ranges[initial+i]+laser_measurement;
             cuentas=cuentas+1;
         }
     }
