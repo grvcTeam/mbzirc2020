@@ -1,28 +1,32 @@
 <?xml version="1.0"?>
 <launch>
     <!-- UAV id -->
-    <arg name="uav_id"              default="1" />
+    <arg name="uav_id"                  default="1" />
+
+    <!-- Debug viewer -->
+    <arg name="debug"                   default="false" />
 
     <!-- Fire and sampling -->
-    <arg name="thermal_threshold"   default="60" />
+    <arg name="thermal_threshold"       default="60" />
     <!-- Laser angle amplitude: 1 grade = 4 point -->
     <!-- Incrementing 1 grade means an arc of 2 grades -->
-    <arg name="angle_amplitude"     default="20" />
+    <arg name="angle_amplitude"         default="20" />
     <!-- Covariance -->
-    <arg name="covariance_x"        default="1.5"/>
-    <arg name="covariance_y"        default="1.5"/>
-    <arg name="covariance_z"        default="0.5"/>
+    <arg name="covariance_x"            default="1.5"/>
+    <arg name="covariance_y"            default="1.5"/>
+    <arg name="covariance_z"            default="0.5"/>
     <!-- Camera pointing direction: FORWARD/DOWNWARD -->
-    <arg name="camera_config"       default="FORWARD"/>
+    <arg name="camera_config"           default="FORWARD"/>
 
     <!-- NODE  -->
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-        <param name="angle_amplitude"       type="int"         value="$(arg angle_amplitude)" />
-        <param name="uav_id"                type="int"         value="$(arg uav_id)" />
-        <param name="thermal_threshold"     type="int"         value="$(arg thermal_threshold)" />
-        <param name="camera_config"         type="string"      value="$(arg camera_config)"/>
-        <param name="covariance_x"          type="string"      value="$(arg covariance_x)"/>
-        <param name="covariance_y"          type="string"      value="$(arg covariance_y)"/>
-        <param name="covariance_z"          type="string"      value="$(arg covariance_z)"/>
+        <param name="angle_amplitude"   value="$(arg angle_amplitude)" />
+        <param name="debug"             value="$(arg debug)"/>
+        <param name="camera_config"     value="$(arg camera_config)"/>
+        <param name="covariance_x"      value="$(arg covariance_x)"/>
+        <param name="covariance_y"      value="$(arg covariance_y)"/>
+        <param name="covariance_z"      value="$(arg covariance_z)"/>
+        <param name="thermal_threshold" value="$(arg thermal_threshold)" />
+        <param name="uav_id"            value="$(arg uav_id)" />
 	</node>
 </launch>

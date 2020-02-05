@@ -19,14 +19,13 @@ using namespace std;
 using namespace cv;
 
 int z=0;
-int last_detection=0;
-int detection=0;
 int maxim;
 float temp_matrix[32][32];
 float x_pose, y_pose, z_pose;
 float yaw;
 float laser_measurement;
 string uav_id;
+bool debug;
 
 geometry_msgs::PoseStamped pos;
 std_msgs::Header header_pose;
@@ -118,6 +117,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     int thermal_threshold;
     float sigma_x,sigma_y,sigma_z;
     string mode;
+    bool detection=false;
     t.getParam("thermal/thermal_threshold",thermal_threshold);
     t.getParam("thermal/covariance_x",sigma_x);
     t.getParam("thermal/covariance_y",sigma_y);
@@ -222,34 +222,41 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                 }
             }
         }
-        // Displaying images on screen 
-        string nombre="Thermal";
-        cv::namedWindow(nombre);
-        cv::rotate(cv_ptr->image,cv_ptr->image,cv::ROTATE_180);
-        cv::imshow(nombre,cv_ptr->image);
 
-        string nombre_dos="B&W";
-        cv::namedWindow(nombre_dos);
-        cv::moveWindow(nombre_dos,565,0);
-        cv::flip(image_color,image_color,0);
-        cv::rotate(image_color,image_color,cv::ROTATE_90_COUNTERCLOCKWISE);
-        cv::imshow(nombre_dos, image_color);
-        cv::waitKey(3);
+        if (debug)
+        {
+            // Displaying images on screen 
+            string nombre="Thermal";
+            cv::namedWindow(nombre);
+            cv::rotate(cv_ptr->image,cv_ptr->image,cv::ROTATE_180);
+            cv::imshow(nombre,cv_ptr->image);
+
+            string nombre_dos="B&W";
+            cv::namedWindow(nombre_dos);
+            cv::moveWindow(nombre_dos,565,0);
+            cv::flip(image_color,image_color,0);
+            cv::rotate(image_color,image_color,cv::ROTATE_90_COUNTERCLOCKWISE);
+            cv::imshow(nombre_dos, image_color);
+            cv::waitKey(3);
+        }
 
         // COnverting image to msg 
         header = msg->header; 
         img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC3, image_color);
         pub.publish(img_bridge.toImageMsg());
         // Publish when a fire is detected
-        if (detection==1)
+        if (detection)
         {
-            // If a fire is detected
-            cout<<"Fire_detected"<<endl;
-            std::string x_dis = std::to_string(x_comp);
-            std::string y_dis = std::to_string(y_comp);
-            // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
-            cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
-            last_detection=last_detection+1;
+            if(debug)
+            {
+                // If a fire is detected
+                cout<<"Fire_detected"<<endl;
+                std::string x_dis = std::to_string(x_comp);
+                std::string y_dis = std::to_string(y_comp);
+                // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
+                cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
+            }
+
             rec_object.header.stamp = ros::Time::now();
             rec_object.header.frame_id = header_pose.frame_id;
             // rec_object.agent_id = uav_id;
@@ -295,17 +302,14 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             rec_list.stamp = ros::Time::now();
             rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
-            detection=0;
-            last_detection=detection;
         }
         else 
         {
-            last_detection=0;
-            cout<<"."<<endl;
+            if(debug)
+            {
+                cout<<"."<<endl;
+            }
         }
-        last_detection=detection;
-        
-
     }
     catch (cv_bridge::Exception& e)
     {
@@ -326,7 +330,8 @@ int main(int argc, char **argv)
     ros::Subscriber sub_dos = n.subscribe("teraranger_evo_thermal/rgb_image",10,image_operations);
     ros::Subscriber sub_tres = n.subscribe("ual/pose",10,ual_to_fire_position);
     ros::Subscriber sub_cuatro = n.subscribe("scan",10,laser_measures);
-   
+    n.getParam("thermal/debug",debug);    
+
     pub = n.advertise<sensor_msgs::Image>("thermal_camera", 10);
     pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_detection",10);
     ros::spin();
