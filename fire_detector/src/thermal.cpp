@@ -321,24 +321,15 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
 // Routine to read data from teraranger topics and ual pose
 int main(int argc, char **argv)
 {
-    float thermal_thres;
-    string Position_topic,Laser_topic,Temp_topic,RGB_image_topic,Advertise_topic,Detection_list_topic;
     ros::init(argc,argv,"Thermal_cam");
     ros::NodeHandle n;
-    n.getParam("/thermal/Position_topic",Position_topic);
-    n.getParam("/thermal/Laser_topic",Laser_topic);
-    n.getParam("/thermal/Temp_topic",Temp_topic);
-    n.getParam("/thermal/RGB_image_topic",RGB_image_topic);
-    n.getParam("/thermal/Advertise_topic",Advertise_topic);
-    n.getParam("/thermal/Detection_list_topic",Detection_list_topic);
-    n.getParam("/thermal/uav_id",uav_id);
 
-    ros::Subscriber sub = n.subscribe(Temp_topic,10,thermal_data);
-    ros::Subscriber sub_dos = n.subscribe(RGB_image_topic,10,image_operations);
-    ros::Subscriber sub_tres = n.subscribe(Position_topic,10,ual_to_fire_position);
-    ros::Subscriber sub_cuatro = n.subscribe(Laser_topic,10,laser_measures);
+    ros::Subscriber sub = n.subscribe("teraranger_evo_thermal/raw_temp_array",10,thermal_data);
+    ros::Subscriber sub_dos = n.subscribe("teraranger_evo_thermal/rgb_image",10,image_operations);
+    ros::Subscriber sub_tres = n.subscribe("ual/pose",10,ual_to_fire_position);
+    ros::Subscriber sub_cuatro = n.subscribe("scan",10,laser_measures);
    
-    pub = n.advertise<sensor_msgs::Image>(Advertise_topic, 10);
-    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>(Detection_list_topic,10);
+    pub = n.advertise<sensor_msgs::Image>("thermal_camera", 10);
+    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_detection",10);
     ros::spin();
 }

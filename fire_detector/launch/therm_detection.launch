@@ -1,45 +1,29 @@
 <?xml version="1.0"?>
 <launch>
     <!-- UAV id -->
-    <arg name="uav_id" default="1" />
+    <arg name="uav_id"              default="1" />
 
     <!-- Fire and sampling -->
-    <arg name="thermal_threshold" default="60" />
-    <arg name="sampling" default="24" />
+    <arg name="thermal_threshold"   default="60" />
+    <arg name="sampling"            default="24" />
     <!-- Laser angle amplitude: 1 grade = 4 point -->
     <!-- Incrementing 1 grade means an arc of 2 grades -->
-    <arg name="angle_amplitude" default="20" />
+    <arg name="angle_amplitude"     default="20" />
     <!-- Covariance -->
-    <arg name="covariance_x" default="1.5"/>
-    <arg name="covariance_y" default="1.5"/>
-    <arg name="covariance_z" default="0.5"/>
+    <arg name="covariance_x"        default="1.5"/>
+    <arg name="covariance_y"        default="1.5"/>
+    <arg name="covariance_z"        default="0.5"/>
     <!-- Camera pointing direction: FORWARD/DOWNWARD -->
-    <arg name="camera_config" default="FORWARD"/>
+    <arg name="camera_config"       default="FORWARD"/>
 
     <!-- NODE  -->
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-        <!-- Fire and sampling -->
-        <param name="thermal_threshold"     type="int"      value="$(arg thermal_threshold)" />
-        <param name="sampling"              type="int"      value="$(arg sampling)" />
-        <!-- Laser angle amplitude: 1 grade = 4 point -->
-        <!-- Incrementing 1 grade means an arc of 2 grades -->
-        <param name="angle_amplitude"       type="int"      value="$(arg angle_amplitude)" />
-        
-        <!-- Covariance -->
+        <param name="thermal_threshold"     type="int"         value="$(arg thermal_threshold)" />
+        <param name="sampling"              type="int"         value="$(arg sampling)" />
+        <param name="angle_amplitude"       type="int"         value="$(arg angle_amplitude)" />
         <param name="covariance_x"          type="string"      value="$(arg covariance_x)"/>
         <param name="covariance_y"          type="string"      value="$(arg covariance_y)"/>
         <param name="covariance_z"          type="string"      value="$(arg covariance_z)"/>
-        <!-- Camera pointing direction: FORWARD/DOWNWARD -->
         <param name="camera_config"         type="string"      value="$(arg camera_config)"/>
-
-        <!-- Topic name list -->
-        <!-- Subscribers -->
-        <param name="Position_topic"        type="string"   value="ual/pose"/>
-        <param name="Laser_topic"           type="string"   value="scan"/>
-        <param name="Temp_topic"            type="string"   value="teraranger_evo_thermal/raw_temp_array"/>
-        <param name="RGB_image_topic"       type="string"   value="teraranger_evo_thermal/rgb_image"/>
-        <!-- Publishers -->
-        <param name="Advertise_topic"       type="string"   value="thermal_camera"/>
-        <param name="Detection_list_topic"  type="string"   value="fire_detection"/>
 	</node>
 </launch>
