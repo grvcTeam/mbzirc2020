@@ -333,6 +333,6 @@ int main(int argc, char **argv)
     n.getParam("thermal/debug",debug);    
 
     pub = n.advertise<sensor_msgs::Image>("thermal_camera", 10);
-    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("fire_detection",10);
+    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",10);
     ros::spin();
 }
