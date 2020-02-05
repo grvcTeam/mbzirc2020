@@ -1,30 +1,22 @@
 #include <ros/ros.h>
+#include <vector>
+#include <math.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
+
 #include <std_msgs/String.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
-#include <std_msgs/MultiArrayDimension.h>
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <image_transport/image_transport.h>
-#include <iostream>
-#include <stdint.h>
-#include <vector>
-using namespace std;
-using namespace cv;
-#include <mbzirc_comm_objs/ObjectDetection.h>
-#include <mbzirc_comm_objs/ObjectDetectionList.h>
-#include <mbzirc_comm_objs/DetectTypes.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <math.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+#include <mbzirc_comm_objs/ObjectDetection.h>
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+using namespace std;
+using namespace cv;
 
 int detection_sampling=0;
 int z=0;
