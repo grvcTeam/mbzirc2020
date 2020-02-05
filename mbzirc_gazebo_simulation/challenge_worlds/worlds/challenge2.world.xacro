@@ -21,6 +21,7 @@
 <!-- UAV BRICKS Location -->
 <!-- Change "basebrick" to modify location and yaw for the entire pile-->
 <xacro:property name="basebrick" value="${[15,30,0,0]}"/>
+
 <xacro:property name="red01p" value="${[basebrick[0]+1.17,basebrick[1]-3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red01" value="${[(red01p[0]-basebrick[0])*cos(basebrick[3])-(red01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red01p[0]-basebrick[0])*sin(basebrick[3])+(red01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red01p[2],red01p[3]+basebrick[3]]}"/>
 <xacro:property name="red02p" value="${[basebrick[0]+1.17,basebrick[1]-2.5,basebrick[2]+0.03,0]}"/>
@@ -83,6 +84,7 @@
 <!-- WALL 2 Location-->
 <!-- Change "dropwall_center" to modify location and yaw -->
 <xacro:property name="dropwall_center" value="${[40,30,0,0]}"/>
+
 <xacro:property name="dropwall01p" value="${[dropwall_center[0]-0.9,dropwall_center[1]+1.2,dropwall_center[2],1.570795]}"/>
 <xacro:property name="dropwall01" value="${[(dropwall01p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall01p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall01p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall01p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall01p[2],dropwall01p[3]+dropwall_center[3]]}"/>
 <xacro:property name="dropwall02p" value="${[dropwall_center[0]+0,dropwall_center[1]+0,dropwall_center[2],0.0]}"/>
@@ -94,6 +96,7 @@
 <!-- UGV Bricks Location-->
 <!-- Change ugvbricks to modify location and yaw for the entire pile-->
 <xacro:property name="ugvbricks" value="${[15,15,0,0]}"/>
+
 <xacro:property name="ugv_orange_centerp" value="${[ugvbricks[0],ugvbricks[1]-3.1,ugvbricks[2],0]}"/>
 <xacro:property name="ugv_orange_center" value="${[(ugv_orange_centerp[0]-ugvbricks[0])*cos(ugvbricks[3])-(ugv_orange_centerp[1]-ugvbricks[1])*sin(ugvbricks[3])+ugvbricks[0],(ugv_orange_centerp[0]-ugvbricks[0])*sin(ugvbricks[3])+(ugv_orange_centerp[1]-ugvbricks[1])*cos(ugvbricks[3])+ugvbricks[1],ugv_orange_centerp[2],ugv_orange_centerp[3]+ugvbricks[3]]}"/>
 <xacro:property name="ugv_blue_centerp" value="${[ugvbricks[0],ugvbricks[1]+0.6,ugvbricks[2],0]}"/>
@@ -222,78 +225,502 @@
     <!-- Y'= X*sin(yaw)+Y*cos(yaw)  -->
 
     <!-- UAV BRICKS -->
-    <single_red_brick id="Red_brick_01" pose="${red01[0]*cos(yaw)-red01[1]*sin(yaw)} ${red01[0]*sin(yaw)+red01[1]*cos(yaw)} ${red01[2]} 0 0 ${red01[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_02" pose="${red02[0]*cos(yaw)-red02[1]*sin(yaw)} ${red02[0]*sin(yaw)+red02[1]*cos(yaw)} ${red02[2]} 0 0 ${red02[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_03" pose="${red03[0]*cos(yaw)-red03[1]*sin(yaw)} ${red03[0]*sin(yaw)+red03[1]*cos(yaw)} ${red03[2]} 0 0 ${red03[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_04" pose="${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_05" pose="${red05[0]*cos(yaw)-red05[1]*sin(yaw)} ${red05[0]*sin(yaw)+red05[1]*cos(yaw)} ${red05[2]} 0 0 ${red05[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_06" pose="${red06[0]*cos(yaw)-red06[1]*sin(yaw)} ${red06[0]*sin(yaw)+red06[1]*cos(yaw)} ${red06[2]} 0 0 ${red06[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_07" pose="${red07[0]*cos(yaw)-red07[1]*sin(yaw)} ${red07[0]*sin(yaw)+red07[1]*cos(yaw)} ${red07[2]} 0 0 ${red07[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_08" pose="${red08[0]*cos(yaw)-red08[1]*sin(yaw)} ${red08[0]*sin(yaw)+red08[1]*cos(yaw)} ${red08[2]} 0 0 ${red08[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_09" pose="${red09[0]*cos(yaw)-red09[1]*sin(yaw)} ${red09[0]*sin(yaw)+red09[1]*cos(yaw)} ${red09[2]} 0 0 ${red09[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_20" pose="${red20[0]*cos(yaw)-red20[1]*sin(yaw)} ${red20[0]*sin(yaw)+red20[1]*cos(yaw)} ${red20[2]} 0 0 ${red20[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_21" pose="${red21[0]*cos(yaw)-red21[1]*sin(yaw)} ${red21[0]*sin(yaw)+red21[1]*cos(yaw)} ${red21[2]} 0 0 ${red21[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_22" pose="${red22[0]*cos(yaw)-red22[1]*sin(yaw)} ${red22[0]*sin(yaw)+red22[1]*cos(yaw)} ${red22[2]} 0 0 ${red22[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_23" pose="${red23[0]*cos(yaw)-red23[1]*sin(yaw)} ${red23[0]*sin(yaw)+red23[1]*cos(yaw)} ${red23[2]} 0 0 ${red23[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_blue_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_02" pose="${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_green_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_02" pose="${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_03" pose="${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_04" pose="${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_04" pose="${green05[0]*cos(yaw)-green05[1]*sin(yaw)} ${green05[0]*sin(yaw)+green05[1]*cos(yaw)} ${green05[2]} 0 0 ${green05[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_04" pose="${green06[0]*cos(yaw)-green06[1]*sin(yaw)} ${green06[0]*sin(yaw)+green06[1]*cos(yaw)} ${green06[2]} 0 0 ${green06[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_04" pose="${green07[0]*cos(yaw)-green07[1]*sin(yaw)} ${green07[0]*sin(yaw)+green07[1]*cos(yaw)} ${green07[2]} 0 0 ${green07[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_orange_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_02" pose="${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" />
+    <!-- <single_red_brick id="Red_brick_01" pose="${red01[0]*cos(yaw)-red01[1]*sin(yaw)} ${red01[0]*sin(yaw)+red01[1]*cos(yaw)} ${red01[2]} 0 0 ${red01[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_01">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red01[0]*cos(yaw)-red01[1]*sin(yaw)} ${red01[0]*sin(yaw)+red01[1]*cos(yaw)} ${red01[2]} 0 0 ${red01[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_02" pose="${red02[0]*cos(yaw)-red02[1]*sin(yaw)} ${red02[0]*sin(yaw)+red02[1]*cos(yaw)} ${red02[2]} 0 0 ${red02[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_02">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red02[0]*cos(yaw)-red02[1]*sin(yaw)} ${red02[0]*sin(yaw)+red02[1]*cos(yaw)} ${red02[2]} 0 0 ${red02[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_03" pose="${red03[0]*cos(yaw)-red03[1]*sin(yaw)} ${red03[0]*sin(yaw)+red03[1]*cos(yaw)} ${red03[2]} 0 0 ${red03[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_03">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red03[0]*cos(yaw)-red03[1]*sin(yaw)} ${red03[0]*sin(yaw)+red03[1]*cos(yaw)} ${red03[2]} 0 0 ${red03[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_04" pose="${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_04">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red04[0]*cos(yaw)-red04[1]*sin(yaw)} ${red04[0]*sin(yaw)+red04[1]*cos(yaw)} ${red04[2]} 0 0 ${red04[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_05" pose="${red05[0]*cos(yaw)-red05[1]*sin(yaw)} ${red05[0]*sin(yaw)+red05[1]*cos(yaw)} ${red05[2]} 0 0 ${red05[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_05">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red05[0]*cos(yaw)-red05[1]*sin(yaw)} ${red05[0]*sin(yaw)+red05[1]*cos(yaw)} ${red05[2]} 0 0 ${red05[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_06" pose="${red06[0]*cos(yaw)-red06[1]*sin(yaw)} ${red06[0]*sin(yaw)+red06[1]*cos(yaw)} ${red06[2]} 0 0 ${red06[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_06">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red06[0]*cos(yaw)-red06[1]*sin(yaw)} ${red06[0]*sin(yaw)+red06[1]*cos(yaw)} ${red06[2]} 0 0 ${red06[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_07" pose="${red07[0]*cos(yaw)-red07[1]*sin(yaw)} ${red07[0]*sin(yaw)+red07[1]*cos(yaw)} ${red07[2]} 0 0 ${red07[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_07">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red07[0]*cos(yaw)-red07[1]*sin(yaw)} ${red07[0]*sin(yaw)+red07[1]*cos(yaw)} ${red07[2]} 0 0 ${red07[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_08" pose="${red08[0]*cos(yaw)-red08[1]*sin(yaw)} ${red08[0]*sin(yaw)+red08[1]*cos(yaw)} ${red08[2]} 0 0 ${red08[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_08">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red08[0]*cos(yaw)-red08[1]*sin(yaw)} ${red08[0]*sin(yaw)+red08[1]*cos(yaw)} ${red08[2]} 0 0 ${red08[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_09" pose="${red09[0]*cos(yaw)-red09[1]*sin(yaw)} ${red09[0]*sin(yaw)+red09[1]*cos(yaw)} ${red09[2]} 0 0 ${red09[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_09">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red09[0]*cos(yaw)-red09[1]*sin(yaw)} ${red09[0]*sin(yaw)+red09[1]*cos(yaw)} ${red09[2]} 0 0 ${red09[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_20" pose="${red20[0]*cos(yaw)-red20[1]*sin(yaw)} ${red20[0]*sin(yaw)+red20[1]*cos(yaw)} ${red20[2]} 0 0 ${red20[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_20">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red20[0]*cos(yaw)-red20[1]*sin(yaw)} ${red20[0]*sin(yaw)+red20[1]*cos(yaw)} ${red20[2]} 0 0 ${red20[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_21" pose="${red21[0]*cos(yaw)-red21[1]*sin(yaw)} ${red21[0]*sin(yaw)+red21[1]*cos(yaw)} ${red21[2]} 0 0 ${red21[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_21">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red21[0]*cos(yaw)-red21[1]*sin(yaw)} ${red21[0]*sin(yaw)+red21[1]*cos(yaw)} ${red21[2]} 0 0 ${red21[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_22" pose="${red22[0]*cos(yaw)-red22[1]*sin(yaw)} ${red22[0]*sin(yaw)+red22[1]*cos(yaw)} ${red22[2]} 0 0 ${red22[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_22">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red22[0]*cos(yaw)-red22[1]*sin(yaw)} ${red22[0]*sin(yaw)+red22[1]*cos(yaw)} ${red22[2]} 0 0 ${red22[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_23" pose="${red23[0]*cos(yaw)-red23[1]*sin(yaw)} ${red23[0]*sin(yaw)+red23[1]*cos(yaw)} ${red23[2]} 0 0 ${red23[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_23">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red23[0]*cos(yaw)-red23[1]*sin(yaw)} ${red23[0]*sin(yaw)+red23[1]*cos(yaw)} ${red23[2]} 0 0 ${red23[3]+yaw} </pose>
+    </model>
+
+    <!-- <single_blue_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_01">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_02" pose="${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_02">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue02[0]*cos(yaw)-blue02[1]*sin(yaw)} ${blue02[0]*sin(yaw)+blue02[1]*cos(yaw)} ${blue02[2]} 0 0 ${blue02[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_03" pose="${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_03">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue03[0]*cos(yaw)-blue03[1]*sin(yaw)} ${blue03[0]*sin(yaw)+blue03[1]*cos(yaw)} ${blue03[2]} 0 0 ${blue03[3]+yaw} </pose>
+    </model>    
+    <!-- <single_blue_brick id="Blue_brick_04" pose="${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_04">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw} </pose>
+    </model>
+
+    <!-- <single_green_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_01">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_02" pose="${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_02">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green02[0]*cos(yaw)-green02[1]*sin(yaw)} ${green02[0]*sin(yaw)+green02[1]*cos(yaw)} ${green02[2]} 0 0 ${green02[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_03" pose="${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_03">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green03[0]*cos(yaw)-green03[1]*sin(yaw)} ${green03[0]*sin(yaw)+green03[1]*cos(yaw)} ${green03[2]} 0 0 ${green03[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_04" pose="${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_04">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green04[0]*cos(yaw)-green04[1]*sin(yaw)} ${green04[0]*sin(yaw)+green04[1]*cos(yaw)} ${green04[2]} 0 0 ${green04[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_05" pose="${green05[0]*cos(yaw)-green05[1]*sin(yaw)} ${green05[0]*sin(yaw)+green05[1]*cos(yaw)} ${green05[2]} 0 0 ${green05[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_05">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green05[0]*cos(yaw)-green05[1]*sin(yaw)} ${green05[0]*sin(yaw)+green05[1]*cos(yaw)} ${green05[2]} 0 0 ${green05[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_06" pose="${green06[0]*cos(yaw)-green06[1]*sin(yaw)} ${green06[0]*sin(yaw)+green06[1]*cos(yaw)} ${green06[2]} 0 0 ${green06[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_06">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green06[0]*cos(yaw)-green06[1]*sin(yaw)} ${green06[0]*sin(yaw)+green06[1]*cos(yaw)} ${green06[2]} 0 0 ${green06[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_07" pose="${green07[0]*cos(yaw)-green07[1]*sin(yaw)} ${green07[0]*sin(yaw)+green07[1]*cos(yaw)} ${green07[2]} 0 0 ${green07[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_07">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green07[0]*cos(yaw)-green07[1]*sin(yaw)} ${green07[0]*sin(yaw)+green07[1]*cos(yaw)} ${green07[2]} 0 0 ${green07[3]+yaw} </pose>
+    </model>
+
+    <!-- <single_orange_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_01">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_02" pose="${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_02">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange02[0]*cos(yaw)-orange02[1]*sin(yaw)} ${orange02[0]*sin(yaw)+orange02[1]*cos(yaw)} ${orange02[2]} 0 0 ${orange02[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_03" pose="${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_03">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange03[0]*cos(yaw)-orange03[1]*sin(yaw)} ${orange03[0]*sin(yaw)+orange03[1]*cos(yaw)} ${orange03[2]} 0 0 ${orange03[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_04" pose="${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_04">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange04[0]*cos(yaw)-orange04[1]*sin(yaw)} ${orange04[0]*sin(yaw)+orange04[1]*cos(yaw)} ${orange04[2]} 0 0 ${orange04[3]+yaw} </pose>
+    </model>
+
     <!-- UGV Bricks -->
-    <single_red_brick id="Red_brick_10" pose="${red10[0]*cos(yaw)-red10[1]*sin(yaw)} ${red10[0]*sin(yaw)+red10[1]*cos(yaw)} ${red10[2]} 0 0 ${red10[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_11" pose="${red11[0]*cos(yaw)-red11[1]*sin(yaw)} ${red11[0]*sin(yaw)+red11[1]*cos(yaw)} ${red11[2]} 0 0 ${red11[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_12" pose="${red12[0]*cos(yaw)-red12[1]*sin(yaw)} ${red12[0]*sin(yaw)+red12[1]*cos(yaw)} ${red12[2]} 0 0 ${red12[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_13" pose="${red13[0]*cos(yaw)-red13[1]*sin(yaw)} ${red13[0]*sin(yaw)+red13[1]*cos(yaw)} ${red13[2]} 0 0 ${red13[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_14" pose="${red14[0]*cos(yaw)-red14[1]*sin(yaw)} ${red14[0]*sin(yaw)+red14[1]*cos(yaw)} ${red14[2]} 0 0 ${red14[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_15" pose="${red15[0]*cos(yaw)-red15[1]*sin(yaw)} ${red15[0]*sin(yaw)+red15[1]*cos(yaw)} ${red15[2]} 0 0 ${red15[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_16" pose="${red16[0]*cos(yaw)-red16[1]*sin(yaw)} ${red16[0]*sin(yaw)+red16[1]*cos(yaw)} ${red16[2]} 0 0 ${red16[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_17" pose="${red17[0]*cos(yaw)-red17[1]*sin(yaw)} ${red17[0]*sin(yaw)+red17[1]*cos(yaw)} ${red17[2]} 0 0 ${red17[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_18" pose="${red18[0]*cos(yaw)-red18[1]*sin(yaw)} ${red18[0]*sin(yaw)+red18[1]*cos(yaw)} ${red18[2]} 0 0 ${red18[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_red_brick id="Red_brick_19" pose="${red19[0]*cos(yaw)-red19[1]*sin(yaw)} ${red19[0]*sin(yaw)+red19[1]*cos(yaw)} ${red19[2]} 0 0 ${red19[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" />
-    <single_green_brick id="Green_brick_10" pose="${green10[0]*cos(yaw)-green10[1]*sin(yaw)} ${green10[0]*sin(yaw)+green10[1]*cos(yaw)} ${green10[2]} 0 0 ${green10[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_11" pose="${green11[0]*cos(yaw)-green11[1]*sin(yaw)} ${green11[0]*sin(yaw)+green11[1]*cos(yaw)} ${green11[2]} 0 0 ${green11[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_12" pose="${green12[0]*cos(yaw)-green12[1]*sin(yaw)} ${green12[0]*sin(yaw)+green12[1]*cos(yaw)} ${green12[2]} 0 0 ${green12[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_13" pose="${green13[0]*cos(yaw)-green13[1]*sin(yaw)} ${green13[0]*sin(yaw)+green13[1]*cos(yaw)} ${green13[2]} 0 0 ${green13[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_14" pose="${green14[0]*cos(yaw)-green14[1]*sin(yaw)} ${green14[0]*sin(yaw)+green14[1]*cos(yaw)} ${green14[2]} 0 0 ${green14[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_15" pose="${green15[0]*cos(yaw)-green15[1]*sin(yaw)} ${green15[0]*sin(yaw)+green15[1]*cos(yaw)} ${green15[2]} 0 0 ${green15[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_16" pose="${green16[0]*cos(yaw)-green16[1]*sin(yaw)} ${green16[0]*sin(yaw)+green16[1]*cos(yaw)} ${green16[2]} 0 0 ${green16[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_17" pose="${green17[0]*cos(yaw)-green17[1]*sin(yaw)} ${green17[0]*sin(yaw)+green17[1]*cos(yaw)} ${green17[2]} 0 0 ${green17[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_18" pose="${green18[0]*cos(yaw)-green18[1]*sin(yaw)} ${green18[0]*sin(yaw)+green18[1]*cos(yaw)} ${green18[2]} 0 0 ${green18[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_green_brick id="Green_brick_19" pose="${green19[0]*cos(yaw)-green19[1]*sin(yaw)} ${green19[0]*sin(yaw)+green19[1]*cos(yaw)} ${green19[2]} 0 0 ${green19[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" />
-    <single_blue_brick id="Blue_brick_10" pose="${blue10[0]*cos(yaw)-blue10[1]*sin(yaw)} ${blue10[0]*sin(yaw)+blue10[1]*cos(yaw)} ${blue10[2]} 0 0 ${blue10[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_11" pose="${blue11[0]*cos(yaw)-blue11[1]*sin(yaw)} ${blue11[0]*sin(yaw)+blue11[1]*cos(yaw)} ${blue11[2]} 0 0 ${blue11[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_12" pose="${blue12[0]*cos(yaw)-blue12[1]*sin(yaw)} ${blue12[0]*sin(yaw)+blue12[1]*cos(yaw)} ${blue12[2]} 0 0 ${blue12[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_13" pose="${blue13[0]*cos(yaw)-blue13[1]*sin(yaw)} ${blue13[0]*sin(yaw)+blue13[1]*cos(yaw)} ${blue13[2]} 0 0 ${blue13[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_14" pose="${blue14[0]*cos(yaw)-blue14[1]*sin(yaw)} ${blue14[0]*sin(yaw)+blue14[1]*cos(yaw)} ${blue14[2]} 0 0 ${blue14[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_15" pose="${blue15[0]*cos(yaw)-blue15[1]*sin(yaw)} ${blue15[0]*sin(yaw)+blue15[1]*cos(yaw)} ${blue15[2]} 0 0 ${blue15[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_16" pose="${blue16[0]*cos(yaw)-blue16[1]*sin(yaw)} ${blue16[0]*sin(yaw)+blue16[1]*cos(yaw)} ${blue16[2]} 0 0 ${blue16[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_17" pose="${blue17[0]*cos(yaw)-blue17[1]*sin(yaw)} ${blue17[0]*sin(yaw)+blue17[1]*cos(yaw)} ${blue17[2]} 0 0 ${blue17[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_18" pose="${blue18[0]*cos(yaw)-blue18[1]*sin(yaw)} ${blue18[0]*sin(yaw)+blue18[1]*cos(yaw)} ${blue18[2]} 0 0 ${blue18[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_blue_brick id="Blue_brick_19" pose="${blue19[0]*cos(yaw)-blue19[1]*sin(yaw)} ${blue19[0]*sin(yaw)+blue19[1]*cos(yaw)} ${blue19[2]} 0 0 ${blue19[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" />
-    <single_orange_brick id="Orange_brick_10" pose="${orange10[0]*cos(yaw)-orange10[1]*sin(yaw)} ${orange10[0]*sin(yaw)+orange10[1]*cos(yaw)} ${orange10[2]} 0 0 ${orange10[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_11" pose="${orange11[0]*cos(yaw)-orange11[1]*sin(yaw)} ${orange11[0]*sin(yaw)+orange11[1]*cos(yaw)} ${orange11[2]} 0 0 ${orange11[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_12" pose="${orange12[0]*cos(yaw)-orange12[1]*sin(yaw)} ${orange12[0]*sin(yaw)+orange12[1]*cos(yaw)} ${orange12[2]} 0 0 ${orange12[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_13" pose="${orange13[0]*cos(yaw)-orange13[1]*sin(yaw)} ${orange13[0]*sin(yaw)+orange13[1]*cos(yaw)} ${orange13[2]} 0 0 ${orange13[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_14" pose="${orange14[0]*cos(yaw)-orange14[1]*sin(yaw)} ${orange14[0]*sin(yaw)+orange14[1]*cos(yaw)} ${orange14[2]} 0 0 ${orange14[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_15" pose="${orange15[0]*cos(yaw)-orange15[1]*sin(yaw)} ${orange15[0]*sin(yaw)+orange15[1]*cos(yaw)} ${orange15[2]} 0 0 ${orange15[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_16" pose="${orange16[0]*cos(yaw)-orange16[1]*sin(yaw)} ${orange16[0]*sin(yaw)+orange16[1]*cos(yaw)} ${orange16[2]} 0 0 ${orange16[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_17" pose="${orange17[0]*cos(yaw)-orange17[1]*sin(yaw)} ${orange17[0]*sin(yaw)+orange17[1]*cos(yaw)} ${orange17[2]} 0 0 ${orange17[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_18" pose="${orange18[0]*cos(yaw)-orange18[1]*sin(yaw)} ${orange18[0]*sin(yaw)+orange18[1]*cos(yaw)} ${orange18[2]} 0 0 ${orange18[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
-    <single_orange_brick id="Orange_brick_19" pose="${orange19[0]*cos(yaw)-orange19[1]*sin(yaw)} ${orange19[0]*sin(yaw)+orange19[1]*cos(yaw)} ${orange19[2]} 0 0 ${orange19[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
+    <!-- <single_red_brick id="Red_brick_10" pose="${red10[0]*cos(yaw)-red10[1]*sin(yaw)} ${red10[0]*sin(yaw)+red10[1]*cos(yaw)} ${red10[2]} 0 0 ${red10[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_10">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red10[0]*cos(yaw)-red10[1]*sin(yaw)} ${red10[0]*sin(yaw)+red10[1]*cos(yaw)} ${red10[2]} 0 0 ${red10[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_11" pose="${red11[0]*cos(yaw)-red11[1]*sin(yaw)} ${red11[0]*sin(yaw)+red11[1]*cos(yaw)} ${red11[2]} 0 0 ${red11[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_11">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red11[0]*cos(yaw)-red11[1]*sin(yaw)} ${red11[0]*sin(yaw)+red11[1]*cos(yaw)} ${red11[2]} 0 0 ${red11[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_12" pose="${red12[0]*cos(yaw)-red12[1]*sin(yaw)} ${red12[0]*sin(yaw)+red12[1]*cos(yaw)} ${red12[2]} 0 0 ${red12[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_12">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red12[0]*cos(yaw)-red12[1]*sin(yaw)} ${red12[0]*sin(yaw)+red12[1]*cos(yaw)} ${red12[2]} 0 0 ${red12[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_13" pose="${red13[0]*cos(yaw)-red13[1]*sin(yaw)} ${red13[0]*sin(yaw)+red13[1]*cos(yaw)} ${red13[2]} 0 0 ${red13[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_13">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red13[0]*cos(yaw)-red13[1]*sin(yaw)} ${red13[0]*sin(yaw)+red13[1]*cos(yaw)} ${red13[2]} 0 0 ${red13[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_14" pose="${red14[0]*cos(yaw)-red14[1]*sin(yaw)} ${red14[0]*sin(yaw)+red14[1]*cos(yaw)} ${red14[2]} 0 0 ${red14[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_14">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red14[0]*cos(yaw)-red14[1]*sin(yaw)} ${red14[0]*sin(yaw)+red14[1]*cos(yaw)} ${red14[2]} 0 0 ${red14[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_15" pose="${red15[0]*cos(yaw)-red15[1]*sin(yaw)} ${red15[0]*sin(yaw)+red15[1]*cos(yaw)} ${red15[2]} 0 0 ${red15[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_15">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red15[0]*cos(yaw)-red15[1]*sin(yaw)} ${red15[0]*sin(yaw)+red15[1]*cos(yaw)} ${red15[2]} 0 0 ${red15[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_16" pose="${red16[0]*cos(yaw)-red16[1]*sin(yaw)} ${red16[0]*sin(yaw)+red16[1]*cos(yaw)} ${red16[2]} 0 0 ${red16[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_16">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red16[0]*cos(yaw)-red16[1]*sin(yaw)} ${red16[0]*sin(yaw)+red16[1]*cos(yaw)} ${red16[2]} 0 0 ${red16[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_17" pose="${red17[0]*cos(yaw)-red17[1]*sin(yaw)} ${red17[0]*sin(yaw)+red17[1]*cos(yaw)} ${red17[2]} 0 0 ${red17[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_17">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red17[0]*cos(yaw)-red17[1]*sin(yaw)} ${red17[0]*sin(yaw)+red17[1]*cos(yaw)} ${red17[2]} 0 0 ${red17[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_18" pose="${red18[0]*cos(yaw)-red18[1]*sin(yaw)} ${red18[0]*sin(yaw)+red18[1]*cos(yaw)} ${red18[2]} 0 0 ${red18[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_18">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red18[0]*cos(yaw)-red18[1]*sin(yaw)} ${red18[0]*sin(yaw)+red18[1]*cos(yaw)} ${red18[2]} 0 0 ${red18[3]+yaw} </pose>
+    </model>
+    <!-- <single_red_brick id="Red_brick_19" pose="${red19[0]*cos(yaw)-red19[1]*sin(yaw)} ${red19[0]*sin(yaw)+red19[1]*cos(yaw)} ${red19[2]} 0 0 ${red19[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    <model name="Red_brick_19">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red19[0]*cos(yaw)-red19[1]*sin(yaw)} ${red19[0]*sin(yaw)+red19[1]*cos(yaw)} ${red19[2]} 0 0 ${red19[3]+yaw} </pose>
+    </model>
 
+    <!-- <single_green_brick id="Green_brick_10" pose="${green10[0]*cos(yaw)-green10[1]*sin(yaw)} ${green10[0]*sin(yaw)+green10[1]*cos(yaw)} ${green10[2]} 0 0 ${green10[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_10">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green10[0]*cos(yaw)-green10[1]*sin(yaw)} ${green10[0]*sin(yaw)+green10[1]*cos(yaw)} ${green10[2]} 0 0 ${green10[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_11" pose="${green11[0]*cos(yaw)-green11[1]*sin(yaw)} ${green11[0]*sin(yaw)+green11[1]*cos(yaw)} ${green11[2]} 0 0 ${green11[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_11">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green11[0]*cos(yaw)-green11[1]*sin(yaw)} ${green11[0]*sin(yaw)+green11[1]*cos(yaw)} ${green11[2]} 0 0 ${green11[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_12" pose="${green12[0]*cos(yaw)-green12[1]*sin(yaw)} ${green12[0]*sin(yaw)+green12[1]*cos(yaw)} ${green12[2]} 0 0 ${green12[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_12">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green12[0]*cos(yaw)-green12[1]*sin(yaw)} ${green12[0]*sin(yaw)+green12[1]*cos(yaw)} ${green12[2]} 0 0 ${green12[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_13" pose="${green13[0]*cos(yaw)-green13[1]*sin(yaw)} ${green13[0]*sin(yaw)+green13[1]*cos(yaw)} ${green13[2]} 0 0 ${green13[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_13">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green13[0]*cos(yaw)-green13[1]*sin(yaw)} ${green13[0]*sin(yaw)+green13[1]*cos(yaw)} ${green13[2]} 0 0 ${green13[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_14" pose="${green14[0]*cos(yaw)-green14[1]*sin(yaw)} ${green14[0]*sin(yaw)+green14[1]*cos(yaw)} ${green14[2]} 0 0 ${green14[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_14">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green14[0]*cos(yaw)-green14[1]*sin(yaw)} ${green14[0]*sin(yaw)+green14[1]*cos(yaw)} ${green14[2]} 0 0 ${green14[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_15" pose="${green15[0]*cos(yaw)-green15[1]*sin(yaw)} ${green15[0]*sin(yaw)+green15[1]*cos(yaw)} ${green15[2]} 0 0 ${green15[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_15">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green15[0]*cos(yaw)-green15[1]*sin(yaw)} ${green15[0]*sin(yaw)+green15[1]*cos(yaw)} ${green15[2]} 0 0 ${green15[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_16" pose="${green16[0]*cos(yaw)-green16[1]*sin(yaw)} ${green16[0]*sin(yaw)+green16[1]*cos(yaw)} ${green16[2]} 0 0 ${green16[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_16">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green16[0]*cos(yaw)-green16[1]*sin(yaw)} ${green16[0]*sin(yaw)+green16[1]*cos(yaw)} ${green16[2]} 0 0 ${green16[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_17" pose="${green17[0]*cos(yaw)-green17[1]*sin(yaw)} ${green17[0]*sin(yaw)+green17[1]*cos(yaw)} ${green17[2]} 0 0 ${green17[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_17">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green17[0]*cos(yaw)-green17[1]*sin(yaw)} ${green17[0]*sin(yaw)+green17[1]*cos(yaw)} ${green17[2]} 0 0 ${green17[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_18" pose="${green18[0]*cos(yaw)-green18[1]*sin(yaw)} ${green18[0]*sin(yaw)+green18[1]*cos(yaw)} ${green18[2]} 0 0 ${green18[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_18">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green18[0]*cos(yaw)-green18[1]*sin(yaw)} ${green18[0]*sin(yaw)+green18[1]*cos(yaw)} ${green18[2]} 0 0 ${green18[3]+yaw} </pose>
+    </model>
+    <!-- <single_green_brick id="Green_brick_19" pose="${green19[0]*cos(yaw)-green19[1]*sin(yaw)} ${green19[0]*sin(yaw)+green19[1]*cos(yaw)} ${green19[2]} 0 0 ${green19[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
+    <model name="Green_brick_19">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green19[0]*cos(yaw)-green19[1]*sin(yaw)} ${green19[0]*sin(yaw)+green19[1]*cos(yaw)} ${green19[2]} 0 0 ${green19[3]+yaw} </pose>
+    </model>
 
-    <BaseBricks pose="${basebrick[0]*cos(yaw)-basebrick[1]*sin(yaw)} ${basebrick[0]*sin(yaw)+basebrick[1]*cos(yaw)} ${basebrick[2]} 0 0 ${basebrick[3]+yaw}" />
+    <!-- <single_blue_brick id="Blue_brick_10" pose="${blue10[0]*cos(yaw)-blue10[1]*sin(yaw)} ${blue10[0]*sin(yaw)+blue10[1]*cos(yaw)} ${blue10[2]} 0 0 ${blue10[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_10">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue10[0]*cos(yaw)-blue10[1]*sin(yaw)} ${blue10[0]*sin(yaw)+blue10[1]*cos(yaw)} ${blue10[2]} 0 0 ${blue10[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_11" pose="${blue11[0]*cos(yaw)-blue11[1]*sin(yaw)} ${blue11[0]*sin(yaw)+blue11[1]*cos(yaw)} ${blue11[2]} 0 0 ${blue11[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_11">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue11[0]*cos(yaw)-blue11[1]*sin(yaw)} ${blue11[0]*sin(yaw)+blue11[1]*cos(yaw)} ${blue11[2]} 0 0 ${blue11[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_12" pose="${blue12[0]*cos(yaw)-blue12[1]*sin(yaw)} ${blue12[0]*sin(yaw)+blue12[1]*cos(yaw)} ${blue12[2]} 0 0 ${blue12[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_12">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue12[0]*cos(yaw)-blue12[1]*sin(yaw)} ${blue12[0]*sin(yaw)+blue12[1]*cos(yaw)} ${blue12[2]} 0 0 ${blue12[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_13" pose="${blue13[0]*cos(yaw)-blue13[1]*sin(yaw)} ${blue13[0]*sin(yaw)+blue13[1]*cos(yaw)} ${blue13[2]} 0 0 ${blue13[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_13">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue13[0]*cos(yaw)-blue13[1]*sin(yaw)} ${blue13[0]*sin(yaw)+blue13[1]*cos(yaw)} ${blue13[2]} 0 0 ${blue13[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_14" pose="${blue14[0]*cos(yaw)-blue14[1]*sin(yaw)} ${blue14[0]*sin(yaw)+blue14[1]*cos(yaw)} ${blue14[2]} 0 0 ${blue14[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_14">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue14[0]*cos(yaw)-blue14[1]*sin(yaw)} ${blue14[0]*sin(yaw)+blue14[1]*cos(yaw)} ${blue14[2]} 0 0 ${blue14[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_15" pose="${blue15[0]*cos(yaw)-blue15[1]*sin(yaw)} ${blue15[0]*sin(yaw)+blue15[1]*cos(yaw)} ${blue15[2]} 0 0 ${blue15[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_15">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue15[0]*cos(yaw)-blue15[1]*sin(yaw)} ${blue15[0]*sin(yaw)+blue15[1]*cos(yaw)} ${blue15[2]} 0 0 ${blue15[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_16" pose="${blue16[0]*cos(yaw)-blue16[1]*sin(yaw)} ${blue16[0]*sin(yaw)+blue16[1]*cos(yaw)} ${blue16[2]} 0 0 ${blue16[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_16">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue16[0]*cos(yaw)-blue16[1]*sin(yaw)} ${blue16[0]*sin(yaw)+blue16[1]*cos(yaw)} ${blue16[2]} 0 0 ${blue16[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_17" pose="${blue17[0]*cos(yaw)-blue17[1]*sin(yaw)} ${blue17[0]*sin(yaw)+blue17[1]*cos(yaw)} ${blue17[2]} 0 0 ${blue17[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_17">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue17[0]*cos(yaw)-blue17[1]*sin(yaw)} ${blue17[0]*sin(yaw)+blue17[1]*cos(yaw)} ${blue17[2]} 0 0 ${blue17[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_18" pose="${blue18[0]*cos(yaw)-blue18[1]*sin(yaw)} ${blue18[0]*sin(yaw)+blue18[1]*cos(yaw)} ${blue18[2]} 0 0 ${blue18[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_18">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue18[0]*cos(yaw)-blue18[1]*sin(yaw)} ${blue18[0]*sin(yaw)+blue18[1]*cos(yaw)} ${blue18[2]} 0 0 ${blue18[3]+yaw} </pose>
+    </model>
+    <!-- <single_blue_brick id="Blue_brick_19" pose="${blue19[0]*cos(yaw)-blue19[1]*sin(yaw)} ${blue19[0]*sin(yaw)+blue19[1]*cos(yaw)} ${blue19[2]} 0 0 ${blue19[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
+    <model name="Blue_brick_19">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue19[0]*cos(yaw)-blue19[1]*sin(yaw)} ${blue19[0]*sin(yaw)+blue19[1]*cos(yaw)} ${blue19[2]} 0 0 ${blue19[3]+yaw} </pose>
+    </model>
+
+    <!-- <single_orange_brick id="Orange_brick_10" pose="${orange10[0]*cos(yaw)-orange10[1]*sin(yaw)} ${orange10[0]*sin(yaw)+orange10[1]*cos(yaw)} ${orange10[2]} 0 0 ${orange10[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_10">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange10[0]*cos(yaw)-orange10[1]*sin(yaw)} ${orange10[0]*sin(yaw)+orange10[1]*cos(yaw)} ${orange10[2]} 0 0 ${orange10[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_11" pose="${orange11[0]*cos(yaw)-orange11[1]*sin(yaw)} ${orange11[0]*sin(yaw)+orange11[1]*cos(yaw)} ${orange11[2]} 0 0 ${orange11[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_11">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange11[0]*cos(yaw)-orange11[1]*sin(yaw)} ${orange11[0]*sin(yaw)+orange11[1]*cos(yaw)} ${orange11[2]} 0 0 ${orange11[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_12" pose="${orange12[0]*cos(yaw)-orange12[1]*sin(yaw)} ${orange12[0]*sin(yaw)+orange12[1]*cos(yaw)} ${orange12[2]} 0 0 ${orange12[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_12">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange12[0]*cos(yaw)-orange12[1]*sin(yaw)} ${orange12[0]*sin(yaw)+orange12[1]*cos(yaw)} ${orange12[2]} 0 0 ${orange12[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_13" pose="${orange13[0]*cos(yaw)-orange13[1]*sin(yaw)} ${orange13[0]*sin(yaw)+orange13[1]*cos(yaw)} ${orange13[2]} 0 0 ${orange13[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_13">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange13[0]*cos(yaw)-orange13[1]*sin(yaw)} ${orange13[0]*sin(yaw)+orange13[1]*cos(yaw)} ${orange13[2]} 0 0 ${orange13[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_14" pose="${orange14[0]*cos(yaw)-orange14[1]*sin(yaw)} ${orange14[0]*sin(yaw)+orange14[1]*cos(yaw)} ${orange14[2]} 0 0 ${orange14[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_14">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange14[0]*cos(yaw)-orange14[1]*sin(yaw)} ${orange14[0]*sin(yaw)+orange14[1]*cos(yaw)} ${orange14[2]} 0 0 ${orange14[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_15" pose="${orange15[0]*cos(yaw)-orange15[1]*sin(yaw)} ${orange15[0]*sin(yaw)+orange15[1]*cos(yaw)} ${orange15[2]} 0 0 ${orange15[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_15">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange15[0]*cos(yaw)-orange15[1]*sin(yaw)} ${orange15[0]*sin(yaw)+orange15[1]*cos(yaw)} ${orange15[2]} 0 0 ${orange15[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_16" pose="${orange16[0]*cos(yaw)-orange16[1]*sin(yaw)} ${orange16[0]*sin(yaw)+orange16[1]*cos(yaw)} ${orange16[2]} 0 0 ${orange16[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_16">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange16[0]*cos(yaw)-orange16[1]*sin(yaw)} ${orange16[0]*sin(yaw)+orange16[1]*cos(yaw)} ${orange16[2]} 0 0 ${orange16[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_17" pose="${orange17[0]*cos(yaw)-orange17[1]*sin(yaw)} ${orange17[0]*sin(yaw)+orange17[1]*cos(yaw)} ${orange17[2]} 0 0 ${orange17[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_17">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange17[0]*cos(yaw)-orange17[1]*sin(yaw)} ${orange17[0]*sin(yaw)+orange17[1]*cos(yaw)} ${orange17[2]} 0 0 ${orange17[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_18" pose="${orange18[0]*cos(yaw)-orange18[1]*sin(yaw)} ${orange18[0]*sin(yaw)+orange18[1]*cos(yaw)} ${orange18[2]} 0 0 ${orange18[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" /> -->
+    <model name="Orange_brick_18">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange18[0]*cos(yaw)-orange18[1]*sin(yaw)} ${orange18[0]*sin(yaw)+orange18[1]*cos(yaw)} ${orange18[2]} 0 0 ${orange18[3]+yaw} </pose>
+    </model>
+    <!-- <single_orange_brick id="Orange_brick_19" pose="${orange19[0]*cos(yaw)-orange19[1]*sin(yaw)} ${orange19[0]*sin(yaw)+orange19[1]*cos(yaw)} ${orange19[2]} 0 0 ${orange19[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
+         -->
+    <model name="Orange_brick_19">
+      <include>
+        <uri>model://single_orange_brick</uri>
+      </include>
+      <pose frame=''>${orange19[0]*cos(yaw)-orange19[1]*sin(yaw)} ${orange19[0]*sin(yaw)+orange19[1]*cos(yaw)} ${orange19[2]} 0 0 ${orange19[3]+yaw} </pose>
+    </model>
+
+    <!-- <model name="Orange_brick_19">
+    <single_orange_brick id="Orange_brick_19" pose="0 0 0 0 0 0" sx="0.2" sy="1.8" sz="0.2" mass="2" mat="Gazebo/Orange" />
+      <pose frame=''>${orange19[0]*cos(yaw)-orange19[1]*sin(yaw)} ${orange19[0]*sin(yaw)+orange19[1]*cos(yaw)} ${orange19[2]} 0 0 ${orange19[3]+yaw} </pose>
+    </model> -->
+    
+    <model name="UAV_Bricks_Rails">
+    <BaseBricks pose="0 0 0 0 0 0" />
+      <pose frame=''>${basebrick[0]*cos(yaw)-basebrick[1]*sin(yaw)} ${basebrick[0]*sin(yaw)+basebrick[1]*cos(yaw)} ${basebrick[2]} 0 0 ${basebrick[3]+yaw} </pose>
+    </model>
+    
     <model name="L_wooden_frame">
       <include>
         <uri>model://L_wooden_frame</uri>

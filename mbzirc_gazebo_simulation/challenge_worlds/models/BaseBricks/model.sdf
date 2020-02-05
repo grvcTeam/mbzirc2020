@@ -114,7 +114,7 @@
         <cast_shadows>1</cast_shadows>
         <transparency>0</transparency>
       </visual>
-      <collision name='collision'>
+      <!-- <collision name='collision'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
         <pose frame=''>0 0 0 0 -0 0</pose>
@@ -168,7 +168,7 @@
             </bullet>
           </contact>
         </surface>
-      </collision>
+      </collision> -->
       <collision name='collision_1'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
