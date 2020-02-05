@@ -17,11 +17,12 @@
 
     <!-- NODE  -->
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-        <param name="thermal_threshold"     type="int"         value="$(arg thermal_threshold)" />
         <param name="angle_amplitude"       type="int"         value="$(arg angle_amplitude)" />
+        <param name="uav_id"                type="int"         value="$(arg uav_id)" />
+        <param name="thermal_threshold"     type="int"         value="$(arg thermal_threshold)" />
+        <param name="camera_config"         type="string"      value="$(arg camera_config)"/>
         <param name="covariance_x"          type="string"      value="$(arg covariance_x)"/>
         <param name="covariance_y"          type="string"      value="$(arg covariance_y)"/>
         <param name="covariance_z"          type="string"      value="$(arg covariance_z)"/>
-        <param name="camera_config"         type="string"      value="$(arg camera_config)"/>
 	</node>
 </launch>

@@ -87,7 +87,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 {
     ros::NodeHandle t;
     int angle_amplitude;
-    t.getParam("/thermal/angle_amplitude",angle_amplitude);
+    t.getParam("thermal/angle_amplitude",angle_amplitude);
     float range_min,range_max,increment_angle;
     int cuentas=0,i=0;
     int initial=360;
@@ -118,13 +118,13 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     int thermal_threshold;
     float sigma_x,sigma_y,sigma_z;
     string mode;
-    t.getParam("/thermal/thermal_threshold",thermal_threshold);
-    t.getParam("/thermal/covariance_x",sigma_x);
-    t.getParam("/thermal/covariance_y",sigma_y);
-    t.getParam("/thermal/covariance_z",sigma_z);
-    t.getParam("/thermal/camera_config",mode);    
-    t.getParam("/thermal/id",uav_id);
-
+    t.getParam("thermal/thermal_threshold",thermal_threshold);
+    t.getParam("thermal/covariance_x",sigma_x);
+    t.getParam("thermal/covariance_y",sigma_y);
+    t.getParam("thermal/covariance_z",sigma_z);
+    t.getParam("thermal/camera_config",mode);    
+    t.getParam("thermal/uav_id",uav_id);
+    // cout<<uav<<endl;
     //Index and size of the thermal window displayed
     int a=32*20,i=0,j=0,k=0;
     int x_size=32*20;
