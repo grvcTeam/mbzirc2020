@@ -1,0 +1,18 @@
+S1.1 B R G R G R R 
+S1.2 R G R G R R B 
+S1.3 R R G R G R B 
+S1.4 B R R R G R G 
+S1.5 R R G R R B G 
+S2.1 O O 
+S2.2 O O 
+S2.3 O O 
+S2.4 O O 
+S2.5 O O 
+C1.1 B G R R R R G 
+C2.1 R B R R R G G 
+C3.1 G B R R G R R 
+C4.1 O O 
+C1.2 R R B G R G R 
+C2.2 G G R R R R B 
+C3.2 R B R R G G R 
+C4.2 O O 
