@@ -18,7 +18,6 @@
 using namespace std;
 using namespace cv;
 
-int detection_sampling=0;
 int z=0;
 int last_detection=0;
 int detection=0;
@@ -116,11 +115,9 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     ros::NodeHandle t;
     // Get parameters from launcher
     int thermal_threshold;
-    int frame_number;
     float sigma_x,sigma_y,sigma_z;
     string mode;
     t.getParam("/thermal/thermal_threshold",thermal_threshold);
-    t.getParam("/thermal/sampling",frame_number);    
     t.getParam("/thermal/covariance_x",sigma_x);
     t.getParam("/thermal/covariance_y",sigma_y);
     t.getParam("/thermal/covariance_z",sigma_z);
@@ -240,9 +237,8 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         header = msg->header; 
         img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC3, image_color);
         pub.publish(img_bridge.toImageMsg());
-        // Publish a msg whenever a fire is detected every X frames
-        detection_sampling=detection_sampling+1;
-        if (detection==1 and detection_sampling>=frame_number)
+        // Publish when a fire is detected
+        if (detection==1)
         {
             // If a fire is detected
             cout<<"Fire_detected"<<endl;
@@ -250,7 +246,6 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             std::string y_dis = std::to_string(y_comp);
             // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
             cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
-            detection_sampling=0;
             last_detection=last_detection+1;
             rec_object.header.stamp = ros::Time::now();
             rec_object.header.frame_id = header_pose.frame_id;

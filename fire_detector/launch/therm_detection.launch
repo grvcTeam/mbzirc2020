@@ -5,7 +5,6 @@
 
     <!-- Fire and sampling -->
     <arg name="thermal_threshold"   default="60" />
-    <arg name="sampling"            default="24" />
     <!-- Laser angle amplitude: 1 grade = 4 point -->
     <!-- Incrementing 1 grade means an arc of 2 grades -->
     <arg name="angle_amplitude"     default="20" />
@@ -19,7 +18,6 @@
     <!-- NODE  -->
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
         <param name="thermal_threshold"     type="int"         value="$(arg thermal_threshold)" />
-        <param name="sampling"              type="int"         value="$(arg sampling)" />
         <param name="angle_amplitude"       type="int"         value="$(arg angle_amplitude)" />
         <param name="covariance_x"          type="string"      value="$(arg covariance_x)"/>
         <param name="covariance_y"          type="string"      value="$(arg covariance_y)"/>
