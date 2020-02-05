@@ -35,7 +35,7 @@ float temp_matrix[32][32];
 float x_pose, y_pose, z_pose;
 float yaw;
 float laser_measurement;
-string uav_id;
+string uav;
 
 geometry_msgs::PoseStamped pos;
 std_msgs::Header header_pose;
@@ -122,6 +122,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 void image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
     ros::NodeHandle t;
+    
     // Get parameters from launcher
     int thermal_threshold;
     int frame_number;
@@ -133,6 +134,8 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     t.getParam("/thermal/covariance_y",sigma_y);
     t.getParam("/thermal/covariance_z",sigma_z);
     t.getParam("/thermal/camera_config",mode);    
+    t.getParam("/thermal/id",uav);
+    // cout<<uav<<endl;
     //Index and size of the thermal window displayed
     int a=32*20,i=0,j=0,k=0;
     int x_size=32*20;
@@ -262,7 +265,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             last_detection=last_detection+1;
             rec_object.header.stamp = ros::Time::now();
             rec_object.header.frame_id = header_pose.frame_id;
-            
+            // rec_object.agent_id = uav_id;
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
             rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
             rec_object.pose.covariance={sigma_x*sigma_x,0,0,0,0,0,
@@ -303,7 +306,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             // Publishing the Object    
             rec_list.objects.push_back(rec_object);
             rec_list.stamp = ros::Time::now();
-            rec_list.agent_id = uav_id;
+            rec_list.agent_id = uav;
             pub_msg.publish(rec_list);
             detection=0;
             last_detection=detection;
@@ -339,8 +342,7 @@ int main(int argc, char **argv)
     n.getParam("/thermal/RGB_image_topic",RGB_image_topic);
     n.getParam("/thermal/Advertise_topic",Advertise_topic);
     n.getParam("/thermal/Detection_list_topic",Detection_list_topic);
-    n.getParam("/thermal/uav_id",uav_id);
-
+    
     ros::Subscriber sub = n.subscribe(Temp_topic,10,thermal_data);
     ros::Subscriber sub_dos = n.subscribe(RGB_image_topic,10,image_operations);
     ros::Subscriber sub_tres = n.subscribe(Position_topic,10,ual_to_fire_position);

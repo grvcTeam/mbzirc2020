@@ -9,7 +9,8 @@
 	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
     <!-- Fire and sampling -->
 	<param name="thermal_threshold" value="60" />
-    <param name="sampling" value="24" />
+    <param name="sampling" value="10" />
+    <param name="id" value="$(arg uav_id)" type="string" />
     <!-- Laser angle amplitude: 1 grade = 4 point -->
     <!-- Incrementing 1 grade means an arc of 2 grades -->
     <param name="angle_amplitude" value="20" />
@@ -28,6 +29,6 @@
     <param name="RGB_image_topic" value="$(arg prefix)_$(arg uav_id)/teraranger_evo_thermal/rgb_image"/>
     <!-- Publishers -->
     <param name="Advertise_topic" value="$(arg prefix)_$(arg uav_id)/thermal_camera"/>
-    <param name="Detection_list_topic" value="$(arg prefix)_$(arg uav_id)/fire_detection"/>
+    <param name="Detection_list_topic" value="$(arg prefix)_$(arg uav_id)/sensed_objects"/>
 	</node>
 </launch>
