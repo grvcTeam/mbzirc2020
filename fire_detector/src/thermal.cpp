@@ -113,6 +113,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 void image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
     ros::NodeHandle t;
+    
     // Get parameters from launcher
     int thermal_threshold;
     float sigma_x,sigma_y,sigma_z;
@@ -122,6 +123,8 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     t.getParam("/thermal/covariance_y",sigma_y);
     t.getParam("/thermal/covariance_z",sigma_z);
     t.getParam("/thermal/camera_config",mode);    
+    t.getParam("/thermal/id",uav_id);
+
     //Index and size of the thermal window displayed
     int a=32*20,i=0,j=0,k=0;
     int x_size=32*20;
@@ -249,7 +252,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
             last_detection=last_detection+1;
             rec_object.header.stamp = ros::Time::now();
             rec_object.header.frame_id = header_pose.frame_id;
-            
+            // rec_object.agent_id = uav_id;
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
             rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
             rec_object.pose.covariance={sigma_x*sigma_x,0,0,0,0,0,

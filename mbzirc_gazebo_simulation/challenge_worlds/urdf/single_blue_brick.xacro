@@ -3,65 +3,64 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
 <xacro:macro name="single_blue_brick" params="id pose sx sy sz mass mat">
-<model name="${id}">
-	<link name="${id}_link">
-            <pose>${pose}</pose>
-            <inertial> 
+  <model name="${id}">
+	  <link name="${id}_link">
+      <pose>${pose}</pose>
+      <inertial> 
 		    <mass>${mass}</mass>
-            <!-- <pose frame=''>0.1 0.6 0.1 0 -0 0</pose> -->
-                <inertia> 
-			<ixx>${(1.0/12.0)*mass*(pow(sy,2)+pow(sz,2))}</ixx> <ixy>0</ixy> 
-			<ixz>0</ixz> <iyy>${(1.0/12.0)*mass*(pow(sx,2)+pow(sz,2))}</iyy> 
-			<iyz>0</iyz> <izz>${(1.0/12.0)*mass*(pow(sx,2)+pow(sy,2))}</izz> 
-		</inertia>
-            </inertial>
-            
-            <visual name="visual">
-		<material> 
-			<script>
-				<uri>gazebo.material</uri>
-				<name>${mat}</name>
-			</script> 
-		</material>
-                <geometry>
-                    <!-- <mesh>
-                        <uri>model://single_blue_brick/meshes/Brick_RibShape_Blue_redux.stl</uri>
-                        <scale>0.01 0.01 0.01</scale>
-                    </mesh> -->
-                    <box>
-                      <size>0.2 1.2 0.2</size>
-                    </box>
-                </geometry>
-            </visual>
-
-            <visual name="visual FM plate">
-            <pose>0 0 0.1 0 -0 0</pose>
-		      <material> 
+        <inertia> 
+			   <ixx>${(1.0/12.0)*mass*(pow(sy,2)+pow(sz,2))}</ixx>
+         <ixy>0</ixy> 
+			   <ixz>0</ixz>
+         <iyy>${(1.0/12.0)*mass*(pow(sx,2)+pow(sz,2))}</iyy>
+         <iyz>0</iyz>
+         <izz>${(1.0/12.0)*mass*(pow(sx,2)+pow(sy,2))}</izz> 
+		     </inertia>
+      </inertial>
+      <visual name="visual">
+		    <material> 
 			    <script>
-				  <uri>gazebo.material</uri>
-				  <name>Gazebo/White</name>
+				    <uri>gazebo.material</uri>
+				    <name>${mat}</name>
 			    </script> 
-		      </material>
-              <geometry>
-                <box>
-                  <size>0.150 0.300 0.001</size>
-                </box>
-              </geometry>
-            </visual>
-            
-            <collision name="collision">
-                <geometry>
-                    <!-- <mesh>
-                        <uri>model://single_blue_brick/meshes/Brick_RibShape_Blue_redux.stl</uri>
-                        <scale>0.01 0.01 0.01</scale>
-                   </mesh> -->
-                   <box>
-                      <size>0.2 1.2 0.2</size>
-                    </box>
-                </geometry>
-            </collision>
-        </link>
-</model>
+		    </material>
+        <geometry>
+        <!-- <mesh>
+        <uri>model://single_blue_brick/meshes/Brick_RibShape_Blue_redux.stl</uri>
+        <scale>0.01 0.01 0.01</scale>
+        </mesh> -->
+          <box>
+            <size>0.2 1.2 0.2</size>
+          </box>
+        </geometry>
+      </visual>
+      <visual name="visual FM plate">
+        <pose>0 0 0.1 0 -0 0</pose>
+  	    <material> 
+			    <script>
+				    <uri>gazebo.material</uri>
+				    <name>Gazebo/White</name>
+			    </script> 
+		    </material>
+        <geometry>
+          <box>
+            <size>0.150 0.300 0.001</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="collision">
+        <geometry>
+        <!-- <mesh>
+        <uri>model://single_blue_brick/meshes/Brick_RibShape_Blue_redux.stl</uri>
+        <scale>0.01 0.01 0.01</scale>
+        </mesh> -->
+          <box>
+            <size>0.2 1.2 0.2</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
 </xacro:macro>
 
 </robot>
