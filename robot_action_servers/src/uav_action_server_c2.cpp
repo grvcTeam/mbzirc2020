@@ -363,7 +363,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     return;
   }  // TODO: else!
 
-  mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);  // TODO: Change to mostCenteredWall!
+  mbzirc_comm_objs::Wall closest_wall = mostCenteredWall(wall_list_);
   ROS_WARN("closest_wall: [%lf, %lf] [%lf, %lf]", closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
   float dx, dy;
   if (closest_wall.start[0] > closest_wall.end[0]) {
