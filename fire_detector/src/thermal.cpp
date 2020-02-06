@@ -15,14 +15,19 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
-#define CONV2PNT 4 //Laser angle amplitude: 1 grade = 4 point
+#define CONV2PNT 4 // Laser angle amplitude: 1 grade = 4 point
+#define M_TEMP  32 // Size of Temp Matrix
+#define MIN_TEMP_DEFAULT 1000
+#define LASER_RANGE 720 // Lidar - full range of points
+#define SCALE_FACTOR 20 // To improve debug view
+#define R_CIRCLE 70.0 // Radius of the circle showed in debug view
 
 using namespace std;
 using namespace cv;
 
 int z=0;
 int maxim;
-float temp_matrix[32][32];
+float temp_matrix[M_TEMP][M_TEMP];
 float x_pose, y_pose, z_pose;
 float yaw;
 float laser_measurement;
@@ -37,23 +42,23 @@ ros::Publisher pub_msg;
 // Routine to find fire in the image
 void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
-    int minim=1000;
+    int minim=MIN_TEMP_DEFAULT;
     int fila,col;
     int i=0,a=0,b=0,j=0;
     maxim=0;
     // Obtaining temperature array
     for (i=0; i<msg->data.size(); i++){
         if (msg->data[i]>maxim){
-            fila=int(i/32);
-            col=i-fila*32;
+            fila=int(i/M_TEMP);
+            col=i-fila*M_TEMP;
             maxim=msg->data[i];
         }
         else if (msg->data[i]<minim){
             minim=msg->data[i];
         }
         j=0;
-        for (b=0;b<32;b++){
-             for (a=0;a<32;a++){
+        for (b=0;b<M_TEMP;b++){
+             for (a=0;a<M_TEMP;a++){
                 temp_matrix[a][b]=msg->data[j];
                 j=j+1;
              }
@@ -91,7 +96,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 
     float range_min,range_max,increment_angle;
     int cuentas=0,i=0;
-    int initial=360;
+    int initial=LASER_RANGE/2; // Point to laser front
     laser_measurement=0;
     range_min=msg.range_min;
     range_max=msg.range_max;
@@ -127,21 +132,15 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     t.getParam("thermal/uav_id",uav_id);
     // cout<<uav<<endl;
     //Index and size of the thermal window displayed
-    int a=32*20,i=0,j=0,k=0;
-    int x_size=32*20;
-    int y_size=32*20;
-    int c=0,d=0;
+    int a=M_TEMP*SCALE_FACTOR,i=0,j=0,k=0;
+    int x_size=M_TEMP*SCALE_FACTOR;
+    int y_size=M_TEMP*SCALE_FACTOR;
+    int d=0;
     int count=0, max_count=0;
-    int gray_im[32][32];
-    int f=0;
-    int cx[20],cy[20];
-    float im_center_x=x_size/2;
-    float im_center_y=y_size/2;
-    // Variables to calculate relative position of the fire
-    int image_center_x=y_size/2;
-    int image_center_y=x_size/2;
-    float relative_pose_x;
-    float relative_pose_y;
+    int gray_im[M_TEMP][M_TEMP];
+    int cx[SCALE_FACTOR],cy[SCALE_FACTOR];
+    float image_center_x=x_size/2;
+    float image_center_y=y_size/2;
     // Variables to port from msg to image and operate in opencv
     sensor_msgs::Image img_msg;
     std_msgs::Header header; 
@@ -163,7 +162,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         // White=pixel temperature is bigger than thermal threeshold 
         for (i=0;i<a;i++){
             for (j=0;j<a;j++){
-                if (temp_matrix[int(floor(i/20))][int(floor(j/20))]>thermal_threshold)
+                if (temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>thermal_threshold)
                     {
                         
                         current_therm_ptr = (uint8_t *)(initial_therm_ptr + x_size * i + j);
@@ -177,11 +176,12 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                 }
             }
         
-        vector<vector<Point> > outline;
-        vector<vector<Point> > rect;
+        vector<vector<Point>> outline;
+        vector<vector<Point>> rect;
         Point pt1,pt2,center,sum;
         center.x=image_center_y;
         center.y=image_center_x;
+
         findContours(therm,outline,CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE);
         vector<Moments> mu(outline.size());
         vector<Point2f> mc(outline.size());
@@ -190,7 +190,7 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
         float distance;
         float x_comp;
         float y_comp;
-        int radio=70;
+        float radio=R_CIRCLE;
         // Routine to detect fire in the image
          circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
         if (maxim>thermal_threshold){
@@ -268,12 +268,12 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
                                         0, 0, 0, 0, 0,  0,
                                         0, 0, 0, 0, 0,  0,
                                         0, 0, 0, 0, 0,  0};
-            rec_object.image_detection.img_height=y_size/20.0;
-            rec_object.image_detection.img_width=x_size/20.0;
-            rec_object.image_detection.v=y_comp/20.0;
-            rec_object.image_detection.u=x_comp/20.0;
-            rec_object.image_detection.height=radio/20.0;
-            rec_object.image_detection.width=radio/20.0;
+            rec_object.image_detection.img_height=y_size/SCALE_FACTOR;
+            rec_object.image_detection.img_width=x_size/SCALE_FACTOR;
+            rec_object.image_detection.v=y_comp/SCALE_FACTOR;
+            rec_object.image_detection.u=x_comp/SCALE_FACTOR;
+            rec_object.image_detection.height=radio/SCALE_FACTOR;
+            rec_object.image_detection.width=radio/SCALE_FACTOR;
 
             if (mode=="DOWNWARD")
             {
