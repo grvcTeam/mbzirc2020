@@ -4,7 +4,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <mbzirc_comm_objs/WallList.h>
 
-double squaredDistanceToSegment(double x, double y, double x1, double y1, double x2, double y2) {
+inline double squaredDistanceToSegment(double x, double y, double x1, double y1, double x2, double y2) {
 	double dx = x2 - x1;
 	double dy = y2 - y1;
 
@@ -23,13 +23,13 @@ double squaredDistanceToSegment(double x, double y, double x1, double y1, double
 	return closest_x*closest_x + closest_y*closest_y;
 }
 
-double squaredLength(const mbzirc_comm_objs::Wall& _wall) {
+inline double squaredLength(const mbzirc_comm_objs::Wall& _wall) {
     double dx = _wall.end[0] - _wall.start[0];
     double dy = _wall.end[1] - _wall.start[1];
     return dx*dx + dy*dy;
 }
 
-mbzirc_comm_objs::Wall closestWall(const mbzirc_comm_objs::WallList& _wall_list) {
+inline mbzirc_comm_objs::Wall closestWall(const mbzirc_comm_objs::WallList& _wall_list) {
   mbzirc_comm_objs::Wall closest;
   double min_sq_distance = 1e6;
   for (auto wall: _wall_list.walls) {
@@ -42,7 +42,7 @@ mbzirc_comm_objs::Wall closestWall(const mbzirc_comm_objs::WallList& _wall_list)
   return closest;
 }
 
-mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list) {
+inline mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list) {
   mbzirc_comm_objs::Wall largest;
   double max_squared_length = 0;
   for (auto wall: _wall_list.walls) {
@@ -55,7 +55,7 @@ mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list)
   return largest;
 }
 
-visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0, const std::string& _ns = "wall") {
+inline visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0, const std::string& _ns = "wall") {
     visualization_msgs::Marker line_marker;
     line_marker.header.frame_id = _frame_id;
     line_marker.header.stamp = ros::Time::now();
@@ -86,7 +86,7 @@ visualization_msgs::Marker getLineMarker(const mbzirc_comm_objs::Wall& _wall, co
     return line_marker;
 }
 
-mbzirc_comm_objs::Wall fromPoints(const geometry_msgs::Point& _start, const geometry_msgs::Point& _end) {
+inline mbzirc_comm_objs::Wall fromPoints(const geometry_msgs::Point& _start, const geometry_msgs::Point& _end) {
     mbzirc_comm_objs::Wall wall;
     wall.start[0] = _start.x;
     wall.start[1] = _start.y;

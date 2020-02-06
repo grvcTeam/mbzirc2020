@@ -77,6 +77,50 @@ void UalActionServer::publishDataFeed(const ros::TimerEvent&) {
   data_feed_pub_.publish(data_feed);
 }
 
+bool UalActionServer::waitForFreshMatchedCandidateMsg(uint8_t seconds) {
+  matched_candidate_.header.seq = 0;
+  for (int i = 0; i < 10 * seconds; i++) {
+    ros::Duration(0.1).sleep();
+    if (matched_candidate_.header.seq != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool UalActionServer::waitForFreshGripperAttachedMsg(uint8_t seconds) {
+  gripper_attached_.header.seq = 0;
+  for (int i = 0; i < 10 * seconds; i++) {
+    ros::Duration(0.1).sleep();
+    if (gripper_attached_.header.seq != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool UalActionServer::waitForFreshSf11RangeMsg(uint8_t seconds) {
+  sf11_range_.header.seq = 0;
+  for (int i = 0; i < 10 * seconds; i++) {
+    ros::Duration(0.1).sleep();
+    if (sf11_range_.header.seq != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool UalActionServer::waitForFreshWallListMsg(uint8_t seconds) {
+  wall_list_.header.seq = 0;
+  for (int i = 0; i < 10 * seconds; i++) {
+    ros::Duration(0.1).sleep();
+    if (wall_list_.header.seq != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // TODO: Who should know about flight_level? robot_action_servers, uav_agent, central_agent...
 void UalActionServer::takeOffCallback(const mbzirc_comm_objs::TakeOffGoalConstPtr &_goal) {
   // ROS_INFO("Take off!");

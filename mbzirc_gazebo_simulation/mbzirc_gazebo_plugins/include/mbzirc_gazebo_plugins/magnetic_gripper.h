@@ -52,6 +52,8 @@ class MagneticGripper : public gazebo::ModelPlugin
     gazebo::common::Time prevUpdateTime;
 
     bool isMagnetized;
+    mbzirc_comm_objs::GripperAttached msg;
+    int pub_msg_decimate_index = 0;
 };
 
 #endif  // GAZEBO_MagneticGripper_H

@@ -96,7 +96,7 @@ protected:
   ros::Publisher data_feed_pub_;
   ros::Publisher marker_pub_;
   mbzirc_comm_objs::ObjectDetection matched_candidate_;
-  bool gripper_attached_ = false;
+  mbzirc_comm_objs::GripperAttached gripper_attached_;
   sensor_msgs::Range sf11_range_;
   mbzirc_comm_objs::WallList wall_list_;
 
@@ -126,6 +126,11 @@ public:
   void extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal);
   void extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal);
 
+  // Communications
+  bool waitForFreshMatchedCandidateMsg(uint8_t seconds);
+  bool waitForFreshGripperAttachedMsg(uint8_t seconds);
+  bool waitForFreshSf11RangeMsg(uint8_t seconds);
+  bool waitForFreshWallListMsg(uint8_t seconds);
 };
 
 #endif // UAV_ACTION_SERVER

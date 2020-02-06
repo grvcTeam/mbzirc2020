@@ -152,10 +152,12 @@ void MagneticGripper::OnUpdate() {
     this->fixedJoint->Fini();
     this->fixedJoint = nullptr;
     gzmsg << "Detached" << std::endl;
-    //advertise dettached
-    mbzirc_comm_objs::GripperAttached msg;
+
     msg.attached = false;
+  }
+  if (pub_msg_decimate_index++ > 200) {
     this->attached_pub.publish(msg);
+    pub_msg_decimate_index = 0;
   }
 }
 
@@ -195,10 +197,11 @@ void MagneticGripper::OnContact(const ConstContactsPtr &contacts) {
     this->fixedJoint->ApplyStiffnessDamping();
     this->fixedJoint->Init();
 
-    //advertise attached
-    mbzirc_comm_objs::GripperAttached msg;
     msg.attached = true;
+  }
+  if (pub_msg_decimate_index++ > 200) {
     this->attached_pub.publish(msg);
+    pub_msg_decimate_index = 0;
   }
 }
 

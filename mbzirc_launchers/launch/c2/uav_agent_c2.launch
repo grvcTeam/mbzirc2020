@@ -20,6 +20,7 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="camera_control_to_camera_tf" args="0 0 0 0 1.57079632679 3.141592 $(arg robot_model)_$(arg agent_id)/camera_control_link $(arg robot_model)_$(arg agent_id)/camera_link" />
     <node if="$(eval mode == 'sim')" pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optcal_tf" args="0 0.05 0 0.5 -0.5 0.5 -0.5 $(arg robot_model)_$(arg agent_id)/camera_link $(arg robot_model)_$(arg agent_id)/camera_color_optical_frame" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_sf11_tf" args="-0.28 0.28 -0.05 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/sf11_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_laser_tf" args="-0.19 0 0.17 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/laser_link" />
 
     <node if="$(eval ual_backend == 'gazebo_light')" pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_$(arg agent_id)" output="screen"
     args="-model=$(arg robot_model) -id=$(arg agent_id) -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -description_package=uavs_description -material=$(arg color) -frame_id=arena -ual_backend=gazebo_light"/>
@@ -53,6 +54,8 @@
       <param name="orientation_th" value="0.75"/>
       <param name="hold_pose_time" value="0"/>
     </node>
+
+    <node pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />

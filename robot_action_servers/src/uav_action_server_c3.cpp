@@ -134,20 +134,14 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
   ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
 
-  bool has_sf11_range;
-  bool has_wall_list;
-  for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
-    has_sf11_range = (sf11_range_.header.seq != 0);
-    has_wall_list = (wall_list_.header.seq != 0);
-    if (has_sf11_range && has_wall_list) {
-      break;
-    }
-    ros::Duration(0.1).sleep();
+  if (!waitForFreshSf11RangeMsg(10)) {
+    result.message = "could not get fresh [sf11_range]";
+    extinguish_facade_fire_server_.setAborted(result);
+    return;
   }
-  if (!has_sf11_range || !has_wall_list) {
-    result.message = "could not get valid: ";
-    if (!has_sf11_range) { result.message += "[sf11_range] "; }
-    if (!has_wall_list) { result.message += "[wall_list]"; }
+
+  if (!waitForFreshWallListMsg(10)) {
+    result.message = "could not get fresh [wall_list]";
     extinguish_facade_fire_server_.setAborted(result);
     return;
   }
@@ -310,25 +304,12 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::ServiceClient release_blanket_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/release_blanket");
   ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
-  ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
   // TODO: Add other subscribers (e.g. fire estimation)
   // TODO: Markers?
   //ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
 
-  bool has_sf11_range = false;
-  bool has_fire_estimation = false;
-  for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
-    has_sf11_range = (sf11_range_.header.seq != 0);
-    has_fire_estimation = true; // TODO: Add real condition
-    if (has_sf11_range && has_fire_estimation) {
-      break;
-    }
-    ros::Duration(0.1).sleep();
-  }
-  if (!has_sf11_range || !has_fire_estimation) {
-    result.message = "could not get valid: ";
-    if (!has_sf11_range) { result.message += "[sf11_range] "; }
-    if (!has_fire_estimation) { result.message += "[fire_estimation] "; }
+  if (!waitForFreshSf11RangeMsg(10)) {
+    result.message = "could not get fresh [sf11_range]";
     extinguish_ground_fire_server_.setAborted(result);
     return;
   }

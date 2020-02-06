@@ -47,6 +47,25 @@
       <origin xyz="0.17 0 -0.16" rpy="0 1.57079632679 3.141592" />
     </xacro:camera_macro>
 
+    <!-- Install laser scanner: rplidar -->
+    <xacro:laser_scanner
+      namespace="${namespace}"
+      id="0"
+      pub_topic="scan"
+      tf="laser_link"
+      parent_link="base_link"
+      update_rate="40"
+      sample_count="720"
+      angle_min="-1.570796"
+      angle_max="1.570796"
+      range_min="0.10"
+      range_max="30.0"
+      range_res="0.01"
+      visualize="false"
+      >
+      <origin xyz="-0.19 0 0.17" rpy="0 0 0" />
+    </xacro:laser_scanner>
+
     <!-- Install laser scanner: altimeter -->
     <xacro:laser_scanner
       namespace="${namespace}"

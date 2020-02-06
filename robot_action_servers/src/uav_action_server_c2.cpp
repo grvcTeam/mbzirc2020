@@ -19,9 +19,10 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //----------------------------------------------------------------------------------------------------------------------
 #include <robot_action_servers/uav_action_server.h>
+#include <scan_passage_detection/wall_utils.h>
 
 void UalActionServer::attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg) {
-  gripper_attached_ = msg->attached;
+  gripper_attached_ = *msg;
 }
 
 void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal) {
@@ -51,23 +52,19 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
   ros::ServiceClient magnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/magnetize_gripper");
   ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
-  ros::Duration(1.0).sleep();  // TODO: tune! needed for sensed_sub?
 
-  // bool has_tracked;
-  // bool has_sf11;
-  // bool has_gripper;
-  // for (int i = 0; i < 100; i++) {  // 100*0.1 = 10 seconds timeout
-  //   has_tracked = (matched_candidate_.header.seq != 0);
-  //   has_sf11 = (sf11_range_.header.seq != 0);
-  //   // has_gripper = (gripper_attached_.header.seq != 0);
-  //   has_gripper = true;  // TODO!
-  //   if (has_tracked && has_sf11 && has_gripper) {
-  //     break;
-  //   }
-  //   ros::Duration(0.1).sleep();
-  // }
+  if (!waitForFreshSf11RangeMsg(10)) {
+    result.message = "could not get fresh [sf11_range]";
+    pick_server_.setAborted(result);
+    return;
+  }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  if (!waitForFreshGripperAttachedMsg(10)) {
+    result.message = "could not get fresh [gripper_attached]";
+    pick_server_.setAborted(result);
+    return;
+  }
+
   // Define upper PID (softer control)
   // TODO: Tune!
   grvc::ual::PIDParams pid_x;
@@ -110,7 +107,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   grvc::ual::PosePID upper_pid(pid_x, pid_y, pid_z, pid_yaw);
   upper_pid.enableRosInterface("pick_upper_control");  // TODO: disable as PID is tuned!
 
-  // Define lower PID (softer control)
+  // Define lower PID (harder control)
   // TODO: Tune!
   pid_x.kp = 0.92;
   pid_x.ki = 0.0;
@@ -264,7 +261,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
 
     // TODO: Look for equivalent!
     // if (catching_device_->switchIsPressed()) {
-    if (gripper_attached_) {
+    if (gripper_attached_.attached) {
       std_srvs::Trigger dummy;
       close_gripper_client.call(dummy);
       sleep(0.4);  // TODO: sleep?
@@ -318,11 +315,23 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
 
   ros::NodeHandle nh;
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
+  ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
   ros::Subscriber attached_sub = nh.subscribe<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 1, &UalActionServer::attachedCallback, this);
   ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)
   ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
   ros::ServiceClient demagnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/demagnetize_gripper");
-  ros::Duration(1.0).sleep();  // TODO: tune! needed for sub?
+
+  if (!waitForFreshSf11RangeMsg(10)) {
+    result.message = "could not get fresh [sf11_range]";
+    place_server_.setAborted(result);
+    return;
+  }
+
+  if (!waitForFreshGripperAttachedMsg(10)) {
+    result.message = "could not get fresh [gripper_attached]";
+    place_server_.setAborted(result);
+    return;
+  }
 
   // float y_offset = 3.0;
   // float z_offset = 0.6;  // TODO: offsets!
@@ -330,26 +339,78 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
   // next_to_wall_uav_pose.pose.position.z += y_offset;
   // next_to_wall_uav_pose.pose.position.z += z_offset;
 
-  auto target_pose = ual_->pose();
-  // target_pose.pose.position.z;
-  float wall_yaw = 2 * atan2(target_pose.pose.orientation.z, target_pose.pose.orientation.w);
+  #define PLACING_LOOP_RATE 10
+  #define DELTA_H_THRESHOLD 1.0
   float step = 0.01;
-  float ux = -step * sin(wall_yaw);
-  float uy =  step * cos(wall_yaw);
+  auto target_pose = ual_->pose();
+  ros::Rate loop_rate(PLACING_LOOP_RATE);
+  while (ros::ok() && (sf11_range_.range > 1.0)) {  // TODO: Threshold
+    if (place_server_.isPreemptRequested()) {
+      ual_->setPose(ual_->pose());
+      place_server_.setPreempted();
+      return;
+    }
+    target_pose.pose.position.z -= step;
+    ual_->setPose(target_pose);
+    loop_rate.sleep();
+  }
+  ROS_WARN("Arrived to sf11.range = %f", sf11_range_.range);
+
+  if (wall_list_.walls.size() <= 0) {
+    ual_->setPose(ual_->pose());
+    result.message = "Cannot find any wall with rplidar";
+    place_server_.setAborted(result);
+    return;
+  }  // TODO: else!
+
+  mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);  // TODO: Change to mostCenteredWall!
+  ROS_WARN("closest_wall: [%lf, %lf] [%lf, %lf]", closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
+  float dx, dy;
+  if (closest_wall.start[0] > closest_wall.end[0]) {
+    dx = closest_wall.start[0] - closest_wall.end[0];
+    dy = closest_wall.start[1] - closest_wall.end[1];
+  } else {
+    dx = closest_wall.end[0] - closest_wall.start[0];
+    dy = closest_wall.end[1] - closest_wall.start[1];
+  
+  }
+  ROS_WARN("dx = %f, dy = %f", dx, dy);
+  float wall_yaw = atan2(dy, dx);
+  auto current_pose = ual_->pose();
+  float current_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
+  float target_yaw = normalizeAngle(current_yaw + wall_yaw);
+  target_pose.pose.orientation.z = sin(0.5 * target_yaw);
+  target_pose.pose.orientation.w = cos(0.5 * target_yaw);
+  ual_->setPose(target_pose);
+  ros::Duration(3.0).sleep();
+  ROS_WARN("Arrived to target_yaw = %f (current_yaw = %f, wall_yaw = %f)", target_yaw, current_yaw, wall_yaw);
+
+  while (ros::ok() && (sf11_range_.range < 2.5)) {  // TODO: Threshold
+    if (place_server_.isPreemptRequested()) {
+      ual_->setPose(ual_->pose());
+      place_server_.setPreempted();
+      return;
+    }
+    target_pose.pose.position.z += step;
+    ual_->setPose(target_pose);
+    loop_rate.sleep();
+  }
+  ROS_WARN("Arrived to sf11.range = %f", sf11_range_.range);
+
+  // float wall_yaw = 2 * atan2(target_pose.pose.orientation.z, target_pose.pose.orientation.w);
+  float ux = -step * sin(target_yaw);
+  float uy =  step * cos(target_yaw);
   float total_distance_travelled = 0.0;
   float estimated_wall_width = 0.0;
 
   bool over_wall = false;
   float last_sf11_range = sf11_range_.range;
 
-  #define PLACING_LOOP_RATE 10
-  #define DELTA_H_THRESHOLD 1.0
-  ros::Rate loop_rate(PLACING_LOOP_RATE);
   while (ros::ok()) {
     if (place_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
       place_server_.setPreempted();
-      break;
+      return;
     }
 
     target_pose.pose.position.x += ux;
@@ -370,6 +431,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       // Release!
       ROS_ERROR("release!");
       ual_->setPose(ual_->pose());
+      ros::Duration(5.0).sleep();  // Some sleep!
       mbzirc_comm_objs::Magnetize magnetize_srv;
       magnetize_srv.request.magnetize = false;
       if (!magnetize_client.call(magnetize_srv)) {
@@ -387,8 +449,8 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     }
 
     if (total_distance_travelled > 5.0) {  // TODO: value
-      ROS_WARN("Cannot find wall");
       ual_->setPose(ual_->pose());
+      result.message = "Cannot find wall with sf11";
       place_server_.setAborted(result);
       break;
     }
