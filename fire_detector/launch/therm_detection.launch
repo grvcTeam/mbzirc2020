@@ -4,10 +4,8 @@
     <arg name="uav_id"                  default="1"/>
     <!-- Debug viewer -->
     <arg name="debug"                   default="false"/>
-    <!-- Laser angle amplitude: 1 grade = 4 point -->
-    <!-- Incrementing 1 grade means an arc of 2 grades -->
-    <!-- TODO: degree as argument - calculate angle inside -->
-    <arg name="angle_amplitude"         default="20"/>
+    <!-- Angle (degrees) / Note: Incrementing 1 grade increase 1 grade per side -->
+    <arg name="angle_amplitude"         default="5"/>
     <!-- Camera pointing direction: FORWARD/DOWNWARD -->
     <arg name="camera_config"           default="FORWARD"/>
     <arg name="covariance_x"            default="1.5"/>

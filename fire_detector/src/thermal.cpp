@@ -15,6 +15,8 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+#define CONV2PNT 4 //Laser angle amplitude: 1 grade = 4 point
+
 using namespace std;
 using namespace cv;
 
@@ -83,7 +85,10 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 {
     ros::NodeHandle t;
     int angle_amplitude;
+
     t.getParam("thermal/angle_amplitude",angle_amplitude);
+    angle_amplitude=angle_amplitude*CONV2PNT;
+
     float range_min,range_max,increment_angle;
     int cuentas=0,i=0;
     int initial=360;
@@ -102,7 +107,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
         }
     }
     laser_measurement=laser_measurement/cuentas;
-    }
+}
 
 //  Routine to process the image and determine if there is fire and where
 void image_operations(const sensor_msgs::ImageConstPtr& msg)
