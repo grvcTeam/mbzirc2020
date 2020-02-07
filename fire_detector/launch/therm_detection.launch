@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- UAV id -->
-    <arg name="uav_id"                  default="1"/>
+    <arg name="agent_id"                  default="1"/>
+    <arg name="robot_model" default="mbzirc2020" />
+
     <!-- Debug viewer -->
     <arg name="debug"                   default="false"/>
     <!-- Angle (degrees) / Note: Incrementing 1 grade increase 1 grade per side -->
@@ -12,15 +13,17 @@
     <arg name="covariance_y"            default="1.5"/>
     <arg name="covariance_z"            default="0.5"/>
     <arg name="thermal_threshold"       default="60"/>
-
-    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-        <param name="angle_amplitude"   value="$(arg angle_amplitude)"/>
-        <param name="camera_config"     value="$(arg camera_config)"/>
-        <param name="covariance_x"      value="$(arg covariance_x)"/>
-        <param name="covariance_y"      value="$(arg covariance_y)"/>
-        <param name="covariance_z"      value="$(arg covariance_z)"/>
-        <param name="debug"             value="$(arg debug)"/>
-        <param name="thermal_threshold" value="$(arg thermal_threshold)"/>
-        <param name="uav_id"            type="string"   value="$(arg uav_id)"/>
-    </node>
+    
+    <group ns="$(arg robot_model)_$(arg agent_id)">
+        <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+            <param name="angle_amplitude"   value="$(arg angle_amplitude)"/>
+            <param name="camera_config"     value="$(arg camera_config)"/>
+            <param name="covariance_x"      value="$(arg covariance_x)"/>
+            <param name="covariance_y"      value="$(arg covariance_y)"/>
+            <param name="covariance_z"      value="$(arg covariance_z)"/>
+            <param name="debug"             value="$(arg debug)"/>
+            <param name="thermal_threshold" value="$(arg thermal_threshold)"/>
+            <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+        </node>
+    </group>
 </launch>
