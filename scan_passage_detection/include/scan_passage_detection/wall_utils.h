@@ -55,6 +55,23 @@ inline mbzirc_comm_objs::Wall mostCenteredWall(const mbzirc_comm_objs::WallList&
   return most_centered;
 }
 
+inline mbzirc_comm_objs::Wall mostCenteredToTheLeftWall(const mbzirc_comm_objs::WallList& _wall_list) {
+  mbzirc_comm_objs::Wall most_centered;
+  double min_sq_dx = 1e6;
+  for (auto wall: _wall_list.walls) {
+      double dy = 0.5 * (wall.start[1] + wall.end[1]);  // y-distance to mid-point
+      if (dy < 0) {
+          continue;  // As wall is to the right
+      }
+      double dx = 0.5 * (wall.start[0] + wall.end[0]);  // x-distance to mid-point
+      if (dx*dx < min_sq_dx) {
+          min_sq_dx = dx*dx;
+          most_centered = wall;
+      }
+  }
+  return most_centered;
+}
+
 inline mbzirc_comm_objs::Wall largestWall(const mbzirc_comm_objs::WallList& _wall_list) {
   mbzirc_comm_objs::Wall largest;
   double max_squared_length = 0;
