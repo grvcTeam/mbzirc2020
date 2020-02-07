@@ -1,4 +1,25 @@
-#include <ros/ros.h>
+//----------------------------------------------------------------------------------------------------------------------
+// Fire Detector
+//----------------------------------------------------------------------------------------------------------------------
+// The MIT License (MIT)
+// 
+// Copyright (c) 2016 GRVC University of Seville
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+// documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+// Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+// WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+// OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//----------------------------------------------------------------------------------------------------------------------
+#include "ros/ros.h"
+#include <thermal.h>
 #include <vector>
 #include <math.h>
 #include <opencv2/opencv.hpp>
@@ -15,32 +36,26 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
-#define CONV2PNT 4 // Laser angle amplitude: 1 grade = 4 point
-#define M_TEMP  32 // Size of Temp Matrix
-#define MIN_TEMP_DEFAULT 1000
-#define LASER_RANGE 720 // Lidar - full range of points
-#define SCALE_FACTOR 20 // To improve debug view
-#define R_CIRCLE 70.0 // Radius of the circle showed in debug view
-
 using namespace std;
 using namespace cv;
 
-int z=0;
-int maxim;
-float temp_matrix[M_TEMP][M_TEMP];
-float x_pose, y_pose, z_pose;
-float yaw;
-float laser_measurement;
-string uav_id;
-bool debug;
+Thermal::Thermal()
+{
+    ros::NodeHandle nh;
 
-geometry_msgs::PoseStamped pos;
-std_msgs::Header header_pose;
-ros::Publisher pub;
-ros::Publisher pub_msg;
+    ros::Subscriber sub = nh.subscribe("teraranger_evo_thermal/raw_temp_array",1,&Thermal::thermal_data,this);
+    ros::Subscriber sub_dos = nh.subscribe("teraranger_evo_thermal/rgb_image",1,&Thermal::image_operations,this);
+    ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
+    ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
+    nh.getParam("thermal/debug",debug);    
+
+    pub = nh.advertise<sensor_msgs::Image>("thermal_camera",1);
+    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
+    ros::spin();
+}
 
 // Routine to find fire in the image
-void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
     int minim=MIN_TEMP_DEFAULT;
     int fila,col;
@@ -67,7 +82,7 @@ void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 }
 
 //  Routine to obtain data pose and header to create fire messages
-void ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
+void Thermal::ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 {
     // Position in x,y,z    
     header_pose=msg.header; 
@@ -86,7 +101,7 @@ void ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 }
 
 //Routine to connect and obtain data from laser scanner and obtaining an average of the values
-void laser_measures(const sensor_msgs::LaserScan& msg)
+void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
 {
     ros::NodeHandle t;
     int angle_amplitude;
@@ -115,7 +130,7 @@ void laser_measures(const sensor_msgs::LaserScan& msg)
 }
 
 //  Routine to process the image and determine if there is fire and where
-void image_operations(const sensor_msgs::ImageConstPtr& msg)
+void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
     ros::NodeHandle t;
     
@@ -318,19 +333,10 @@ void image_operations(const sensor_msgs::ImageConstPtr& msg)
     }
 }
 
-// Routine to read data from teraranger topics and ual pose
-int main(int argc, char **argv)
+int main(int argc, char** argv) 
 {
-    ros::init(argc,argv,"Thermal_cam");
-    ros::NodeHandle n;
-
-    ros::Subscriber sub = n.subscribe("teraranger_evo_thermal/raw_temp_array",1,thermal_data);
-    ros::Subscriber sub_dos = n.subscribe("teraranger_evo_thermal/rgb_image",1,image_operations);
-    ros::Subscriber sub_tres = n.subscribe("ual/pose",1,ual_to_fire_position);
-    ros::Subscriber sub_cuatro = n.subscribe("scan",1,laser_measures);
-    n.getParam("thermal/debug",debug);    
-
-    pub = n.advertise<sensor_msgs::Image>("thermal_camera",1);
-    pub_msg = n.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
+    ros::init(argc, argv, "Thermal_cam");
+    Thermal thermal;
     ros::spin();
+    return 0;
 }
