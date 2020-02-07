@@ -354,36 +354,22 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     ual_->setPose(target_pose);
     loop_rate.sleep();
   }
-  ROS_WARN("Arrived to sf11.range = %f", sf11_range_.range);
+  ROS_INFO("Arrived to sf11.range = %f", sf11_range_.range);
 
   if (wall_list_.walls.size() <= 0) {
     ual_->setPose(ual_->pose());
     result.message = "Cannot find any wall with rplidar";
     place_server_.setAborted(result);
     return;
-  }  // TODO: else!
-
-  mbzirc_comm_objs::Wall closest_wall = mostCenteredWall(wall_list_);
-  ROS_WARN("closest_wall: [%lf, %lf] [%lf, %lf]", closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
-  float dx, dy;
-  if (closest_wall.start[0] > closest_wall.end[0]) {
-    dx = closest_wall.start[0] - closest_wall.end[0];
-    dy = closest_wall.start[1] - closest_wall.end[1];
-  } else {
-    dx = closest_wall.end[0] - closest_wall.start[0];
-    dy = closest_wall.end[1] - closest_wall.start[1];
-  
   }
-  ROS_WARN("dx = %f, dy = %f", dx, dy);
-  float wall_yaw = atan2(dy, dx);
-  auto current_pose = ual_->pose();
-  float current_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
-  float target_yaw = normalizeAngle(current_yaw + wall_yaw);
-  target_pose.pose.orientation.z = sin(0.5 * target_yaw);
-  target_pose.pose.orientation.w = cos(0.5 * target_yaw);
-  ual_->setPose(target_pose);
-  ros::Duration(3.0).sleep();
-  ROS_WARN("Arrived to target_yaw = %f (current_yaw = %f, wall_yaw = %f)", target_yaw, current_yaw, wall_yaw);
+  mbzirc_comm_objs::Wall best_wall = mostCenteredToTheLeftWall(wall_list_);
+  if ((best_wall.start[0] == 0) && (best_wall.start[1] == 0) && (best_wall.end[0] == 0) && (best_wall.end[1] == 0)) {
+    ual_->setPose(ual_->pose());
+    result.message = "Cannot find any wall to the left";
+    place_server_.setAborted(result);
+    return;
+  }
+  ROS_INFO("best_wall: [%lf, %lf] [%lf, %lf] length: %lf", best_wall.start[0], best_wall.start[1], best_wall.end[0], best_wall.end[1], sqrt(squaredLength(best_wall)));
 
   while (ros::ok() && (sf11_range_.range < 2.5)) {  // TODO: Threshold
     if (place_server_.isPreemptRequested()) {
@@ -395,17 +381,61 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     ual_->setPose(target_pose);
     loop_rate.sleep();
   }
-  ROS_WARN("Arrived to sf11.range = %f", sf11_range_.range);
+  ROS_INFO("Arrived to sf11.range = %f", sf11_range_.range);
 
-  // float wall_yaw = 2 * atan2(target_pose.pose.orientation.z, target_pose.pose.orientation.w);
-  float ux = -step * sin(target_yaw);
-  float uy =  step * cos(target_yaw);
-  float total_distance_travelled = 0.0;
-  float estimated_wall_width = 0.0;
+  float dx, dy;
+  if (best_wall.start[0] > best_wall.end[0]) {
+    dx = best_wall.start[0] - best_wall.end[0];
+    dy = best_wall.start[1] - best_wall.end[1];
+  } else {
+    dx = best_wall.end[0] - best_wall.start[0];
+    dy = best_wall.end[1] - best_wall.start[1];
+  }
+  ROS_INFO("dx = %f, dy = %f", dx, dy);
+  // auto current_pose = ual_->pose();
+  // float current_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
+  float wall_yaw = atan2(dy, dx);
+  // float target_yaw = normalizeAngle(current_yaw + wall_yaw);
+  float u_x = cos(wall_yaw);
+  float u_y = sin(wall_yaw);
+  float v_x = -u_y;
+  float v_y =  u_x;
+  float mid_x = 0.5 * (best_wall.start[0] + best_wall.end[0]);
+  float mid_y = 0.5 * (best_wall.start[1] + best_wall.end[1]);
+
+  float desired_distance = 0.0;  // TODO: From wall_center, take it from action goal! Must be positive?
+  float corrected_distance = desired_distance - 0.19;  // TODO: Values! Also 0.4 if segment is not first!?
+  geometry_msgs::PoseStamped next_to_wall;
+  next_to_wall.header.frame_id = tf_prefix_ + "/laser_link";  // TODO: wall_list_.header.frame_id
+  next_to_wall.pose.position.x = mid_x + corrected_distance * u_x - 1.0 * v_x;  // TODO: values
+  next_to_wall.pose.position.y = mid_y + corrected_distance * u_y - 1.0 * v_y;  // TODO: values + corrected_distance!
+  next_to_wall.pose.position.z = -0.17;  // TODO: values
+  next_to_wall.pose.orientation.z = sin(0.5 * wall_yaw);
+  next_to_wall.pose.orientation.w = cos(0.5 * wall_yaw);
+
+  std::string ual_pose_frame = ual_->pose().header.frame_id;
+  geometry_msgs::TransformStamped laser_to_ual_pose_frame;
+  try {
+    laser_to_ual_pose_frame = tf_buffer_.lookupTransform(ual_pose_frame, tf_prefix_ + "/laser_link", ros::Time(0));
+  } catch (tf2::TransformException &ex) {
+    ual_->setPose(ual_->pose());
+    result.message = ex.what();
+    place_server_.setAborted(result);
+    return;
+  }
+  // std::cout << laser_to_ual_pose_frame << '\n';
+  tf2::doTransform(next_to_wall, target_pose, laser_to_ual_pose_frame);
+  float target_yaw = 2.0 * atan2(target_pose.pose.orientation.z, target_pose.pose.orientation.w);  // bis!
+  // ROS_ERROR("target_yaw = %f, target_yaw_bis = %f", target_yaw, target_yaw_bis);
+  ual_->goToWaypoint(target_pose, true);
+  // std::cout << target_pose << '\n';
 
   bool over_wall = false;
   float last_sf11_range = sf11_range_.range;
-
+  float total_distance_travelled = 0.0;
+  float estimated_wall_width = 0.0;
+  float w_x = -sin(target_yaw);
+  float w_y =  cos(target_yaw);
   while (ros::ok()) {
     if (place_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
@@ -413,8 +443,8 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       return;
     }
 
-    target_pose.pose.position.x += ux;
-    target_pose.pose.position.y += uy;
+    target_pose.pose.position.x += step * w_x;
+    target_pose.pose.position.y += step * w_y;
     ual_->setPose(target_pose);
 
     float delta_h = sf11_range_.range - last_sf11_range;
