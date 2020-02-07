@@ -72,6 +72,8 @@ bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response 
     for (int i = 2; i < 5; i++) {
         board_input.pwm[i] = 1800;  // TODO: From config file?
     }
+    board_input.pwm[3] = 1280;  // TODO: PATCH!
+    board_input.pwm[4] = 1280;  // TODO: PATCH!
     input_mutex.unlock();
     return true;
 }
@@ -81,6 +83,8 @@ bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
     for (int i = 2; i < 5; i++) {
         board_input.pwm[i] = 1500;  // TODO: From config file?
     }
+    board_input.pwm[3] = 1380;  // TODO: PATCH!
+    board_input.pwm[4] = 1380;  // TODO: PATCH!
     input_mutex.unlock();
     return true;
 }
@@ -208,6 +212,10 @@ int main(int argc, char** argv) {
     ros::Publisher actuators_data_pub = n.advertise<mbzirc_comm_objs::ActuatorsData>("actuators_system/raw/actuators_data", 10);
     ros::Publisher gripper_attached_pub = n.advertise<mbzirc_comm_objs::GripperAttached>("actuators_system/gripper_attached", 10);
     mbzirc_comm_objs::GripperAttached gripper_msg;
+
+    std_srvs::Trigger::Request dummy_req;
+    std_srvs::Trigger::Response dummy_res;
+    open_gripper(dummy_req, dummy_res);  // TODO: Sure?
 
     ros::Rate rate(10);  // [Hz]
     while (ros::ok()) {
