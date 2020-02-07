@@ -59,10 +59,10 @@ void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
     int minim=MIN_TEMP_DEFAULT;
     int fila,col;
-    int i=0,a=0,b=0,j=0;
+    int aux;
     maxim=0;
     // Obtaining temperature array
-    for (i=0; i<msg->data.size(); i++){
+    for (int i=0; i<msg->data.size(); i++){     
         if (msg->data[i]>maxim){
             fila=int(i/M_TEMP);
             col=i-fila*M_TEMP;
@@ -71,11 +71,11 @@ void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
         else if (msg->data[i]<minim){
             minim=msg->data[i];
         }
-        j=0;
-        for (b=0;b<M_TEMP;b++){
-             for (a=0;a<M_TEMP;a++){
-                temp_matrix[a][b]=msg->data[j];
-                j=j+1;
+        aux=0;
+        for (int b=0;b<M_TEMP;b++){
+             for (int a=0;a<M_TEMP;a++){
+                temp_matrix[a][b]=msg->data[aux];
+                aux=aux+1;
              }
         }
     }
@@ -110,23 +110,23 @@ void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
     angle_amplitude=angle_amplitude*CONV2PNT;
 
     float range_min,range_max,increment_angle;
-    int cuentas=0,i=0;
+    int sum=0;
     int initial=LASER_RANGE/2; // Point to laser front
     laser_measurement=0;
+
     range_min=msg.range_min;
     range_max=msg.range_max;
     increment_angle=msg.angle_increment;
-
     initial=initial-angle_amplitude;
     // Reading every measure established and calculating the average
-    for (i=0;i<(angle_amplitude*2);i++)
+    for (int i=0;i<(angle_amplitude*2);i++)
     {
         if (msg.ranges[initial+i]>range_min and msg.ranges[initial+i]<range_max){
             laser_measurement=msg.ranges[initial+i]+laser_measurement;
-            cuentas=cuentas+1;
+            sum=sum+1;
         }
     }
-    laser_measurement=laser_measurement/cuentas;
+    laser_measurement=laser_measurement/sum;
 }
 
 //  Routine to process the image and determine if there is fire and where
@@ -147,10 +147,9 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
     t.getParam("thermal/uav_id",uav_id);
     // cout<<uav<<endl;
     //Index and size of the thermal window displayed
-    int a=M_TEMP*SCALE_FACTOR,i=0,j=0,k=0;
+    int a=M_TEMP*SCALE_FACTOR;
     int x_size=M_TEMP*SCALE_FACTOR;
     int y_size=M_TEMP*SCALE_FACTOR;
-    int d=0;
     int count=0, max_count=0;
     int gray_im[M_TEMP][M_TEMP];
     int cx[SCALE_FACTOR],cy[SCALE_FACTOR];
@@ -175,8 +174,8 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // Routine to obtain a black & white filter, 
         // Black=there is no fire
         // White=pixel temperature is bigger than thermal threeshold 
-        for (i=0;i<a;i++){
-            for (j=0;j<a;j++){
+        for (int i=0;i<a;i++){
+            for (int j=0;j<a;j++){
                 if (temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>thermal_threshold)
                     {
                         
@@ -211,7 +210,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         if (maxim>thermal_threshold){
             detection=1;
             // Calculating moments and centers in the fire
-            for (d=0;d<outline.size();d++){
+            for (int d=0;d<outline.size();d++){
                 // Obtaining centers in the fire
                 mu[d]=moments(outline[d], false);
                 mc[d]=Point2f(mu[d].m10/mu[d].m00 , mu[d].m01/mu[d].m00);
@@ -221,7 +220,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                 Rect rect=boundingRect(outline[d]);
                 circle(image_color,mc[d],2,CV_RGB(0,255,0),1,16,0);
             }
-            for (d=0;d<outline.size();d++)
+            for (int d=0;d<outline.size();d++)
             {
                 sum.x=cx[d]+sum.x;
                 sum.y=cy[d]+sum.y;
