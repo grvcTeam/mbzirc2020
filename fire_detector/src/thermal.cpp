@@ -42,12 +42,10 @@ using namespace cv;
 Thermal::Thermal()
 {
     ros::NodeHandle nh;
-
     ros::Subscriber sub = nh.subscribe("teraranger_evo_thermal/raw_temp_array",1,&Thermal::thermal_data,this);
     ros::Subscriber sub_dos = nh.subscribe("teraranger_evo_thermal/rgb_image",1,&Thermal::image_operations,this);
     ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
     ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
-    nh.getParam("thermal/debug",debug);    
 
     pub = nh.advertise<sensor_msgs::Image>("thermal_camera",1);
     pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
@@ -84,40 +82,40 @@ void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 //  Routine to obtain data pose and header to create fire messages
 void Thermal::ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 {
+    double roll_aux, pitch_aux, yaw_aux;
+	tf2::Quaternion q;
+
     // Position in x,y,z    
     header_pose=msg.header; 
-    // cout<<header_pose<<endl;
     x_pose=msg.pose.position.x;
     y_pose=msg.pose.position.y;
     z_pose=msg.pose.position.z;
-    double roll_aux, pitch_aux, yaw_aux;
-	tf2::Quaternion q;
+
 	tf2::fromMsg(msg.pose.orientation,q);
 	tf2::Matrix3x3 Rot_matrix(q);
 	Rot_matrix.getRPY(roll_aux,pitch_aux,yaw_aux);
-
     yaw = yaw_aux;
-    pos.pose=msg.pose;
+    //pos.pose=msg.pose;
 }
 
 //Routine to connect and obtain data from laser scanner and obtaining an average of the values
 void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
 {
-    ros::NodeHandle t;
+    ros::NodeHandle n("~");
     int angle_amplitude;
+    float range_min,range_max;
 
-    t.getParam("thermal/angle_amplitude",angle_amplitude);
+    n.getParam("angle_amplitude",angle_amplitude);
     angle_amplitude=angle_amplitude*CONV2PNT;
-
-    float range_min,range_max,increment_angle;
-    int sum=0;
-    int initial=LASER_RANGE/2; // Point to laser front
-    laser_measurement=0;
+    int initial=LASER_RANGE/2-angle_amplitude; // Point to laser front
 
     range_min=msg.range_min;
     range_max=msg.range_max;
-    increment_angle=msg.angle_increment;
-    initial=initial-angle_amplitude;
+    float increment_angle=msg.angle_increment;
+
+    int sum=0;
+    laser_measurement=0;
+
     // Reading every measure established and calculating the average
     for (int i=0;i<(angle_amplitude*2);i++)
     {
@@ -132,19 +130,22 @@ void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
 //  Routine to process the image and determine if there is fire and where
 void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
 {
-    ros::NodeHandle t;
+    ros::NodeHandle n("~");
     
     // Get parameters from launcher
     int thermal_threshold;
     float sigma_x,sigma_y,sigma_z;
     string mode;
     bool detection=false;
-    t.getParam("thermal/thermal_threshold",thermal_threshold);
-    t.getParam("thermal/covariance_x",sigma_x);
-    t.getParam("thermal/covariance_y",sigma_y);
-    t.getParam("thermal/covariance_z",sigma_z);
-    t.getParam("thermal/camera_config",mode);    
-    t.getParam("thermal/uav_id",uav_id);
+    bool debug;
+    n.getParam("thermal_threshold",thermal_threshold);
+    n.getParam("covariance_x",sigma_x);
+    n.getParam("covariance_y",sigma_y);
+    n.getParam("covariance_z",sigma_z);
+    n.getParam("camera_config",mode);    
+    n.getParam("uav_id",uav_id);
+    n.getParam("uav_id",uav_id);
+    n.getParam("debug",debug);
     // cout<<uav<<endl;
     //Index and size of the thermal window displayed
     int a=M_TEMP*SCALE_FACTOR;

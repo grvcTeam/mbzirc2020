@@ -37,18 +37,16 @@
 class Thermal {
 public:
     Thermal();
-    
     void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg);
     void ual_to_fire_position(const geometry_msgs::PoseStamped& msg);
     void laser_measures(const sensor_msgs::LaserScan& msg);
     void image_operations(const sensor_msgs::ImageConstPtr& msg);
 
 protected:
-    geometry_msgs::PoseStamped pos;
+    //geometry_msgs::PoseStamped pos;
     std_msgs::Header header_pose;
     ros::Publisher pub;
     ros::Publisher pub_msg;
-    bool debug;
     int maxim;
     float temp_matrix[M_TEMP][M_TEMP];
     float x_pose, y_pose, z_pose;
