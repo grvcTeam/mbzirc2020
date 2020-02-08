@@ -182,6 +182,13 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   grvc::utils::CircularBuffer history_xy_errors;
   history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
   history_xy_errors.fill_with(MAX_AVG_XY_ERROR_HI);
+
+  grvc::utils::CircularBuffer history_orientation_sq_x;
+  grvc::utils::CircularBuffer history_orientation_sq_y;
+  history_orientation_sq_x.set_size(CATCHING_LOOP_RATE);  // 1s @ CATCHING_LOOP_RATE Hz
+  history_orientation_sq_y.set_size(CATCHING_LOOP_RATE);  // 1s @ CATCHING_LOOP_RATE Hz
+  history_orientation_sq_x.fill_with(0);
+  history_orientation_sq_y.fill_with(0);
   // unsigned tries_counter = 0;  // TODO: as feedback?
   ros::Duration timeout(CANDIDATE_TIMEOUT);
   ros::Rate loop_rate(CATCHING_LOOP_RATE);
@@ -203,6 +210,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     white_edge_pose.pose.position = matched_candidate_.point_of_interest;
     white_edge_pose.pose.orientation.z = 1;
 
+    auto current_pose = ual_->pose();
     geometry_msgs::PoseStamped error_pose;
     tf2::doTransform(white_edge_pose, error_pose, optical_to_camera_control);
     error_pose.header.stamp = ros::Time::now();
@@ -212,7 +220,6 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
         lower_pid.reset();
         ROS_INFO("Switch to lower pick control");
       }
-      auto current_pose = ual_->pose();
       double absolute_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
       double absolute_yaw_error = normalizeAngle(absolute_yaw_lock - absolute_yaw);
       error_pose.pose.orientation.x = 0;
@@ -227,7 +234,6 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       }
       error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
       error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // change sign!
-      auto current_pose = ual_->pose();
       absolute_yaw_lock = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
     }
 
@@ -266,6 +272,20 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     }
     // ROS_ERROR("vel = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
+    // Check if uav is in risk!
+    history_orientation_sq_x.push(current_pose.pose.orientation.x*current_pose.pose.orientation.x);
+    history_orientation_sq_y.push(current_pose.pose.orientation.y*current_pose.pose.orientation.y);
+    double min_orientation_sq_x, avg_orientation_sq_x, max_orientation_sq_x;
+    history_orientation_sq_x.get_stats(min_orientation_sq_x, avg_orientation_sq_x, max_orientation_sq_x);
+    double min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y;
+    history_orientation_sq_y.get_stats(min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y);
+    if ((avg_orientation_sq_x + avg_orientation_sq_y) > 0.3) {  // TODO: Tune!
+      velocity.header.frame_id = "arena";  // TODO: uav?
+      velocity.twist.linear.x = 0;
+      velocity.twist.linear.y = 0;
+      velocity.twist.linear.z = 0.5;  // TODO: Tune
+    }
+
     ual_->setVelocity(velocity);
     // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
     // ROS_INFO("target_position = [%lf, %lf, %lf] target angle = x", target_position.x, target_position.y, target_position.z);
@@ -295,6 +315,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       //   ROS_ERROR("Error setting target status to LOST in UAV_%d", uav_id_);
       // }
       // hover_position_waypoint_ = ual_.pose();
+      result.message = "Z_GIVE_UP_CATCHING reached!";
       pick_server_.setAborted(result);
       break;
     }
