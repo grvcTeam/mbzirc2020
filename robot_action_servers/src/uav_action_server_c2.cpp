@@ -25,6 +25,16 @@ void UalActionServer::attachedCallback(const mbzirc_comm_objs::GripperAttachedCo
   gripper_attached_ = *msg;
 }
 
+#define MAX_AVG_XY_ERROR_HI 1.50  // [m]
+#define MAX_AVG_XY_ERROR_LO 0.15  // [m]
+#define MAX_AVG_Z_HI 15.0  // [m]
+#define MAX_AVG_Z_LO  3.0  // [m]
+inline float max_avg_xy_error(float _z) {
+  if (_z < MAX_AVG_Z_LO) { return MAX_AVG_XY_ERROR_LO; }
+  if (_z > MAX_AVG_Z_HI) { return MAX_AVG_XY_ERROR_HI; }
+  return MAX_AVG_XY_ERROR_LO + ((MAX_AVG_XY_ERROR_HI - MAX_AVG_XY_ERROR_LO) / (MAX_AVG_Z_HI - MAX_AVG_Z_LO)) * (_z - MAX_AVG_Z_LO);
+}
+
 void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal) {
   // ROS_INFO("Pick!");
   // mbzirc_comm_objs::PickFeedback feedback;
@@ -171,7 +181,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   bool is_lower_pick_control_active = false;
   grvc::utils::CircularBuffer history_xy_errors;
   history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
-  history_xy_errors.fill_with(MAX_AVG_XY_ERROR);
+  history_xy_errors.fill_with(MAX_AVG_XY_ERROR_HI);
   // unsigned tries_counter = 0;  // TODO: as feedback?
   ros::Duration timeout(CANDIDATE_TIMEOUT);
   ros::Rate loop_rate(CATCHING_LOOP_RATE);
@@ -185,6 +195,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       break;
     }
 
+    float estimated_z = sf11_range_.range;
     const float height_threshold = 1.0;
     const float height_hysteresis = 0.4;
     geometry_msgs::PoseStamped white_edge_pose;
@@ -195,7 +206,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     geometry_msgs::PoseStamped error_pose;
     tf2::doTransform(white_edge_pose, error_pose, optical_to_camera_control);
     error_pose.header.stamp = ros::Time::now();
-    if (matched_candidate_.is_cropped || (sf11_range_.range < height_threshold) || ((sf11_range_.range < height_threshold + height_hysteresis) && is_lower_pick_control_active) ) {  // TODO: Threshold
+    if (matched_candidate_.is_cropped || (estimated_z < height_threshold) || ((estimated_z < height_threshold + height_hysteresis) && is_lower_pick_control_active) ) {  // TODO: Threshold
       if (!is_lower_pick_control_active) {
         is_lower_pick_control_active = true;
         lower_pid.reset();
@@ -227,10 +238,11 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       double min_xy_error, avg_xy_error, max_xy_error;
       history_xy_errors.get_stats(min_xy_error, avg_xy_error, max_xy_error);
 
-      if (avg_xy_error > MAX_AVG_XY_ERROR) {
-        avg_xy_error = MAX_AVG_XY_ERROR;
+      float max_avg_xy_error_for_z = max_avg_xy_error(estimated_z);
+      if (avg_xy_error > max_avg_xy_error_for_z) {
+        avg_xy_error = max_avg_xy_error_for_z;
       }
-      error_pose.pose.position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
+      error_pose.pose.position.z = -MAX_DELTA_Z * (1.0 - (avg_xy_error / max_avg_xy_error_for_z));
       // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
     } else {  // No fresh candidates (timeout)
