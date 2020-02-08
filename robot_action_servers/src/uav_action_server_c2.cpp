@@ -78,20 +78,20 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   // Define upper PID (softer control)
   // TODO: Tune!
   grvc::ual::PIDParams pid_x;
-  pid_x.kp = 0.82;
+  pid_x.kp = 0.6;
   pid_x.ki = 0.0;
   pid_x.kd = 0.0;
-  pid_x.min_sat = -1.0;
-  pid_x.max_sat = 1.0;
+  pid_x.min_sat = -0.5;
+  pid_x.max_sat = 0.5;
   pid_x.min_wind = -2.0;
   pid_x.max_wind = 2.0;
 
   grvc::ual::PIDParams pid_y;
-  pid_y.kp = 0.82;
+  pid_y.kp = 0.6;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
-  pid_y.min_sat = -1.0;
-  pid_y.max_sat = 1.0;
+  pid_y.min_sat = -0.5;
+  pid_y.max_sat = 0.5;
   pid_y.min_wind = -2.0;
   pid_y.max_wind = 2.0;
 
