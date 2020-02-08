@@ -46,7 +46,7 @@ protected:
     std_msgs::Header header_pose;
     ros::Publisher pub;
     ros::Publisher pub_msg;
-    int maxim;
+    float max_temp;
     int angle_amplitude;
     int initial;
     float temp_matrix[M_TEMP][M_TEMP];

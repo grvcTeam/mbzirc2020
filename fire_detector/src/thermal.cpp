@@ -60,29 +60,22 @@ Thermal::Thermal()
     ros::spin();
 }
 
-// Routine to find fire in the image
+// Routine to find fire in the image - Just one fire in the image
+// TODO - detect more than one possible fire
 void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
-    int minim=MIN_TEMP_DEFAULT;
-    int fila,col;
-    int aux;
-    maxim=0;
-    // Obtaining temperature array
-    for (int i=0; i<msg->data.size(); i++){     
-        if (msg->data[i]>maxim){
-            fila=int(i/M_TEMP);
-            col=i-fila*M_TEMP;
-            maxim=msg->data[i];
-        }
-        else if (msg->data[i]<minim){
-            minim=msg->data[i];
-        }
-        aux=0;
-        for (int b=0;b<M_TEMP;b++){
-             for (int a=0;a<M_TEMP;a++){
-                temp_matrix[a][b]=msg->data[aux];
-                aux=aux+1;
-             }
+    int aux; // to loop through thermal array data
+
+    for (int j=0, aux=0;j<M_TEMP;j++)
+    {
+        for (int k=0;k<M_TEMP;k++,aux++)
+        {
+            // Save current temp matrix
+            temp_matrix[k][j]=msg->data[aux];
+            // Search hightest temp of the array
+            if (msg->data[aux]>max_temp){
+                max_temp=msg->data[aux];
+            }
         }
     }
 }
@@ -202,7 +195,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         float radio=R_CIRCLE;
         // Routine to detect fire in the image
          circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
-        if (maxim>thermal_threshold){
+        if (max_temp>thermal_threshold){
             detection=1;
             // Calculating moments and centers in the fire
             for (int d=0;d<outline.size();d++){
