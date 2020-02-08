@@ -43,11 +43,12 @@ public:
     void image_operations(const sensor_msgs::ImageConstPtr& msg);
 
 protected:
-    //geometry_msgs::PoseStamped pos;
     std_msgs::Header header_pose;
     ros::Publisher pub;
     ros::Publisher pub_msg;
     int maxim;
+    int angle_amplitude;
+    int initial;
     float temp_matrix[M_TEMP][M_TEMP];
     float x_pose, y_pose, z_pose;
     float yaw;

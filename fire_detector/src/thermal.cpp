@@ -42,6 +42,7 @@ using namespace cv;
 Thermal::Thermal()
 {
     ros::NodeHandle nh;
+
     ros::Subscriber sub = nh.subscribe("teraranger_evo_thermal/raw_temp_array",1,&Thermal::thermal_data,this);
     ros::Subscriber sub_dos = nh.subscribe("teraranger_evo_thermal/rgb_image",1,&Thermal::image_operations,this);
     ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
@@ -49,6 +50,13 @@ Thermal::Thermal()
 
     pub = nh.advertise<sensor_msgs::Image>("thermal_camera",1);
     pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
+
+    ros::NodeHandle n("~");
+
+    n.getParam("angle_amplitude",angle_amplitude);
+    angle_amplitude=angle_amplitude*CONV2PNT;
+    initial=LASER_RANGE/2-angle_amplitude; // Point to laser front
+
     ros::spin();
 }
 
@@ -100,31 +108,17 @@ void Thermal::ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 
 //Routine to connect and obtain data from laser scanner and obtaining an average of the values
 void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
-{
-    ros::NodeHandle n("~");
-    int angle_amplitude;
-    float range_min,range_max;
-
-    n.getParam("angle_amplitude",angle_amplitude);
-    angle_amplitude=angle_amplitude*CONV2PNT;
-    int initial=LASER_RANGE/2-angle_amplitude; // Point to laser front
-
-    range_min=msg.range_min;
-    range_max=msg.range_max;
-    float increment_angle=msg.angle_increment;
-
-    int sum=0;
-    laser_measurement=0;
-
+{  
+    float sum_measurement=0.0;
+    int n_measurement=0;
     // Reading every measure established and calculating the average
-    for (int i=0;i<(angle_amplitude*2);i++)
+    for (int i=0;i<(angle_amplitude*2);i++,n_measurement++)
     {
-        if (msg.ranges[initial+i]>range_min and msg.ranges[initial+i]<range_max){
-            laser_measurement=msg.ranges[initial+i]+laser_measurement;
-            sum=sum+1;
+        if (msg.ranges[initial+i]>msg.range_min and msg.ranges[initial+i]<msg.range_max){
+            sum_measurement=msg.ranges[initial+i]+sum_measurement;
         }
-    }
-    laser_measurement=laser_measurement/sum;
+    }    
+    laser_measurement=sum_measurement/n_measurement;
 }
 
 //  Routine to process the image and determine if there is fire and where
@@ -337,6 +331,6 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "Thermal_cam");
     Thermal thermal;
-    ros::spin();
+
     return 0;
 }
