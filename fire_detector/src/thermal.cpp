@@ -31,6 +31,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/image_encodings.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
@@ -83,20 +84,16 @@ void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 //  Routine to obtain data pose and header to create fire messages
 void Thermal::ual_to_fire_position(const geometry_msgs::PoseStamped& msg)
 {
-    double roll_aux, pitch_aux, yaw_aux;
+    // Position in x,y,z   
+    uav_position.header=msg.header;
+    uav_position.point=msg.pose.position;
+
 	tf2::Quaternion q;
-
-    // Position in x,y,z    
-    header_pose=msg.header; 
-    x_pose=msg.pose.position.x;
-    y_pose=msg.pose.position.y;
-    z_pose=msg.pose.position.z;
-
 	tf2::fromMsg(msg.pose.orientation,q);
 	tf2::Matrix3x3 Rot_matrix(q);
-	Rot_matrix.getRPY(roll_aux,pitch_aux,yaw_aux);
-    yaw = yaw_aux;
-    //pos.pose=msg.pose;
+    double roll, pitch, yaw;
+	Rot_matrix.getRPY(roll,pitch,yaw);
+    uav_yaw = yaw;
 }
 
 //Routine to connect and obtain data from laser scanner and obtaining an average of the values
@@ -261,7 +258,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             }
 
             rec_object.header.stamp = ros::Time::now();
-            rec_object.header.frame_id = header_pose.frame_id;
+            rec_object.header.frame_id = uav_position.header.frame_id;
             rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
             rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
             rec_object.pose.covariance={sigma_x*sigma_x,0,0,0,0,0,
@@ -280,12 +277,12 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             if (mode=="DOWNWARD")
             {
             //Thermal image fields
-            rec_object.image_detection.depth=z_pose;
+            rec_object.image_detection.depth=uav_position.point.z; // TODO - To check 
             rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_DOWNWARD;
             // Object Detection fields
-            rec_object.pose.pose.position.x=x_pose;
-            rec_object.pose.pose.position.y=y_pose;
-            rec_object.pose.pose.position.z=0.0;
+            rec_object.pose.pose.position.x=uav_position.point.x;
+            rec_object.pose.pose.position.y=uav_position.point.y;
+            rec_object.pose.pose.position.z=0.0; // TODO - uav_position.z?
             }
             else if (mode=="FORWARD")
             {
@@ -295,9 +292,9 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
            //Object detection fields
 
             
-            rec_object.pose.pose.position.x=x_pose+laser_measurement*cos(yaw);
-            rec_object.pose.pose.position.y=y_pose+laser_measurement*sin(yaw);
-            rec_object.pose.pose.position.z=z_pose;
+            rec_object.pose.pose.position.x=uav_position.point.x+laser_measurement*cos(uav_yaw);
+            rec_object.pose.pose.position.y=uav_position.point.y+laser_measurement*sin(uav_yaw);
+            rec_object.pose.pose.position.z=uav_position.point.z;
             }
             // Publishing the Object    
             rec_list.objects.push_back(rec_object);

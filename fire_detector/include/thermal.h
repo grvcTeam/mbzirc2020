@@ -23,6 +23,7 @@
 
 #include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/opencv.hpp>
@@ -43,15 +44,14 @@ public:
     void image_operations(const sensor_msgs::ImageConstPtr& msg);
 
 protected:
-    std_msgs::Header header_pose;
+    geometry_msgs::PointStamped uav_position;
     ros::Publisher pub;
     ros::Publisher pub_msg;
     float max_temp;
     int angle_amplitude;
     int initial;
     float temp_matrix[M_TEMP][M_TEMP];
-    float x_pose, y_pose, z_pose;
-    float yaw;
+    float uav_yaw;
     float laser_measurement;
     std::string uav_id;
 };
