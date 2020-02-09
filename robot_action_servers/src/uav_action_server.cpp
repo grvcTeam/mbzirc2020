@@ -243,13 +243,9 @@ void UalActionServer::trackedFireCallback(const mbzirc_comm_objs::ObjectDetectio
   matched_candidate_ = *msg;
 }
 
-// void UalActionServer::sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
-//   for (auto obj : msg->objects) {
-//     if (obj.color == mbzirc_comm_objs::ObjectDetection::COLOR_RED) {
-//       matched_candidate_ = obj;
-//     }
-//   }
-// }
+void UalActionServer::sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg) {
+  sensed_objects_ = *msg;
+}
 
 void UalActionServer::sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg) {
   sf11_range_ = *msg;

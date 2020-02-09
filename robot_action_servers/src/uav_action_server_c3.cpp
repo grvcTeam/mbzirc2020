@@ -105,7 +105,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     extinguish_facade_fire_server_.setAborted(result);
     return;
   }
-
+/*
   std::string fires_folder = ros::package::getPath("fire_extinguisher") + "/fires/";
   std::string fires_filename = fires_folder + (_goal->fires_file != ""? _goal->fires_file: "fire_default.yaml");
 
@@ -128,17 +128,28 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     return;
   }
   FireData target_fire = fire_map[_goal->fire_id];
+*/
+
+  geometry_msgs::TransformStamped optical_to_camera;  // Constant!
+  try {
+    optical_to_camera = tf_buffer_.lookupTransform(tf_prefix_ + "/camera_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
+  } catch (tf2::TransformException &ex) {
+    result.message = ex.what();
+    extinguish_facade_fire_server_.setAborted(result);
+  }
 
   ros::NodeHandle nh;
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
+  ros::Subscriber sensed_sub = nh.subscribe<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
   ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+  ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
 
-  if (!waitForFreshSf11RangeMsg(10)) {
-    result.message = "could not get fresh [sf11_range]";
-    extinguish_facade_fire_server_.setAborted(result);
-    return;
-  }
+  // if (!waitForFreshSf11RangeMsg(10)) {
+  //   result.message = "could not get fresh [sf11_range]";
+  //   extinguish_facade_fire_server_.setAborted(result);
+  //   return;
+  // }
 
   if (!waitForFreshWallListMsg(10)) {
     result.message = "could not get fresh [wall_list]";
@@ -150,51 +161,51 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   pid_x.kp = 0.4;
   pid_x.ki = 0.0;
   pid_x.kd = 0.0;
-  pid_x.min_sat = -1.0;
-  pid_x.max_sat = 1.0;
-  pid_x.min_wind = -1.0;
-  pid_x.max_wind = 1.0;
+  pid_x.min_sat = -0.5;
+  pid_x.max_sat = 0.5;
+  pid_x.min_wind = -0.1;
+  pid_x.max_wind = 0.1;
 
   grvc::ual::PIDParams pid_y;
   pid_y.kp = 0.4;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
-  pid_y.min_sat = -1.0;
-  pid_y.max_sat = 1.0;
-  pid_y.min_wind = -1.0;
-  pid_y.max_wind = 1.0;
+  pid_y.min_sat = -0.5;
+  pid_y.max_sat = 0.5;
+  pid_y.min_wind = -0.1;
+  pid_y.max_wind = 0.1;
 
   grvc::ual::PIDParams pid_z;
   pid_z.kp = 0.4;
   pid_z.ki = 0.0;
   pid_z.kd = 0.0;
-  pid_z.min_sat = -1.0;
-  pid_z.max_sat = 1.0;
-  pid_z.min_wind = -1.0;
-  pid_z.max_wind = 1.0;
+  pid_z.min_sat = -0.5;
+  pid_z.max_sat = 0.5;
+  pid_z.min_wind = -0.1;
+  pid_z.max_wind = 0.1;
 
   grvc::ual::PIDParams pid_yaw;
   pid_yaw.kp = 0.4;
   pid_yaw.ki = 0.02;
   pid_yaw.kd = 0.0;
-  pid_yaw.min_sat = -2.0;
-  pid_yaw.max_sat = 2.0;
-  pid_yaw.min_wind = -2.0;
-  pid_yaw.max_wind = 2.0;
+  pid_yaw.min_sat = -0.5;
+  pid_yaw.max_sat = 0.5;
+  pid_yaw.min_wind = -0.1;
+  pid_yaw.max_wind = 0.1;
   pid_yaw.is_angular = true;
 
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_facade_control");
 
-  // grvc::utils::PidController x_pid("x", 0.4, 0.02, 0);
-  // grvc::utils::PidController y_pid("y", 0.4, 0.02, 0);
-  // grvc::utils::PidController z_pid("z", 0.4, 0.02, 0);
-  // grvc::utils::PidController yaw_pid("yaw", 0.4, 0.02, 0);
-
+/*
   mbzirc_comm_objs::Wall fire_closest_wall = closestWall(target_fire.wall_list);
   mbzirc_comm_objs::Wall fire_largest_wall = largestWall(target_fire.wall_list);
   double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
+*/
 
+  auto ual_safe_pose = ual_->pose();
+  mbzirc_comm_objs::ObjectDetection hole;
+  ros::Duration timeout(CANDIDATE_TIMEOUT);  // TODO: different timeout?
   ros::Rate loop_rate(FACADE_EXTINGUISH_LOOP_RATE);
   while (ros::ok()) {
     if (extinguish_facade_fire_server_.isPreemptRequested()) {
@@ -203,6 +214,59 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       return;
     }
 
+    for (auto object: sensed_objects_.objects) {
+      if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
+        hole = object;
+      }
+    }
+    ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
+
+    if (since_last_candidate < timeout) {
+      mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
+      
+      double distance_to_closest_wall = 0.0;
+      if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
+        distance_to_closest_wall = sqrt(squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]));
+      }
+
+      if (distance_to_closest_wall < 1.5) {  // TODO: Tune
+        ROS_WARN("Too close to closest_wall!");
+        ual_->setPose(ual_safe_pose);
+      } else {
+        ual_safe_pose = ual_->pose();
+
+        geometry_msgs::PoseStamped hole_pose;
+        hole_pose.header = hole.header;
+        hole_pose.pose = hole.pose.pose;
+        // std::cout << hole_pose << '\n';
+        geometry_msgs::PoseStamped error_pose;
+        tf2::doTransform(hole_pose, error_pose, optical_to_camera);
+        error_pose.header.stamp = ros::Time::now();
+        // std::cout << error_pose << '\n';
+        error_pose.pose.position.x -= 1.8;  // TODO!
+        error_pose.pose.position.y += 0.0;  // TODO!
+        error_pose.pose.position.z += 0.2;  // TODO!
+        error_pose.pose.orientation.x = 0;
+        error_pose.pose.orientation.y = 0;
+        error_pose.pose.orientation.z = 0;  // TODO!
+        error_pose.pose.orientation.w = 1;  // TODO!
+        // std::cout << error_pose << '\n';
+        geometry_msgs::TwistStamped velocity;
+        velocity = pose_pid.updateError(error_pose);
+        velocity.twist.angular.x = 0;  // TODO!
+        velocity.twist.angular.y = 0;  // TODO!
+        velocity.twist.angular.z = 0;  // TODO!
+        // std::cout << velocity << '\n';
+        debug_pub.publish(velocity);
+        // ual_->setVelocity(velocity);
+      }
+
+    } else {
+      ROS_WARN("Candidates timeout!");
+      ual_->setPose(ual_safe_pose);
+    }
+
+/*
     double z_error = target_fire.sf11_range.range - sf11_range_.range;
     // ROS_ERROR("z: %lf", z_error);
 
@@ -277,6 +341,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
 
     // std::cout << velocity << '\n';
     ual_->setVelocity(velocity);
+*/
 
     loop_rate.sleep();
   }

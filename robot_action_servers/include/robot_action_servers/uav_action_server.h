@@ -99,6 +99,7 @@ protected:
   mbzirc_comm_objs::GripperAttached gripper_attached_;
   sensor_msgs::Range sf11_range_;
   mbzirc_comm_objs::WallList wall_list_;
+  mbzirc_comm_objs::ObjectDetectionList sensed_objects_;
 
 public:
 
@@ -112,7 +113,7 @@ public:
   void goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_goal);
   void trackedBrickCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg);
   void trackedFireCallback(const mbzirc_comm_objs::ObjectDetectionConstPtr& msg);
-  void sensedObjectCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg);
+  void sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg);
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg);
   void sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg);
   
