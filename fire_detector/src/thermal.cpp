@@ -35,6 +35,8 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+#include <fire_detector/CheckFire.h>
+
 using namespace std;
 using namespace cv;
 
@@ -50,6 +52,8 @@ Thermal::Thermal()
     pub = nh.advertise<sensor_msgs::Image>("thermal_camera",1);
     pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
 
+    ros::ServiceServer srv_checkfire = nh.advertiseService("fire_detected", &Thermal::srv_callback_checkfire, this);
+
     ros::NodeHandle n("~");
 
     n.getParam("angle_amplitude",angle_amplitude);
@@ -61,7 +65,9 @@ Thermal::Thermal()
     n.getParam("uav_id",uav_id);
     n.getParam("debug",debug);
     n.getParam("thermal_threshold",thermal_threshold);
-    n.getParam("camera_config",mode);    
+    n.getParam("camera_config",mode);
+    detected=false;
+
     ros::spin();
 }
 
@@ -70,7 +76,7 @@ Thermal::Thermal()
 void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
     int aux; // to loop through thermal array data
-
+    float aux_max=0;
     for (int j=0, aux=0;j<M_TEMP;j++)
     {
         for (int k=0;k<M_TEMP;k++,aux++)
@@ -78,11 +84,12 @@ void Thermal::thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg)
             // Save current temp matrix
             temp_matrix[k][j]=msg->data[aux];
             // Search hightest temp of the array
-            if (msg->data[aux]>max_temp){
-                max_temp=msg->data[aux];
+            if (msg->data[aux]>aux_max){
+                aux_max=msg->data[aux];
             }
         }
     }
+    max_temp=aux_max;
 }
 
 //  Routine to obtain data pose and header to create fire messages
@@ -151,7 +158,9 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
 
         // Routine to detect fire in the image
         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
+
         if (max_temp>thermal_threshold){
+            detected=true;
             // Calculating moments and centers in the fire
             for (int d=0;d<outline.size();d++){
                 // Obtaining centers in the fire
@@ -178,6 +187,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                     y_comp=(center.x-sum.x)*-1;
                 }
             }
+
             if(debug)
             {
                 // If a fire is detected
@@ -228,13 +238,18 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
         }
-        else if(debug)
+        else
         {
-
+            detected=false;
+            if(debug)
+            {
             cout<<"."<<endl;
+            }
         }
+
         flip(image_color,image_color,0);
         rotate(image_color,image_color,ROTATE_90_COUNTERCLOCKWISE);
+        
         if (debug)
         {
             // Displaying images on screen 
@@ -252,7 +267,6 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         }
         // Converting image to msg 
         header = msg->header; 
-        
         img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, image_color);
         pub.publish(img_bridge.toImageMsg());
     }
@@ -261,6 +275,12 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
       ROS_ERROR("cv_bridge exception: %s", e.what());
       return;
     }
+}
+
+bool Thermal::srv_callback_checkfire(fire_detector::CheckFire::Request  &req, fire_detector::CheckFire::Response &res)
+{
+    res.fire=detected;
+    return true;
 }
 
 int main(int argc, char** argv) 

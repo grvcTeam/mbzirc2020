@@ -32,6 +32,8 @@
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
 
+#include <fire_detector/CheckFire.h>
+
 #define CONV2PNT 4 // Laser angle amplitude: 1 grade = 4 point
 #define M_TEMP  32 // Size of Temp Matrix
 #define MIN_TEMP_DEFAULT 1000
@@ -46,6 +48,7 @@ public:
     void ual_to_fire_position(const geometry_msgs::PoseStamped& msg);
     void laser_measures(const sensor_msgs::LaserScan& msg);
     void image_operations(const sensor_msgs::ImageConstPtr& msg);
+    bool srv_callback_checkfire(fire_detector::CheckFire::Request& req, fire_detector::CheckFire::Response& res);
 
 protected:
     geometry_msgs::PointStamped uav_position;
@@ -71,6 +74,7 @@ protected:
     cv_bridge::CvImage img_bridge; 
     cv_bridge::CvImageConstPtr cv_ptr;
     cv::Mat therm;
+    bool detected;
 };
 
 #endif  // FIRE_DETECTOR_THERMAL_H
