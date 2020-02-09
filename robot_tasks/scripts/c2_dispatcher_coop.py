@@ -15,6 +15,19 @@
 # Challenge duration	30 minutes
 # Communications	TBD
 
+##### Behavior #####
+
+# Area is partitioned between the UAVs to search for piles and walls. 
+# UAVs get pick&place tasks for their wall. We can create a queue of bricks to place in the wall, extracted from the given pattern. 
+# Assign bricks in their order in the layer (per rows). After, completing all segments available. Then, go to the second layer.  
+# Each UAV can travel at a different altitude to avoid conflicts (except for in the search task). 
+# UAV pile and wall will be shared resources. 
+# If we do not find piles or walls in the search task, we retry. 
+# If we fail picking a brick, we retry. 
+# If a brick falls down while picking or placing, we discard it and go to another one. 
+
+# If there is no communication at all with the Ground Station, use a single UAV with CentralUnit onboard.
+
 import copy
 import rospy
 import smach
@@ -27,10 +40,10 @@ from utils.translate import color_from_int
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import all_piles_are_found, get_build_wall_sequence
+from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence
 
 
-field_width  = 20  # TODO: should be 60
+field_width  = 20  # TODO: read them from file 
 field_height = 20  # TODO: should be 50
 column_count = 4  # 6  # TODO: as a function of fov
 
@@ -42,19 +55,24 @@ brick_scales['blue']   = Vector3(x = 1.2, y = 0.2, z = 0.2)
 brick_scales['orange'] = Vector3(x = 1.8, y = 0.2, z = 0.2)
 
 # TODO: from especification, assume x-z layout
-wall_blueprint = [['red', 'green'], ['green', 'red']]
+wall_blueprint = {1: [['red', 'green'], ['green', 'red']], 2: [['red', 'green'], ['green', 'red']], 3: [['red', 'green'], ['green', 'red']], 4: [['orange', 'orange'], ['orange', 'orange']] } 
 
 
 class CentralUnit(object):
     def __init__(self):
-        self.available_robots = ['1', '2'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+        self.available_robots = ['1', '2', '3'] # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
         self.robots = {}
         for robot_id in self.available_robots:
             self.robots[robot_id] = RobotProxy(robot_id)
 
-        self.piles = {}
-        rospy.Subscriber("estimated_objects", msg.ObjectDetectionList, self.estimation_callback)
+        self.ugv_piles = {}
+        self.ugv_wall = None
+        self.uav_piles = {}
+        self.uav_walls = {}
+        self.objects_locked = False
+        
+        rospy.Subscriber("estimated_objects", msg.ObjectList, self.estimation_callback)
 
         self.task_manager = TaskManager(self.robots)
 
@@ -63,13 +81,28 @@ class CentralUnit(object):
         return rospy.get_param(self.robots[robot_id].url + param_name)
 
     def estimation_callback(self, data):
-        for pile in data.objects:
-            # TODO: check type and scale?
-            color = color_from_int(pile.color)
-            pose = PoseStamped()
-            pose.header = pile.header
-            pose.pose = pile.pose.pose
-            self.piles[color] = pose
+
+        if not objects_locked:
+
+            for obj in data.objects:
+                # TODO: check scale?
+                color = color_from_int(pile.color)
+                pose = PoseStamped()
+                pose.header = obj.header
+                pose.pose = obj.pose.pose
+
+                if obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UAV:
+                    self.uav_piles[color] = pose
+
+                elif obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UGV:
+                    self.ugv_piles[color] = pose
+                
+                elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
+                    self.uav_walls[obj.id] = pose
+                
+                elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UGV:
+                    self.ugv_wall = pose
+
 
     def take_off(self):
         for robot_id in self.available_robots:
@@ -79,7 +112,10 @@ class CentralUnit(object):
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
-    def look_for_piles(self):
+    def lock_objects(self):
+        objects_locked = True
+
+    def look_for_objects(self):
         robot_paths = {}
         point_paths = generate_uav_paths(len(self.available_robots), field_width, field_height, column_count)
         for i, robot_id in enumerate(self.available_robots):
@@ -96,14 +132,15 @@ class CentralUnit(object):
             robot_paths[robot_id] = robot_path
 
         for robot_id in self.available_robots:
-            print('sending goal to search_piles server {}'.format(robot_id))
+            print('sending goal to search_objects server {}'.format(robot_id))
             userdata = smach.UserData()
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
-        while not all_piles_are_found(self.piles) and not rospy.is_shutdown():
+        while not all_piles_are_found(self.uav_piles,self.ugv_piles) and not all_walls_are_found(self.uav_walls,self.ugv_wall) and not rospy.is_shutdown():
             # TODO: What happens if all piles are NEVER found?
-            rospy.logwarn('len(self.piles) = {}'.format(len(self.piles)))
+            rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
+            rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.sleep(1.0)
 
         for robot_id in self.available_robots:
@@ -111,30 +148,36 @@ class CentralUnit(object):
             self.task_manager.preempt_task(robot_id)
 
     def build_wall(self):
-        piles = copy.deepcopy(self.piles)  # Cache piles
-        build_wall_sequence = get_build_wall_sequence(wall_blueprint, brick_scales)
-        for i, row in enumerate(build_wall_sequence):
-            for brick in row:
-                print('row[{}] brick = {}'.format(i, brick))
-                costs = {}
-                while not costs and not rospy.is_shutdown():
-                    for robot_id in self.available_robots:
-                        if self.task_manager.is_idle(robot_id):
-                            costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
-                        else:
-                            # print('waiting for an idle robot...')
-                            rospy.sleep(0.5)
-                min_cost_robot_id = min(costs, key = costs.get)
-                print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
+        piles = copy.deepcopy(self.uav_piles)  # Cache piles
+        
+        build_wall_sequence = {}
+        for wall_id,wall_pose in self.uav_walls.items():
+            build_wall_sequence[wall_id] = get_build_wall_sequence(wall_blueprint[wall_id], brick_scales, wall_pose)
 
-                flight_level = self.get_param(min_cost_robot_id,'flight_level')
-                userdata = smach.UserData()
-                userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
-                userdata.above_pile_pose.pose.position.z = flight_level
-                userdata.above_wall_pose = copy.deepcopy(brick.pose)
-                userdata.above_wall_pose.pose.position.z = flight_level
-                userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
-                self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
+        for wall_id in build_wall_sequence.keys():
+
+            for i, row in enumerate(build_wall_sequence[wall_id]):
+                for brick in row:
+                    print('row[{}] brick = {}'.format(i, brick))
+                    costs = {}
+                    while not costs and not rospy.is_shutdown():
+                        for robot_id in self.available_robots:
+                            if self.task_manager.is_idle(robot_id):
+                                costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
+                            else:
+                                # print('waiting for an idle robot...')
+                                rospy.sleep(0.5)
+                    min_cost_robot_id = min(costs, key = costs.get)
+                    print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
+
+                    flight_level = self.get_param(min_cost_robot_id,'flight_level')
+                    userdata = smach.UserData()
+                    userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
+                    userdata.above_pile_pose.pose.position.z = flight_level
+                    userdata.above_wall_pose = copy.deepcopy(brick.pose)
+                    userdata.above_wall_pose.pose.position.z = flight_level
+                    userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
+                    self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
 
         # Once arrived here, last pick_and_place task has been allocated
         print('All pick_and_place tasks allocated')
@@ -173,8 +216,14 @@ def main():
     # rospy.sleep(3)
 
     central_unit.take_off()
-    if not all_piles_are_found(central_unit.piles):  # TODO: make it a while-loop?
-        central_unit.look_for_piles()
+    while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.uav_walls): 
+        central_unit.look_for_objects()
+        #TODO: fill in automatically piles if any of them was found?
+
+    central_unit.lock_objects()
+    # TODO: is uav_walls modified inside the function?
+    order_wall_segments(self.uav_walls)
+    
     central_unit.build_wall()
 
     rospy.spin()
