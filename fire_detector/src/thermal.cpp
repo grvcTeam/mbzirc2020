@@ -23,8 +23,6 @@
 #include <vector>
 #include <math.h>
 #include <opencv2/opencv.hpp>
-#include <cv_bridge/cv_bridge.h>
-
 #include <std_msgs/String.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <sensor_msgs/Image.h>
@@ -57,7 +55,13 @@ Thermal::Thermal()
     n.getParam("angle_amplitude",angle_amplitude);
     angle_amplitude=angle_amplitude*CONV2PNT;
     initial=LASER_RANGE/2-angle_amplitude; // Point to laser front
-
+    n.getParam("covariance_x",sigma[0]);
+    n.getParam("covariance_y",sigma[1]);
+    n.getParam("covariance_z",sigma[2]);
+    n.getParam("uav_id",uav_id);
+    n.getParam("debug",debug);
+    n.getParam("thermal_threshold",thermal_threshold);
+    n.getParam("camera_config",mode);    
     ros::spin();
 }
 
@@ -113,44 +117,13 @@ void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
 
 //  Routine to process the image and determine if there is fire and where
 void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
-{
-    ros::NodeHandle n("~");
-    
-    // Get parameters from launcher
-    int thermal_threshold;
-    float sigma_x,sigma_y,sigma_z;
-    string mode;
-    bool detection=false;
-    bool debug;
-    n.getParam("thermal_threshold",thermal_threshold);
-    n.getParam("covariance_x",sigma_x);
-    n.getParam("covariance_y",sigma_y);
-    n.getParam("covariance_z",sigma_z);
-    n.getParam("camera_config",mode);    
-    n.getParam("uav_id",uav_id);
-    n.getParam("uav_id",uav_id);
-    n.getParam("debug",debug);
+{  
     // cout<<uav<<endl;
-    //Index and size of the thermal window displayed
-    int a=M_TEMP*SCALE_FACTOR;
-    int x_size=M_TEMP*SCALE_FACTOR;
-    int y_size=M_TEMP*SCALE_FACTOR;
-    int count=0, max_count=0;
-    int gray_im[M_TEMP][M_TEMP];
-    int cx[SCALE_FACTOR],cy[SCALE_FACTOR];
-    float image_center_x=x_size/2;
-    float image_center_y=y_size/2;
-    // Variables to port from msg to image and operate in opencv
-    sensor_msgs::Image img_msg;
-    std_msgs::Header header; 
-    cv_bridge::CvImage img_bridge; 
-    cv_bridge::CvImageConstPtr cv_ptr;
-    mbzirc_comm_objs::ObjectDetectionList rec_list;
-    mbzirc_comm_objs::ObjectDetection rec_object;
-    Mat image_color;
-    Mat therm(Size(x_size,y_size), CV_8UC1);
-    uint8_t *initial_therm_ptr = therm.data;
-    uint8_t *current_therm_ptr;
+    float x_comp, y_comp;
+    float cx[SCALE_FACTOR],cy[SCALE_FACTOR];
+    vector<vector<Point>> outline;
+    Point center,sum;
+    therm = Mat::zeros(Size(M_TEMP*SCALE_FACTOR,M_TEMP*SCALE_FACTOR), CV_8UC1); // TODO Why CV_8UC1
 
     //Main routine 
     try{
@@ -159,41 +132,26 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // Routine to obtain a black & white filter, 
         // Black=there is no fire
         // White=pixel temperature is bigger than thermal threeshold 
-        for (int i=0;i<a;i++){
-            for (int j=0;j<a;j++){
+        for (int i=0;i<M_TEMP*SCALE_FACTOR;i++){
+            for (int j=0;j<M_TEMP*SCALE_FACTOR;j++){
                 if (temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>thermal_threshold)
-                    {
-                        
-                        current_therm_ptr = (uint8_t *)(initial_therm_ptr + x_size * i + j);
-                        *(current_therm_ptr) =255;
-                    }
-                    else
-                    {
-                        current_therm_ptr = (uint8_t *)(initial_therm_ptr + y_size * i + j);
-                        *(current_therm_ptr) = 0;
-                    }
+                { 
+                    *((uint8_t *)(therm.data + M_TEMP*SCALE_FACTOR * i + j)) =255;
                 }
             }
+        }
         
-        vector<vector<Point>> outline;
-        vector<vector<Point>> rect;
-        Point pt1,pt2,center,sum;
-        center.x=image_center_y;
-        center.y=image_center_x;
+        center.x=M_TEMP*SCALE_FACTOR/2.0;
+        center.y=M_TEMP*SCALE_FACTOR/2.0;
 
         findContours(therm,outline,CV_RETR_TREE,CV_CHAIN_APPROX_SIMPLE);
         vector<Moments> mu(outline.size());
         vector<Point2f> mc(outline.size());
         cvtColor(therm,image_color,CV_GRAY2BGR);
 
-        float distance;
-        float x_comp;
-        float y_comp;
-        float radio=R_CIRCLE;
         // Routine to detect fire in the image
-         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
+        circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
         if (max_temp>thermal_threshold){
-            detection=1;
             // Calculating moments and centers in the fire
             for (int d=0;d<outline.size();d++){
                 // Obtaining centers in the fire
@@ -212,17 +170,71 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                 if (d==outline.size()-1){
                     sum.y=sum.y/outline.size();
                     sum.x=sum.x/outline.size();
-                    circle(image_color,sum,radio,CV_RGB(0,255,0),1,16,0);
+                    circle(image_color,sum,R_CIRCLE,CV_RGB(0,255,0),1,16,0);
                     circle(image_color,sum,3,CV_RGB(0,255,0),1,16,0);
                     line(image_color,center,sum,CV_RGB(0,255,0),1,16,0);
 
                     x_comp=center.y-sum.y;
                     y_comp=(center.x-sum.x)*-1;
-                    distance=sqrt(x_comp*x_comp+y_comp*y_comp);
                 }
             }
-        }
+            if(debug)
+            {
+                // If a fire is detected
+                cout<<"Fire_detected"<<endl;
+                cout<<"Distance to center ~ x: "<<to_string(x_comp)<<"  y:"<<to_string(y_comp)<< " total:"<< to_string(sqrt(x_comp*x_comp+y_comp*y_comp))<<endl;
+            }
 
+            rec_object.header.stamp = ros::Time::now();
+            rec_object.header.frame_id = uav_position.header.frame_id;
+            rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
+            rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
+            rec_object.pose.covariance={sigma[0]*sigma[0],0,0,0,0,0,
+                                        0,sigma[1]*sigma[1],0,0,0,0,
+                                        0,0,sigma[2]*sigma[2],0,0,0,
+                                        0, 0, 0, 0, 0,  0,
+                                        0, 0, 0, 0, 0,  0,
+                                        0, 0, 0, 0, 0,  0};
+            rec_object.image_detection.img_height=M_TEMP;
+            rec_object.image_detection.img_width=M_TEMP;
+            rec_object.image_detection.v=y_comp/SCALE_FACTOR;
+            rec_object.image_detection.u=x_comp/SCALE_FACTOR;
+            rec_object.image_detection.height=R_CIRCLE/SCALE_FACTOR;
+            rec_object.image_detection.width=R_CIRCLE/SCALE_FACTOR;
+
+            if (mode=="DOWNWARD")
+            {
+                //Thermal image fields
+                rec_object.image_detection.depth=uav_position.point.z;
+                rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_DOWNWARD;
+                // Object Detection fields
+                rec_object.pose.pose.position.x=uav_position.point.x;
+                rec_object.pose.pose.position.y=uav_position.point.y;
+                rec_object.pose.pose.position.z=0.0;
+            }
+            else if (mode=="FORWARD")
+            {
+                //Thermal image fields
+                rec_object.image_detection.depth=laser_measurement;
+                rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_FORWARD;
+                //Object detection fields              
+                rec_object.pose.pose.position.x=uav_position.point.x+laser_measurement*cos(uav_yaw);
+                rec_object.pose.pose.position.y=uav_position.point.y+laser_measurement*sin(uav_yaw);
+                rec_object.pose.pose.position.z=uav_position.point.z;
+            }
+            // Publishing the Object    
+            rec_list.objects.push_back(rec_object);
+            rec_list.stamp = ros::Time::now();
+            rec_list.agent_id = uav_id;
+            pub_msg.publish(rec_list);
+        }
+        else if(debug)
+        {
+
+            cout<<"."<<endl;
+        }
+        flip(image_color,image_color,0);
+        rotate(image_color,image_color,ROTATE_90_COUNTERCLOCKWISE);
         if (debug)
         {
             // Displaying images on screen 
@@ -234,81 +246,15 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             string nombre_dos="B&W";
             namedWindow(nombre_dos);
             moveWindow(nombre_dos,565,0);
-            flip(image_color,image_color,0);
-            rotate(image_color,image_color,ROTATE_90_COUNTERCLOCKWISE);
+            
             imshow(nombre_dos, image_color);
             waitKey(3);
         }
-
-        // COnverting image to msg 
+        // Converting image to msg 
         header = msg->header; 
-        img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_8UC3, image_color);
+        
+        img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, image_color);
         pub.publish(img_bridge.toImageMsg());
-        // Publish when a fire is detected
-        if (detection)
-        {
-            if(debug)
-            {
-                // If a fire is detected
-                cout<<"Fire_detected"<<endl;
-                string x_dis = to_string(x_comp);
-                string y_dis = to_string(y_comp);
-                // putText(image_color,s,center,FONT_HERSHEY_SIMPLEX,1,CV_RGB(100,100,0),1,1,0);
-                cout<<"Distance to center ~ x: "<<x_dis<<"  y:"<<y_dis<<endl;
-            }
-
-            rec_object.header.stamp = ros::Time::now();
-            rec_object.header.frame_id = uav_position.header.frame_id;
-            rec_object.type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
-            rec_object.color = mbzirc_comm_objs::ObjectDetection::COLOR_UNKNOWN;
-            rec_object.pose.covariance={sigma_x*sigma_x,0,0,0,0,0,
-                                        0,sigma_y*sigma_y,0,0,0,0,
-                                        0,0,sigma_z*sigma_z,0,0,0,
-                                        0, 0, 0, 0, 0,  0,
-                                        0, 0, 0, 0, 0,  0,
-                                        0, 0, 0, 0, 0,  0};
-            rec_object.image_detection.img_height=y_size/SCALE_FACTOR;
-            rec_object.image_detection.img_width=x_size/SCALE_FACTOR;
-            rec_object.image_detection.v=y_comp/SCALE_FACTOR;
-            rec_object.image_detection.u=x_comp/SCALE_FACTOR;
-            rec_object.image_detection.height=radio/SCALE_FACTOR;
-            rec_object.image_detection.width=radio/SCALE_FACTOR;
-
-            if (mode=="DOWNWARD")
-            {
-            //Thermal image fields
-            rec_object.image_detection.depth=uav_position.point.z; // TODO - To check 
-            rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_DOWNWARD;
-            // Object Detection fields
-            rec_object.pose.pose.position.x=uav_position.point.x;
-            rec_object.pose.pose.position.y=uav_position.point.y;
-            rec_object.pose.pose.position.z=0.0; // TODO - uav_position.z?
-            }
-            else if (mode=="FORWARD")
-            {
-            //Thermal image fields
-            rec_object.image_detection.depth=laser_measurement;
-            rec_object.image_detection.camera_direction=mbzirc_comm_objs::ThermalImage::CAMERA_DIRECTION_FORWARD;
-           //Object detection fields
-
-            
-            rec_object.pose.pose.position.x=uav_position.point.x+laser_measurement*cos(uav_yaw);
-            rec_object.pose.pose.position.y=uav_position.point.y+laser_measurement*sin(uav_yaw);
-            rec_object.pose.pose.position.z=uav_position.point.z;
-            }
-            // Publishing the Object    
-            rec_list.objects.push_back(rec_object);
-            rec_list.stamp = ros::Time::now();
-            rec_list.agent_id = uav_id;
-            pub_msg.publish(rec_list);
-        }
-        else 
-        {
-            if(debug)
-            {
-                cout<<"."<<endl;
-            }
-        }
     }
     catch (cv_bridge::Exception& e)
     {

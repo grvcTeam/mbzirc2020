@@ -27,6 +27,10 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <opencv2/opencv.hpp>
+#include <cv_bridge/cv_bridge.h>
+
+#include <mbzirc_comm_objs/ObjectDetection.h>
+#include <mbzirc_comm_objs/ObjectDetectionList.h>
 
 #define CONV2PNT 4 // Laser angle amplitude: 1 grade = 4 point
 #define M_TEMP  32 // Size of Temp Matrix
@@ -54,6 +58,19 @@ protected:
     float uav_yaw;
     float laser_measurement;
     std::string uav_id;
+    float sigma[3]; // xyz  
+    bool debug;
+    int thermal_threshold;
+    std::string mode;
+    cv::Mat image_color;
+    mbzirc_comm_objs::ObjectDetectionList rec_list;
+    mbzirc_comm_objs::ObjectDetection rec_object;
+    // Variables to port from msg to image and operate in opencv
+    sensor_msgs::Image img_msg;
+    std_msgs::Header header; 
+    cv_bridge::CvImage img_bridge; 
+    cv_bridge::CvImageConstPtr cv_ptr;
+    cv::Mat therm;
 };
 
 #endif  // FIRE_DETECTOR_THERMAL_H
