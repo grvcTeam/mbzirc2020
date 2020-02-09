@@ -85,13 +85,13 @@
 <!-- Change "dropwall_center" to modify location and yaw -->
 <xacro:property name="dropwall_center" value="${[40,30,0,0]}"/>
 
-<xacro:property name="dropwall01p" value="${[dropwall_center[0]-0.9,dropwall_center[1]+1.2,dropwall_center[2],1.570795]}"/>
+<xacro:property name="dropwall01p" value="${[dropwall_center[0]-1.9,dropwall_center[1]+2.2,dropwall_center[2],1.570795]}"/>
 <xacro:property name="dropwall01" value="${[(dropwall01p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall01p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall01p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall01p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall01p[2],dropwall01p[3]+dropwall_center[3]]}"/>
 <xacro:property name="dropwall02p" value="${[dropwall_center[0]+0,dropwall_center[1]+0,dropwall_center[2],0.0]}"/>
 <xacro:property name="dropwall02" value="${[(dropwall02p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall02p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall02p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall02p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall02p[2],dropwall02p[3]+dropwall_center[3]]}"/>
-<xacro:property name="dropwall03p" value="${[dropwall_center[0]+1.2,dropwall_center[1]-0.9,dropwall_center[2],1.570795]}"/>
+<xacro:property name="dropwall03p" value="${[dropwall_center[0]+2.2,dropwall_center[1]-1.9,dropwall_center[2],1.570795]}"/>
 <xacro:property name="dropwall03" value="${[(dropwall03p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall03p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall03p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall03p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall03p[2],dropwall03p[3]+dropwall_center[3]]}"/>
-<xacro:property name="dropwall04p" value="${[dropwall_center[0]+2.1,dropwall_center[1]-2.1,dropwall_center[2],0.0]}"/>
+<xacro:property name="dropwall04p" value="${[dropwall_center[0]+4.1,dropwall_center[1]-4.1,dropwall_center[2],0.0]}"/>
 <xacro:property name="dropwall04" value="${[(dropwall04p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall04p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall04p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall04p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall04p[2],dropwall04p[3]+dropwall_center[3]]}"/>
 <!-- UGV Bricks Location-->
 <!-- Change ugvbricks to modify location and yaw for the entire pile-->

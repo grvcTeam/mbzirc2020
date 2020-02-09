@@ -6,12 +6,12 @@
       <inertial>
         <mass>1</mass>
         <inertia>
-          <ixx>0.166667</ixx>
+          <ixx>1.57416667</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.166667</iyy>
-          <iyz>0</iyz>
-          <izz>0.166667</izz>
+          <iyy>0.24416667</iyy> 
+			    <iyz>0</iyz>
+          <izz>1.33666667</izz> 
         </inertia>
         <pose frame=''>0 0 0 0 -0 0</pose>
       </inertial>
@@ -22,7 +22,7 @@
         <pose frame=''>0.09 0 0 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.02 2 1.7</size>
+            <size>0.02 4 1.7</size>
           </box>
         </geometry>
         <material>
@@ -44,7 +44,7 @@
         <transparency>0</transparency>
       </visual>
       <visual name='ModelPreview_0::link_0::visual_2'>
-        <pose frame=''>0 -0.99 0 0 -0 0</pose>
+        <pose frame=''>0 -1.99 0 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.16 0.02 1.7</size>
@@ -69,7 +69,7 @@
         <transparency>0</transparency>
       </visual>
       <visual name='ModelPreview_0::link_0::visual_3'>
-        <pose frame=''>0 0.99 0 0 -0 0</pose>
+        <pose frame=''>0 1.99 0 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.16 0.02 1.7</size>
@@ -97,7 +97,7 @@
         <pose frame=''>-0.09 0 0 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.02 2 1.7</size>
+            <size>0.02 4 1.7</size>
           </box>
         </geometry>
         <material>
@@ -119,11 +119,11 @@
         <transparency>0</transparency>
       </visual>
       <visual name='visual_UP'>
-        <pose frame=''>0 -0.8 -0.85 0 -0 0</pose>
+        <pose frame=''>0 -1.6 -0.85 0 -0 0</pose>
         <geometry>
           <mesh>
             <uri>model://DropWall/meshes/DropWallUp.stl</uri>
-            <scale>0.01 .01 0.01</scale>
+            <scale>0.01 0.02 0.01</scale>
           </mesh>
         </geometry>
         <material>
@@ -150,7 +150,7 @@
         <pose frame=''>-0.09 0 0 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.02 2 1.7</size>
+            <size>0.02 4 1.7</size>
           </box>
         </geometry>
         <surface>
@@ -205,7 +205,7 @@
         <pose frame=''>0.09 0 0 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.02 2 1.7</size>
+            <size>0.02 4 1.7</size>
           </box>
         </geometry>
         <surface>
@@ -257,7 +257,7 @@
       <collision name='collision_2'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose frame=''>0 -0.99 0 0 -0 0</pose>
+        <pose frame=''>0 -1.99 0 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.16 0.02 1.7</size>
@@ -312,7 +312,7 @@
       <collision name='collision_3'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose frame=''>0 0.99 0 0 -0 0</pose>
+        <pose frame=''>0 1.99 0 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.16 0.02 1.7</size>
@@ -367,11 +367,11 @@
       <collision name='collision_UP'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose frame=''>0 -0.8 -0.85 0 -0 0</pose>
+        <pose frame=''>0 -1.6 -0.85 0 -0 0</pose>
         <geometry>
           <mesh>
             <uri>model://DropWall/meshes/DropWallUp.stl</uri>
-            <scale>0.01 0.01 0.01</scale>
+            <scale>0.01 0.02 0.01</scale>
           </mesh>
         </geometry>
         <surface>
