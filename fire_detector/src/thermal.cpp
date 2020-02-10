@@ -49,10 +49,10 @@ Thermal::Thermal()
     ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
     ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
 
-    pub = nh.advertise<sensor_msgs::Image>("thermal_camera",1);
-    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects",1);
+    pub = nh.advertise<sensor_msgs::Image>("thermal_detection/detection_image",1);
+    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("thermal_detection/sensed_objects",1);
 
-    ros::ServiceServer srv_checkfire = nh.advertiseService("fire_detected", &Thermal::srv_callback_checkfire, this);
+    ros::ServiceServer srv_checkfire = nh.advertiseService("thermal_detection/fire_detected", &Thermal::srv_callback_checkfire, this);
 
     ros::NodeHandle n("~");
 

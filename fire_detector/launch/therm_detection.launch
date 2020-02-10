@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="agent_id"                default="1"/>
-    <!-- <arg name="robot_model"             default="mbzirc2020" /> -->
-    <!-- <arg name="ns"                      default="$(arg robot_model)_$(arg agent_id)" /> -->
-
     <!-- Debug viewer -->
     <arg name="debug"                   default="false"/>
     <!-- Angle (degrees) / Note: Incrementing 1 grade increase 1 grade per side -->

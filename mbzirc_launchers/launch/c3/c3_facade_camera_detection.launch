@@ -43,5 +43,17 @@
     <node pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
       <param name="portname" value="/dev/evot33"/>
     </node>
+
+    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+      <param name="thermal_threshold" value="37"/>
+      <param name="angle_amplitude"   value="5"/>
+      <param name="camera_config"     value="FORWARD"/>
+      <param name="covariance_x"      value="1.5"/>
+      <param name="covariance_y"      value="1.5"/>
+      <param name="covariance_z"      value="0.5"/>
+      <param name="debug"             value="false"/>
+      <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+    </node>
+
   </group>
 </launch>
