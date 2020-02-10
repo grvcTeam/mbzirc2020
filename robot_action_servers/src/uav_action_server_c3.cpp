@@ -245,7 +245,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         // std::cout << error_pose << '\n';
         error_pose.pose.position.x -= 1.8;  // TODO!
         error_pose.pose.position.y += 0.0;  // TODO!
-        error_pose.pose.position.z += 0.2;  // TODO!
+        error_pose.pose.position.z += 0.3;  // TODO!
         error_pose.pose.orientation.x = 0;
         error_pose.pose.orientation.y = 0;
         error_pose.pose.orientation.z = 0;  // TODO!
@@ -257,8 +257,8 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         velocity.twist.angular.y = 0;  // TODO!
         velocity.twist.angular.z = 0;  // TODO!
         // std::cout << velocity << '\n';
-        debug_pub.publish(velocity);
-        // ual_->setVelocity(velocity);
+        // debug_pub.publish(velocity);
+        ual_->setVelocity(velocity);
       }
 
     } else {

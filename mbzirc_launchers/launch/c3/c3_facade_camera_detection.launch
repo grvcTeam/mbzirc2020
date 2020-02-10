@@ -16,13 +16,15 @@
     <node pkg="circle_detection" type="circle_detection_node" name="circle_detection" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="publish_debug_marker" value="false" />
-      <param name="publish_debug_images" value="false" />
+      <param name="publish_debug_images" value="true" />
       <param name="dp" value="1" />
       <param name="min_dist_between_circle_center" value="60" />
-      <param name="canny_edge_upper_threshold" value="150" />
+      <param name="canny_edge_upper_threshold" value="50" />
       <param name="accumulator_threshold" value="50" />
-      <param name="min_radius" value="0" />
-      <param name="max_radius" value="0" />
+      <param name="min_radius_meters" value="0.05" />
+      <param name="max_radius_meters" value="0.30" />
+      <param name="gaussian_blur_sigma" value="1.5" />
+      <param name="use_gaussian_blur" value="true" />
     </node>
 
     <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">

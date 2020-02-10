@@ -516,6 +516,7 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
         std::cout << "Circle " << i << " radius : " << radius << std::endl;
         // Extract circle center depth from depth image
         float circle_center_depth = (float)((depth_image_cv->image.at<uint16_t>(center))/1000.0);
+        std::cout << "Circle center depth: " << circle_center_depth << std::endl;
 
         if (circle_center_depth != 0 && circle_center_depth < 10.0 && circle_center_depth < max_depth_th_)
         {
