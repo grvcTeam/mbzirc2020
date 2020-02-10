@@ -280,7 +280,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     history_orientation_sq_x.get_stats(min_orientation_sq_x, avg_orientation_sq_x, max_orientation_sq_x);
     double min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y;
     history_orientation_sq_y.get_stats(min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y);
-    if ((avg_orientation_sq_x + avg_orientation_sq_y) > 0.3) {  // TODO: Tune!
+    if ((avg_orientation_sq_x + avg_orientation_sq_y) > 0.008) {  // TODO: Tune!
+      ROS_WARN("UAV in risk, go up!");
       velocity.header.frame_id = "map";  // TODO: uav?
       velocity.twist.linear.x = 0;
       velocity.twist.linear.y = 0;

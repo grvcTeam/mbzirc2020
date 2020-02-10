@@ -72,8 +72,6 @@ bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response 
     for (int i = 2; i < 5; i++) {
         board_input.pwm[i] = 1800;  // TODO: From config file?
     }
-    board_input.pwm[3] = 1280;  // TODO: PATCH!
-    board_input.pwm[4] = 1280;  // TODO: PATCH!
     input_mutex.unlock();
     return true;
 }
@@ -81,10 +79,8 @@ bool open_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response 
 bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     for (int i = 2; i < 5; i++) {
-        board_input.pwm[i] = 1500;  // TODO: From config file?
+        board_input.pwm[i] = 1200;  // TODO: From config file?
     }
-    board_input.pwm[3] = 1380;  // TODO: PATCH!
-    board_input.pwm[4] = 1380;  // TODO: PATCH!
     input_mutex.unlock();
     return true;
 }
