@@ -67,6 +67,7 @@ Thermal::Thermal()
     n.getParam("thermal_threshold",thermal_threshold);
     n.getParam("camera_config",mode);
     detected=false;
+    false_negative=0;
 
     ros::spin();
 }
@@ -141,7 +142,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // White=pixel temperature is bigger than thermal threeshold 
         for (int i=0;i<M_TEMP*SCALE_FACTOR;i++){
             for (int j=0;j<M_TEMP*SCALE_FACTOR;j++){
-                if (temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>thermal_threshold)
+                if (temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>=thermal_threshold || (false_negative<=MAX_FILTER_NEGATIVES && temp_matrix[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))]>=max_temp-5))
                 { 
                     *((uint8_t *)(therm.data + M_TEMP*SCALE_FACTOR * i + j)) =255;
                 }
@@ -159,8 +160,17 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // Routine to detect fire in the image
         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
 
-        if (max_temp>thermal_threshold){
+        if (max_temp>=thermal_threshold || false_negative<=MAX_FILTER_NEGATIVES){
             detected=true;
+
+            if(max_temp<=thermal_threshold)
+            {
+                false_negative++;
+            }else
+            {
+                false_negative=0;
+            }
+            
             // Calculating moments and centers in the fire
             for (int d=0;d<outline.size();d++){
                 // Obtaining centers in the fire
@@ -186,13 +196,6 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                     x_comp=center.y-sum.y;
                     y_comp=(center.x-sum.x)*-1;
                 }
-            }
-
-            if(debug)
-            {
-                // If a fire is detected
-                cout<<"Fire_detected"<<endl;
-                cout<<"Distance to center ~ x: "<<to_string(x_comp)<<"  y:"<<to_string(y_comp)<< " total:"<< to_string(sqrt(x_comp*x_comp+y_comp*y_comp))<<endl;
             }
 
             rec_object.header.stamp = ros::Time::now();
@@ -232,8 +235,23 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                 rec_object.pose.pose.position.y=uav_position.point.y+laser_measurement*sin(uav_yaw);
                 rec_object.pose.pose.position.z=uav_position.point.z;
             }
+
+            if(debug)
+            {
+                if(false_negative)
+               {                    
+                    cout<<"Possible false negative: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
+                }
+                else
+                {
+                    // Fire detected
+                    cout<<"Fire_detected"<<endl;
+                    cout<<"Distance to center ~ x: "<<to_string(x_comp)<<"  y:"<<to_string(y_comp)<< " total:"<< to_string(sqrt(x_comp*x_comp+y_comp*y_comp))<<endl;
+                }
+            }
+
             // Publishing the Object    
-            rec_list.objects.push_back(rec_object);
+            rec_list.objects.push_back(rec_object); // TODO - Check if publish full list or current point
             rec_list.stamp = ros::Time::now();
             rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
@@ -243,11 +261,11 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             detected=false;
             if(debug)
             {
-            cout<<"."<<endl;
+                cout<<"FIRE NOT DETECTED: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
             }
         }
 
-        flip(image_color,image_color,0);
+        flip(image_color,image_color,-1);
         rotate(image_color,image_color,ROTATE_90_COUNTERCLOCKWISE);
         
         if (debug)
@@ -255,7 +273,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             // Displaying images on screen 
             string nombre="Thermal";
             namedWindow(nombre);
-            rotate(cv_ptr->image,cv_ptr->image,ROTATE_180);
+            flip(cv_ptr->image,cv_ptr->image,1);
             imshow(nombre,cv_ptr->image);
 
             string nombre_dos="B&W";

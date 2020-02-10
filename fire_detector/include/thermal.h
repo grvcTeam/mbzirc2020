@@ -40,6 +40,7 @@
 #define LASER_RANGE 720 // Lidar - full range of points
 #define SCALE_FACTOR 20 // To improve debug view
 #define R_CIRCLE 70.0 // Radius of the circle showed in debug view
+#define MAX_FILTER_NEGATIVES 5 // Num of needed continue iterations to consider a negative measure as false
 
 class Thermal {
 public:
@@ -75,6 +76,7 @@ protected:
     cv_bridge::CvImageConstPtr cv_ptr;
     cv::Mat therm;
     bool detected;
+    short int false_negative;
 };
 
 #endif  // FIRE_DETECTOR_THERMAL_H
