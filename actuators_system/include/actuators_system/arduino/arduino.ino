@@ -27,7 +27,7 @@
 #define SERIAL_BAUDRATE 9600
 
 #define PERIOD_IN_MS 20
-#define INI_SERVO_PWM 1500
+#define INI_SERVO_PWM 1800
 
 #define PIN_PWM_0   5
 #define PIN_PWM_1   6
