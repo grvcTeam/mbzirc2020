@@ -28,6 +28,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Temperature.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PointStamped.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -42,18 +43,6 @@ using namespace cv;
 
 Thermal::Thermal()
 {
-    ros::NodeHandle nh;
-
-    ros::Subscriber sub = nh.subscribe("teraranger_evo_thermal/raw_temp_array",1,&Thermal::thermal_data,this);
-    ros::Subscriber sub_dos = nh.subscribe("teraranger_evo_thermal/rgb_image",1,&Thermal::image_operations,this);
-    ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
-    ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
-
-    pub = nh.advertise<sensor_msgs::Image>("thermal_detection/detection_image",1);
-    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("thermal_detection/sensed_objects",1);
-
-    ros::ServiceServer srv_checkfire = nh.advertiseService("thermal_detection/fire_detected", &Thermal::srv_callback_checkfire, this);
-
     ros::NodeHandle n("~");
 
     n.getParam("angle_amplitude",angle_amplitude);
@@ -63,12 +52,28 @@ Thermal::Thermal()
     n.getParam("covariance_y",sigma[1]);
     n.getParam("covariance_z",sigma[2]);
     n.getParam("uav_id",uav_id);
-    n.getParam("debug",debug);
+    n.getParam("debug_publisher",debug_publisher);
+    n.getParam("debug_view",debug_view);
     n.getParam("thermal_threshold",thermal_threshold);
     n.getParam("camera_config",mode);
     detected=false;
     false_negative=0;
 
+    ros::NodeHandle nh;
+
+    ros::Subscriber sub = nh.subscribe("teraranger_evo_thermal/raw_temp_array",1,&Thermal::thermal_data,this);
+    ros::Subscriber sub_dos = nh.subscribe("teraranger_evo_thermal/rgb_image",1,&Thermal::image_operations,this);
+    ros::Subscriber sub_tres = nh.subscribe("ual/pose",1,&Thermal::ual_to_fire_position,this);
+    ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
+
+    pub = nh.advertise<sensor_msgs::Image>("thermal_detection/detection_image",1);
+    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("thermal_detection/sensed_objects",1);
+    if(debug_publisher)
+    {
+        pub_debug = nh.advertise<sensor_msgs::Temperature>("thermal_detection/debug",1);
+    }
+
+    ros::ServiceServer srv_checkfire = nh.advertiseService("thermal_detection/fire_detected", &Thermal::srv_callback_checkfire, this);
     ros::spin();
 }
 
@@ -125,7 +130,7 @@ void Thermal::laser_measures(const sensor_msgs::LaserScan& msg)
 
 //  Routine to process the image and determine if there is fire and where
 void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
-{  
+{
     // cout<<uav<<endl;
     float x_comp, y_comp;
     float cx[SCALE_FACTOR],cy[SCALE_FACTOR];
@@ -236,7 +241,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
                 rec_object.pose.pose.position.z=uav_position.point.z;
             }
 
-            if(debug)
+            if(debug_view)
             {
                 if(false_negative)
                {                    
@@ -259,7 +264,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         else
         {
             detected=false;
-            if(debug)
+            if(debug_view)
             {
                 cout<<"FIRE NOT DETECTED: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
             }
@@ -268,7 +273,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         flip(image_color,image_color,-1);
         rotate(image_color,image_color,ROTATE_90_COUNTERCLOCKWISE);
         
-        if (debug)
+        if (debug_view)
         {
             // Displaying images on screen 
             string nombre="Thermal";
@@ -283,6 +288,15 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             imshow(nombre_dos, image_color);
             waitKey(3);
         }
+
+        if(debug_publisher)
+        {
+            measure_debug.header = header;
+            measure_debug.temperature = max_temp;
+            measure_debug.variance = thermal_threshold;
+            pub_debug.publish(measure_debug);
+        }
+        
         // Converting image to msg 
         header = msg->header; 
         img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, image_color);

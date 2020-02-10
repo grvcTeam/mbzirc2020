@@ -51,7 +51,8 @@
       <param name="covariance_x"      value="1.5"/>
       <param name="covariance_y"      value="1.5"/>
       <param name="covariance_z"      value="0.5"/>
-      <param name="debug"             value="false"/>
+      <param name="debug_view"        value="false"/>
+      <param name="debug_publisher"   value="false"/>
       <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
     </node>
 

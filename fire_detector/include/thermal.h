@@ -26,6 +26,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Temperature.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 
@@ -53,8 +54,10 @@ public:
 
 protected:
     geometry_msgs::PointStamped uav_position;
+    sensor_msgs::Temperature measure_debug;
     ros::Publisher pub;
     ros::Publisher pub_msg;
+    ros::Publisher pub_debug;
     float max_temp;
     int angle_amplitude;
     int initial;
@@ -63,7 +66,7 @@ protected:
     float laser_measurement;
     std::string uav_id;
     float sigma[3]; // xyz  
-    bool debug;
+    bool debug_publisher, debug_view;
     int thermal_threshold;
     std::string mode;
     cv::Mat image_color;
