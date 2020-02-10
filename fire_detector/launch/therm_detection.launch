@@ -1,34 +1,28 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="agent_id"                default="1"/>
+    <!-- <arg name="robot_model"             default="mbzirc2020" /> -->
+    <!-- <arg name="ns"                      default="$(arg robot_model)_$(arg agent_id)" /> -->
 
-    <!-- UAV id -->
-    <arg name="prefix" value="mbzirc2020" />
-    <arg name="uav_id" value="1" />
-
-    <!-- NODE  -->
-	<node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-    <!-- Fire and sampling -->
-	<param name="thermal_threshold" value="60" />
-    <param name="sampling" value="10" />
-    <param name="id" value="$(arg uav_id)" type="string" />
-    <!-- Laser angle amplitude: 1 grade = 4 point -->
-    <!-- Incrementing 1 grade means an arc of 2 grades -->
-    <param name="angle_amplitude" value="20" />
-    
-    <!-- Covariance -->
-    <param name="covariance_x" value="1.5"/>
-    <param name="covariance_y" value="1.5"/>
-    <param name="covariance_z" value="0.5"/>
+    <!-- Debug viewer -->
+    <arg name="debug"                   default="false"/>
+    <!-- Angle (degrees) / Note: Incrementing 1 grade increase 1 grade per side -->
+    <arg name="angle_amplitude"         default="5"/>
     <!-- Camera pointing direction: FORWARD/DOWNWARD -->
-    <param name="camera_config" value="FORWARD"/>
-    <!-- Topic name list -->
-    <!-- Subscribers -->
-    <param name="Position_topic" value="$(arg prefix)_$(arg uav_id)/ual/pose"/>
-    <param name="Laser_topic" value="$(arg prefix)_$(arg uav_id)/scan"/>
-    <param name="Temp_topic" value="$(arg prefix)_$(arg uav_id)/teraranger_evo_thermal/raw_temp_array"/>
-    <param name="RGB_image_topic" value="$(arg prefix)_$(arg uav_id)/teraranger_evo_thermal/rgb_image"/>
-    <!-- Publishers -->
-    <param name="Advertise_topic" value="$(arg prefix)_$(arg uav_id)/thermal_camera"/>
-    <param name="Detection_list_topic" value="$(arg prefix)_$(arg uav_id)/sensed_objects"/>
-	</node>
+    <arg name="camera_config"           default="FORWARD"/>
+    <arg name="covariance_x"            default="1.5"/>
+    <arg name="covariance_y"            default="1.5"/>
+    <arg name="covariance_z"            default="0.5"/>
+    <arg name="thermal_threshold"       default="37 "/>
+    
+    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+        <param name="angle_amplitude"   value="$(arg angle_amplitude)"/>
+        <param name="camera_config"     value="$(arg camera_config)"/>
+        <param name="covariance_x"      value="$(arg covariance_x)"/>
+        <param name="covariance_y"      value="$(arg covariance_y)"/>
+        <param name="covariance_z"      value="$(arg covariance_z)"/>
+        <param name="debug"             value="$(arg debug)"/>
+        <param name="thermal_threshold" value="$(arg thermal_threshold)"/>
+        <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+    </node>
 </launch>
