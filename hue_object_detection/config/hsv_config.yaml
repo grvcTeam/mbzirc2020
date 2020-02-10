@@ -1,7 +1,7 @@
 colors:
 
   red:
-    H_range: [140, 180]
+    H_range: [140, 10]
     S_range: [140, 255]
     V_range: [140, 255]
 
@@ -31,7 +31,7 @@ colors:
     V_range: [140, 255]
 
 detection_config:
-  min_area: 150.0
-  poly_epsilon: 5.0
+  min_area: 60.0
+  poly_epsilon: 3.0
   kernel_type: 0
-  kernel_size: 1
+  kernel_size: 0

@@ -333,6 +333,31 @@ HSVTrackingPair HSVDetection::trackBrick(const std::string _id, bool _draw) {
     std::vector<HSVItem> white_list = detectPipeline("white", hsv_roi, false);
     if (white_list.size() == 0) {
         // ROS_WARN("HSVDetection::track: white not found!");
+        std::vector<HSVItem> all_white_list = detect("white", false);
+        HSVItem closest_white;
+        min_sq_distance = (hsv_size.width + hsv_size.width) * (hsv_size.width + hsv_size.width);
+        for (auto item: all_white_list) {
+            float dx = closest_colour.rectangle.center.x - item.rectangle.center.x;
+            float dy = closest_colour.rectangle.center.y - item.rectangle.center.y;
+            float sq_distance = dx*dx + dy*dy;
+            if (sq_distance < min_sq_distance) {
+                min_sq_distance = sq_distance;
+                closest_white = item;
+                tracking_pair.has_white = true;
+            }
+        }
+        closest_white.cropped = is_cropped(closest_white.rectangle);
+        tracking_pair.white_item = closest_white;
+        tracking_pair.white_edge_center = closest_white.rectangle.center;  // TODO: Not really the edge!
+
+        if (_draw) {
+            rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
+            // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
+            // drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
+            drawRotatedRect(closest_white.rectangle, -1, colour_[_id]);
+            cv::circle(frame_, tracking_pair.white_edge_center, 6, colour_[_id], 1);
+        }
+
         return tracking_pair;
     }
 

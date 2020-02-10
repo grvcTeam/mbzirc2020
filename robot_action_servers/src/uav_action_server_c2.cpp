@@ -25,11 +25,12 @@ void UalActionServer::attachedCallback(const mbzirc_comm_objs::GripperAttachedCo
   gripper_attached_ = *msg;
 }
 
-#define MAX_AVG_XY_ERROR_HI 1.50  // [m]
+#define MAX_AVG_XY_ERROR_HI 0.25  // [m]
 #define MAX_AVG_XY_ERROR_LO 0.15  // [m]
 #define MAX_AVG_Z_HI 15.0  // [m]
 #define MAX_AVG_Z_LO  3.0  // [m]
 inline float max_avg_xy_error(float _z) {
+  // return MAX_AVG_XY_ERROR_LO;
   if (_z < MAX_AVG_Z_LO) { return MAX_AVG_XY_ERROR_LO; }
   if (_z > MAX_AVG_Z_HI) { return MAX_AVG_XY_ERROR_HI; }
   return MAX_AVG_XY_ERROR_LO + ((MAX_AVG_XY_ERROR_HI - MAX_AVG_XY_ERROR_LO) / (MAX_AVG_Z_HI - MAX_AVG_Z_LO)) * (_z - MAX_AVG_Z_LO);
@@ -203,8 +204,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     }
 
     float estimated_z = sf11_range_.range;
-    const float height_threshold = 1.0;
-    const float height_hysteresis = 0.4;
+    const float height_threshold = 1.5;
+    const float height_hysteresis = 0.5;
     geometry_msgs::PoseStamped white_edge_pose;
     white_edge_pose.header = matched_candidate_.header;
     white_edge_pose.pose.position = matched_candidate_.point_of_interest;
@@ -280,20 +281,23 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     double min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y;
     history_orientation_sq_y.get_stats(min_orientation_sq_y, avg_orientation_sq_y, max_orientation_sq_y);
     if ((avg_orientation_sq_x + avg_orientation_sq_y) > 0.3) {  // TODO: Tune!
-      velocity.header.frame_id = "arena";  // TODO: uav?
+      velocity.header.frame_id = "map";  // TODO: uav?
       velocity.twist.linear.x = 0;
       velocity.twist.linear.y = 0;
       velocity.twist.linear.z = 0.5;  // TODO: Tune
     }
 
-    ual_->setVelocity(velocity);
-    // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
-    // ROS_INFO("target_position = [%lf, %lf, %lf] target angle = x", target_position.x, target_position.y, target_position.z);
-    // ROS_INFO("velocity = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
-
     // TODO: Look for equivalent!
     // if (catching_device_->switchIsPressed()) {
     if (gripper_attached_.attached) {
+      velocity.header.frame_id = "map";
+      velocity.twist.linear.x = 0;
+      velocity.twist.linear.y = 0;
+      velocity.twist.linear.z = 0;
+      velocity.twist.angular.x = 0;
+      velocity.twist.angular.y = 0;
+      velocity.twist.angular.z = 0;
+      ual_->setVelocity(velocity);
       std_srvs::Trigger dummy;
       close_gripper_client.call(dummy);
       sleep(0.4);  // TODO: sleep?
@@ -303,6 +307,11 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       pick_server_.setSucceeded(result);
       break;
     }
+
+    ual_->setVelocity(velocity);
+    // ROS_INFO("Candidate relative position = [%lf, %lf, %lf]", matched_candidate_.relative_position.x, matched_candidate_.relative_position.y, matched_candidate_.relative_position.z);
+    // ROS_INFO("target_position = [%lf, %lf, %lf] target angle = x", target_position.x, target_position.y, target_position.z);
+    // ROS_INFO("velocity = [%lf, %lf, %lf]", velocity.twist.linear.x, velocity.twist.linear.y, velocity.twist.linear.z);
 
     // If we're too high, give up TODO: use _goal.z?
     if (ual_->pose().pose.position.z > Z_GIVE_UP_CATCHING) {

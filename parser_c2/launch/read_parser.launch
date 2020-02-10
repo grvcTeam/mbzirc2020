@@ -3,14 +3,8 @@
 
     <!-- NODE to launch parser  -->
 	<node name="parser" pkg="parser_c2" type="parser.py" respawn="false" output="screen">
-    
-	<!-- Messages to read available  -->
-	<!-- Example: Segment 2, Layer 3 => S2.3 -->
-		<param name="Line_to_read" value="C4.2" />
-
-	<!-- Name of the .txt that includes all the data -->
-		<param name="File_data" value= "$(find parser_c2)/src/Data.txt" />
-	<!-- Destination of the extracted data -->
-		<param name="Extracted_data" value= "$(find parser_c2)/src/Data_extract.txt" />
+   
+		<param name="UGV_data" value= "$(find parser_c2)/src/Wall1.txt" />
+		<param name="UAV_data" value= "$(find parser_c2)/src/Wall2.txt" />
 	</node>
 </launch>
