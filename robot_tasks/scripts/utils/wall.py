@@ -1,12 +1,12 @@
 from geometry_msgs.msg import PoseStamped, Point
+from mbzirc_comm_objs.msg import ObjectDetection as ObjectDetection
 import tf2_py as tf2
 
 def all_piles_are_found(uav_piles, ugv_piles):
-    # TODO: Check not only count, but also size of piles
     return len(uav_piles) >= 4 and len(ugv_piles) >= 4 
 
 def all_walls_are_found(uav_wall, ugv_wall):
-    return len(uav_wall) >= 4 and ugv_wall is not None 
+    return len(uav_wall) >= 4 and ugv_wall != None 
 
 def uav_piles_are_found(uav_piles):
     return len(uav_piles) >= 4 
@@ -16,7 +16,7 @@ def uav_walls_are_found(uav_wall):
 
 def order_wall_segments(uav_wall):
     #TODO: cluster segments searching for connections in 90 degrees 
-    return 1
+    return uav_wall
 
 class BrickInWall(object):
     def __init__(self, color, position, wall_pose):
@@ -60,5 +60,5 @@ def get_build_wall_sequence(wall_blueprint, brick_scales, wall_pose):
             build_row_sequence.append(brick_in_wall)
 
         buid_wall_sequence.append(build_row_sequence)
-        current_z += brick_scales['red'].z  # As all bricks (should) have the same height
+        current_z += brick_scales[ObjectDetection.COLOR_RED].z  # As all bricks (should) have the same height
     return buid_wall_sequence
