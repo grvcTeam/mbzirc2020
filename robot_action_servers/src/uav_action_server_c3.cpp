@@ -324,16 +324,29 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         error_pose.pose.position.x -= 1.8;  // TODO!
         error_pose.pose.position.y += 0.0;  // TODO!
         error_pose.pose.position.z += 0.3;  // TODO!
+
+        // Control yaw with closest wall
+        float dx, dy;
+        if (closest_wall.start[1] < closest_wall.end[1]) {
+          dx = closest_wall.end[0] - closest_wall.start[0];
+          dy = closest_wall.end[1] - closest_wall.start[1];
+        } else {
+          dx = closest_wall.start[0] - closest_wall.end[0];
+          dy = closest_wall.start[1] - closest_wall.end[1];
+        }
+        // ROS_INFO("dx = %f, dy = %f", dx, dy);
+        float wall_angle = atan2(dx, dy);  // Defined in this way on purpose! (usually dy/dx)
+        // ROS_INFO("wall_angle = %f", wall_angle);
         error_pose.pose.orientation.x = 0;
         error_pose.pose.orientation.y = 0;
-        error_pose.pose.orientation.z = 0;  // TODO!
-        error_pose.pose.orientation.w = 1;  // TODO!
+        error_pose.pose.orientation.z = -sin(0.5 * wall_angle);
+        error_pose.pose.orientation.w =  cos(0.5 * wall_angle);
         // std::cout << error_pose << '\n';
         geometry_msgs::TwistStamped velocity;
         velocity = pose_pid.updateError(error_pose);
-        velocity.twist.angular.x = 0;  // TODO!
-        velocity.twist.angular.y = 0;  // TODO!
-        velocity.twist.angular.z = 0;  // TODO!
+        // velocity.twist.angular.x = 0;  // TODO!
+        // velocity.twist.angular.y = 0;  // TODO!
+        // velocity.twist.angular.z = 0;  // TODO!
         // std::cout << velocity << '\n';
         // debug_pub.publish(velocity);
         ual_->setVelocity(velocity);
