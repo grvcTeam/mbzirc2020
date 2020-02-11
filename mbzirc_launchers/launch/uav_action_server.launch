@@ -3,7 +3,7 @@
   <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
   <arg name="flight_level" default="2.0" />
-  <arg name="x" default="10" />
+  <arg name="x" default="0" />
   <arg name="y" default="0" />
   <arg name="z" default="0" />
 
