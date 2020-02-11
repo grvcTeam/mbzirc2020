@@ -67,6 +67,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    SetObjectStatus.srv
    SetPWM.srv
    SetDigital.srv
+   CheckFire.srv
  )
 
 ## Generate actions in the 'action' folder

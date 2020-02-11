@@ -35,8 +35,7 @@
 
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
-
-#include <fire_detector/CheckFire.h>
+#include <mbzirc_comm_objs/CheckFire.h>
 
 using namespace std;
 using namespace cv;
@@ -67,7 +66,7 @@ Thermal::Thermal()
     ros::Subscriber sub_cuatro = nh.subscribe("scan",1,&Thermal::laser_measures,this);
 
     pub = nh.advertise<sensor_msgs::Image>("thermal_detection/detection_image",1);
-    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("thermal_detection/sensed_objects",1);
+    pub_msg = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1);
     if(debug_publisher)
     {
         pub_debug = nh.advertise<sensor_msgs::Temperature>("thermal_detection/debug",1);
@@ -309,9 +308,9 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
     }
 }
 
-bool Thermal::srv_callback_checkfire(fire_detector::CheckFire::Request  &req, fire_detector::CheckFire::Response &res)
+bool Thermal::srv_callback_checkfire(mbzirc_comm_objs::CheckFire::Request  &req, mbzirc_comm_objs::CheckFire::Response &res)
 {
-    res.fire=detected;
+    res.fire_detected = detected;
     return true;
 }
 
