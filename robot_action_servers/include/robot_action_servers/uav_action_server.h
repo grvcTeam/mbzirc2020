@@ -40,6 +40,7 @@
 #include <mbzirc_comm_objs/DetectTypes.h>
 #include <mbzirc_comm_objs/Magnetize.h>
 #include <mbzirc_comm_objs/WallList.h>
+#include <fire_extinguisher/fire_data.h>
 #include <std_srvs/Trigger.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -126,6 +127,7 @@ public:
   void moveInCirclesCallback(const mbzirc_comm_objs::MoveInCirclesGoalConstPtr &_goal);
   void extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal);
   void extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal);
+  geometry_msgs::PoseStamped errorPoseFromFireData(const FireData& _target_fire, bool _publish_markers = false);
 
   // Communications
   bool waitForFreshMatchedCandidateMsg(uint8_t seconds);

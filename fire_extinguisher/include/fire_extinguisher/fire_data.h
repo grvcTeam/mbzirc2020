@@ -13,7 +13,7 @@ struct FireData {
     mbzirc_comm_objs::WallList wall_list;
 };
 
-void operator>>(const YAML::Node& in, FireData& fire_data) {
+inline void operator>>(const YAML::Node& in, FireData& fire_data) {
     // TODO: Check that expected fields do exist
     fire_data.id = in["id"].as<std::string>();
     fire_data.ual_pose.header.frame_id = in["pose_frame"].as<std::string>();
