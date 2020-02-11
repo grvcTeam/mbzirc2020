@@ -21,6 +21,7 @@
       <param name="position_th" value="1.00"/>
       <param name="orientation_th" value="0.75"/>
       <param name="hold_pose_time" value="0"/>
+      <rosparam file="$(find robot_action_servers)/config/ual_pid.yaml" />
     </node>
   </group>
 </launch>
