@@ -156,7 +156,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   grvc::ual::PosePID lower_pid(pid_x, pid_y, pid_z, pid_yaw);
   lower_pid.enableRosInterface("pick_lower_control");  // TODO: disable as PID is tuned!
 
-  double absolute_yaw_lock = 0;
+  auto current_pose = ual_->pose();
+  double absolute_yaw_lock = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
 
   // TODO: Magnetize catching device
   mbzirc_comm_objs::Magnetize magnetize_srv;
@@ -211,11 +212,11 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
     white_edge_pose.pose.position = matched_candidate_.point_of_interest;
     white_edge_pose.pose.orientation.z = 1;
 
-    auto current_pose = ual_->pose();
+    current_pose = ual_->pose();
     geometry_msgs::PoseStamped error_pose;
     tf2::doTransform(white_edge_pose, error_pose, optical_to_camera_control);
     error_pose.header.stamp = ros::Time::now();
-    if (matched_candidate_.is_cropped || (estimated_z < height_threshold) || ((estimated_z < height_threshold + height_hysteresis) && is_lower_pick_control_active) ) {  // TODO: Threshold
+    if ((estimated_z < height_threshold) || ((estimated_z < height_threshold + height_hysteresis) && is_lower_pick_control_active) ) {  // TODO: Threshold
       if (!is_lower_pick_control_active) {
         is_lower_pick_control_active = true;
         lower_pid.reset();
@@ -233,9 +234,18 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
         upper_pid.reset();
         ROS_INFO("Switch to upper pick control");
       }
-      error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
-      error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // change sign!
-      absolute_yaw_lock = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
+      if (matched_candidate_.is_cropped) {
+        double absolute_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
+        double absolute_yaw_error = normalizeAngle(absolute_yaw_lock - absolute_yaw);
+        error_pose.pose.orientation.x = 0;
+        error_pose.pose.orientation.y = 0;
+        error_pose.pose.orientation.z = sin(0.5 * absolute_yaw_error);
+        error_pose.pose.orientation.w = cos(0.5 * absolute_yaw_error);
+      } else {
+        error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
+        error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // change sign!
+        absolute_yaw_lock = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
+      }
     }
 
     geometry_msgs::Point error_position = error_pose.pose.position;
