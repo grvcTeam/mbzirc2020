@@ -19,7 +19,6 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //----------------------------------------------------------------------------------------------------------------------
 #include <robot_action_servers/uav_action_server.h>
-#include <fire_extinguisher/fire_data.h>
 #include <scan_passage_detection/wall_utils.h>
 
 void UalActionServer::wallListCallback(const mbzirc_comm_objs::WallListConstPtr& msg) {
@@ -96,6 +95,87 @@ void UalActionServer::moveInCirclesCallback(const mbzirc_comm_objs::MoveInCircle
   move_in_circles_server_.setSucceeded(result);
 }
 
+inline double squaredPositionNorm(const geometry_msgs::Pose& _pose) {
+  return _pose.position.x*_pose.position.x + _pose.position.y*_pose.position.y + _pose.position.z*_pose.position.z;
+}
+
+inline double yawFromPose(const geometry_msgs::Pose& _pose) {
+  return 2.0 * atan2(_pose.orientation.z, _pose.orientation.w);
+}
+
+geometry_msgs::PoseStamped UalActionServer::errorPoseFromFireData(const FireData& _target_fire, bool _publish_markers) {
+  // TODO: target criteria
+  mbzirc_comm_objs::Wall target_wall = closestWall(_target_fire.wall_list);
+  // mbzirc_comm_objs::Wall target_wall = largestWall(_target_fire.wall_list);
+  mbzirc_comm_objs::Wall current_wall = closestWall(wall_list_);
+  // mbzirc_comm_objs::Wall current_wall = largestWall(wall_list_);
+
+  visualization_msgs::MarkerArray marker_array;
+  std_msgs::ColorRGBA color;
+  if (_publish_markers) {
+    color.r = 0.0;  // Color for target_wall
+    color.g = 1.0;
+    color.b = 0.0;
+    color.a = 1.0;
+    marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0, "target_wall"));
+    color.r = 0.0;  // Prepare color for healthy current wall...
+    color.g = 0.0;
+    color.b = 1.0;
+    color.a = 1.0;
+  }
+
+  double x_error = 0;
+  double y_error = 0;
+  double squared_delta_length = fabs(squaredLength(target_wall) - squaredLength(current_wall));
+  if (squared_delta_length < 10.0) {  // TODO: Tune threshold (sq!)
+      double x_start_error = target_wall.start[0] - current_wall.start[0];
+      double y_start_error = target_wall.start[1] - current_wall.start[1];
+      double x_end_error = target_wall.end[0] - current_wall.end[0];
+      double y_end_error = target_wall.end[1] - current_wall.end[1];
+      x_error = 0.5 * (x_start_error + x_end_error);
+      y_error = 0.5 * (y_start_error + y_end_error);
+      // ROS_INFO("xy: %lf, %lf", x_error, y_error);
+  } else {
+      ROS_WARN("Wall lengths too different! squared_delta_length = %lf", squared_delta_length);
+      // std::cout << target_wall;
+      // std::cout << current_wall;
+      color.r = 1.0;  // ...but current wall is not healthy :(
+      color.g = 0.0;
+      color.b = 0.0;
+      color.a = 1.0;
+  }
+
+  if (_publish_markers) {
+    marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1, "target_wall"));
+    marker_pub_.publish(marker_array);
+  }
+
+  // ROS_ERROR("start: %lf, %lf", x_start_error, y_start_error);
+  // ROS_ERROR("end: %lf, %lf", x_end_error, y_end_error);
+  // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
+  // std::cout << current_wall;
+
+  double z_error = _target_fire.sf11_range.range - sf11_range_.range;
+  // ROS_ERROR("z: %lf", z_error);
+
+  auto ual_pose = ual_->pose();
+  double current_yaw = yawFromPose(ual_pose.pose);
+  double fire_ual_yaw = yawFromPose(_target_fire.ual_pose.pose);
+  double yaw_error = fire_ual_yaw - current_yaw;
+
+  geometry_msgs::PoseStamped error_pose;
+  error_pose.header.stamp = ros::Time::now();
+  error_pose.header.frame_id = wall_list_.header.frame_id;
+  error_pose.pose.position.x = -x_error;
+  error_pose.pose.position.y = -y_error;
+  error_pose.pose.position.z = z_error;
+  error_pose.pose.orientation.x = 0;
+  error_pose.pose.orientation.y = 0;
+  error_pose.pose.orientation.z = sin(0.5 * yaw_error);
+  error_pose.pose.orientation.w = cos(0.5 * yaw_error);
+  return error_pose;
+}
+
 void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal) {
   mbzirc_comm_objs::ExtinguishFacadeFireFeedback feedback;
   mbzirc_comm_objs::ExtinguishFacadeFireResult result;
@@ -142,14 +222,16 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
   ros::Subscriber sensed_sub = nh.subscribe<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
+  ros::ServiceClient start_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/start_pump");
+  ros::ServiceClient stop_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/stop_pump");
   ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
   ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
 
-  // if (!waitForFreshSf11RangeMsg(10)) {
-  //   result.message = "could not get fresh [sf11_range]";
-  //   extinguish_facade_fire_server_.setAborted(result);
-  //   return;
-  // }
+  if (!waitForFreshSf11RangeMsg(10)) {
+    result.message = "could not get fresh [sf11_range]";
+    extinguish_facade_fire_server_.setAborted(result);
+    return;
+  }
 
   if (!waitForFreshWallListMsg(10)) {
     result.message = "could not get fresh [wall_list]";
@@ -197,12 +279,8 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_facade_control");
 
-/*
-  mbzirc_comm_objs::Wall fire_closest_wall = closestWall(target_fire.wall_list);
-  mbzirc_comm_objs::Wall fire_largest_wall = largestWall(target_fire.wall_list);
-  double fire_ual_yaw = 2 * atan2(target_fire.ual_pose.pose.orientation.z, target_fire.ual_pose.pose.orientation.w);
-*/
-
+  FireData target_fire;
+  bool fire_is_locked = false;
   auto ual_safe_pose = ual_->pose();
   mbzirc_comm_objs::ObjectDetection hole;
   ros::Duration timeout(CANDIDATE_TIMEOUT);  // TODO: different timeout?
@@ -216,7 +294,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
 
     for (auto object: sensed_objects_.objects) {
       if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
-        hole = object;
+        hole = object;  // TODO: Look for the best fit!
       }
     }
     ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
@@ -246,19 +324,43 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         error_pose.pose.position.x -= 1.8;  // TODO!
         error_pose.pose.position.y += 0.0;  // TODO!
         error_pose.pose.position.z += 0.3;  // TODO!
+
+        // Control yaw with closest wall
+        float dx, dy;
+        if (closest_wall.start[1] < closest_wall.end[1]) {
+          dx = closest_wall.end[0] - closest_wall.start[0];
+          dy = closest_wall.end[1] - closest_wall.start[1];
+        } else {
+          dx = closest_wall.start[0] - closest_wall.end[0];
+          dy = closest_wall.start[1] - closest_wall.end[1];
+        }
+        // ROS_INFO("dx = %f, dy = %f", dx, dy);
+        float wall_angle = atan2(dx, dy);  // Defined in this way on purpose! (usually dy/dx)
+        // ROS_INFO("wall_angle = %f", wall_angle);
         error_pose.pose.orientation.x = 0;
         error_pose.pose.orientation.y = 0;
-        error_pose.pose.orientation.z = 0;  // TODO!
-        error_pose.pose.orientation.w = 1;  // TODO!
+        error_pose.pose.orientation.z = -sin(0.5 * wall_angle);
+        error_pose.pose.orientation.w =  cos(0.5 * wall_angle);
         // std::cout << error_pose << '\n';
         geometry_msgs::TwistStamped velocity;
         velocity = pose_pid.updateError(error_pose);
-        velocity.twist.angular.x = 0;  // TODO!
-        velocity.twist.angular.y = 0;  // TODO!
-        velocity.twist.angular.z = 0;  // TODO!
+        // velocity.twist.angular.x = 0;  // TODO!
+        // velocity.twist.angular.y = 0;  // TODO!
+        // velocity.twist.angular.z = 0;  // TODO!
         // std::cout << velocity << '\n';
         // debug_pub.publish(velocity);
         ual_->setVelocity(velocity);
+
+        if ((squaredPositionNorm(error_pose.pose) < 0.01) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {  // TODO: tune! buffer?
+          ROS_INFO("Fire locked!");
+          ual_->setPose(ual_->pose());  // TODO: is this enough?
+          target_fire.id = "TODO!";  // TODO!
+          target_fire.ual_pose = ual_->pose();
+          target_fire.sf11_range = sf11_range_;
+          target_fire.wall_list = wall_list_;
+          fire_is_locked = true;
+          break;
+        }
       }
 
     } else {
@@ -266,85 +368,57 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       ual_->setPose(ual_safe_pose);
     }
 
-/*
-    double z_error = target_fire.sf11_range.range - sf11_range_.range;
-    // ROS_ERROR("z: %lf", z_error);
-
-    // TODO: target criteria
-    mbzirc_comm_objs::Wall target_wall = fire_closest_wall;
-    mbzirc_comm_objs::Wall current_wall = closestWall(wall_list_);
-    // mbzirc_comm_objs::Wall target_wall = fire_largest_wall;
-    // mbzirc_comm_objs::Wall current_wall = largestWall(wall_list_);
-
-    visualization_msgs::MarkerArray marker_array;
-    std_msgs::ColorRGBA color;
-    color.r = 0.0;
-    color.g = 1.0;
-    color.b = 0.0;
-    color.a = 1.0;
-    marker_array.markers.push_back(getLineMarker(target_wall, wall_list_.header.frame_id, color, 0, "target_wall"));
-
-    double x_error = 0;
-    double y_error = 0;
-    double squared_delta_length = fabs(squaredLength(target_wall) - squaredLength(current_wall));
-    if (squared_delta_length < 10.0) {  // TODO: Tune threshold (sq!)
-        double x_start_error = target_wall.start[0] - current_wall.start[0];
-        double y_start_error = target_wall.start[1] - current_wall.start[1];
-        double x_end_error = target_wall.end[0] - current_wall.end[0];
-        double y_end_error = target_wall.end[1] - current_wall.end[1];
-        x_error = 0.5 * (x_start_error + x_end_error);
-        y_error = 0.5 * (y_start_error + y_end_error);
-        // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
-        color.r = 0.0;
-        color.g = 0.0;
-        color.b = 1.0;
-        color.a = 1.0;
-    } else {
-        // ROS_ERROR("squared_delta_length = %lf", squared_delta_length);
-        // std::cout << target_wall;
-        // std::cout << current_wall;
-        color.r = 1.0;
-        color.g = 0.0;
-        color.b = 0.0;
-        color.a = 1.0;
-    }
-    marker_array.markers.push_back(getLineMarker(current_wall, wall_list_.header.frame_id, color, 1, "target_wall"));
-    marker_pub_.publish(marker_array);  // TODO: optional!
-
-    // ROS_ERROR("start: %lf, %lf", x_start_error, y_start_error);
-    // ROS_ERROR("end: %lf, %lf", x_end_error, y_end_error);
-    // ROS_ERROR("xy: %lf, %lf", x_error, y_error);
-    // std::cout << current_wall;
-
-    auto ual_pose = ual_->pose();
-    double current_yaw = 2 * atan2(ual_pose.pose.orientation.z, ual_pose.pose.orientation.w);
-    double yaw_error = fire_ual_yaw - current_yaw;
-
-    // geometry_msgs::TwistStamped velocity;  // TODO: frame_id?
-    // velocity.header.stamp = ros::Time::now();
-    // velocity.header.frame_id = wall_list_.header.frame_id;
-    geometry_msgs::PoseStamped error_pose;
-    error_pose.header.stamp = ros::Time::now();
-    error_pose.header.frame_id = wall_list_.header.frame_id;
-    error_pose.pose.position.x = -x_error;
-    error_pose.pose.position.y = -y_error;
-    error_pose.pose.position.z = z_error;
-    error_pose.pose.orientation.x = 0;
-    error_pose.pose.orientation.y = 0;
-    error_pose.pose.orientation.z = sin(0.5 * yaw_error);
-    error_pose.pose.orientation.w = cos(0.5 * yaw_error);
-    // velocity.twist.linear.x = x_pid.control_signal(-x_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
-    // velocity.twist.linear.y = y_pid.control_signal(-y_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
-    // velocity.twist.linear.z = z_pid.control_signal(z_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
-    // velocity.twist.angular.z = yaw_pid.control_signal(yaw_error, 1.0/FACADE_EXTINGUISH_LOOP_RATE);
-    geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
-
-    // std::cout << velocity << '\n';
-    ual_->setVelocity(velocity);
-*/
-
     loop_rate.sleep();
   }
+
+  if (!fire_is_locked) {
+    ual_->setPose(ual_->pose());
+    result.message = "Could not lock fire";
+    extinguish_facade_fire_server_.setAborted(result);
+    return;
+  }
+
+  // TODO: Call service to ask if there is fire
+  bool fire_detected = true;
+  if (!fire_detected) {
+    ual_->setPose(ual_->pose());
+    result.message = "Fire is not detected";
+    extinguish_facade_fire_server_.setAborted(result);
+    return;    
+  }
+
+  // TODO: Start pumping!
+  std_srvs::Trigger trigger;
+  start_pump_client.call(trigger);
+  int pumping_count_loop = 0;
+
+  while (ros::ok()) {
+    mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);    
+    double distance_to_closest_wall = 0.0;
+    if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
+      distance_to_closest_wall = sqrt(squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]));
+    }
+
+    if (distance_to_closest_wall < 1.5) {  // TODO: Tune
+      ROS_WARN("Too close to closest_wall!");
+      ual_->setPose(ual_safe_pose);
+    } else {
+      ual_safe_pose = ual_->pose();
+      geometry_msgs::TwistStamped velocity = pose_pid.updateError(errorPoseFromFireData(target_fire, true));
+      ual_->setVelocity(velocity);
+    }
+
+    if ((pumping_count_loop / FACADE_EXTINGUISH_LOOP_RATE) > 10) {  // TODO: Tune, in seconds
+      stop_pump_client.call(trigger);
+      ual_->setPose(ual_->pose());
+      result.message = "Fire extinguished!";
+      extinguish_facade_fire_server_.setSucceeded(result);
+      break;
+    }
+    pumping_count_loop++;
+    loop_rate.sleep();
+  }
+  // TODO: Save target_fire to file?
 }
 
 void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal) {
