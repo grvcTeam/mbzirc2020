@@ -179,8 +179,6 @@ class CentralUnit(object):
                 waypoint = PoseStamped()
                 waypoint.header.frame_id = 'arena'
                 waypoint.pose.position = point
-                waypoint.pose.orientation.z = 0
-                waypoint.pose.orientation.w = 1  # TODO: other orientation?
                 robot_path.append(waypoint)
             robot_paths[robot_id] = robot_path
 

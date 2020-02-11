@@ -42,7 +42,7 @@ column_count = 4  # 6  # TODO: as a function of fov
 
 class CentralUnit(object):
     def __init__(self):
-        self.available_robots = ['1']  # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
+        self.available_robots = ['5']  # Force id to be a string to avoid index confussion  # TODO: auto discovery (and update!)
 
         self.robots = {}
         for robot_id in self.available_robots:
@@ -107,8 +107,8 @@ class CentralUnit(object):
         userdata.approximate_pose.pose.position.x = 7.5
         userdata.approximate_pose.pose.position.y = 7.5
         userdata.approximate_pose.pose.position.z = 2.0
-        userdata.approximate_pose.pose.orientation.z = math.sin(0.5*1.57)
-        userdata.approximate_pose.pose.orientation.w = math.cos(0.5*1.57)
+        userdata.approximate_pose.pose.orientation.z = 0
+        userdata.approximate_pose.pose.orientation.w = 0
         self.task_manager.start_task(self.available_robots[0], ExtinguishFacadeFire(), userdata)
 
 
