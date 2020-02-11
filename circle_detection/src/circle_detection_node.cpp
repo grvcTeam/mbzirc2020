@@ -83,6 +83,12 @@ private:
     // Gaussian Blur Image Publisher
     image_transport::Publisher gaussian_blur_image_pub_;
 
+    // Mask image Publisher
+    image_transport::Publisher mask_image_pub_;
+
+    // Masked grayscale image Publisher
+    image_transport::Publisher masked_gray_pub_;
+
     // Canny Edge Detector Image Publisher
     image_transport::Publisher canny_edge_image_pub_;
 
@@ -127,7 +133,6 @@ sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
     pnh_.param<float>("min_radius_meters", min_radius_meters_, 0.05);
     pnh_.param<float>("max_radius_meters", max_radius_meters_, 0.6);
     pnh_.param<float>("max_depth_th", max_depth_th_, 10.0);
-    pnh_.param<bool>("use_color_image", use_color_image_, true);
     pnh_.param<bool>("use_gaussian_blur", use_gaussian_blur_, false);
     pnh_.param<float>("gaussian_blur_sigma", gaussian_blur_sigma_, 2);
     pnh_.param<int>("gaussian_blur_kernel_size", gaussian_blur_kernel_size_, 3);
@@ -160,6 +165,8 @@ sync(ApproxTimeSyncPolicy(10), color_image_sub_, depth_image_sub_)
         detected_circles_image_pub_ = image_transport_.advertise("circle_detection/detected_circles_image", 1);
         if (use_gaussian_blur_)
             gaussian_blur_image_pub_ = image_transport_.advertise("circle_detection/gaussian_blur_image", 1);
+        mask_image_pub_ = image_transport_.advertise("circle_detection/mask_image", 1);
+        masked_gray_pub_ = image_transport_.advertise("circle_detection/masked_gray_image", 1);
         canny_edge_image_pub_ = image_transport_.advertise("circle_detection/canny_edge_image", 1);
     }
 
@@ -196,288 +203,13 @@ void CircleDetector::callbackSyncColorDepth(const sensor_msgs::ImageConstPtr &co
             ROS_WARN("Received camera frame doesn't match expected one");
             return;
         }
-        if (use_color_image_ == true)
-            findCirclesColor(color_img_ptr, depth_img_ptr);
-        else
-            findCirclesDepth(color_img_ptr, depth_img_ptr);
+        findCirclesColor(color_img_ptr, depth_img_ptr);
     }
     else
     {
         ROS_WARN("No camera_info available");
     }
  
-}
-
-void CircleDetector::findCirclesDepth(const sensor_msgs::ImageConstPtr &color_img_ptr, const sensor_msgs::ImageConstPtr &depth_img_ptr)
-{
-    // Convert from ROS image type to OpenCV
-    cv_bridge::CvImagePtr color_image_cv = cv_bridge::toCvCopy(color_img_ptr, sensor_msgs::image_encodings::RGB8);
-
-    // Convert depth image to grayscale
-    uint16_t min_depth_value = std::numeric_limits<uint16_t>::max();
-    uint16_t max_depth_value = 0;
-    float min_depth_value_meters = std::numeric_limits<float>::infinity();
-    float max_depth_value_meters = 0.0;
-    const uint32_t &image_width = depth_img_ptr->width;
-    const uint32_t &image_height = depth_img_ptr->height;
-    
-    if (depth_img_ptr->encoding == sensor_msgs::image_encodings::TYPE_16UC1)
-    {
-        cv_bridge::CvImagePtr depth_image_milimeters_cv = cv_bridge::toCvCopy(depth_img_ptr, sensor_msgs::image_encodings::TYPE_16UC1);
-        cv_bridge::CvImage depth_image_meters_cv;
-        depth_image_meters_cv.image = cv::Mat(cv::Size(image_width, image_height), CV_32FC1);
-        depth_image_meters_cv.header = depth_image_milimeters_cv->header;
-        depth_image_meters_cv.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-        cv_bridge::CvImage depth_gray_cv;
-        depth_gray_cv.image = cv::Mat(cv::Size(image_width, image_height), CV_8UC1);
-        depth_gray_cv.header = depth_image_milimeters_cv->header;
-        depth_gray_cv.encoding = sensor_msgs::image_encodings::MONO8;
-        uint16_t *  value_original_mm_ptr;
-        float * value_converted_meters_ptr;
-        uint8_t * value_converted_gray_ptr;
-        int i1 = 0;
-        int j1 = 0;
-        // Convert depth image from milimeters to meters and also find min and max values
-        for(i1 = 0; i1 < depth_image_milimeters_cv->image.rows; i1++)
-        {
-            for(j1 = 0; j1 < depth_image_milimeters_cv->image.cols; j1++)
-            {
-                const cv::Mat & original_image_ref_mm = depth_image_milimeters_cv->image;
-                const cv::Mat & converted_image_ref_meters = depth_image_meters_cv.image;
-                const cv::Mat & gray_image_ref = depth_gray_cv.image;
-                value_original_mm_ptr = (uint16_t *) (original_image_ref_mm.data + original_image_ref_mm.step[0]*i1 + original_image_ref_mm.step[1]*j1); 
-                value_converted_meters_ptr = (float *) (converted_image_ref_meters.data + converted_image_ref_meters.step[0] * i1 + converted_image_ref_meters.step[1] * j1);
-                value_converted_gray_ptr = (uint8_t *) (gray_image_ref.data + gray_image_ref.step[0] * i1 + gray_image_ref.step[1] * j1);
-                if (*value_original_mm_ptr == 0)
-                {
-                    *value_converted_meters_ptr = std::numeric_limits<float>::quiet_NaN();
-                    *value_converted_gray_ptr = 0;
-                }
-                else
-                {
-                    *value_converted_meters_ptr = (float) (*value_original_mm_ptr)/1000.0;
-                    if (*value_converted_meters_ptr > max_depth_value_meters)
-                        max_depth_value_meters = *value_converted_meters_ptr;
-                    if (*value_converted_meters_ptr < min_depth_value_meters)
-                        min_depth_value_meters = *value_converted_meters_ptr; 
-                    //*value_converted_gray_ptr = (uint8_t) floor((*value_converted_meters_ptr/DEPTH_MAX_VALUE_METERS)*255);
-                }
-            }
-        }
-        std::cout << "Max depth value: " << max_depth_value_meters << std::endl;
-        std::cout << "Min depth value: " << min_depth_value_meters << std::endl;
-
-        if (max_depth_value_meters > 10.0)
-            max_depth_value_meters = 10;
-
-        for(i1 = 0; i1 < depth_image_milimeters_cv->image.rows; i1++)
-        {
-            for(j1 = 0; j1 < depth_image_milimeters_cv->image.cols; j1++)
-            {
-                const cv::Mat & original_image_ref_mm = depth_image_milimeters_cv->image;
-                const cv::Mat & converted_image_ref_meters = depth_image_meters_cv.image;
-                const cv::Mat & gray_image_ref = depth_gray_cv.image;
-                value_original_mm_ptr = (uint16_t *) (original_image_ref_mm.data + original_image_ref_mm.step[0]*i1 + original_image_ref_mm.step[1]*j1); 
-                value_converted_meters_ptr = (float *) (converted_image_ref_meters.data + converted_image_ref_meters.step[0] * i1 + converted_image_ref_meters.step[1] * j1);
-                value_converted_gray_ptr = (uint8_t *) (gray_image_ref.data + gray_image_ref.step[0] * i1 + gray_image_ref.step[1] * j1);
-                if (*value_original_mm_ptr == 0)
-                {
-                    // Do nothing, because in the previous loop it has been assigned a 0 value in that case
-                }
-                else
-                {
-                    //*value_converted_gray_ptr = (uint8_t) floor((*value_converted_meters_ptr/DEPTH_MAX_VALUE_METERS)*255);
-                    *value_converted_gray_ptr = (uint8_t) floor((*value_converted_meters_ptr-min_depth_value_meters)/(max_depth_value_meters - min_depth_value_meters)*255);
-                }
-            }
-        }
-        cv_bridge::CvImage gaussian_blur_image_cv;
-        gaussian_blur_image_cv.encoding = sensor_msgs::image_encodings::MONO8;
-        // Apply Blur
-        if (use_gaussian_blur_)
-        {
-            cv::GaussianBlur(depth_gray_cv.image, gaussian_blur_image_cv.image, cv::Size(3,3), 2, 2);
-            if (publish_debug_images_)
-                gaussian_blur_image_pub_.publish(gaussian_blur_image_cv.toImageMsg());
-        }
-        else
-        {
-            gaussian_blur_image_cv.image = depth_gray_cv.image;
-        }
-        
-        // Find fire circle using HoughCircles on color image
-        std::vector<cv::Vec3f> circles_detected;
-        if (publish_debug_images_)
-        {
-            cv_bridge::CvImage canny_edge_image;
-            canny_edge_image.encoding = sensor_msgs::image_encodings::MONO8;
-            cv::Canny(gaussian_blur_image_cv.image, canny_edge_image.image, canny_edge_upper_threshold_, canny_edge_upper_threshold_/2);
-            canny_edge_image_pub_.publish(canny_edge_image.toImageMsg());
-        }
-        cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp_, min_dist_between_circle_center_, 
-                         canny_edge_upper_threshold_, accu_th_, min_radius_pixels_, max_radius_pixels_);
-        for (size_t i = 0; i < circles_detected.size(); i++)
-        {
-            cv::Point center(cvRound(circles_detected[i][0]), cvRound(circles_detected[i][1]));
-            int radius = cvRound(circles_detected[i][2]);
-            std::cout << "Circle " << i << " radius : " << radius << std::endl;
-            // circle center
-            cv::circle( color_image_cv->image, center, 3, cv::Scalar(0,255,0), -1, 8, 0);
-            // circle outline
-            cv::circle( color_image_cv->image, center, radius, cv::Scalar(0,0,255), 3, 8, 0);
-            // Extract circle center depth from depth image
-            float circle_center_depth = (float)((depth_image_milimeters_cv->image.at<uint16_t>(center))/1000.0);
-            std::cout << "Circle center depth: " << circle_center_depth << std::endl;
-            // Calc 3D position of circle center
-            geometry_msgs::Point circle_center_3D;
-            get3DPointCameraModel(circle_center_3D, circle_center_depth, center.y, center.x);
-            if (publish_debug_marker_)
-            {
-                circle_center_marker_.header.stamp = color_img_ptr->header.stamp;
-                circle_center_marker_.pose.position = circle_center_3D;
-                circle_center_marker_pub_.publish(circle_center_marker_);
-            }
-            object_detection_.header.stamp = color_img_ptr->header.stamp;
-            object_detection_.header.frame_id = color_img_ptr->header.frame_id;
-            object_detection_.pose.pose.position = circle_center_3D;
-            object_detection_.pose.pose.orientation.w = 1.0; // TODO: Calc orientation
-            object_detection_list_.stamp = color_img_ptr->header.stamp;
-            object_detection_.scale.x = object_detection_.scale.y = object_detection_.scale.z = radius;
-            // TODO: Fill covariance
-
-            object_detection_list_.objects.push_back(object_detection_);
-        }
-        if (publish_debug_images_)
-            detected_circles_image_pub_.publish(color_image_cv->toImageMsg());
-        // Publish detected circles
-        object_detection_pub_.publish(object_detection_list_);
-        object_detection_list_.objects.clear();
-    }
-    else if (depth_img_ptr->encoding == sensor_msgs::image_encodings::TYPE_32FC1)
-    {
-        cv_bridge::CvImagePtr depth_image_meters_cv = cv_bridge::toCvCopy(depth_img_ptr, sensor_msgs::image_encodings::TYPE_32FC1);
-        depth_image_meters_cv->header = depth_img_ptr->header;
-        depth_image_meters_cv->encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-        cv_bridge::CvImage depth_gray_cv;
-        depth_gray_cv.image = cv::Mat(cv::Size(image_width, image_height), CV_8UC1);
-        depth_gray_cv.header = depth_image_meters_cv->header;
-        depth_gray_cv.encoding = sensor_msgs::image_encodings::MONO8;
-        float * value_original_meters_ptr;
-        uint8_t * value_converted_gray_ptr;
-        int i1 = 0;
-        int j1 = 0;
-        // Convert depth image from milimeters to meters and also find min and max values
-        for(i1 = 0; i1 < depth_image_meters_cv->image.rows; i1++)
-        {
-            for(j1 = 0; j1 < depth_image_meters_cv->image.cols; j1++)
-            {
-                const cv::Mat & original_image_ref_meters = depth_image_meters_cv->image;
-                const cv::Mat & gray_image_ref = depth_gray_cv.image;
-                value_original_meters_ptr = (float *) (original_image_ref_meters.data + original_image_ref_meters.step[0] * i1 + original_image_ref_meters.step[1] * j1);
-                value_converted_gray_ptr = (uint8_t *) (gray_image_ref.data + gray_image_ref.step[0] * i1 + gray_image_ref.step[1] * j1);
-
-                uint32_t integer_aux;
-                std::memcpy(&integer_aux, value_original_meters_ptr, sizeof(float));
-                if (integer_aux == 0x7FC00000)
-                {
-                    //std::cout << "NaN value detected" << std::endl;
-                    //*value_original_meters_ptr = std::numeric_limits<float>::quiet_NaN();
-                    *value_converted_gray_ptr = 0;
-                }
-                else
-                {
-                    if (*value_original_meters_ptr > max_depth_value_meters)
-                        max_depth_value_meters = *value_original_meters_ptr;
-                    if (*value_original_meters_ptr < min_depth_value_meters)
-                        min_depth_value_meters = *value_original_meters_ptr; 
-                }
-            }
-        }
-        std::cout << "Max depth value: " << max_depth_value_meters << std::endl;
-        std::cout << "Min depth value: " << min_depth_value_meters << std::endl;
-        for(i1 = 0; i1 < depth_image_meters_cv->image.rows; i1++)
-        {
-            for(j1 = 0; j1 < depth_image_meters_cv->image.cols; j1++)
-            {
-                const cv::Mat & original_image_ref_meters = depth_image_meters_cv->image;
-                const cv::Mat & converted_image_ref_meters = depth_image_meters_cv->image;
-                const cv::Mat & gray_image_ref = depth_gray_cv.image;
-                value_original_meters_ptr = (float *) (original_image_ref_meters.data + original_image_ref_meters.step[0]*i1 + original_image_ref_meters.step[1]*j1); 
-                value_converted_gray_ptr = (uint8_t *) (gray_image_ref.data + gray_image_ref.step[0] * i1 + gray_image_ref.step[1] * j1);
-
-                uint32_t integer_aux;
-                std::memcpy(&integer_aux, value_original_meters_ptr, sizeof(float));
-                if (integer_aux == 0x7FC00000)
-                {
-                    // Do nothing, because in the previous loop it has been assigned a 0 value in that case
-                }
-                else
-                {
-                    //*value_converted_gray_ptr = (uint8_t) floor((*value_converted_meters_ptr/DEPTH_MAX_VALUE_METERS)*255);
-                    *value_converted_gray_ptr = (uint8_t) floor((*value_original_meters_ptr-min_depth_value_meters)/(max_depth_value_meters - min_depth_value_meters)*255);
-                }
-            }
-        }
-        // Apply Blur
-        cv_bridge::CvImage gaussian_blur_image_cv;
-        gaussian_blur_image_cv.encoding = sensor_msgs::image_encodings::MONO8;
-        cv::GaussianBlur(depth_gray_cv.image, gaussian_blur_image_cv.image, cv::Size(3,3), 2, 2);
-        if (publish_debug_images_)
-            gaussian_blur_image_pub_.publish(gaussian_blur_image_cv.toImageMsg());
-        // Find fire circle using HoughCircles on color image
-        std::vector<cv::Vec3f> circles_detected;
-        if (publish_debug_images_)
-        {
-            cv_bridge::CvImage canny_edge_image;
-            canny_edge_image.encoding = sensor_msgs::image_encodings::MONO8;
-            cv::Canny(gaussian_blur_image_cv.image, canny_edge_image.image, canny_edge_upper_threshold_, canny_edge_upper_threshold_/2);
-            canny_edge_image_pub_.publish(canny_edge_image.toImageMsg());
-        }
-        cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp_, min_dist_between_circle_center_, 
-                         canny_edge_upper_threshold_, accu_th_, min_radius_pixels_, max_radius_pixels_);
-        for (size_t i = 0; i < circles_detected.size(); i++)
-        {
-            cv::Point center(cvRound(circles_detected[i][0]), cvRound(circles_detected[i][1]));
-            int radius = cvRound(circles_detected[i][2]);
-            std::cout << "Circle " << i << " radius : " << radius << std::endl;
-            // circle center
-            cv::circle( color_image_cv->image, center, 3, cv::Scalar(0,255,0), -1, 8, 0);
-            // circle outline
-            cv::circle( color_image_cv->image, center, radius, cv::Scalar(0,0,255), 3, 8, 0);
-            // Extract circle center depth from depth image
-            float circle_center_depth = (float)(depth_image_meters_cv->image.at<float>(center));
-            std::cout << "Circle center depth: " << circle_center_depth << std::endl;
-            // Calc 3D position of circle center
-            geometry_msgs::Point circle_center_3D;
-            get3DPointCameraModel(circle_center_3D, circle_center_depth, center.y, center.x);
-            if (publish_debug_marker_)
-            {
-                circle_center_marker_.header.stamp = color_img_ptr->header.stamp;
-                circle_center_marker_.pose.position = circle_center_3D;
-                circle_center_marker_pub_.publish(circle_center_marker_);
-            }
-            object_detection_.header.stamp = color_img_ptr->header.stamp;
-            object_detection_.header.frame_id = color_img_ptr->header.frame_id;
-            object_detection_.pose.pose.position = circle_center_3D;
-            object_detection_.pose.pose.orientation.w = 1.0; // TODO: Calc orientation
-            object_detection_list_.stamp = color_img_ptr->header.stamp;
-            object_detection_.scale.x = object_detection_.scale.y = object_detection_.scale.z = radius;
-            // TODO: Fill covariance
-            
-            object_detection_list_.objects.push_back(object_detection_);
-        }
-        if (publish_debug_images_)
-            detected_circles_image_pub_.publish(color_image_cv->toImageMsg());
-        // Publish detected circles
-        object_detection_pub_.publish(object_detection_list_);
-        object_detection_list_.objects.clear();
-    }
-    else
-    {
-        ROS_WARN("Invalid depth image encoding");
-    }
-    
-
 }
 
 void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_img_ptr, const sensor_msgs::ImageConstPtr &depth_img_ptr)
@@ -500,23 +232,82 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
         gaussian_blur_image_pub_.publish(gaussian_blur_image_cv.toImageMsg());
     // Find fire circle using HoughCircles on color image
     std::vector<cv::Vec3f> circles_detected;
+
+    cv_bridge::CvImage mask_image_cv;
+    mask_image_cv.encoding = sensor_msgs::image_encodings::MONO8;
+    mask_image_cv.header = depth_img_ptr->header;
+    mask_image_cv.image = cv::Mat(cv::Size(depth_img_ptr->width, depth_img_ptr->height), CV_8UC1);
+    
+    // Before applying Canny Edge detection and Hough Circle algorithm, mask grayscale image based on pixel values of depth image
+    // If pixels have depth values higher than max_distance_th, higher than realsense approx max range or 0, a 0 value will be assigned to them in the grayscale image
+    // TODO: Not apply masking directly to grayscale image, but to an auxiliary image, then apply erode and dilate to this image
+    int i1 = 0;
+    int j1 = 0;
+    for(i1 = 0; i1 < depth_image_cv->image.rows; i1++)
+    {
+        for(j1 = 0; j1 < depth_image_cv->image.cols; j1++)
+        {
+            const cv::Mat & original_image_ref_mm = depth_image_cv->image;
+            const cv::Mat & mask_image_ref = mask_image_cv.image; 
+            uint16_t * value_original_mm_ptr = (uint16_t *) (original_image_ref_mm.data + original_image_ref_mm.step[0]*i1 + original_image_ref_mm.step[1]*j1); 
+            uint8_t * mask_image_pixel_ptr = (uint8_t *) (mask_image_ref.data + mask_image_ref.step[0] * i1 + mask_image_ref.step[1] * j1);
+            if ( (*value_original_mm_ptr == 0) || (*value_original_mm_ptr/1000 > 10) || (*value_original_mm_ptr/1000 > max_depth_th_) )
+            {
+                *mask_image_pixel_ptr = 0;
+            }
+            else
+            {
+                *mask_image_pixel_ptr = 255;
+            }
+        }
+    }
+
+    // Apply erosion and dilation to mask image before applying mask to grayscale image
+    cv::morphologyEx(mask_image_cv.image, mask_image_cv.image, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(10,10)), cv::Point(-1,-1), 2);
+
+    for(i1 = 0; i1 < depth_image_cv->image.rows; i1++)
+    {
+        for(j1 = 0; j1 < depth_image_cv->image.cols; j1++)
+        {
+            const cv::Mat & mask_image_ref = mask_image_cv.image;
+            const cv::Mat & gray_image_ref = gaussian_blur_image_cv.image; 
+            uint16_t * mask_image_pixel_ptr = (uint16_t *) (mask_image_ref.data + mask_image_ref.step[0]*i1 + mask_image_ref.step[1]*j1); 
+            uint8_t * gray_image_pixel_ptr = (uint8_t *) (gray_image_ref.data + gray_image_ref.step[0] * i1 + gray_image_ref.step[1] * j1);
+            if ( *mask_image_pixel_ptr == 0)
+            {
+                // Ignore this pixel of the image
+                *gray_image_pixel_ptr = 0;
+            }
+            else
+            {
+                // Preserve grayscale pixel value
+            }
+        }
+    }
+
     if (publish_debug_images_)
     {
+        mask_image_pub_.publish(mask_image_cv.toImageMsg());
+        masked_gray_pub_.publish(gaussian_blur_image_cv.toImageMsg());
         cv_bridge::CvImage canny_edge_image;
         canny_edge_image.encoding = sensor_msgs::image_encodings::MONO8;
         cv::Canny(gaussian_blur_image_cv.image, canny_edge_image.image, canny_edge_upper_threshold_, canny_edge_upper_threshold_/2);
         canny_edge_image_pub_.publish(canny_edge_image.toImageMsg());
     }
+
+    // Dilate and Erode gaussian_blur_image
+    cv::morphologyEx(gaussian_blur_image_cv.image, gaussian_blur_image_cv.image, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)), cv::Point(-1,-1), 2);
+
     cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp_, min_dist_between_circle_center_, 
                      canny_edge_upper_threshold_, accu_th_, min_radius_pixels_, max_radius_pixels_);
     for (size_t i = 0; i < circles_detected.size(); i++)
     {
         cv::Point center(cvRound(circles_detected[i][0]), cvRound(circles_detected[i][1]));
         int radius = cvRound(circles_detected[i][2]);
-        std::cout << "Circle " << i << " radius : " << radius << std::endl;
+        //std::cout << "Circle " << i << " radius : " << radius << std::endl;
         // Extract circle center depth from depth image
         float circle_center_depth = (float)((depth_image_cv->image.at<uint16_t>(center))/1000.0);
-        std::cout << "Circle center depth: " << circle_center_depth << std::endl;
+        //std::cout << "Circle center depth: " << circle_center_depth << std::endl;
 
         if (circle_center_depth != 0 && circle_center_depth < 10.0 && circle_center_depth < max_depth_th_)
         {
@@ -527,8 +318,8 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
                 cv::circle( color_image_cv->image, center, 3, cv::Scalar(0,255,0), -1, 8, 0);
                 // circle outline
                 cv::circle( color_image_cv->image, center, radius, cv::Scalar(0,0,255), 3, 8, 0);
-                std::cout << "Circle radius meters: " << circle_radius_meters << "\n";
-                std::cout << "Circle center depth: " << circle_center_depth << std::endl;
+                //std::cout << "Circle radius meters: " << circle_radius_meters << "\n";
+                //std::cout << "Circle center depth: " << circle_center_depth << std::endl;
                 // Calc 3D position of circle center
                 geometry_msgs::Point circle_center_3D;
                 get3DPointCameraModel(circle_center_3D, circle_center_depth, center.y, center.x);
