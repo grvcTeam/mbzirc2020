@@ -2,34 +2,34 @@
 pid:
   ros: false
   x:
-    kp: 0.7
-    ki: 0.05
-    kd: 0.1
-    min_sat: -2
-    max_sat: 2
-    min_wind: -3
-    max_wind: 3
+    kp: 0.6
+    ki: 0.0
+    kd: 0.0
+    min_sat: -1.0
+    max_sat: 1.0
+    min_wind: -2.0
+    max_wind: 2.0
   y:
-    kp: 0.7
-    ki: 0.05
-    kd: 0.1
-    min_sat: -2
-    max_sat: 2
-    min_wind: -3
-    max_wind: 3
+    kp: 0.6
+    ki: 0.0
+    kd: 0.0
+    min_sat: -1.0
+    max_sat: 1.0
+    min_wind: -2.0
+    max_wind: 2.0
   z:
-    kp: 0.7
-    ki: 0.05
-    kd: 0.05
-    min_sat: -1
-    max_sat: 1
-    min_wind: -3
-    max_wind: 3
+    kp: 0.5
+    ki: 0.0
+    kd: 0.0
+    min_sat: -1.0
+    max_sat: 1.0
+    min_wind: -2.0
+    max_wind: 2.0
   yaw:
-    kp: 1
-    ki: 0.05
-    kd: 0
-    min_sat: -1
-    max_sat: 1
+    kp: 0.4
+    ki: 0.04
+    kd: 0.0
+    min_sat: -1.0
+    max_sat: 1.0
     min_wind: -1.57
     max_wind: 1.57
