@@ -226,8 +226,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       double absolute_yaw_error = normalizeAngle(absolute_yaw_lock - absolute_yaw);
       error_pose.pose.orientation.x = 0;
       error_pose.pose.orientation.y = 0;
-      error_pose.pose.orientation.z = sin(0.5 * absolute_yaw_error);
-      error_pose.pose.orientation.w = cos(0.5 * absolute_yaw_error);
+      error_pose.pose.orientation.z = 0;  //sin(0.5 * absolute_yaw_error);
+      error_pose.pose.orientation.w = 1;  //cos(0.5 * absolute_yaw_error);
     } else {
       if (is_lower_pick_control_active) {
         is_lower_pick_control_active = false;
@@ -239,8 +239,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
         double absolute_yaw_error = normalizeAngle(absolute_yaw_lock - absolute_yaw);
         error_pose.pose.orientation.x = 0;
         error_pose.pose.orientation.y = 0;
-        error_pose.pose.orientation.z = sin(0.5 * absolute_yaw_error);
-        error_pose.pose.orientation.w = cos(0.5 * absolute_yaw_error);
+        error_pose.pose.orientation.z = 0;  //sin(0.5 * absolute_yaw_error);
+        error_pose.pose.orientation.w = 1;  //cos(0.5 * absolute_yaw_error);
       } else {
         error_pose.pose.orientation = matched_candidate_.pose.pose.orientation;
         error_pose.pose.orientation.z = -error_pose.pose.orientation.z;  // change sign!
