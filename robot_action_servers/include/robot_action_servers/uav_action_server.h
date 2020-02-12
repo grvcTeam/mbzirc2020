@@ -74,6 +74,14 @@ inline double normalizeAngle(double angle) {
     return angle;
 }
 
+inline double squaredPositionNorm(const geometry_msgs::Pose& _pose) {
+  return _pose.position.x*_pose.position.x + _pose.position.y*_pose.position.y + _pose.position.z*_pose.position.z;
+}
+
+inline double yawFromPose(const geometry_msgs::Pose& _pose) {
+  return 2.0 * atan2(_pose.orientation.z, _pose.orientation.w);
+}
+
 class UalActionServer {
 protected:
 

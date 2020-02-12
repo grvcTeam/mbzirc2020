@@ -96,14 +96,6 @@ void UalActionServer::moveInCirclesCallback(const mbzirc_comm_objs::MoveInCircle
   move_in_circles_server_.setSucceeded(result);
 }
 
-inline double squaredPositionNorm(const geometry_msgs::Pose& _pose) {
-  return _pose.position.x*_pose.position.x + _pose.position.y*_pose.position.y + _pose.position.z*_pose.position.z;
-}
-
-inline double yawFromPose(const geometry_msgs::Pose& _pose) {
-  return 2.0 * atan2(_pose.orientation.z, _pose.orientation.w);
-}
-
 geometry_msgs::PoseStamped UalActionServer::errorPoseFromFireData(const FireData& _target_fire, bool _publish_markers) {
   // TODO: target criteria
   mbzirc_comm_objs::Wall target_wall = closestWall(_target_fire.wall_list);
