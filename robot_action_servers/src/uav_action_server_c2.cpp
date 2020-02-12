@@ -187,8 +187,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
 
   grvc::utils::CircularBuffer history_orientation_sq_x;
   grvc::utils::CircularBuffer history_orientation_sq_y;
-  history_orientation_sq_x.set_size(CATCHING_LOOP_RATE);  // 1s @ CATCHING_LOOP_RATE Hz
-  history_orientation_sq_y.set_size(CATCHING_LOOP_RATE);  // 1s @ CATCHING_LOOP_RATE Hz
+  history_orientation_sq_x.set_size(5);  // 1s @ CATCHING_LOOP_RATE Hz
+  history_orientation_sq_y.set_size(5);  // 1s @ CATCHING_LOOP_RATE Hz
   history_orientation_sq_x.fill_with(0);
   history_orientation_sq_y.fill_with(0);
   // unsigned tries_counter = 0;  // TODO: as feedback?
