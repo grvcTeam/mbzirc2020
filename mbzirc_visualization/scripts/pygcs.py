@@ -41,7 +41,9 @@ class AgentStatus:
         self.autopilot_mode = ""
         self.vehicle_type = ""
         self.battery_voltage = 0.0
+        self.battery_per_cell = 0.0
         self.battery_remaining = 0.0
+        self.battery_current = 0.0
         self.ual_state = ""
 
         rospy.Subscriber(ns_prefix + str(id) + "/ual/pose", PoseStamped, self.ualPoseCallback)
@@ -97,6 +99,8 @@ class SystemStatus:
                         battery_voltage = float(value.value)
                     if "Remaining" in value.key:
                         battery_remaining = float(value.value)
+                    if "Current" in value.key:
+                        battery_current = float(value.value)
 
         if found_heartbeat:
             agent_id_pos = data.status[0].name.find(self.ns_prefix)
@@ -110,7 +114,9 @@ class SystemStatus:
                 self.agents[agent_id].autopilot_mode    = autopilot_mode
                 self.agents[agent_id].vehicle_type      = vehicle_type
                 self.agents[agent_id].battery_voltage   = battery_voltage
+                self.agents[agent_id].battery_per_cell  = battery_voltage/6
                 self.agents[agent_id].battery_remaining = battery_remaining
+                self.agents[agent_id].battery_current   = battery_current
 
 class bcolors:
     HEADER = '\033[95m'
@@ -126,15 +132,16 @@ def print_info(system_status):
     system("clear")
     print bcolors.OKBLUE + "===================================" + bcolors.ENDC
     print bcolors.OKBLUE + "============== " + bcolors.ENDC + bcolors.BOLD + "pyGCS" + bcolors.ENDC + bcolors.OKBLUE + " ==============\n" + bcolors.ENDC
-    print "          --- Agents ---       "
+    print "           --- Agents ---       "
     for id, agent in system_status.agents.items():
         print bcolors.BOLD + "\nAgent " + str(agent.id) + bcolors.ENDC
         print "  AP: " + agent.autopilot_type + " - " + agent.vehicle_type
-        print "  Battery: " + ( (bcolors.BOLD + bcolors.FAIL) if agent.battery_remaining<25.0 else (bcolors.OKGREEN if agent.battery_remaining>=50.0 else bcolors.WARNING) ) + "{:.2f}V - {:.1f}%".format(agent.battery_voltage, agent.battery_remaining) + bcolors.ENDC
+        print "  Battery: " + ( (bcolors.BOLD + bcolors.FAIL) if agent.battery_per_cell<3.6 else (bcolors.OKGREEN if agent.battery_per_cell>=3.9 else bcolors.WARNING) ) + "{:.2f}V - {:.2f}V - {:.1f}%".format(agent.battery_voltage, agent.battery_per_cell, agent.battery_remaining) + bcolors.ENDC
+        print "  Current: {:.2f}A".format(agent.battery_current)
         print "  AP mode: " + agent.autopilot_mode
-        print "  UAL state: " + agent.ual_state
+        print "  UAL state: " + (bcolors.FAIL if agent.ual_state=="FLYING_MANUAL" else (bcolors.OKGREEN if agent.ual_state=="FLYING_AUTO" else "")) + agent.ual_state + bcolors.ENDC
         print "  GPS Fix/nSat/Cov: " + bcolors.BOLD + (bcolors.FAIL if agent.gps_fix<=4 else (bcolors.OKGREEN if agent.gps_fix==6 else bcolors.WARNING) ) + str(agent.gps_fix) + bcolors.ENDC + " / " + str(agent.n_satellites) + " / {:.4f}".format(agent.gps_cov)
-        print "  Pose: {:.2f}  {:.2f}  {:.2f}  {:d}º".format(agent.pose_x,agent.pose_y,agent.pose_z,agent.orientation)
+        print "  Pose: {:6.2f} {:6.2f} {:5.2f} {:3d}º".format(agent.pose_x,agent.pose_y,agent.pose_z,agent.orientation)
 
     print bcolors.OKBLUE + "===================================" + bcolors.ENDC
 
