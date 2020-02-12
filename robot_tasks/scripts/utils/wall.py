@@ -1,5 +1,6 @@
 from geometry_msgs.msg import PoseStamped, Point
 from mbzirc_comm_objs.msg import ObjectDetection as ObjectDetection
+from utils import int_from_color
 import tf2_py as tf2
 
 def all_piles_are_found(uav_piles, ugv_piles):
@@ -17,6 +18,34 @@ def uav_walls_are_found(uav_wall):
 def order_wall_segments(uav_wall):
     #TODO: cluster segments searching for connections in 90 degrees 
     return uav_wall
+
+def wall_parser(wall_file, n_segments, n_layers, n_bricks):
+
+    wall_pattern = {}
+    for segment in range(n_segments):
+        wall_pattern[segment] = []
+
+    with open(wall_file, “r”) as f:
+        
+        lines = f.readlines()
+
+        for line in lines:
+
+            bricks = line.split()
+
+            for segment in range(n_segments - 1):
+
+                colors = []
+
+                for i in range(segment*n_bricks:segment*n_bricks+n_bricks):
+                    colors.append(int_from_color(bricks[i]))
+
+                wall_pattern[segment].insert(0,colors)
+
+    for layer in range(n_layers):
+        wall_patter[n_segments-1].append([ObjectDetection.COLOR_ORANGE,ObjectDetection.COLOR_ORANGE])
+
+    return wall_pattern
 
 class BrickInWall(object):
     def __init__(self, color, position, wall_pose):

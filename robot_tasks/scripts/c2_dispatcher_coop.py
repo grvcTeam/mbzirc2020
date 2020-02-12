@@ -41,7 +41,7 @@ from utils.translate import color_from_int
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence
+from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence, parse_wall
 
 brick_scales = {}
 brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.3, y = 0.2, z = 0.2)
@@ -49,16 +49,14 @@ brick_scales[msg.ObjectDetection.COLOR_GREEN]  = Vector3(x = 0.6, y = 0.2, z = 0
 brick_scales[msg.ObjectDetection.COLOR_BLUE]   = Vector3(x = 1.2, y = 0.2, z = 0.2)
 brick_scales[msg.ObjectDetection.COLOR_ORANGE] = Vector3(x = 1.8, y = 0.2, z = 0.2)
 
-# TODO: from especification, assume y-z layout
-# TODO: create wall_blueprint out of file, converting strings into color codes
-wall_blueprint = {1: [[msg.ObjectDetection.COLOR_RED, msg.ObjectDetection.COLOR_GREEN], [msg.ObjectDetection.COLOR_GREEN, msg.ObjectDetection.COLOR_RED]], 2: [[msg.ObjectDetection.COLOR_RED, msg.ObjectDetection.COLOR_GREEN], [msg.ObjectDetection.COLOR_GREEN, msg.ObjectDetection.COLOR_RED]], 3: [[msg.ObjectDetection.COLOR_RED, msg.ObjectDetection.COLOR_GREEN], [msg.ObjectDetection.COLOR_GREEN, msg.ObjectDetection.COLOR_RED]], 4: [[msg.ObjectDetection.COLOR_ORANGE, msg.ObjectDetection.COLOR_ORANGE], [msg.ObjectDetection.COLOR_ORANGE, msg.ObjectDetection.COLOR_ORANGE]] } 
-
-
 class CentralUnit(object):
     def __init__(self):
 
         # Read parameters
         conf_file = rospy.get_param('~conf_file', 'config/conf.yaml')
+        wall_file = rospy.get_param('~wall_file', 'config/uav_wall.txt')
+        
+        self.wall_pattern = parse_wall(wall_file, 3, 2, 7) 
 
         with open(r'conf_file') as file:
             arena_conf = yaml.full_load(file)
@@ -201,7 +199,7 @@ class CentralUnit(object):
 
         self.build_wall_sequence = {}
         for wall_id,wall_pose in self.uav_walls.items():
-            self.build_wall_sequence[wall_id] = get_build_wall_sequence(wall_blueprint[wall_id], brick_scales, wall_pose)
+            self.build_wall_sequence[wall_id] = get_build_wall_sequence(self.wall_pattern[wall_id], brick_scales, wall_pose)
 
     # Return False if wall building is aborted
     def build_wall(self):
