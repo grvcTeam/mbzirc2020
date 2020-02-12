@@ -416,7 +416,6 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     return;
   }
 
-  // Define upper PID (softer control)
   // TODO: Tune!
   grvc::ual::PIDParams pid_x;
   pid_x.kp = 0.4;
@@ -457,6 +456,10 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
 
   grvc::ual::PosePID wall_pid(pid_x, pid_y, pid_z, pid_yaw);
   wall_pid.enableRosInterface("wall_control");  // TODO: disable as PID is tuned!
+
+  grvc::utils::CircularBuffer history_sq_xy_errors;
+  history_sq_xy_errors.set_size(10);  // TODO: 1s
+  history_sq_xy_errors.fill_with(1e3);  // TODO: 1km?
 
   float target_yaw = 0;
   while (ros::ok()) {
@@ -516,16 +519,19 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
 
     // std::string ual_pose_frame = ual_->pose().header.frame_id;
     auto error_pose = next_to_wall;
+    history_sq_xy_errors.push(squaredPositionNorm(error_pose.pose));
+    double min_sq_xy_error, avg_sq_xy_error, max_sq_xy_error;
+    history_sq_xy_errors.get_stats(min_sq_xy_error, avg_sq_xy_error, max_sq_xy_error);
+
+    if ((avg_sq_xy_error < 0.01) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {
+      target_pose = ual_->pose();
+      break;
+    }
 
     geometry_msgs::TwistStamped velocity;
     velocity = wall_pid.updateError(error_pose);
     ual_->setVelocity(velocity);
     loop_rate.sleep();
-
-    if (squaredPositionNorm(error_pose.pose) < 0.1 && yawFromPose(error_pose.pose)) {
-      target_pose = ual_->pose();
-      break;  // TODO: buffer!
-    }
 
 /*
     geometry_msgs::TransformStamped laser_to_ual_pose_frame;
