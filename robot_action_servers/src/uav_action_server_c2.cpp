@@ -25,7 +25,7 @@ void UalActionServer::attachedCallback(const mbzirc_comm_objs::GripperAttachedCo
   gripper_attached_ = *msg;
 }
 
-#define MAX_AVG_XY_ERROR_HI 0.25  // [m]
+#define MAX_AVG_XY_ERROR_HI 0.5  // [m]
 #define MAX_AVG_XY_ERROR_LO 0.15  // [m]
 #define MAX_AVG_Z_HI 15.0  // [m]
 #define MAX_AVG_Z_LO  3.0  // [m]
@@ -79,7 +79,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   // Define upper PID (softer control)
   // TODO: Tune!
   grvc::ual::PIDParams pid_x;
-  pid_x.kp = 0.6;
+  pid_x.kp = 0.4;
   pid_x.ki = 0.0;
   pid_x.kd = 0.0;
   pid_x.min_sat = -0.5;
@@ -88,7 +88,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   pid_x.max_wind = 2.0;
 
   grvc::ual::PIDParams pid_y;
-  pid_y.kp = 0.6;
+  pid_y.kp = 0.4;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
   pid_y.min_sat = -0.5;
