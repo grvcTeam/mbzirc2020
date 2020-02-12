@@ -273,6 +273,10 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_facade_control");
 
+  grvc::utils::CircularBuffer history_sq_xyz_errors;
+  history_sq_xyz_errors.set_size(FACADE_EXTINGUISH_LOOP_RATE);  // TODO: 1s
+  history_sq_xyz_errors.fill_with(1e3);  // TODO: 1km?
+
   FireData target_fire;
   bool fire_is_locked = false;
   auto ual_safe_pose = ual_->pose();
@@ -354,14 +358,19 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         // debug_pub.publish(velocity);
         ual_->setVelocity(velocity);
 
-        if ((squaredPositionNorm(error_pose.pose) < 0.01) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {  // TODO: tune! buffer?
-          ROS_INFO("Fire locked!");
-          ual_->setPose(ual_->pose());  // TODO: is this enough?
-          target_fire.id = "TODO!";  // TODO!
-          target_fire.ual_pose = ual_->pose();
-          target_fire.sf11_range = sf11_range_;
+        history_sq_xyz_errors.push(squaredPositionNorm(error_pose.pose));
+        double min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error;
+        history_sq_xyz_errors.get_stats(min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error);
+
+        if ((avg_sq_xyz_error < 0.01) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {  // TODO: tune!
+          auto current_pose = ual_->pose();
           target_fire.wall_list = wall_list_;
+          target_fire.sf11_range = sf11_range_;
+          target_fire.id = "TODO!";  // TODO!
+          target_fire.ual_pose = current_pose;
+          ual_->setPose(current_pose);  // TODO: is this enough?
           fire_is_locked = true;
+          ROS_INFO("Fire locked!");
           break;
         }
       }
