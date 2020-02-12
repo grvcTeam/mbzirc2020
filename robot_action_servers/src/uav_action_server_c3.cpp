@@ -286,10 +286,19 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       return;
     }
 
+    float min_sq_distance = 1e6;
     for (auto object: sensed_objects_.objects) {
       if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
-        hole = object;  // TODO: Look for the best fit!
+        auto current_sq_distance = squaredPositionNorm(object.pose.pose);
+        if (current_sq_distance < min_sq_distance) {
+          min_sq_distance = current_sq_distance;
+          hole = object;  // TODO: Closest is best fit?
+        }
       }
+    }
+    if (min_sq_distance > 36) {  // TODO: Tune?
+      ROS_WARN("Closest hole is too far!");
+      continue;
     }
     ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
 
