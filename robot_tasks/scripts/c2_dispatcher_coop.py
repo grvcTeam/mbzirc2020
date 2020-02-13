@@ -44,10 +44,10 @@ from utils.path import generate_uav_paths, set_z
 from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence, parse_wall
 
 brick_scales = {}
-brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.3, y = 0.2, z = 0.2)
-brick_scales[msg.ObjectDetection.COLOR_GREEN]  = Vector3(x = 0.6, y = 0.2, z = 0.2)
-brick_scales[msg.ObjectDetection.COLOR_BLUE]   = Vector3(x = 1.2, y = 0.2, z = 0.2)
-brick_scales[msg.ObjectDetection.COLOR_ORANGE] = Vector3(x = 1.8, y = 0.2, z = 0.2)
+brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.2, y = 0.3, z = 0.2)
+brick_scales[msg.ObjectDetection.COLOR_GREEN]  = Vector3(x = 0.2, y = 0.6, z = 0.2)
+brick_scales[msg.ObjectDetection.COLOR_BLUE]   = Vector3(x = 0.2, y = 1.2, z = 0.2)
+brick_scales[msg.ObjectDetection.COLOR_ORANGE] = Vector3(x = 0.2, y = 1.8, z = 0.2)
 
 class CentralUnit(object):
     def __init__(self):
@@ -56,7 +56,9 @@ class CentralUnit(object):
         conf_file = rospy.get_param('~conf_file', 'config/conf.yaml')
         wall_file = rospy.get_param('~wall_file', 'config/uav_wall.txt')
         
-        self.wall_pattern = parse_wall(wall_file, 3, 2, 7) 
+        self.wall_pattern = parse_wall(wall_file, n_segments=4, n_layers=2, n_bricks=7)
+        self.n_segments = 4
+        self.n_layers = 2 
 
         with open(r'conf_file') as file:
             arena_conf = yaml.full_load(file)
@@ -75,9 +77,6 @@ class CentralUnit(object):
 
         # TODO: auto discovery (and update!)?
 
-        #TODO: remove after testing
-        self.available_robots = ['1', '2', '3'] # Force id to be a string to avoid index confussion  
-
         self.robots = {}
         for robot_id in self.available_robots:
             self.robots[robot_id] = RobotProxy(robot_id)
@@ -95,6 +94,8 @@ class CentralUnit(object):
         self.current_wall_segment = 0 
         self.current_wall_layer = 0
         self.current_wall_brick = 0
+
+        self.wall_segment_ids = []
         
         rospy.Subscriber("estimated_objects", msg.ObjectList, self.estimation_callback)
 
@@ -141,8 +142,6 @@ class CentralUnit(object):
                         
                         self.ugv_piles[color] = pose
                         self.ugv_pile_areas[color] = obj_area 
-
-                    self.ugv_piles[color] = pose
                 
                 elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
                     self.uav_walls[obj.id] = pose
@@ -186,6 +185,7 @@ class CentralUnit(object):
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
+        #TODO: what if objects never found?
         while not all_piles_are_found(self.uav_piles,self.ugv_piles) and not all_walls_are_found(self.uav_walls,self.ugv_wall) and not rospy.is_shutdown():
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
@@ -195,25 +195,35 @@ class CentralUnit(object):
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
 
+    def cluster_wall_segments(self):
+        #TODO: cluster segments searching for connections in 90 degrees 
+        obj_ids = []
+        
+        self.wall_segment_ids = obj_ids
+
     def build_wall_sequence(self):
 
         self.build_wall_sequence = {}
-        for wall_id,wall_pose in self.uav_walls.items():
-            self.build_wall_sequence[wall_id] = get_build_wall_sequence(self.wall_pattern[wall_id], brick_scales, wall_pose)
+        for segment,wall_id in enumerate(self.wall_segment_ids):
+        
+            if segment != self.n_segments-1:    
+                offset = 0.065
+            else:
+                offset = 0.4
+
+            wall_pose = self.uav_walls[wall_id]
+            self.build_wall_sequence[segment] = get_build_wall_sequence(self.wall_pattern[segment], brick_scales, wall_pose, offset)
 
     # Return False if wall building is aborted
     def build_wall(self):
         piles = copy.deepcopy(self.uav_piles)  # Cache piles
+        object_missing = False
 
-        pile_missing = False
-        n_layers = len(self.build_wall_sequence.values()[0])
-        segment_ids = self.build_wall_sequence.keys()
-        n_segments = len(segment_ids)
+        #### Place all bricks for each segment first. Orange last ####
+        """ for wall_layer in range(self.current_wall_layer, self.n_layers):
+            for segment in range(self.current_wall_segment, self.n_segments):
 
-        for wall_layer in range(self.current_wall_layer, n_layers):
-            for segment in range(self.current_wall_segment, n_segments):
-
-                row = self.build_wall_sequence[segment_ids[segment]][wall_layer]
+                row = self.build_wall_sequence[segment][wall_layer]
                 
                 for brick_index in range(self.current_wall_brick, len(row)):
 
@@ -221,60 +231,138 @@ class CentralUnit(object):
 
                     print('segment[{}] brick = {}'.format(segment, brick))
 
-                    if brick.color in piles:
+                    costs = {}
+                    while not costs and not rospy.is_shutdown():
+                        for robot_id in self.available_robots:
+                            if self.task_manager.is_idle(robot_id):
+                                costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
+                            else:
+                                # print('waiting for an idle robot...')
+                                rospy.sleep(0.5)
+                    min_cost_robot_id = min(costs, key = costs.get)
+                    print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
 
-                        costs = {}
-                        while not costs and not rospy.is_shutdown():
-                            for robot_id in self.available_robots:
-                                if self.task_manager.is_idle(robot_id):
-                                    costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
-                                else:
-                                    # print('waiting for an idle robot...')
-                                    rospy.sleep(0.5)
-                        min_cost_robot_id = min(costs, key = costs.get)
-                        print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
+                    flight_level = self.get_param(min_cost_robot_id,'flight_level')
+                    userdata = smach.UserData()
+                    userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
+                    userdata.above_pile_pose.pose.position.z = flight_level
+                    userdata.above_wall_pose = copy.deepcopy(brick.pose)
+                    userdata.above_wall_pose.pose.position.z = flight_level
+                    userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
+ 
+                    self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
 
-                        flight_level = self.get_param(min_cost_robot_id,'flight_level')
-                        userdata = smach.UserData()
-                        userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
-                        userdata.above_pile_pose.pose.position.z = flight_level
-                        userdata.above_wall_pose = copy.deepcopy(brick.pose)
-                        userdata.above_wall_pose.pose.position.z = flight_level
-                        userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
+                    #TODO: if pick fails due to not brick found, removed object from Estimator, remove locally and abort
+                    #TODO: if place fails due to not wall found, removed object from Estimator, remove locally and abort
+                    #
+                    # self.uav_piles[brick.color] = [] 
+                    # call Estimator service to remove object self.uav_pile_ids[brick.color] 
+                    # rospy.logwarn("Missing pile, aborting wall building")
 
-                        #TODO: if pick fails due to not brick found, removed object from Estimator and abort
-                        self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
+                    # del self.uav_walls[ self.wall_segment_ids[segment] ] 
+                    # call Estimator service to remove object self.wall_segment_ids[segment]
+                    # rospy.logwarn("Missing wall, aborting wall building")
+                    
+                    # object_missing = True
+                    # break
 
-                        self.current_wall_brick = self.current_wall_brick + 1
-                        if self.current_wall_brick = len(row):
-                            self.current_wall_brick = 0
-
-                    else:
-                        pile_missing = True
-                        rospy.logwarn("Missing pile, aborting wall building")
-                        break
+                    self.current_wall_brick = self.current_wall_brick + 1
+                    if self.current_wall_brick = len(row):
+                        self.current_wall_brick = 0
 
                 # Ending segment
-                if not pile_missing:
+                if not object_missing:
                     self.current_wall_segment = self.current_wall_segment + 1
-                        if self.current_wall_segment = n_segments:
+                        if self.current_wall_segment = self.n_segments:
                             self.current_wall_segment = 0
 
                 else:
                     break
 
             # Ending layer
-            if not pile_missing:
+            if not object_missing:
 
                 self.current_wall_layer = self.current_wall_layer + 1
-                        if self.current_wall_layer = n_layers:
+                        if self.current_wall_layer = self.n_layers:
+                            self.current_wall_layer = 0
+            else:
+                break """
+        #### End comment ####
+
+
+        for wall_layer in range(self.current_wall_layer, self.n_layers):
+
+            n_bricks = self.build_wall_sequence[0][wall_layer]
+
+            for brick_index in range(self.current_wall_brick, n_bricks):
+        
+                # Last segment is skipped
+                for segment in range(self.current_wall_segment, self.n_segments-1):
+
+                    brick = self.build_wall_sequence[segment][wall_layer][brick_index]
+                
+                    print('segment[{}] brick = {}'.format(segment, brick))
+
+                    costs = {}
+                    while not costs and not rospy.is_shutdown():
+                        for robot_id in self.available_robots:
+                            if self.task_manager.is_idle(robot_id):
+                                costs[robot_id] = self.robots[robot_id].get_cost_to_go_to(piles[brick.color])
+                            else:
+                                # print('waiting for an idle robot...')
+                                rospy.sleep(0.5)
+                    min_cost_robot_id = min(costs, key = costs.get)
+                    print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
+
+                    flight_level = self.get_param(min_cost_robot_id,'flight_level')
+                    userdata = smach.UserData()
+                    userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
+                    userdata.above_pile_pose.pose.position.z = flight_level
+                    userdata.above_wall_pose = copy.deepcopy(brick.pose)
+                    userdata.above_wall_pose.pose.position.z = flight_level
+                    userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
+ 
+                    self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
+
+                    #TODO: if pick fails due to not brick found, removed object from Estimator, remove locally and abort
+                    #TODO: if place fails due to not wall found, removed object from Estimator, remove locally and abort
+                    #
+                    # self.uav_piles[brick.color] = [] 
+                    # call Estimator service to remove object self.uav_pile_ids[brick.color] 
+                    # rospy.logwarn("Missing pile, aborting wall building")
+
+                    # del self.uav_walls[ self.wall_segment_ids[segment] ] 
+                    # call Estimator service to remove object self.wall_segment_ids[segment]
+                    # rospy.logwarn("Missing wall, aborting wall building")
+                    
+                    # object_missing = True
+                    # break
+
+                    # Last segment is skipped
+                    self.current_wall_segment = self.current_wall_segment + 1
+                        if self.current_wall_segment = self.n_segments - 1:
+                            self.current_wall_segment = 0
+
+                # Ending brick index
+                if not object_missing:
+                    self.current_wall_brick = self.current_wall_brick + 1
+                    if self.current_wall_brick = n_bricks:
+                        self.current_wall_brick = 0
+                else:
+                    break
+
+            # Ending layer
+            if not object_missing:
+
+                self.current_wall_layer = self.current_wall_layer + 1
+                        if self.current_wall_layer = self.n_layers:
                             self.current_wall_layer = 0
             else:
                 break
 
 
         # Once arrived here, last pick_and_place task has been allocated or building aborted
-        if pile_missing:        
+        if object_missing:        
             return False
         else:
             print('All pick_and_place tasks allocated')
@@ -328,7 +416,7 @@ def main():
 
         central_unit.lock_objects()
         
-        self.uav_walls = order_wall_segments(self.uav_walls)
+        central_unit.cluster_wall_segments()
         central_unit.build_wall_sequence()
         finished = central_unit.build_wall()
 

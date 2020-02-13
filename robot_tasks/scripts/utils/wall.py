@@ -15,11 +15,7 @@ def uav_piles_are_found(uav_piles):
 def uav_walls_are_found(uav_wall):
     return len(uav_wall) >= 4
 
-def order_wall_segments(uav_wall):
-    #TODO: cluster segments searching for connections in 90 degrees 
-    return uav_wall
-
-def wall_parser(wall_file, n_segments, n_layers, n_bricks):
+def parse_wall(wall_file, n_segments, n_layers, n_bricks):
 
     wall_pattern = {}
     for segment in range(n_segments):
@@ -71,7 +67,7 @@ class BrickInWall(object):
                 self.pose.pose.orientation.x, self.pose.pose.orientation.y, self.pose.pose.orientation.z, self.pose.pose.orientation.w)
 
 
-def get_build_wall_sequence(wall_blueprint, brick_scales, wall_pose):
+def get_build_wall_sequence(wall_blueprint, brick_scales, wall_pose, offset):
 
     buid_wall_sequence = []
     current_z = 0.0
@@ -83,7 +79,7 @@ def get_build_wall_sequence(wall_blueprint, brick_scales, wall_pose):
             brick_position.x = 0.5 * brick_scales[brick_color].x
             brick_position.y = current_y + 0.5 * brick_scales[brick_color].y
             brick_position.z = current_z + 0.5 * brick_scales[brick_color].z
-            current_y += brick_scales[brick_color].y
+            current_y += brick_scales[brick_color].y + offset
 
             brick_in_wall = BrickInWall(color = brick_color, position = brick_position, wall_pose = wall_pose)
             build_row_sequence.append(brick_in_wall)
