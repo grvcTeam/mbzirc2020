@@ -259,6 +259,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             rec_list.stamp = ros::Time::now();
             rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
+            rec_list.clear();
         }
         else
         {
