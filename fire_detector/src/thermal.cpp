@@ -164,7 +164,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // Routine to detect fire in the image
         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
 
-        if (max_temp>=thermal_threshold || false_negative<=MAX_FILTER_NEGATIVES){
+        if ((max_temp>=thermal_threshold || false_negative<=MAX_FILTER_NEGATIVES) && laser_measurement<5){
             detected=true;
 
             if(max_temp<=thermal_threshold)
@@ -259,7 +259,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
             rec_list.stamp = ros::Time::now();
             rec_list.agent_id = uav_id;
             pub_msg.publish(rec_list);
-            rec_list.clear();
+            rec_list.objects.clear();
         }
         else
         {

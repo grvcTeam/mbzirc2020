@@ -40,7 +40,7 @@
 #define LASER_RANGE 720 // Lidar - full range of points
 #define SCALE_FACTOR 20 // To improve debug view
 #define R_CIRCLE 70.0 // Radius of the circle showed in debug view
-#define MAX_FILTER_NEGATIVES 75 // Num of needed continue iterations to consider a negative measure as false (15Hz*5s=75frames)
+#define MAX_FILTER_NEGATIVES 30 // Num of needed continue iterations to consider a negative measure as false (15Hz*5s=75frames)
 
 class Thermal {
 public:
