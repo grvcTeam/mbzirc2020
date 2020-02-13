@@ -251,7 +251,7 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
             const cv::Mat & mask_image_ref = mask_image_cv.image; 
             uint16_t * value_original_mm_ptr = (uint16_t *) (original_image_ref_mm.data + original_image_ref_mm.step[0]*i1 + original_image_ref_mm.step[1]*j1); 
             uint8_t * mask_image_pixel_ptr = (uint8_t *) (mask_image_ref.data + mask_image_ref.step[0] * i1 + mask_image_ref.step[1] * j1);
-            if ( (*value_original_mm_ptr == 0) || (*value_original_mm_ptr/1000 > 10) || (*value_original_mm_ptr/1000 > max_depth_th_) )
+            if ( (*value_original_mm_ptr == 0) || (*value_original_mm_ptr/1000.0 > 10) || (*value_original_mm_ptr/1000.0 > max_depth_th_) )
             {
                 *mask_image_pixel_ptr = 0;
             }
