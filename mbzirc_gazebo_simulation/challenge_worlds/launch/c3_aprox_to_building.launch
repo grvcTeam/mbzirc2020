@@ -1,0 +1,6 @@
+<!-- This launch sends 2 drones to visit 2 facades each one and return to home. Not landing, not taking off actions -->
+<!-- To do: check "human confirmation" in track_waypoints.py is not a problem to launch 2 flights at the same time -->
+<launch>
+<node pkg="uav_abstraction_layer" type="track_waypoints.py" name="track_1" ns="mbzirc2020_1" args="-plan_package=challenge_worlds -plan_file=facaderun_D1.yaml" output="screen"/>
+<!-- <node pkg="uav_abstraction_layer" type="track_waypoints.py" name="track_2" ns="mbzirc2020_2" args="-plan_file=facaderun_D2.yaml" output="screen"/> -->
+</launch>
