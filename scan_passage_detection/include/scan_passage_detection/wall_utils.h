@@ -7,9 +7,13 @@
 inline double squaredDistanceToSegment(double x, double y, double x1, double y1, double x2, double y2) {
 	double dx = x2 - x1;
 	double dy = y2 - y1;
+    double sq_dx_dy = dx*dx + dy*dy;
+    if (sq_dx_dy == 0) {
+        return 0;
+    }
 
-  double t_star;
-	double t_hat = (dx * (x - x1) + dy * (y - y1)) / (dx*dx + dy*dy);
+    double t_star;
+	double t_hat = (dx * (x - x1) + dy * (y - y1)) / sq_dx_dy;
 	if (t_hat < 0.0) {
 		t_star = 0;
 	} else if (t_hat > 1.0) {
