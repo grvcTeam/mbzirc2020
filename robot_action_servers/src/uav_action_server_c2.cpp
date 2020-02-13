@@ -109,8 +109,8 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   pid_yaw.kp = 0.4;
   pid_yaw.ki = 0.04;
   pid_yaw.kd = 0.0;
-  pid_yaw.min_sat = -1.0;
-  pid_yaw.max_sat = 1.0;
+  pid_yaw.min_sat = -0.5;
+  pid_yaw.max_sat = 0.5;
   pid_yaw.min_wind = -2.0;
   pid_yaw.max_wind = 2.0;
   pid_yaw.is_angular = true;
@@ -475,7 +475,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       loop_rate.sleep();
       continue;
     }
-    ROS_INFO("best_wall: [%lf, %lf] [%lf, %lf] length: %lf", best_wall.start[0], best_wall.start[1], best_wall.end[0], best_wall.end[1], sqrt(squaredLength(best_wall)));
+    // ROS_INFO("best_wall: [%lf, %lf] [%lf, %lf] length: %lf", best_wall.start[0], best_wall.start[1], best_wall.end[0], best_wall.end[1], sqrt(squaredLength(best_wall)));
 
     auto best_wall_lenght = sqrt(squaredLength(best_wall));
     if (best_wall_lenght < 1.75) {  // TODO: Tune (sq)
@@ -483,7 +483,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       loop_rate.sleep();
       continue;
     }
-    ROS_INFO("best_wall_lenght = %lf", best_wall_lenght);
+    // ROS_INFO("best_wall_lenght = %lf", best_wall_lenght);
 
     float dx, dy;
     if (best_wall.start[0] > best_wall.end[0]) {
@@ -493,11 +493,11 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       dx = best_wall.end[0] - best_wall.start[0];
       dy = best_wall.end[1] - best_wall.start[1];
     }
-    ROS_INFO("dx = %f, dy = %f", dx, dy);
+    // ROS_INFO("dx = %f, dy = %f", dx, dy);
     auto current_pose = ual_->pose();
     float current_yaw = 2.0 * atan2(current_pose.pose.orientation.z, current_pose.pose.orientation.w);
     float wall_yaw = atan2(dy, dx);
-    ROS_INFO("wall_yaw = %f", wall_yaw);
+    // ROS_INFO("wall_yaw = %f", wall_yaw);
     target_yaw = normalizeAngle(current_yaw + wall_yaw);
     float u_x = cos(wall_yaw);
     float u_y = sin(wall_yaw);
@@ -566,7 +566,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     ros::Duration(10).sleep();
 */
   }
-
+  ROS_INFO("Going up!");
   while (ros::ok() && (sf11_range_.range < 2.5)) {  // TODO: Threshold
     if (place_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
@@ -600,6 +600,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     last_sf11_range = sf11_range_.range;
     if (!over_wall && (delta_h < -DELTA_H_THRESHOLD)) {
       over_wall = true;
+      ROS_INFO("Over wall!");
     }
 
     if (over_wall) {
@@ -609,8 +610,9 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     if (over_wall && (estimated_wall_width > 0.3) && (sf11_range_.range > 1.7)) {  // TODO: values!
       // Release!
       ROS_ERROR("release!");
-      ual_->setPose(ual_->pose());
-      ros::Duration(5.0).sleep();  // Some sleep!
+      auto release_pose = ual_->pose();
+      release_pose.pose.position.z -= 0.1;
+      ual_->goToWaypoint(release_pose, true);
       mbzirc_comm_objs::Magnetize magnetize_srv;
       magnetize_srv.request.magnetize = false;
       if (!magnetize_client.call(magnetize_srv)) {
@@ -623,6 +625,8 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
       if (!open_gripper_client.call(trigger)) {
         ROS_ERROR("Failed to call (real) open gripper service");
       }
+      release_pose.pose.position.z += 2.0;
+      ual_->goToWaypoint(release_pose, true);
       place_server_.setSucceeded(result);
       break;
     }
