@@ -4,8 +4,8 @@
   <arg name="agent_id" default="1" />
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.25 0 -0.1 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
-    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.25 0 -0.11 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.30 0 -0.09 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.30 0 -0.14 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
@@ -17,7 +17,7 @@
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="publish_debug_marker" value="false" />
       <param name="publish_debug_images" value="true" />
-      <param name="dp" value="0.3" />
+      <param name="dp" value="1.0" />
       <param name="min_dist_between_circle_center" value="60" />
       <param name="canny_edge_upper_threshold" value="50" />
       <param name="accumulator_threshold" value="50" />
@@ -46,14 +46,14 @@
     </node>
 
     <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
-      <param name="thermal_threshold" value="37"/>
+      <param name="thermal_threshold" value="60"/>
       <param name="angle_amplitude"   value="5"/>
       <param name="camera_config"     value="FORWARD"/>
       <param name="covariance_x"      value="1.5"/>
       <param name="covariance_y"      value="1.5"/>
       <param name="covariance_z"      value="0.5"/>
       <param name="debug_view"        value="false"/>
-      <param name="debug_publisher"   value="false"/>
+      <param name="debug_publisher"   value="true"/>
       <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
     </node>
 

@@ -243,7 +243,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   pid_x.max_wind = 0.1;
 
   grvc::ual::PIDParams pid_y;
-  pid_y.kp = 0.4;
+  pid_y.kp = 0.5;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
   pid_y.min_sat = -0.5;
@@ -271,7 +271,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   pid_yaw.is_angular = true;
 
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
-  pose_pid.enableRosInterface("extinguish_facade_control");
+  // pose_pid.enableRosInterface("extinguish_facade_control");
 
   grvc::utils::CircularBuffer history_sq_xyz_errors;
   history_sq_xyz_errors.set_size(FACADE_EXTINGUISH_LOOP_RATE);  // TODO: 1s
@@ -291,7 +291,8 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     }
 
     float min_sq_distance = 1e6;
-    for (auto object: sensed_objects_.objects) {
+    for (size_t i = 0; i < sensed_objects_.objects.size(); i++) {
+      auto object = sensed_objects_.objects[i];
       if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
         auto current_sq_distance = squaredPositionNorm(object.pose.pose);
         if (current_sq_distance < min_sq_distance) {
@@ -301,20 +302,29 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       }
     }
     if (min_sq_distance > 36) {  // TODO: Tune?
-      ROS_WARN("Closest hole is too far!");
+      if (min_sq_distance < 1e5) {
+        ROS_WARN("Closest hole is too far!");
+      }
       continue;
     }
     ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
 
     if (since_last_candidate < timeout) {
       mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
-      
-      double distance_to_closest_wall = 0.0;
-      if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
-        distance_to_closest_wall = sqrt(squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]));
+      if ((closest_wall.start[0] == 0)) {
+        ROS_WARN("No closest wall!");
+       continue;
       }
 
-      if (distance_to_closest_wall < 1.5) {  // TODO: Tune
+      double distance_to_closest_wall = 0;
+      if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
+        distance_to_closest_wall = squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
+      }
+      if (distance_to_closest_wall == 0) {
+        continue;
+      }
+
+      if (distance_to_closest_wall < 2.25) {  // TODO: Tune (2.25 = 1.5*1.5)
         ROS_WARN("Too close to closest_wall!");
         ual_->setPose(ual_safe_pose);
       } else {
@@ -328,9 +338,9 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         tf2::doTransform(hole_pose, error_pose, optical_to_camera);
         error_pose.header.stamp = ros::Time::now();
         // std::cout << error_pose << '\n';
-        error_pose.pose.position.x -= 1.8;  // TODO!
-        error_pose.pose.position.y += 0.0;  // TODO!
-        error_pose.pose.position.z += 0.3;  // TODO!
+        error_pose.pose.position.x -= 1.80;  // TODO!
+        error_pose.pose.position.y += 0.00;  // TODO!
+        error_pose.pose.position.z += 0.17;  // TODO!
 
         // Control yaw with closest wall
         float dx, dy;
@@ -340,6 +350,10 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         } else {
           dx = closest_wall.start[0] - closest_wall.end[0];
           dy = closest_wall.start[1] - closest_wall.end[1];
+        }
+        if ((dx == 0) && (dy == 0)) {
+          ROS_WARN("dx = dy = 0");
+          continue;
         }
         // ROS_INFO("dx = %f, dy = %f", dx, dy);
         float wall_angle = atan2(dx, dy);  // Defined in this way on purpose! (usually dy/dx)
@@ -366,9 +380,9 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
           auto current_pose = ual_->pose();
           target_fire.wall_list = wall_list_;
           target_fire.sf11_range = sf11_range_;
-          target_fire.id = "TODO!";  // TODO!
+          target_fire.id = "TODO";  // TODO!
           target_fire.ual_pose = current_pose;
-          ual_->setPose(current_pose);  // TODO: is this enough?
+          ual_->goToWaypoint(current_pose, false);  // TODO: is this enough?
           fire_is_locked = true;
           ROS_INFO("Fire locked!");
           break;
@@ -390,6 +404,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     return;
   }
 
+  ros::Duration(2).sleep();
   mbzirc_comm_objs::CheckFire check_fire_srv;
   check_fire_client.call(check_fire_srv);
   bool fire_detected = check_fire_srv.response.fire_detected;
@@ -398,22 +413,26 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     ual_->setPose(ual_->pose());
     result.message = "Fire is not detected";
     extinguish_facade_fire_server_.setAborted(result);
-    return;    
+    return;
   }
 
   // TODO: Start pumping!
   std_srvs::Trigger trigger;
   start_pump_client.call(trigger);
-  int pumping_count_loop = 0;
+//  ros::Duration(20).sleep();
+//  stop_pump_client.call(trigger);
+//  result.message = "Fire extinguished!";
+//  extinguish_facade_fire_server_.setSucceeded(result);
 
+  int pumping_count_loop = 0;
   while (ros::ok()) {
-    mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);    
+    mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
     double distance_to_closest_wall = 0.0;
     if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
-      distance_to_closest_wall = sqrt(squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]));
+      distance_to_closest_wall = squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
     }
 
-    if (distance_to_closest_wall < 1.5) {  // TODO: Tune
+    if (distance_to_closest_wall < 2.25) {  // TODO: Tune (1.5*1.5 = 2.25)
       ROS_WARN("Too close to closest_wall!");
       ual_->setPose(ual_safe_pose);
     } else {
@@ -422,7 +441,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       ual_->setVelocity(velocity);
     }
 
-    if ((pumping_count_loop / FACADE_EXTINGUISH_LOOP_RATE) > 10) {  // TODO: Tune, in seconds
+    if ((pumping_count_loop / FACADE_EXTINGUISH_LOOP_RATE) > 20) {  // TODO: Tune, in seconds
       stop_pump_client.call(trigger);
       ual_->setPose(ual_->pose());
       result.message = "Fire extinguished!";
@@ -432,6 +451,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     pumping_count_loop++;
     loop_rate.sleep();
   }
+
   // TODO: Save target_fire to file?
 }
 
