@@ -14,6 +14,7 @@
           $(arg robot_ns)/camera/aligned_depth_to_color/image_raw
           $(arg robot_ns)/camera/aligned_depth_to_color/camera_info
 
+          $(arg robot_ns)/scan
           $(arg robot_ns)/sf11
 
           $(arg robot_ns)/ual/pose
