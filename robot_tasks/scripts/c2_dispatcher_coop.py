@@ -32,7 +32,10 @@ import copy
 import rospy
 import smach
 import yaml
+from math import pi,fabs,sin,cos
 import mbzirc_comm_objs.msg as msg
+import tf2_py as tf2
+import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3
 from tasks.move import TakeOff, FollowPath
@@ -194,12 +197,84 @@ class CentralUnit(object):
         for robot_id in self.available_robots:
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
+        
+    def clustersConnected(self, top_segment, bottom_segment):
+
+        result = False
+
+        wall_size = 4
+        dist_error = 1.5
+        angle_error = pi/6
+
+        # Compute distance
+        max_dist = sqrt(2*((wall_size/2)**2)) + dist_error
+
+        dist = sqrt((top_segment.pose.postion.x - bottom_segment.pose.postion.x)**2 + (top_segment.pose.postion.y - bottom_segment.pose.postion.y)**2)
+
+        # Compute angle between segments
+        (roll_t,pitch_t,yaw_t) = tf.transformations.euler_from_quaternion(top_segment)
+        (roll_b,pitch_b,yaw_b) = tf.transformations.euler_from_quaternion(bottom_segment)
+        
+        angle = yaw_t - yaw_b
+
+        if angle > pi:
+            angle = angle - 2*pi
+        elif angle < -2*pi:
+            angle = angel + 2*pi
+    
+        # Compute local vector from top to bottom, to check if bottom is above top
+        bottom_top = [bottom_segment.pose.postion.x - top_segment.pose.postion.x, bottom_segment.pose.postion.y - top_segment.pose.postion.y]
+        bottom_top = [bottom_top[0]*cos(yaw_t) + bottom_top[1]*sin(yaw_t), -bottom_top[0]*sin(yaw_t) + bottom_top[1]*cos(yaw_t)]
+
+        if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
+            result = True
+
+        return result
+
 
     def cluster_wall_segments(self):
-        #TODO: cluster segments searching for connections in 90 degrees 
-        obj_ids = []
         
-        self.wall_segment_ids = obj_ids
+        clusters = self.uav_walls.keys()
+        changed = True
+
+        while changed:
+            changed = False
+            nclusters = len(clusters)
+
+            for i in range(nclusters):
+                for j in range(i+1,nclusters):
+
+                    top_segment = self.uav_walls[clusters[i][-1]]
+                    bottom_segment = self.uav_walls[clusters[j][0]]
+
+                    if clustersConnected(top_segment,bottom_segment):
+                        clusters[i] = [clusters[i],clusters[j]]
+                        changed = True
+                        del clusters(j)
+
+                    else:
+                        top_segment = self.uav_walls[clusters[j][-1]]
+                        bottom_segment = self.uav_walls[clusters[i][0]]
+
+                        if clustersConnected(top_segment,bottom_segment):
+                            clusters[i] = [clusters[j],clusters[i]]
+                            changed = True
+                            del clusters(j)
+
+                    if changed:
+                        break
+                
+                if changed:
+                    break
+ 
+        found = False
+        for cluster in clusters:
+            if len(cluster) == self.n_segments:
+                self.wall_segment_ids = cluster.copy()
+                found = True
+                break
+
+        return found
 
     def build_wall_sequence(self):
 
@@ -416,9 +491,11 @@ def main():
 
         central_unit.lock_objects()
         
-        central_unit.cluster_wall_segments()
-        central_unit.build_wall_sequence()
-        finished = central_unit.build_wall()
+        if central_unit.cluster_wall_segments() == True:
+            central_unit.build_wall_sequence()
+            finished = central_unit.build_wall()
+        else:
+            rospy.logwarn("No wall find with enough segments")
 
     rospy.spin()
 
