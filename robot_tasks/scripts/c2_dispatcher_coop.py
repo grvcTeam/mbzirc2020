@@ -40,7 +40,6 @@ import tf.transformations
 from geometry_msgs.msg import PoseStamped, Vector3
 from tasks.move import TakeOff, FollowPath
 from tasks.build import PickAndPlace
-from utils.translate import color_from_int
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
@@ -63,8 +62,8 @@ class CentralUnit(object):
         self.n_segments = 4
         self.n_layers = 2 
 
-        with open(r'conf_file') as file:
-            arena_conf = yaml.full_load(file)
+        with open(conf_file,'r') as file:
+            arena_conf = yaml.safe_load(file)
 
         if 'arena' in arena_conf and 'x_min' in arena_conf['arena']:
             self.field_width = arena_conf['arena']['x_max'] - arena_conf['arena']['x_min']
@@ -77,12 +76,17 @@ class CentralUnit(object):
 
         if len(self.available_robots) == 0:
             rospy.logerr('No available UAVs for Dispatcher')
-
+        
         # TODO: auto discovery (and update!)?
 
         self.robots = {}
         for robot_id in self.available_robots:
             self.robots[robot_id] = RobotProxy(robot_id)
+
+        self.flight_levels = {}
+        for robot_id in self.available_robots:
+            self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 5.0)
+
 
         self.ugv_piles = {}
         self.ugv_pile_areas = {}
@@ -103,10 +107,6 @@ class CentralUnit(object):
         rospy.Subscriber("estimated_objects", msg.ObjectList, self.estimation_callback)
 
         self.task_manager = TaskManager(self.robots)
-
-    def get_param(self, robot_id, param_name):
-        # TODO: Default value in case param_name is not found?
-        return rospy.get_param(self.robots[robot_id].url + param_name)
 
     def estimation_callback(self, data):
 
@@ -158,7 +158,7 @@ class CentralUnit(object):
         for robot_id in self.available_robots:
             # TODO: clear all regions?
             userdata = smach.UserData()
-            userdata.height = self.get_param(robot_id, 'flight_level')  # TODO: Why not directly inside tasks?
+            userdata.height = self.flight_levels[robot_id]  # TODO: Why not directly inside tasks?
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
@@ -173,7 +173,7 @@ class CentralUnit(object):
         point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
         for i, robot_id in enumerate(self.available_robots):
             robot_path = []
-            flight_level = self.get_param(robot_id, 'flight_level')
+            flight_level = self.flight_levels[robot_id]
             point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
@@ -188,8 +188,7 @@ class CentralUnit(object):
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
-        #TODO: what if objects never found?
-        while not all_piles_are_found(self.uav_piles,self.ugv_piles) and not all_walls_are_found(self.uav_walls,self.ugv_wall) and not rospy.is_shutdown():
+        while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.uav_walls,self.ugv_wall)):
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.sleep(1.0)
@@ -250,7 +249,7 @@ class CentralUnit(object):
                     if clustersConnected(top_segment,bottom_segment):
                         clusters[i] = [clusters[i],clusters[j]]
                         changed = True
-                        del clusters(j)
+                        del clusters[j]
 
                     else:
                         top_segment = self.uav_walls[clusters[j][-1]]
@@ -259,7 +258,7 @@ class CentralUnit(object):
                         if clustersConnected(top_segment,bottom_segment):
                             clusters[i] = [clusters[j],clusters[i]]
                             changed = True
-                            del clusters(j)
+                            del clusters[j]
 
                     if changed:
                         break
@@ -317,7 +316,7 @@ class CentralUnit(object):
                     min_cost_robot_id = min(costs, key = costs.get)
                     print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
 
-                    flight_level = self.get_param(min_cost_robot_id,'flight_level')
+                    flight_level = self.flight_levels[min_cost_robot_id]
                     userdata = smach.UserData()
                     userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
                     userdata.above_pile_pose.pose.position.z = flight_level
@@ -342,14 +341,14 @@ class CentralUnit(object):
                     # break
 
                     self.current_wall_brick = self.current_wall_brick + 1
-                    if self.current_wall_brick = len(row):
+                    if self.current_wall_brick == len(row):
                         self.current_wall_brick = 0
 
                 # Ending segment
                 if not object_missing:
                     self.current_wall_segment = self.current_wall_segment + 1
-                        if self.current_wall_segment = self.n_segments:
-                            self.current_wall_segment = 0
+                    if self.current_wall_segment == self.n_segments:
+                        self.current_wall_segment = 0
 
                 else:
                     break
@@ -358,8 +357,9 @@ class CentralUnit(object):
             if not object_missing:
 
                 self.current_wall_layer = self.current_wall_layer + 1
-                        if self.current_wall_layer = self.n_layers:
-                            self.current_wall_layer = 0
+                if self.current_wall_layer == self.n_layers:
+                    self.current_wall_layer = 0
+
             else:
                 break """
         #### End comment ####
@@ -389,7 +389,7 @@ class CentralUnit(object):
                     min_cost_robot_id = min(costs, key = costs.get)
                     print('costs: {}, min_cost_id: {}'.format(costs, min_cost_robot_id))
 
-                    flight_level = self.get_param(min_cost_robot_id,'flight_level')
+                    flight_level = self.flight_levels[min_cost_robot_id]
                     userdata = smach.UserData()
                     userdata.above_pile_pose = copy.deepcopy(piles[brick.color])
                     userdata.above_pile_pose.pose.position.z = flight_level
@@ -415,13 +415,13 @@ class CentralUnit(object):
 
                     # Last segment is skipped
                     self.current_wall_segment = self.current_wall_segment + 1
-                        if self.current_wall_segment = self.n_segments - 1:
-                            self.current_wall_segment = 0
+                    if self.current_wall_segment == self.n_segments - 1:
+                        self.current_wall_segment = 0
 
                 # Ending brick index
                 if not object_missing:
                     self.current_wall_brick = self.current_wall_brick + 1
-                    if self.current_wall_brick = n_bricks:
+                    if self.current_wall_brick == n_bricks:
                         self.current_wall_brick = 0
                 else:
                     break
@@ -430,8 +430,9 @@ class CentralUnit(object):
             if not object_missing:
 
                 self.current_wall_layer = self.current_wall_layer + 1
-                        if self.current_wall_layer = self.n_layers:
-                            self.current_wall_layer = 0
+                if self.current_wall_layer == self.n_layers:
+                    self.current_wall_layer = 0
+
             else:
                 break
 
@@ -448,7 +449,7 @@ class CentralUnit(object):
                     if self.task_manager.is_idle(robot_id) and (robot_id not in finished_robots):
                         finished_robots.append(robot_id)
                         print('now go home, robot [{}]!'.format(robot_id))
-                        flight_level = self.get_param(robot_id, 'flight_level')
+                        flight_level = self.flight_levels[robot_id]
                         go_home_path = []
                         current_at_flight_level = copy.deepcopy(self.robots[robot_id].pose)
                         current_at_flight_level.pose.position.z = flight_level
