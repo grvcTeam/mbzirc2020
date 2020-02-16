@@ -56,7 +56,7 @@ Thermal::Thermal()
     n.getParam("thermal_threshold",thermal_threshold);
     n.getParam("camera_config",mode);
     detected=false;
-    false_negative=0;
+    false_negative, false_positive=0,0;
 
     ros::NodeHandle nh;
 
@@ -164,7 +164,7 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         // Routine to detect fire in the image
         circle(image_color,center,1,CV_RGB(0,255,0),1,25,0);
 
-        if ((max_temp>=thermal_threshold || false_negative<=MAX_FILTER_NEGATIVES) && laser_measurement<5){
+        if (false_positive > MIN_FILTER_POSITIVES && (max_temp>=thermal_threshold || false_negative<=MAX_FILTER_NEGATIVES) && laser_measurement<5){
             detected=true;
 
             if(max_temp<=thermal_threshold)
@@ -264,9 +264,21 @@ void Thermal::image_operations(const sensor_msgs::ImageConstPtr& msg)
         else
         {
             detected=false;
-            if(debug_view)
+
+            if(max_temp>=thermal_threshold && laser_measurement<5)
             {
-                cout<<"FIRE NOT DETECTED: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
+                false_positive++;
+                if(debug_view)
+                {
+                    cout<<"POSSIBLE FIRE DETECTED: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
+                }
+            }else
+            {
+                false_positive=0;
+                if(debug_view)
+                {
+                    cout<<"FIRE NOT DETECTED: Max temp detected-> "<<max_temp<<" | Current threshold-> "<<thermal_threshold<<endl;
+                }
             }
         }
 
