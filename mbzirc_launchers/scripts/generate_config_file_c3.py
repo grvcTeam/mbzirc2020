@@ -122,7 +122,7 @@ e3=[(e3p[0]-b[0])*m.cos(b[3])-(e3p[1]-b[1])*m.sin(b[3])+b[0],(e3p[0]-b[0])*m.sin
 p=[a1,a2,a3,a4,a5,b1,b2,b3,b4,b5,c1,c2,c3,c4,c5,d1,d2,d3,d4,e1,e2,e3]
 
 # printing all to .yaml
-port = open ('conf_ch3.yaml', 'w')
+port = open ('../config/conf_ch3.yaml', 'w')
 
 port.write("# Include only objects whose positions we know, even if they are inactive. For instance, if we have several possible poses for the facades, but only active per trial.\n")
 port.write("arena:\n  x_min: 0\n  x_max: 50\n  y_min: 0\n  y_max: 60\n\nbuilding:")
