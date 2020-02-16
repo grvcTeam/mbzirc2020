@@ -85,6 +85,15 @@ bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
     return true;
 }
 
+bool close_central_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
+    input_mutex.lock();
+    for (int i = 3; i < 5; i++) {   //TODO: Check who are the central grippers
+        board_input.pwm[i] = 1200;
+    }
+    input_mutex.unlock();
+    return true;
+}
+
 bool magnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
     board_input.pwm[0] = 2500;  // TODO: From config file?
@@ -195,6 +204,7 @@ int main(int argc, char** argv) {
     ros::ServiceServer set_digital_service = n.advertiseService("actuators_system/raw/set_digital", set_digital);
     ros::ServiceServer open_gripper_service = n.advertiseService("actuators_system/open_gripper", open_gripper);
     ros::ServiceServer close_gripper_service = n.advertiseService("actuators_system/close_gripper", close_gripper);
+    ros::ServiceServer close_central_gripper_service = n.advertiseService("actuators_system/close_central_gripper", close_central_gripper);
     ros::ServiceServer release_blanket_service = n.advertiseService("actuators_system/release_blanket", release_blanket);
     ros::ServiceServer grasp_blanket_service = n.advertiseService("actuators_system/grasp_blanket", grasp_blanket);
     ros::ServiceServer magnetize_gripper_service = n.advertiseService("actuators_system/magnetize_gripper", magnetize_gripper);
