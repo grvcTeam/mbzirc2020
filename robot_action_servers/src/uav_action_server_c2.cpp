@@ -311,7 +311,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       velocity.twist.angular.z = 0;
       ual_->setVelocity(velocity);
       std_srvs::Trigger dummy;
-      if(_goal->color == 'red'){
+      if(_goal->color == "red"){
         close_central_gripper_client.call(dummy);
       }else{
         close_gripper_client.call(dummy);
