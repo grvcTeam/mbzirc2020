@@ -32,7 +32,7 @@ import copy
 import rospy
 import smach
 import yaml
-from math import pi,fabs,sin,cos
+from math import pi,fabs,sin,cos,sqrt
 import mbzirc_comm_objs.msg as msg
 import tf2_py as tf2
 import tf.transformations
@@ -110,7 +110,7 @@ class CentralUnit(object):
 
     def estimation_callback(self, data):
 
-        if not objects_locked:
+        if not self.objects_locked:
 
             # Reset information
             if len(data.objects) >= 0 and data.objects[0].type == msg.Object.TYPE_PILE:
@@ -127,7 +127,7 @@ class CentralUnit(object):
                 pose = PoseStamped()
                 pose.header = obj.header
                 pose.pose = obj.pose.pose
-                obj_area = obj.scale[0]*obj.scale[1]
+                obj_area = obj.scale.x*obj.scale.y
 
                 
                 if obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UAV:
@@ -163,10 +163,10 @@ class CentralUnit(object):
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
     def lock_objects(self):
-        objects_locked = True
+        self.objects_locked = True
 
     def unlock_objects(self):
-        objects_locked = False
+        self.objects_locked = False
 
     def look_for_objects(self):
         robot_paths = {}
@@ -208,21 +208,23 @@ class CentralUnit(object):
         # Compute distance
         max_dist = sqrt(2*((wall_size/2)**2)) + dist_error
 
-        dist = sqrt((top_segment.pose.postion.x - bottom_segment.pose.postion.x)**2 + (top_segment.pose.postion.y - bottom_segment.pose.postion.y)**2)
+        dist = sqrt((top_segment.pose.position.x - bottom_segment.pose.position.x)**2 + (top_segment.pose.position.y - bottom_segment.pose.position.y)**2)
 
         # Compute angle between segments
-        (roll_t,pitch_t,yaw_t) = tf.transformations.euler_from_quaternion(top_segment)
-        (roll_b,pitch_b,yaw_b) = tf.transformations.euler_from_quaternion(bottom_segment)
+        top_quaternion = [top_segment.pose.orientation.x, top_segment.pose.orientation.y, top_segment.pose.orientation.z, top_segment.pose.orientation.w]
+        bottom_quaternion = [bottom_segment.pose.orientation.x, bottom_segment.pose.orientation.y, bottom_segment.pose.orientation.z, bottom_segment.pose.orientation.w]
+        (roll_t,pitch_t,yaw_t) = tf.transformations.euler_from_quaternion(top_quaternion)
+        (roll_b,pitch_b,yaw_b) = tf.transformations.euler_from_quaternion(bottom_quaternion)
         
         angle = yaw_t - yaw_b
 
-        if angle > pi:
+        if angle >= pi:
             angle = angle - 2*pi
-        elif angle < -2*pi:
+        elif angle <= -2*pi:
             angle = angel + 2*pi
     
         # Compute local vector from top to bottom, to check if bottom is above top
-        bottom_top = [bottom_segment.pose.postion.x - top_segment.pose.postion.x, bottom_segment.pose.postion.y - top_segment.pose.postion.y]
+        bottom_top = [bottom_segment.pose.position.x - top_segment.pose.position.x, bottom_segment.pose.position.y - top_segment.pose.position.y]
         bottom_top = [bottom_top[0]*cos(yaw_t) + bottom_top[1]*sin(yaw_t), -bottom_top[0]*sin(yaw_t) + bottom_top[1]*cos(yaw_t)]
 
         if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
@@ -232,9 +234,12 @@ class CentralUnit(object):
 
 
     def cluster_wall_segments(self):
-        
-        clusters = self.uav_walls.keys()
+    
         changed = True
+
+        clusters = []
+        for id in self.uav_walls.keys():
+            clusters.append([id])
 
         while changed:
             changed = False
@@ -246,8 +251,8 @@ class CentralUnit(object):
                     top_segment = self.uav_walls[clusters[i][-1]]
                     bottom_segment = self.uav_walls[clusters[j][0]]
 
-                    if clustersConnected(top_segment,bottom_segment):
-                        clusters[i] = [clusters[i],clusters[j]]
+                    if self.clustersConnected(top_segment,bottom_segment):
+                        clusters[i].extend(clusters[j])
                         changed = True
                         del clusters[j]
 
@@ -255,8 +260,9 @@ class CentralUnit(object):
                         top_segment = self.uav_walls[clusters[j][-1]]
                         bottom_segment = self.uav_walls[clusters[i][0]]
 
-                        if clustersConnected(top_segment,bottom_segment):
-                            clusters[i] = [clusters[j],clusters[i]]
+                        if self.clustersConnected(top_segment,bottom_segment):
+                            clusters[j].extend(clusters[i])  
+                            clusters[i] = clusters[j]
                             changed = True
                             del clusters[j]
 
@@ -269,7 +275,7 @@ class CentralUnit(object):
         found = False
         for cluster in clusters:
             if len(cluster) == self.n_segments:
-                self.wall_segment_ids = cluster.copy()
+                self.wall_segment_ids = cluster[:]
                 found = True
                 break
 
