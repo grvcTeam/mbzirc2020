@@ -599,10 +599,10 @@ void ObjectTracker::computeSubtype(YAML::Node &scenario_info)
 				double y_min = scenario_info["y_min"].as<float>();
 				double y_max = scenario_info["x_max"].as<float>();
 
-				double y_base_max = scenario_info["y_base_max"].as<float>();
-				double y_base_min = y_max;
-				double x_base_max = x_max;
-				double x_base_min = x_min;
+				double x_base_min = scenario_info["x_base_min"].as<float>();
+				double x_base_max = x_min;
+				double y_base_min = y_min;
+				double y_base_max = x_max;
 
 				if( (x_min+1  <= pose_(0,0) && pose_(0,0) <= x_max-1 
 				&& y_min+1  <= pose_(1,0) && pose_(1,0) <= y_max-1)
@@ -611,8 +611,8 @@ void ObjectTracker::computeSubtype(YAML::Node &scenario_info)
 				)
 					obj_subtype_ = Object::SUBTYPE_INFIRE;
 				
-				else if( pose_(0,0) <= x_min-2.0 || x_max+2.0 <= pose_(0,0) 
-				|| pose_(1,0) <= y_min-2.0 || y_base_max+2.0 <= pose_(1,0))
+				else if( pose_(0,0) <= min(x_min,x_base_min)-2.0 || max(x_max,x_base_max)+2.0 <= pose_(0,0) 
+				|| pose_(1,0) <= min(y_min,y_base_min)-2.0 || max(x_max,y_base_max)+2.0 <= pose_(1,0))
 
 					obj_subtype_ = Object::SUBTYPE_OUTFIRE;
 				
