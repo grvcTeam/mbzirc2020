@@ -153,7 +153,7 @@ void Thermal::thermalImageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
 // (false_negative_ <= MAX_FILTER_NEGATIVES && temp_matrix_[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))] >= (max_temp_ - 5))
 
-        if ((false_positive_ > MIN_FILTER_POSITIVES) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 5.0)) {
+        if ((false_positive_ > MIN_FILTER_POSITIVES) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 5.0 || mode_=="DOWNWARD")) {
             detected_ = true;
 
             if (max_temp_ <= thermal_threshold_) {
@@ -248,7 +248,7 @@ void Thermal::thermalImageCallback(const sensor_msgs::ImageConstPtr& msg) {
         } else {
 
             detected_ = false;
-            if ((max_temp_ >= thermal_threshold_) && (laser_measurement_ < 5.0)) {
+            if ((max_temp_ >= thermal_threshold_) && (laser_measurement_ < 5.0 || mode_=="DOWNWARD")) {
                 false_positive_++;
                 if (debug_view_) {
                     cout << "POSSIBLE FIRE DETECTED: Max temp detected-> " << max_temp_ << " | Current threshold-> " << thermal_threshold_ << endl;
