@@ -87,7 +87,7 @@ bool close_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response
 
 bool close_central_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
-    for (int i = 3; i < 5; i++) {   //TODO: Check who are the central grippers
+    for (int i = 2; i < 4; i++) {
         board_input.pwm[i] = 1200;
     }
     input_mutex.unlock();
