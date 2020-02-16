@@ -61,6 +61,7 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
   ros::ServiceClient magnetize_client = nh.serviceClient<mbzirc_comm_objs::Magnetize>("magnetize");  // TODO: (only sim)
   ros::ServiceClient open_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/open_gripper");
   ros::ServiceClient close_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_gripper");
+  ros::ServiceClient close_central_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/close_central_gripper");
   ros::ServiceClient magnetize_gripper_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/magnetize_gripper");
   ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
 
@@ -310,7 +311,11 @@ void UalActionServer::pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_go
       velocity.twist.angular.z = 0;
       ual_->setVelocity(velocity);
       std_srvs::Trigger dummy;
-      close_gripper_client.call(dummy);
+      if(_goal->color == "red"){
+        close_central_gripper_client.call(dummy);
+      }else{
+        close_gripper_client.call(dummy);
+      }
       sleep(0.4);  // TODO: sleep?
       auto up_pose = ual_->pose();
       up_pose.pose.position.z += 2.0;  // TODO: Up?
