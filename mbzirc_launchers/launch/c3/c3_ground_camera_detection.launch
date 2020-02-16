@@ -2,18 +2,20 @@
 <launch>
   <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
+  <arg name="mode" default="real" />
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.34 0 -0.11 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.32 0 -0.13 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
 
+     <node if="$(eval mode == 'sim')" name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
+     
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
-      <param name="camera_url" value="camera_0" />
       <param name="camera_url" value="camera/color" />
     </node>
 
-    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+    <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
       <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)/camera"/>
       <arg name="enable_pointcloud"   value="false"/>
 
@@ -26,10 +28,21 @@
       <arg name="color_height"        value="480"/>
     </include>
 
-    <node pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
+    <node if="$(eval mode == 'real')" pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
       <param name="portname" value="/dev/evot33"/>
     </node>
 
-    <!-- TODO: Include thermal image analysis -->
+    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+      <param name="thermal_threshold" value="60"/>
+      <param name="angle_amplitude"   value="5"/>
+      <param name="camera_config"     value="DOWNWARD"/>
+      <param name="covariance_x"      value="1.5"/>
+      <param name="covariance_y"      value="1.5"/>
+      <param name="covariance_z"      value="0.5"/>
+      <param name="debug_view"        value="false"/>
+      <param name="debug_publisher"   value="true"/>
+      <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+    </node>
+
   </group>
 </launch>

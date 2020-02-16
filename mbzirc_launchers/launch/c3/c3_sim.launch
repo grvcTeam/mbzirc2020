@@ -43,11 +43,11 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="1"/>
-        <arg name="laser" value="yes"/>
+        <arg name="laser" value="no"/>
 
     </include>
   
-    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_ground_camera_detection.launch">
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -87,7 +87,7 @@
 
     </include>
   
-    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -127,7 +127,7 @@
 
     </include>
   
-    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -137,7 +137,7 @@
 
 
     <!--Central unit -->
-    <include file="$(find mbzirc_launchers)/launch/c2/c2_central_unit.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="arena_yaw" value="$(arg arena_yaw)"/>

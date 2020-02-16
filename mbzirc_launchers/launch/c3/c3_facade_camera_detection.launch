@@ -2,21 +2,23 @@
 <launch>
   <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
+  <arg name="mode" default="real" />
 
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.30 0 -0.09 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.30 0 -0.14 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
 
+     <node if="$(eval mode == 'sim')" name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
+     
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
-      <param name="camera_url" value="camera_0" />
       <param name="camera_url" value="camera/color" />
     </node>
 
     <node pkg="circle_detection" type="circle_detection_node" name="circle_detection" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="publish_debug_marker" value="false" />
-      <param name="publish_debug_images" value="true" />
+      <param name="publish_debug_images" value="false" />
       <param name="dp" value="1.0" />
       <param name="min_dist_between_circle_center" value="60" />
       <param name="canny_edge_upper_threshold" value="50" />
@@ -28,7 +30,7 @@
       <param name="max_depth_th" value="6.5" />
     </node>
 
-    <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+    <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
       <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)/camera"/>
       <arg name="enable_pointcloud"   value="false"/>
 
@@ -41,7 +43,7 @@
       <arg name="color_height"        value="480"/>
     </include>
 
-    <node pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
+    <node if="$(eval mode == 'real')" pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
       <param name="portname" value="/dev/evot33"/>
     </node>
 
