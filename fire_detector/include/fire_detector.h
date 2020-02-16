@@ -46,41 +46,39 @@
 class Thermal {
 public:
     Thermal();
-    void thermal_data(const std_msgs::Float64MultiArray::ConstPtr& msg);
-    void ual_to_fire_position(const geometry_msgs::PoseStamped& msg);
-    void laser_measures(const sensor_msgs::LaserScan& msg);
-    void image_operations(const sensor_msgs::ImageConstPtr& msg);
-    bool srv_callback_checkfire(mbzirc_comm_objs::CheckFire::Request& req, mbzirc_comm_objs::CheckFire::Response& res);
 
 protected:
-    geometry_msgs::PointStamped uav_position;
-    sensor_msgs::Temperature measure_debug;
-    ros::Publisher pub;
-    ros::Publisher pub_msg;
-    ros::Publisher pub_debug;
-    float max_temp;
-    int angle_amplitude;
-    int initial;
-    float temp_matrix[M_TEMP][M_TEMP];
-    float uav_yaw;
-    float laser_measurement;
-    std::string uav_id;
-    float sigma[3]; // xyz  
-    bool debug_publisher, debug_view;
-    int thermal_threshold;
-    std::string mode;
-    cv::Mat image_color;
-    mbzirc_comm_objs::ObjectDetectionList rec_list;
-    mbzirc_comm_objs::ObjectDetection rec_object;
-    // Variables to port from msg to image and operate in opencv
-    sensor_msgs::Image img_msg;
-    std_msgs::Header header; 
-    cv_bridge::CvImage img_bridge; 
-    cv_bridge::CvImageConstPtr cv_ptr;
-    cv::Mat therm;
-    bool detected;
-    short int false_negative;
-    short int false_positive;
+    void thermalDataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
+    void thermalImageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void ualPoseCallback(const geometry_msgs::PoseStamped& msg);
+    void laserCallback(const sensor_msgs::LaserScan& msg);
+    bool checkFireCallback(mbzirc_comm_objs::CheckFire::Request& req, mbzirc_comm_objs::CheckFire::Response& res);
+
+    ros::Publisher pub_detect_img_;
+    ros::Publisher pub_sensed_;
+    ros::Publisher pub_debug_;
+    ros::Subscriber sub_raw_temp_;
+    ros::Subscriber sub_rgb_img_;
+    ros::Subscriber sub_ual_pose_;
+    ros::Subscriber sub_scan_;
+    ros::ServiceServer srv_checkfire_;
+
+    std::string uav_id_;
+    geometry_msgs::PointStamped uav_position_;
+    float uav_yaw_;
+    std::string mode_;
+    float temp_matrix_[M_TEMP][M_TEMP];
+    float max_temp_;
+    int thermal_threshold_;
+    float sigma_[3];  // xyz  
+    bool debug_publisher_;
+    bool debug_view_;
+    int angle_amplitude_;
+    int initial_index_;
+    float laser_measurement_;
+    short int false_negative_;
+    short int false_positive_;
+    bool detected_;
 };
 
 #endif  // FIRE_DETECTOR_THERMAL_H
