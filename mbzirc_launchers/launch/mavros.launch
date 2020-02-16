@@ -2,11 +2,30 @@
 <launch>
   <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
+  <arg name="mode" default="real" />
+  
+  <arg name="color" default="Orange" />
+  <arg name="x" default="10" />
+  <arg name="y" default="0" />
+  <arg name="z" default="0" />
+  <arg name="yaw" default="0" />
 
   <include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="$(arg robot_model)_$(arg agent_id)">
-    <arg name="mode" value="custom"/>
+    <arg if="$(eval mode == 'sim')" name="mode" value="sitl"/>
+    <arg if="$(eval mode == 'real')" name="mode" value="custom"/>
     <arg name="fcu_url" value="serial:///dev/pixhawk:921600"/>
     <arg name="id" value="$(arg agent_id)"/>
     <arg name="rtcm_topic" value="/rtcm_stream"/>
+
+    <arg if="(eval mode == 'sim')" name="description_package" value="uavs_description"/>
+    <arg if="(eval mode == 'sim')" name="robot_model" value="$(arg robot_model)"/>
+    <arg if="(eval mode == 'sim')" name="material" value="$(arg color)"/>
+    <arg if="(eval mode == 'sim')" name="x" value="$(arg x)"/>
+    <arg if="(eval mode == 'sim')" name="y" value="$(arg y)"/>
+    <arg if="(eval mode == 'sim')" name="z" value="$(arg z)"/>
+    <arg if="(eval mode == 'sim')" name="yaw" value="$(arg yaw)"/>
+    <arg if="(eval mode == 'sim')" name="frame_id" value="arena"/>
+    <arg if="(eval mode == 'sim')" name="append_xacro_args" value="challenge=2"/>
+
   </include>
 </launch>

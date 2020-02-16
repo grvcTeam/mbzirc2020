@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="mode" default="sim"/>
+    <arg name="robot_model" default="mbzirc2020"/>
+    <arg name="arena_yaw" default="0"/> <!-- TODO-->
+    <!--TODO update UAVs x,y,z,yaw-->
+    <arg name="x1" default="0"/>
+    <arg name="y1" default="0"/>
+    <arg name="yaw1" default="0"/>
+    <arg name="x2" default="0"/>
+    <arg name="y2" default="0"/>
+    <arg name="yaw2" default="0"/>
+    <arg name="x3" default="0"/>
+    <arg name="y3" default="0"/>
+    <arg name="yaw3" default="0"/>
+
+    <!-- UAV 1 -->
+    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="1"/>
+        <arg name="color" value="Orange" />
+        <arg name="x"     value="$(arg x1)" />
+        <arg name="y"     value="$(arg y1)" />
+        <arg name="z"     value="0" />
+        <arg name="yaw"   value="$(arg yaw1)" />
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+        
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="1"/>
+        <arg name="flight_level" default="2.0" />
+        <arg name="x" default="$(arg x1)" />
+        <arg name="y" default="$(arg y1)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="1"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="1"/>
+        
+    </include>
+
+    <!-- UAV 2 -->
+    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="2"/>
+        <arg name="color" value="Red" />
+        <arg name="x"     value="$(arg x2)" />
+        <arg name="y"     value="$(arg y2)" />
+        <arg name="z"     value="0" />
+        <arg name="yaw"   value="$(arg yaw2)" />
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+        
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="2"/>
+        <arg name="flight_level" default="2.0" />
+        <arg name="x" default="$(arg x2)" />
+        <arg name="y" default="$(arg y2)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="2"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="2"/>
+        
+    </include>
+  
+    <!-- UAV 3 -->
+    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        <arg name="color" value="Green" />
+        <arg name="x"     value="$(arg x3)" />
+        <arg name="y"     value="$(arg y3)" />
+        <arg name="z"     value="0" />
+        <arg name="yaw"   value="$(arg yaw3)" />
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+        
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        <arg name="flight_level" default="2.0" />
+        <arg name="x" default="$(arg x3)" />
+        <arg name="y" default="$(arg y3)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        
+    </include>
+
+
+    <!--Central unit -->
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_central_unit.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+    </include>
+
+    
+</launch>
