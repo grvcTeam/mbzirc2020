@@ -10,7 +10,7 @@ building:
   x_max: 30
   y_min: 23
   y_max: 33
-  ybase_max: 43
+  y_base_max: 43
   first_floor: 5
   second_floor: 10
 
