@@ -134,7 +134,7 @@ port.write("\n  y_min: ")
 port.write(str(b[1]))
 port.write("\n  y_max: ")
 port.write(str(b[1]+10))
-port.write("\n  ybase_max: ")
+port.write("\n  y_base_max: ")
 port.write(str(b[1]+20))
 port.write("\n  first_floor: 5\n  second_floor: 10\n\n")
 
