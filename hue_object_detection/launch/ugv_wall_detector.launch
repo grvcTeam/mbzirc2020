@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="agent_id"                default="1"/>
+    <!-- Debug viewer for local use and debug topic publisher enable -->
+    <arg name="debug_view"                   default="false"/>
+    <arg name="debug_publisher"              default="false"/>
+    
+    <node pkg="hue_object_detection" name="ugv_wall_detector" type="ugv_wall_detector.py" respawn="false" output="screen">
+        <param name="debug_view"             value="$(arg debug_view)"/>
+        <param name="debug_publisher"             value="$(arg debug_publisher)"/>
+        <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+    </node>
+</launch>
