@@ -252,7 +252,7 @@ public:
             marker_array.markers.push_back(getLineMarker(wall_list.walls[i], _msg->header.frame_id, colorFromIndex(i), i));
         }
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
-        sensed_pub_.publish(object_list);
+        // sensed_pub_.publish(object_list);
         walls_pub_.publish(wall_list);
     }
 
