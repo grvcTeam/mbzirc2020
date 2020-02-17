@@ -161,8 +161,7 @@
           <robotNamespace>${namespace}</robotNamespace>
           <cameraName>camera</cameraName>
           <imageTopicName>color/image_rect_color</imageTopicName>
-          <!-- <cameraInfoTopicName>color/camera_info</cameraInfoTopicName> -->
-          <cameraInfoTopicName>aligned_depth_to_color/camera_info</cameraInfoTopicName>
+          <cameraInfoTopicName>color/camera_info</cameraInfoTopicName>
           <depthImageTopicName>aligned_depth_to_color/image_raw</depthImageTopicName>
           <!-- <depthImageInfoTopicName>aligned_depth_to_color/camera_info</depthImageInfoTopicName> -->
           <depthImageInfoTopicName>dummy/camera_info</depthImageInfoTopicName>

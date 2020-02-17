@@ -10,8 +10,10 @@
     <node if="$(eval mode == 'sim')" pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optical_tf" args="0 0.05 0 0.5 -0.5 0.5 -0.5 $(arg robot_model)_$(arg agent_id)/camera_link $(arg robot_model)_$(arg agent_id)/camera_color_optical_frame" />
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
+      <param name="agent_id" value="$(arg agent_id)" />
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="camera_url" value="camera/color" />
+      <remap if="$(eval mode == 'sim')" from="camera/color/image_raw" to="camera/color/image_rect_color"/>
     </node>
 
     <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
