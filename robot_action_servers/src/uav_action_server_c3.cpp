@@ -404,7 +404,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     return;
   }
 
-  ros::Duration(2).sleep();
+  ros::Duration(3).sleep();
   mbzirc_comm_objs::CheckFire check_fire_srv;
   check_fire_client.call(check_fire_srv);
   bool fire_detected = check_fire_srv.response.fire_detected;
@@ -437,7 +437,13 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       ual_->setPose(ual_safe_pose);
     } else {
       ual_safe_pose = ual_->pose();
-      geometry_msgs::TwistStamped velocity = pose_pid.updateError(errorPoseFromFireData(target_fire, true));
+      auto error_pose = errorPoseFromFireData(target_fire, true);
+      if (squaredPositionNorm(error_pose.pose) > 1.0) {
+        error_pose.pose.position.x = 0;
+        error_pose.pose.position.y = 0;
+        // Do not reset z nor orientation on purpose
+      }
+      geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
       ual_->setVelocity(velocity);
     }
 
