@@ -1,14 +1,11 @@
 #!/usr/bin/python
-import sys
-import rospy
+import rospy, tf, cv2
 import numpy as np
-import cv2
-import tf
-
-from std_msgs.msg import Float32MultiArray
-from sensor_msgs.msg import Image, CameraInfo
-from std_msgs.msg import String
+from tf import transformations
 from cv_bridge import CvBridge, CvBridgeError
+
+from std_msgs.msg import Float32MultiArray, String
+from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped
 
 RATE = 10
@@ -16,23 +13,17 @@ yellowLower = (0, 40, 150)
 yellowUpper = (35, 255, 255)
 purpleLower = (154, 40, 100)
 purpleUpper = (174, 255, 255)
-class frame_detector:
 
+class frame_detector:
   def __init__(self):
-    rospy.init_node('frame_detector', anonymous=True)
-    self.rate = rospy.Rate(RATE) 
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("/mbzirc2020_5/camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
     self.depth_sub = rospy.Subscriber("/mbzirc2020_5/ual/pose",PoseStamped,self.callback_ual, queue_size=1)
     self.camera_sub = rospy.Subscriber('/mbzirc2020_5/camera/color/camera_info', CameraInfo, self.callback_camera, queue_size=1)
     self.point_pub = rospy.Publisher("/frame_corner", PoseStamped, queue_size=1)
-    self.list_tf = tf.TransformListener() 
     self.image = Image()
     self.debug_info = True
-
     rospy.wait_for_message("/mbzirc2020_5/camera/color/image_rect_color", Image)
-
-    rospy.sleep(1)
 
   def callback_camera(self,data):
     # set values for local variables
@@ -77,7 +68,7 @@ class frame_detector:
     point.pose.position.x = x
     point.pose.position.y = y
     point.pose.position.z = z
-    quaternion = tf.transformations.quaternion_from_euler(-np.pi, 0, angle*(np.pi/180))
+    quaternion = transformations.quaternion_from_euler(-np.pi, 0, angle*(np.pi/180))
     point.pose.orientation.x = quaternion[0]
     point.pose.orientation.y = quaternion[1]
     point.pose.orientation.z = quaternion[2]
@@ -117,36 +108,34 @@ class frame_detector:
       gray = cv2.cvtColor(self.warped, cv2.COLOR_BGR2GRAY)
       black_pixels = width*height - cv2.countNonZero(gray)
       self.warped = mask
-      
+
       if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)):
         print "its a corner"
         corner, idx = self.closest_point(box, contorno)
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
         self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx))
-       
+
       else:
         print "no cornerino"
-    
 
+    if self.debug_info:
+      cv2.imshow("image", self.update_img)
+      cv2.imshow("warped", self.warped)
+      cv2.waitKey(3)
 
-def main(args):
-  cv2.namedWindow('image')
-  cv2.namedWindow('warped')
+def main():
+  rospy.init_node('ugv_wall_detector')
+  rate = rospy.Rate(RATE) 
   ic = frame_detector()
+  
   try:
     while not rospy.is_shutdown():
       ic.execute()
-      if ic.debug_info:
-	      cv2.imshow("image", ic.update_img)
-	      cv2.imshow("warped", ic.warped)
-	      cv2.waitKey(3)
-
-      ic.rate.sleep()
-  # try:
-  #   rospy.spin()
+      rate.sleep()
+      # rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
