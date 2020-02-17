@@ -182,9 +182,11 @@ mbzirc_comm_objs::ObjectDetection fromHSVTrackingPair(const HSVTrackingPair& _hs
   return object;
 }
 
-mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>& _hsv_item_list, const CameraParameters& _camera, double _estimated_z, uint8_t _type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) {
+mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>& _hsv_item_list, const CameraParameters& _camera, double _estimated_z, const std::string& _robot_id, uint8_t _type = mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) {
 
   mbzirc_comm_objs::ObjectDetectionList object_list;
+  object_list.agent_id = _robot_id;
+  object_list.stamp = ros::Time::now();
 
   for (auto item: _hsv_item_list) {
     RealWorldRect rect_real = fromCvRotatedRect(item.rectangle, _camera, _estimated_z);
@@ -244,8 +246,10 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "hsv_detection_node");
   ros::NodeHandle nh;
 
+  std::string agent_id;
   std::string tf_prefix;
   std::string camera_url;
+  ros::param::param<std::string>("~agent_id", agent_id, "1");
   ros::param::param<std::string>("~tf_prefix", tf_prefix, "default_prefix");
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
 
@@ -303,7 +307,9 @@ int main(int argc, char** argv) {
         case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT_ALL:
         {
           std::vector<HSVItem> detected = detection.detectAll(true);
-          sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z));
+          if (detected.size() > 0) {
+            sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z, agent_id));
+          }
           // Print detected items:
           // for (int i = 0; i < detected.size(); i++) {
           //  	printf("[%d] Detected: centroid = {%d, %d}, area = %lf, detector = {%s}\n", i, detected[i].centroid.x, detected[i].centroid.y, detected[i].area, detected[i].detector_id.c_str());
@@ -333,7 +339,7 @@ int main(int argc, char** argv) {
           std::string target = g_detect_request.types[0];  // We track first element (should be color fire!)
           std::vector<HSVItem> tracked = detection.track(target, true);
           if (tracked.size() > 0) {
-            mbzirc_comm_objs::ObjectDetectionList object_list = fromHSVItemList(tracked, camera, estimated_z, mbzirc_comm_objs::ObjectDetection::TYPE_FIRE);
+            mbzirc_comm_objs::ObjectDetectionList object_list = fromHSVItemList(tracked, camera, estimated_z, agent_id, mbzirc_comm_objs::ObjectDetection::TYPE_FIRE);
             tracked_pub.publish(object_list.objects[0]);
           }
           break;
