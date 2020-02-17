@@ -29,7 +29,7 @@
 #include <object_estimation/centralized_estimator.h>
 #include <yaml-cpp/yaml.h>
 
-// #define DEBUG_MODE
+#define DEBUG_MODE
 
 using namespace std;
 
@@ -250,7 +250,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			if(valid_candidates[i])
 			{
 				#ifdef DEBUG_MODE
-				cout << "Candidate " << z_list[i]->location(0) << "," << z_list[i]->location(1) << ". New target " << track_id_count_ << endl;
+				cout << "Candidate " << z_list[i]->pose.pose.position.x << "," << z_list[i]->pose.pose.position.y << ". New target " << track_id_count_ << endl;
 				#endif
 
 				targets_[track_id_count_] = new ObjectTracker(track_id_count_, obj_type_);
