@@ -51,6 +51,7 @@ class Visualizer
 public:
 	Visualizer();
 	~Visualizer();
+    void clearCache();
 
     void publishArena();
     void publishMarkers();
@@ -123,7 +124,15 @@ Visualizer::Visualizer()
 */
 Visualizer::~Visualizer()
 {
+}
 
+/** \brief Clear cached data
+*/
+void Visualizer::clearCache()
+{
+    object_detections_.clear();
+    uavs_poses_.clear();
+    objects_.clear();
 }
 
 /** \brief Callback to receive observations from vision module
@@ -521,6 +530,7 @@ int main(int argc, char** argv)
     {
         ros::spinOnce();
         vis.publishMarkers();
+        vis.clearCache();
 
         cont++;
         if(cont == 30)
