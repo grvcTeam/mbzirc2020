@@ -10,11 +10,6 @@
 
      <node if="$(eval mode == 'sim')" name="fire_extinguisher" pkg="fire_extinguisher" type="fire_extinguisher.py"/>
      
-    <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
-      <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
-      <param name="camera_url" value="camera/color" />
-    </node>
-
     <node pkg="circle_detection" type="circle_detection_node" name="circle_detection" output="screen">
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="publish_debug_marker" value="false" />

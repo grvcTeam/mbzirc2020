@@ -35,5 +35,5 @@
       <param name="scan_mode"           type="string" value="Stability"/>
     </node>
 
-    <node pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>  </group>
+    <node if="$(eval laser == 'yes')" pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>  </group>
 </launch>

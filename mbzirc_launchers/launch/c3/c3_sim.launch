@@ -3,16 +3,16 @@
 
     <arg name="mode" default="sim"/>
     <arg name="robot_model" default="mbzirc2020"/>
-    <arg name="arena_yaw" default="0"/> <!-- TODO-->
+    <arg name="arena_yaw" default="-0.2968107"/> 
     <!--TODO update UAVs x,y,z,yaw-->
-    <arg name="x1" default="0"/>
-    <arg name="y1" default="0"/>
+    <arg name="x1" default="2.0"/>
+    <arg name="y1" default="12.5"/>
     <arg name="yaw1" default="0"/>
-    <arg name="x2" default="0"/>
-    <arg name="y2" default="0"/>
+    <arg name="x2" default="2.0"/>
+    <arg name="y2" default="25.0"/>
     <arg name="yaw2" default="0"/>
-    <arg name="x3" default="0"/>
-    <arg name="y3" default="0"/>
+    <arg name="x3" default="2.0"/>
+    <arg name="y3" default="37.5"/>
     <arg name="yaw3" default="0"/>
 
     <!-- UAV 1 -->
@@ -60,7 +60,7 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
-        <arg name="color" value="Red" />
+        <arg name="color" value="Indigo" />
         <arg name="x"     value="$(arg x2)" />
         <arg name="y"     value="$(arg y2)" />
         <arg name="z"     value="0" />
@@ -100,7 +100,7 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="3"/>
-        <arg name="color" value="Green" />
+        <arg name="color" value="Yellow" />
         <arg name="x"     value="$(arg x3)" />
         <arg name="y"     value="$(arg y3)" />
         <arg name="z"     value="0" />
