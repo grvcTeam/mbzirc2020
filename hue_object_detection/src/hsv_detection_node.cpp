@@ -197,6 +197,13 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
     }
 
     RealWorldRect rect_real = fromCvRotatedRect(item.rectangle, _camera, _estimated_z);
+    if (_type == mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) {
+      double min_size = std::min(rect_real.size.x, rect_real.size.y);  // z = 0.2 always
+      // double max_size = std::max(rect_real.size.x, rect_real.size.y);
+      if (min_size < 0.1) {  // TODO: tune
+        continue;
+      }
+    }
 
     mbzirc_comm_objs::ObjectDetection object;
     object.header.frame_id = _camera.frame_id;
