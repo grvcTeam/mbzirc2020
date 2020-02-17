@@ -17,13 +17,13 @@ purpleUpper = (174, 255, 255)
 class frame_detector:
   def __init__(self):
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/mbzirc2020_5/camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
-    self.depth_sub = rospy.Subscriber("/mbzirc2020_5/ual/pose",PoseStamped,self.callback_ual, queue_size=1)
-    self.camera_sub = rospy.Subscriber('/mbzirc2020_5/camera/color/camera_info', CameraInfo, self.callback_camera, queue_size=1)
-    self.point_pub = rospy.Publisher("/frame_corner", PoseStamped, queue_size=1)
+    self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
+    self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
+    self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
+    self.point_pub = rospy.Publisher("frame_corner", PoseStamped, queue_size=1)
     self.image = Image()
     self.debug_info = True
-    rospy.wait_for_message("/mbzirc2020_5/camera/color/image_rect_color", Image)
+    rospy.wait_for_message("camera/color/image_rect_color", Image)
 
   def callback_camera(self,data):
     # set values for local variables
@@ -132,7 +132,7 @@ def main():
   try:
     while not rospy.is_shutdown():
       ic.execute()
-      rate.sleep()
+      rate.sleep() # TODO: Check strange behaviour when line is commented - warped image and false negative in detections
       # rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
