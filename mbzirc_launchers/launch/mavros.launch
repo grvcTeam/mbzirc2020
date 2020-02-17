@@ -17,15 +17,15 @@
     <arg name="id" value="$(arg agent_id)"/>
     <arg name="rtcm_topic" value="/rtcm_stream"/>
 
-    <arg if="(eval mode == 'sim')" name="description_package" value="uavs_description"/>
-    <arg if="(eval mode == 'sim')" name="robot_model" value="$(arg robot_model)"/>
-    <arg if="(eval mode == 'sim')" name="material" value="$(arg color)"/>
-    <arg if="(eval mode == 'sim')" name="x" value="$(arg x)"/>
-    <arg if="(eval mode == 'sim')" name="y" value="$(arg y)"/>
-    <arg if="(eval mode == 'sim')" name="z" value="$(arg z)"/>
-    <arg if="(eval mode == 'sim')" name="yaw" value="$(arg yaw)"/>
-    <arg if="(eval mode == 'sim')" name="frame_id" value="arena"/>
-    <arg if="(eval mode == 'sim')" name="append_xacro_args" value="challenge=2"/>
+    <arg if="$(eval mode == 'sim')" name="description_package" value="uavs_description"/>
+    <arg if="$(eval mode == 'sim')" name="robot_model" value="$(arg robot_model)"/>
+    <arg if="$(eval mode == 'sim')" name="material" value="$(arg color)"/>
+    <arg if="$(eval mode == 'sim')" name="x" value="$(arg x)"/>
+    <arg if="$(eval mode == 'sim')" name="y" value="$(arg y)"/>
+    <arg if="$(eval mode == 'sim')" name="z" value="$(arg z)"/>
+    <arg if="$(eval mode == 'sim')" name="yaw" value="$(arg yaw)"/>
+    <arg if="$(eval mode == 'sim')" name="frame_id" value="arena"/>
+    <arg if="$(eval mode == 'sim')" name="append_xacro_args" value="challenge=2"/>
 
   </include>
 </launch>
