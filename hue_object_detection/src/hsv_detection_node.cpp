@@ -189,6 +189,13 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
   object_list.stamp = ros::Time::now();
 
   for (auto item: _hsv_item_list) {
+    if (item.detector_id == "white") {
+      continue;
+    }
+    if ((_type == mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) && (item.detector_id == "fire")) {
+      continue;
+    }
+
     RealWorldRect rect_real = fromCvRotatedRect(item.rectangle, _camera, _estimated_z);
 
     mbzirc_comm_objs::ObjectDetection object;
@@ -307,8 +314,9 @@ int main(int argc, char** argv) {
         case mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT_ALL:
         {
           std::vector<HSVItem> detected = detection.detectAll(true);
-          if (detected.size() > 0) {
-            sensed_pub.publish(fromHSVItemList(detected, camera, estimated_z, agent_id));
+          auto detected_list = fromHSVItemList(detected, camera, estimated_z, agent_id);
+          if (detected_list.objects.size() > 0) {
+            sensed_pub.publish(detected_list);
           }
           // Print detected items:
           // for (int i = 0; i < detected.size(); i++) {
