@@ -1,5 +1,6 @@
 import threading
 import rospy
+import copy
 
 
 class ThreadWithReturnValue(threading.Thread):
@@ -23,11 +24,13 @@ class TaskManager(object):
         self.locks = {}
         self.tasks = {}
         self.threads = {}
+        self.outcomes = {}
 
         for robot_id in self.robots:
             self.locks[robot_id] = threading.Lock()
             self.idle[robot_id] = threading.Event()
             self.idle[robot_id].set()
+            self.outcomes[robot_id] = None
 
         self.manage_thread = threading.Thread(target = self.manage_tasks)
         self.manage_thread.daemon = True
@@ -40,8 +43,8 @@ class TaskManager(object):
                 self.locks[robot_id].acquire()
                 if not self.idle[robot_id].is_set() and not thread.is_alive():
                     thread.join()
-                    outcome = thread.get_return_value()
-                    rospy.logwarn('task on robot[{}] finished with output: {}'.format(robot_id, outcome))
+                    self.outcomes[robot_id] = copy.deepcopy(thread.get_return_value())
+                    rospy.loginfo('task on robot[{}] finished with output: {}'.format(robot_id, self.outcomes[robot_id]))
                     del self.threads[robot_id]  # TODO: needed?
                     del self.tasks[robot_id]    # TODO: needed?
                     self.idle[robot_id].set()
@@ -66,7 +69,9 @@ class TaskManager(object):
         if robot_id not in self.tasks:
             rospy.logerr('Invalid robot_id [{}]'.format(robot_id))
             return False
-        rospy.logwarn('Trying to preempt current task on robot[{}]'.format(robot_id))
+        if self.is_idle(robot_id):
+            rospy.logwarn('Trying to preempt an idle robot[{}]'.format(robot_id))    
+        rospy.loginfo('Trying to preempt current task on robot[{}]'.format(robot_id))
         self.tasks[robot_id].request_preempt()
         return True
 
