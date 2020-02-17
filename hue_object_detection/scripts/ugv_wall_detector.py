@@ -8,7 +8,6 @@ from std_msgs.msg import Float32MultiArray, String
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped
 
-RATE = 10
 yellowLower = (0, 40, 150)
 yellowUpper = (35, 255, 255)
 purpleLower = (154, 40, 100)
@@ -22,8 +21,11 @@ class frame_detector:
     self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
     self.point_pub = rospy.Publisher("frame_corner", PoseStamped, queue_size=1)
     self.image = Image()
-    self.debug_info = True
+
+    self.debug_view = rospy.get_param("~debug_view")
+
     rospy.wait_for_message("camera/color/image_rect_color", Image)
+    rospy.wait_for_message("ual/pose", PoseStamped) # wait to init depth var with uav pose
 
   def callback_camera(self,data):
     # set values for local variables
@@ -36,7 +38,7 @@ class frame_detector:
     self.center_y = data.K[5]
 
   def callback_ual(self,ual_pose):
-    self.depth = ual_pose.pose.position.z
+    self.depth = ual_pose.pose.position.z # Set and update depth class variable
 
   def callback_color(self,data):
     try:
@@ -110,23 +112,23 @@ class frame_detector:
       self.warped = mask
 
       if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)):
-        print "its a corner"
+        if self.debug_view:
+          print "its a corner"
         corner, idx = self.closest_point(box, contorno)
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
         self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx))
-
-      else:
+      elif self.debug_view:
         print "no cornerino"
 
-    if self.debug_info:
+    if self.debug_view:
       cv2.imshow("image", self.update_img)
       cv2.imshow("warped", self.warped)
       cv2.waitKey(3)
 
 def main():
   rospy.init_node('ugv_wall_detector')
-  rate = rospy.Rate(RATE) 
+  rate = rospy.Rate(rospy.get_param("~rate")) 
   ic = frame_detector()
   
   try:
