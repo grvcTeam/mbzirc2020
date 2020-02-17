@@ -263,9 +263,11 @@ int main(int argc, char** argv) {
   std::string agent_id;
   std::string tf_prefix;
   std::string camera_url;
+  std::string config_filename;
   ros::param::param<std::string>("~agent_id", agent_id, "1");
   ros::param::param<std::string>("~tf_prefix", tf_prefix, "default_prefix");
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
+  ros::param::param<std::string>("~config_filename", config_filename, "hsv_config.yaml");
 
   ros::Publisher sensed_pub = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1);
   ros::Publisher tracked_pub = nh.advertise<mbzirc_comm_objs::ObjectDetection>("tracked_object", 1);
@@ -274,16 +276,15 @@ int main(int argc, char** argv) {
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &sf11RangeCallback);
 
   std::string config_folder = ros::package::getPath("hue_object_detection") + "/config/";
-  std::string config_filename = config_folder + "hsv_config.yaml";  // TODO: From param?
 
-  YAML::Node config_yaml = YAML::LoadFile(config_filename);
+  YAML::Node config_yaml = YAML::LoadFile(config_folder + config_filename);
   std::map<std::string, HSVRange> range_map;
   config_yaml["colors"]["red"]    >> range_map["red"];
   config_yaml["colors"]["green"]  >> range_map["green"];
   config_yaml["colors"]["blue"]   >> range_map["blue"];
   config_yaml["colors"]["orange"] >> range_map["orange"];
   config_yaml["colors"]["white"]  >> range_map["white"];
-  config_yaml["colors"]["fire"]  >> range_map["fire"];
+  config_yaml["colors"]["fire"]   >> range_map["fire"];
 
   HSVDetectionConfig detection_config;
   config_yaml["detection_config"] >> detection_config;
@@ -292,9 +293,9 @@ int main(int argc, char** argv) {
   HSVDetection detection;
   detection.setConfig(detection_config);
   detection.addDetector("red", range_map["red"], cvScalar(0, 255, 0));
-  detection.addDetector("green", range_map["green"], cvScalar(255, 0, 0));
-  detection.addDetector("blue", range_map["blue"], cvScalar(255, 255, 0));
-  detection.addDetector("orange", range_map["orange"], cvScalar(0, 255, 255));
+  detection.addDetector("green", range_map["green"], cvScalar(0, 0, 255));
+  detection.addDetector("blue", range_map["blue"], cvScalar(0, 255, 255));
+  detection.addDetector("orange", range_map["orange"], cvScalar(255, 255, 0));
   detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
   detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));  // TODO: Only for C3!
 
