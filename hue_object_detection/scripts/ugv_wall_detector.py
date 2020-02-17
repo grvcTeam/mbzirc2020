@@ -7,6 +7,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import Float32MultiArray, String
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped
+from mbzirc_comm_objs.msg import ObjectDetectionList, ObjectDetection
 
 yellowLower = (0, 40, 150)
 yellowUpper = (35, 255, 255)
@@ -15,14 +16,21 @@ purpleUpper = (174, 255, 255)
 
 class frame_detector:
   def __init__(self):
+    self.current_pose = PoseStamped()
+    self.L_angle = 0 # TODO - To be calculated
+    self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw = 0,0,0,0,0,0,0 # TODO - To pass as argument
     self.bridge = CvBridge()
+    self.image = Image()
+
     self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
     self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
     self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
     self.point_pub = rospy.Publisher("frame_corner", PoseStamped, queue_size=1)
-    self.image = Image()
+    self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
 
+    self.uav_id = rospy.get_param("~uav_id")
     self.debug_view = rospy.get_param("~debug_view")
+    self.debug_publisher = rospy.get_param("~debug_publisher")
 
     rospy.wait_for_message("camera/color/image_rect_color", Image)
     rospy.wait_for_message("ual/pose", PoseStamped) # wait to init depth var with uav pose
@@ -38,7 +46,7 @@ class frame_detector:
     self.center_y = data.K[5]
 
   def callback_ual(self,ual_pose):
-    self.depth = ual_pose.pose.position.z # Set and update depth class variable
+    self.current_pose = ual_pose
 
   def callback_color(self,data):
     try:
@@ -47,7 +55,7 @@ class frame_detector:
       print(e)
 
   def converte_xy(self, pixel_x, pixel_y):
-    z = self.depth
+    z = self.current_pose.pose.position.z
     rx =(pixel_x-self.center_x)*z*self.inv_fx #convertion from image plane to meters
     ry =(pixel_y-self.center_y)*z*self.inv_fy
     return rx, ry, z
@@ -80,6 +88,7 @@ class frame_detector:
     return point
 
   def execute(self):
+    object_detected = ObjectDetection()
     self.update_img = self.image
     imhsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
     mask = (cv2.inRange(imhsv, yellowLower, yellowUpper)+cv2.inRange(imhsv, purpleLower, purpleUpper))
@@ -111,13 +120,29 @@ class frame_detector:
       black_pixels = width*height - cv2.countNonZero(gray)
       self.warped = mask
 
-      if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)):
+      if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)): # TODO - Why 0.7
         if self.debug_view:
           print "its a corner"
         corner, idx = self.closest_point(box, contorno)
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
-        self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx))
+
+        object_detected.header.stamp = rospy.Time.now()
+        object_detected.header.frame_id = self.current_pose.header.frame_id
+
+        object_detected.pose.pose.position = self.create_point(ponto[0],ponto[1],ponto[2],self.current_pose.header.frame_id, rect[2]+90*idx) # TODO - Remove function, do operation in line
+        object_detected.pose.pose.orientation = self.L_angle # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.covariance = [self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw] # TODO - Calculate cov in class init
+
+        object_detected.scale.x = 4 # Size of L (m)
+        object_detected.scale.y = 4 # Size of L (m)
+        object_detected.scale.z = 0 # Size of L (m)
+
+        object_detected.type = object_detected.TYPE_LWALL
+        object_detected.color = object_detected.COLOR_UNKNOWN
+
+        self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx)) # TODO - Remove old message
+        # self.sensed_pub.publish(ObjectDetectionList(uav_id, rospy.Time.now(), [object_detected])) # TODO - Publish new message
       elif self.debug_view:
         print "no cornerino"
 
@@ -130,7 +155,7 @@ def main():
   rospy.init_node('ugv_wall_detector')
   rate = rospy.Rate(rospy.get_param("~rate")) 
   ic = frame_detector()
-  
+
   try:
     while not rospy.is_shutdown():
       ic.execute()
