@@ -34,16 +34,17 @@ import smach
 import yaml
 from math import pi,fabs,sin,cos,sqrt
 import mbzirc_comm_objs.msg as msg
+import mbzirc_comm_objs.srv as srv
 import tf2_py as tf2
 import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3
 from tasks.move import TakeOff, FollowPath
-from tasks.build import PickAndPlace
+from tasks.build import Pick, Place
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence, parse_wall
+from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence, parse_wall, uav_piles_are_found, uav_walls_are_found
 
 brick_scales = {}
 brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.2, y = 0.3, z = 0.2)
@@ -133,7 +134,7 @@ class CentralUnit(object):
                 if obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UAV:
 
                     # We keep largest piles for each color
-                    if color not in self.uav_piles or obj_area >= self.uav_piles_areas[color]:
+                    if color not in self.uav_piles or obj_area >= self.uav_pile_areas[color]:
                         
                         self.uav_piles[color] = pose
                         self.uav_pile_areas[color] = obj_area
@@ -141,7 +142,7 @@ class CentralUnit(object):
 
                 elif obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UGV:
 
-                    if color not in self.ugv_piles or obj_area >= self.ugv_piles_areas[color]:
+                    if color not in self.ugv_piles or obj_area >= self.ugv_pile_areas[color]:
                         
                         self.ugv_piles[color] = pose
                         self.ugv_pile_areas[color] = obj_area 
@@ -169,6 +170,21 @@ class CentralUnit(object):
         self.objects_locked = False
 
     def look_for_objects(self):
+        for robot_id in self.available_robots:
+            service_url = 'mbzirc2020_' + robot_id + '/set_types'
+            rospy.wait_for_service(service_url)  # TODO: wait?
+            detect_types = srv.DetectTypesRequest()
+            detect_types.types = []
+            detect_types.command = srv.DetectTypesRequest.COMMAND_DETECT_ALL
+            detect_types.visualize = True
+            try:
+                set_types = rospy.ServiceProxy(service_url, srv.DetectTypes)
+                response = set_types(detect_types)
+                if not response.success:
+                    rospy.logerr("Service call failed!")
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: {}".format(e))
+
         robot_paths = {}
         point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
         for i, robot_id in enumerate(self.available_robots):
@@ -221,7 +237,7 @@ class CentralUnit(object):
         if angle >= pi:
             angle = angle - 2*pi
         elif angle <= -2*pi:
-            angle = angel + 2*pi
+            angle = angle + 2*pi
     
         # Compute local vector from top to bottom, to check if bottom is above top
         bottom_top = [bottom_segment.pose.position.x - top_segment.pose.position.x, bottom_segment.pose.position.y - top_segment.pose.position.y]
@@ -281,7 +297,7 @@ class CentralUnit(object):
 
         return found
 
-    def build_wall_sequence(self):
+    def calculate_wall_sequence(self):
 
         self.build_wall_sequence = {}
         for segment,wall_id in enumerate(self.wall_segment_ids):
@@ -403,8 +419,12 @@ class CentralUnit(object):
                     userdata.above_wall_pose.pose.position.z = flight_level
                     userdata.in_wall_brick_pose = copy.deepcopy(brick.pose)
  
-                    self.task_manager.start_task(min_cost_robot_id, PickAndPlace(), userdata)
-
+                    self.task_manager.start_task(min_cost_robot_id, Pick(), userdata)
+                    self.task_manager.wait_for(min_cost_robot_id)
+                    if self.task_manager.outcomes[min_cost_robot_id] == 'aborted':
+                        rospy.logwarn('Robot [{}] task aborted!'.format(min_cost_robot_id))
+                    self.task_manager.start_task(min_cost_robot_id, Place(), userdata)
+                    
                     #TODO: if pick fails due to not brick found, removed object from Estimator, remove locally and abort
                     #TODO: if place fails due to not wall found, removed object from Estimator, remove locally and abort
                     #
@@ -499,7 +519,7 @@ def main():
         central_unit.lock_objects()
         
         if central_unit.cluster_wall_segments() == True:
-            central_unit.build_wall_sequence()
+            central_unit.calculate_wall_sequence()
             finished = central_unit.build_wall()
         else:
             rospy.logwarn("No wall find with enough segments")

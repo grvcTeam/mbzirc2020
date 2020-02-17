@@ -9,9 +9,9 @@ from move import GoTo
 from regions import FreeRegions
 
 
-class PickAndPlace(smach.StateMachine):
+class Pick(smach.StateMachine):
     def __init__(self):
-        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose', 'above_wall_pose', 'in_wall_brick_pose'])
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_pile_pose'])
 
     def define_for(self, robot):
         with self:
@@ -54,11 +54,24 @@ class PickAndPlace(smach.StateMachine):
             smach.StateMachine.add('FREE_REGION_TO_PICK', FreeRegions().define_for(robot, label = 'pick'),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
+        return self
+
+
+class Place(smach.StateMachine):
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['above_wall_pose', 'in_wall_brick_pose'])
+
+    def define_for(self, robot):
+        with self:
+
             def ask_for_region_to_place_request_callback(userdata, request):
                 radius = 3.0  # TODO: Tune, assure uav is not going further while place!
                 z_max = userdata.above_wall_pose.pose.position.z
                 request = robot.build_request_for_vertical_region(userdata.above_wall_pose, 'place', radius, z_max = z_max)
                 return request
+
+            def ask_for_region_response_callback(userdata, response):
+                return 'succeeded' if response.success else 'aborted'
 
             smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('ask_for_region', srv.AskForRegion,
                                     input_keys = ['above_wall_pose'],
@@ -90,4 +103,3 @@ class PickAndPlace(smach.StateMachine):
                         transitions = {'succeeded': 'succeeded'})
 
         return self
-
