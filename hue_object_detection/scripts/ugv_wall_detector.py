@@ -77,8 +77,6 @@ class frame_detector:
         closest = dist
         index = i
     return box[index], index
-    
-    return point
 
   def execute(self):
     self.update_img = self.image
