@@ -7,7 +7,7 @@ from tf import transformations
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import Float32MultiArray, String
-from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import Image, CameraInfo, Range
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.msg import ObjectDetectionList, ObjectDetection
 
@@ -20,14 +20,15 @@ purpleUpper = (174, 255, 255)
 
 enable_node = True
 
-THRESHOLD = 0.7
+THRESHOLD = 0.7   # Threshold to detect the rectangle in image
+DELTA = 0.1       # Distance (m) between realsense and SF11
+MAX_HIGHT = 20.0    # Known max hight to avoid failed measures from sf11 
 
 class frame_detector:
   def __init__(self):
-    self.current_pose = PoseStamped()
-
     self.bridge = CvBridge()
     self.image = Image()
+    self.laser_measure = 0
 
     self.uav_id = rospy.get_param("~uav_id")
     self.debug_view = rospy.get_param("~debug_view")
@@ -36,8 +37,8 @@ class frame_detector:
     sigma_orientation = [rospy.get_param("~sigma_pitch"), rospy.get_param("~sigma_roll"), rospy.get_param("~sigma_yaw")]
     self.covariance_matrix = np.diag(np.square(sigma_pos + sigma_orientation)).flatten()
 
-    self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
-    self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
+    self.image_sub = rospy.Subscriber("camera/color/image_rect_color", Image,self.callback_color, queue_size=1)
+    self.laser_sub = rospy.Subscriber("sf11", Range, self.callback_laser, queue_size=1)
     self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
     self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
     if self.debug_publisher:
@@ -46,7 +47,7 @@ class frame_detector:
     self.enable_detection_srv = rospy.Service('ugv_wall_detector/enable', SetBool, self.enable_detection)
 
     rospy.wait_for_message("camera/color/image_rect_color", Image)
-    # rospy.wait_for_message("ual/pose", PoseStamped)
+    rospy.wait_for_message("sf11", Range)
 
   def enable_detection(self, req):
     global enable_node
@@ -70,9 +71,9 @@ class frame_detector:
       self.center_x = data.K[2]
       self.center_y = data.K[5]
 
-  def callback_ual(self,ual_pose):
-    if enable_node:
-      self.current_pose = ual_pose
+  def callback_laser(self, data):
+    if enable_node and data.range <= MAX_HIGHT:
+      self.laser_measure = data.range - DELTA
 
   def callback_color(self,data):
     if enable_node:
@@ -82,7 +83,7 @@ class frame_detector:
         print(e)
 
   def converte_xy(self, pixel_x, pixel_y):
-    z = self.current_pose.pose.position.z
+    z = self.laser_measure
     rx =(pixel_x-self.center_x)*z*self.inv_fx #convertion from image plane to meters
     ry =(pixel_y-self.center_y)*z*self.inv_fy
     return rx, ry, z
