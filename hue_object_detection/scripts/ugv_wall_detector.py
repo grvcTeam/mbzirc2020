@@ -17,8 +17,11 @@ purpleUpper = (174, 255, 255)
 class frame_detector:
   def __init__(self):
     self.current_pose = PoseStamped()
-    self.L_angle = 0 # TODO - To be calculated
-    self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw = 0,0,0,0,0,0,0 # TODO - To pass as argument
+    self.L_angle = [0.0,0.0,0.0,0.0] # TODO - To be calculated
+    self.cov_x, self.cov_y, self.cov_z, self.cov_pitch, self.cov_roll, self.cov_yaw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 # TODO - To pass as argument
+    self.covariance = np.diag([self.cov_x, self.cov_y, self.cov_z, self.cov_pitch, self.cov_roll, self.cov_yaw]).flatten()
+
+    # self.covariance[0], self.covariance[7] =self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw]
     self.bridge = CvBridge()
     self.image = Image()
 
@@ -88,7 +91,6 @@ class frame_detector:
     return point
 
   def execute(self):
-    object_detected = ObjectDetection()
     self.update_img = self.image
     imhsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
     mask = (cv2.inRange(imhsv, yellowLower, yellowUpper)+cv2.inRange(imhsv, purpleLower, purpleUpper))
@@ -127,12 +129,19 @@ class frame_detector:
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
 
-        object_detected.header.stamp = rospy.Time.now()
-        object_detected.header.frame_id = self.current_pose.header.frame_id
+        # Fill ObjectDetection msg
+        object_detected = ObjectDetection()
 
-        object_detected.pose.pose.position = self.create_point(ponto[0],ponto[1],ponto[2],self.current_pose.header.frame_id, rect[2]+90*idx) # TODO - Remove function, do operation in line
-        object_detected.pose.pose.orientation = self.L_angle # TODO - Calculate L angle - mult quaternions
-        object_detected.pose.covariance = [self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw] # TODO - Calculate cov in class init
+        object_detected.header.stamp = rospy.Time.now()
+        object_detected.header.frame_id = self.frame
+
+        point = self.create_point(ponto[0],ponto[1],ponto[2],self.frame, rect[2]+90*idx) # TODO - Remove function, do operation in line
+        object_detected.pose.pose.position = point.pose.position
+        object_detected.pose.pose.orientation.x = self.L_angle[0] # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.pose.orientation.y = self.L_angle[1] # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.pose.orientation.z = self.L_angle[2] # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.pose.orientation.w = self.L_angle[3] # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.covariance = self.covariance # TODO - Calculate cov in class init
 
         object_detected.scale.x = 4 # Size of L (m)
         object_detected.scale.y = 4 # Size of L (m)
@@ -141,8 +150,15 @@ class frame_detector:
         object_detected.type = object_detected.TYPE_LWALL
         object_detected.color = object_detected.COLOR_UNKNOWN
 
-        self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx)) # TODO - Remove old message
-        # self.sensed_pub.publish(ObjectDetectionList(uav_id, rospy.Time.now(), [object_detected])) # TODO - Publish new message
+        # Fill ObjectDetectionList msg 
+        object_list_detected = ObjectDetectionList()
+
+        object_list_detected.agent_id = str(self.uav_id)
+        object_list_detected.stamp = rospy.Time.now()
+        object_list_detected.objects = [object_detected]
+
+        #self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx)) # TODO - Remove information related with old message
+        self.sensed_pub.publish(object_list_detected) # TODO - Publish new message
       elif self.debug_view:
         print "no cornerino"
 
