@@ -16,6 +16,8 @@ yellowUpper = (35, 255, 255)
 purpleLower = (154, 40, 100)
 purpleUpper = (174, 255, 255)
 
+THRESHOLD = 0.7
+
 class frame_detector:
   def __init__(self):
     self.current_pose = PoseStamped()
@@ -110,7 +112,7 @@ class frame_detector:
       black_pixels = width*height - cv2.countNonZero(gray)
       self.warped = mask
 
-      if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)): # TODO - Why 0.7
+      if (cv2.contourArea(contorno) < THRESHOLD*(width*height - black_pixels)):
         corner, idx = self.closest_point(box, contorno)
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
