@@ -23,17 +23,19 @@ class frame_detector:
     self.bridge = CvBridge()
     self.image = Image()
 
-    self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
-    self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
-    self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
-    self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
-
     self.uav_id = rospy.get_param("~uav_id")
     self.debug_view = rospy.get_param("~debug_view")
     self.debug_publisher = rospy.get_param("~debug_publisher")
     sigma_pos = [rospy.get_param("~sigma_x"), rospy.get_param("~sigma_y"), rospy.get_param("~sigma_z")]
     sigma_orientation = [rospy.get_param("~sigma_pitch"), rospy.get_param("~sigma_roll"), rospy.get_param("~sigma_yaw")]
     self.covariance_matrix = np.diag(np.square(sigma_pos + sigma_orientation)).flatten()
+
+    self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
+    self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
+    self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
+    self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
+    if self.debug_publisher:
+      self.debug_image_pub = rospy.Publisher("debug_image", Image, queue_size=1)
 
     rospy.wait_for_message("camera/color/image_rect_color", Image)
     # rospy.wait_for_message("ual/pose", PoseStamped)
@@ -153,6 +155,9 @@ class frame_detector:
 
         if self.debug_view:
           print "Corner found - Angle:"+str(angle)
+        if self.debug_publisher:
+          self.debug_image_pub.publish(self.bridge.cv2_to_imgmsg(self.update_img, "rgb8"))
+
       elif self.debug_view:
         print "Corner not found"
 
