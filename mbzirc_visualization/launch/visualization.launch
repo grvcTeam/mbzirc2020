@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="ns" default="mbzirc2020" />
+	<arg name="arena" default="stage" />
+	<arg name="arena_yaw" default="-0.2968107"/>
 
 	<node name="visualization_node" pkg="mbzirc_visualization" type="visualizer_node" respawn="false" output="screen">
 
 	<param name="robot_ns" value="$(arg ns)"/>
 	<param name="object_topic" value="estimated_objects"/>
 	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
+	<param name="arena_file" value="$(arg arena)"/>
 
     </node>
 

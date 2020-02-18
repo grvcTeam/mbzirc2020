@@ -85,6 +85,9 @@ protected:
     vector<string> uav_ids_;
 	int n_uavs_;
 
+    /// Arena mesh name file and orientation
+    string arena_file_;
+    double arena_yaw_;
 };
 
 /** \brief Constructor
@@ -92,9 +95,12 @@ protected:
 Visualizer::Visualizer()
 {
     // Get parameters
-    string robot_ns, object_topic;
+    string robot_ns, object_topic, arena_file;
+    double arena_yaw;
     ros::param::param<string>("~robot_ns", robot_ns, "mbzirc2020");
     ros::param::param<string>("~object_topic", object_topic, "estimated_objects");
+    ros::param::param<string>("~arena_file", arena_file_, "stage.dae");
+    ros::param::param<double>("~arena_yaw", arena_yaw_, 0.0);
     ros::param::param<vector<string> >("~uav_ids", uav_ids_, vector<string>());
 
                 
@@ -253,18 +259,17 @@ void Visualizer::publishArena()
     marker.ns = "arena";
     marker.id = 0;
     marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-    marker.mesh_resource = "package://mbzirc_visualization/meshes/stage.dae";
+    marker.mesh_resource = "package://mbzirc_visualization/meshes/" + arena_file_;
     marker.action = visualization_msgs::Marker::ADD;
 
     marker.pose.position.x = 0;
     marker.pose.position.y = 0;
     marker.pose.position.z = 0;
 
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = -0.99893;
-    marker.pose.orientation.w = 0.046306;
-
+    tf2::Quaternion q;
+    q.setRPY(0.0,0.0,arena_yaw_);
+    marker.pose.orientation = tf2::toMsg(q);
+    
     marker.scale.x = 1;
     marker.scale.y = 1;
     marker.scale.z = 1;
@@ -328,10 +333,10 @@ void Visualizer::publishMarkers()
                 marker.color.b = 0.267;
                 break;
                 default:
-                // gray
-                marker.color.r = 0.5;
-                marker.color.g = 0.5;
-                marker.color.b = 0.5;
+                // white
+                marker.color.r = 1.0;
+                marker.color.g = 1.0;
+                marker.color.b = 1.0;
                 break;
             }
 
@@ -468,6 +473,16 @@ void Visualizer::publishMarkers()
             tf2::Quaternion q;
             q.setRPY(0.0,0.0, cov_yaw);
             marker.pose.orientation = tf2::toMsg(q);
+
+            object_markers.markers.push_back(marker);
+
+            // Plot scales
+            marker.ns = "rectangle_" + obj.type;
+            marker.type = visualization_msgs::Marker::CUBE;    
+            marker.scale.x = obj.scale.x;
+            marker.scale.y = obj.scale.y;    
+            marker.scale.z = obj.scale.z;
+            marker.pose = obj.pose.pose;
 
             object_markers.markers.push_back(marker);
 
