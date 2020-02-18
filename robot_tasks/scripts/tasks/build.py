@@ -4,6 +4,7 @@ import smach_ros
 import mbzirc_comm_objs.msg
 import mbzirc_comm_objs.srv as srv
 
+from std_srvs.srv import SetBool, SetBoolRequest
 from timing import SleepAndRetry
 from move import GoTo
 from regions import FreeRegions
@@ -17,16 +18,14 @@ class Pick(smach.StateMachine):
         with self:
 
             def ask_for_region_to_pick_request_callback(userdata, request):
-                radius = 2.5  # TODO: Tune, assure uav is not going further while pick!
-                z_max = userdata.above_pile_pose.pose.position.z
-                request = robot.build_request_for_vertical_region(userdata.above_pile_pose, 'pick', radius, z_max = z_max)
+                request = SetBoolRequest()
+                request.data = True
                 return request
 
             def ask_for_region_response_callback(userdata, response):
                 return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('ask_for_region', srv.AskForRegion,
-                                    input_keys = ['above_pile_pose'],
+            smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
                                     request_cb = ask_for_region_to_pick_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'GO_TO_PILE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
@@ -51,8 +50,18 @@ class Pick(smach.StateMachine):
                                     remapping = {'waypoint': 'above_pile_pose'},
                                     transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
 
-            smach.StateMachine.add('FREE_REGION_TO_PICK', FreeRegions().define_for(robot, label = 'pick'),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
+            def free_pick_region_request_callback(userdata, request):
+                request = SetBoolRequest()
+                request.data = False
+                return request
+
+            def free_pick_region_response_callback(userdata, response):
+                return 'succeeded'
+
+            smach.StateMachine.add('FREE_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
+                                    request_cb = free_pick_region_request_callback,
+                                    response_cb = free_pick_region_response_callback),
+                                    transitions = {'succeeded': 'succeeded'})
 
         return self
 
@@ -65,16 +74,14 @@ class Place(smach.StateMachine):
         with self:
 
             def ask_for_region_to_place_request_callback(userdata, request):
-                radius = 3.0  # TODO: Tune, assure uav is not going further while place!
-                z_max = userdata.above_wall_pose.pose.position.z
-                request = robot.build_request_for_vertical_region(userdata.above_wall_pose, 'place', radius, z_max = z_max)
+                request = SetBoolRequest()
+                request.data = True
                 return request
 
             def ask_for_region_response_callback(userdata, response):
                 return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('ask_for_region', srv.AskForRegion,
-                                    input_keys = ['above_wall_pose'],
+            smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
                                     request_cb = ask_for_region_to_place_request_callback,
                                     response_cb = ask_for_region_response_callback),
                                     transitions = {'succeeded': 'GO_ABOVE_WALL', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
@@ -99,7 +106,17 @@ class Place(smach.StateMachine):
                                     remapping = {'waypoint': 'above_wall_pose'},
                                     transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
             
-            smach.StateMachine.add('FREE_REGION_TO_PLACE', FreeRegions().define_for(robot, label = 'place'),
+            def free_place_region_request_callback(userdata, request):
+                request = SetBoolRequest()
+                request.data = False
+                return request
+
+            def free_place_region_response_callback(userdata, response):
+                return 'succeeded'
+
+            smach.StateMachine.add('FREE_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
+                                    request_cb = free_place_region_request_callback,
+                                    response_cb = free_place_region_response_callback),
                         transitions = {'succeeded': 'succeeded'})
 
         return self
