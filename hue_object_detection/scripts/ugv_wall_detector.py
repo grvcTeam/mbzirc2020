@@ -37,7 +37,7 @@ class frame_detector:
     self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
     self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
     if self.debug_publisher:
-      self.debug_image_pub = rospy.Publisher("debug_image", Image, queue_size=1)
+      self.debug_image_pub = rospy.Publisher("ugv_wall_detector/debug_image", Image, queue_size=1)
 
     rospy.wait_for_message("camera/color/image_rect_color", Image)
     # rospy.wait_for_message("ual/pose", PoseStamped)
