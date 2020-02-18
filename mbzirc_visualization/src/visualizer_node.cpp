@@ -87,7 +87,8 @@ protected:
 
     /// Arena mesh name file and orientation
     string arena_file_;
-    double arena_yaw_;
+    double arena_x_;
+    double arena_y_;
 };
 
 /** \brief Constructor
@@ -100,7 +101,8 @@ Visualizer::Visualizer()
     ros::param::param<string>("~robot_ns", robot_ns, "mbzirc2020");
     ros::param::param<string>("~object_topic", object_topic, "estimated_objects");
     ros::param::param<string>("~arena_file", arena_file_, "stage.dae");
-    ros::param::param<double>("~arena_yaw", arena_yaw_, 0.0);
+    ros::param::param<double>("~arena_x", arena_x_, 0.0);
+    ros::param::param<double>("~arena_y", arena_y_, 0.0);
     ros::param::param<vector<string> >("~uav_ids", uav_ids_, vector<string>());
 
                 
@@ -254,7 +256,7 @@ void Visualizer::publishArena()
 {
     // Publish the scenario
     visualization_msgs::Marker marker;
-    marker.header.frame_id = "/map";
+    marker.header.frame_id = "arena";
     marker.header.stamp = ros::Time();
     marker.ns = "arena";
     marker.id = 0;
@@ -262,13 +264,9 @@ void Visualizer::publishArena()
     marker.mesh_resource = "package://mbzirc_visualization/meshes/" + arena_file_;
     marker.action = visualization_msgs::Marker::ADD;
 
-    marker.pose.position.x = 0;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = 0;
-
-    tf2::Quaternion q;
-    q.setRPY(0.0,0.0,arena_yaw_);
-    marker.pose.orientation = tf2::toMsg(q);
+    marker.pose.position.x = arena_x_;
+    marker.pose.position.y = arena_y_;
+    marker.pose.position.z = -0.5;
     
     marker.scale.x = 1;
     marker.scale.y = 1;

@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="ns" default="mbzirc2020" />
-	<arg name="arena" default="stage" />
-	<arg name="arena_yaw" default="-0.2968107"/>
+	<arg name="arena" default="stage.dae" />
+	<arg name="arena_x" default="30.0"/>
+	<arg name="arena_y" default="25.0"/>
 
 	<node name="visualization_node" pkg="mbzirc_visualization" type="visualizer_node" respawn="false" output="screen">
 
@@ -10,6 +11,9 @@
 	<param name="object_topic" value="estimated_objects"/>
 	<rosparam param="uav_ids">["1", "2", "3"]</rosparam>
 	<param name="arena_file" value="$(arg arena)"/>
+	<param name="arena_x" value="$(arg arena_x)"/>
+	<param name="arena_y" value="$(arg arena_y)"/>
+
 
     </node>
 
