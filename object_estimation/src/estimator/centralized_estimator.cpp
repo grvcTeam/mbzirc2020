@@ -118,7 +118,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 {
 	vector<vector<double> > distances;
 	vector<int> valid_targets;
-	vector<int> valid_candidates;
+	vector<bool> valid_candidates;
 	int n_valid_targets = 0, n_valid_candidates = 0;
 
 	// Compute distances for each association. And count valid targets
@@ -157,26 +157,32 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 
 	// All candidates valid initially
 	for(int i = 0; i < z_list.size(); i++)
-		valid_candidates.push_back(1);
+		valid_candidates.push_back(true);
 
 	n_valid_candidates = z_list.size();
-
-	#ifdef DEBUG_MODE
-	cout << "Candidates from UAV " << endl;
-	cout << "Distances: " << endl;
-	for(int i = 0; i < distances.size(); i++)
-	{
-		for(int j = 0; j < distances[i].size(); j++)
-			cout << distances[i][j] << " ";
-		cout << endl;
-	}
-	cout << endl;	
-	
-	#endif
 
 	// Look for best pairs until running out of candidates or targets
 	while(n_valid_targets != 0 && n_valid_candidates != 0 )
 	{
+		#ifdef DEBUG_MODE
+		cout << "Valid candidates from UAV " << endl;
+		for(int i = 0; i < z_list.size(); i++)
+		{
+			if(valid_candidates[i])
+				cout << "Candidate: " << i << ". (" << z_list[i]->pose.pose.position.x << "," << z_list[i]->pose.pose.position.y << "). Color: " << z_list[i]->color << endl;
+		}
+
+		cout << "Distances: " << endl;
+		for(int i = 0; i < distances.size(); i++)
+		{
+			for(int j = 0; j < distances[i].size(); j++)
+				cout << distances[i][j] << " ";
+			cout << endl;
+		}
+		cout << endl;	
+		
+		#endif
+		
 		double min_dist = -1.0;
 		pair<int, int> best_pair;
 
@@ -200,7 +206,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 		if(min_dist != -1 && min_dist <= likelihood_th_)
 		{
 			#ifdef DEBUG_MODE
-			cout << "Candidate " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". Associated to target " << valid_targets[best_pair.first] << ", with distance " << min_dist << endl;
+			cout << "Candidate " << best_pair.second << ". " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". Associated to target " << valid_targets[best_pair.first] << ", with distance " << min_dist << endl;
 			#endif
 
 			targets_[valid_targets[best_pair.first]]->update(z_list[best_pair.second]);
@@ -211,7 +217,7 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 		else
 		{
 			#ifdef DEBUG_MODE
-			cout << "Candidate " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". New target " << track_id_count_ << ", with distance " << min_dist << endl;
+			cout << "Candidate " << best_pair.second << ". " << z_list[best_pair.second]->pose.pose.position.x << "," << z_list[best_pair.second]->pose.pose.position.y << ". New target " << track_id_count_ << ", with distance " << min_dist << endl;
 			#endif
 			int new_target_id = track_id_count_++;
 			targets_[new_target_id] = new ObjectTracker(new_target_id, obj_type_);
@@ -238,13 +244,16 @@ bool CentralizedEstimator::update(vector<mbzirc_comm_objs::ObjectDetection*> z_l
 			distances.push_back(t_distances);			
 		}
 
-		valid_candidates[best_pair.second] = -1;
+		valid_candidates[best_pair.second] = false;
 		n_valid_candidates--;
 	}
 
 	// Create new targets with remaining candidates
 	if(n_valid_candidates)
 	{
+		#ifdef DEBUG_MODE
+		cout << "Remaining candidates" << endl;
+		#endif 
 		for(int i = 0; i < z_list.size(); i++)
 		{
 			if(valid_candidates[i])
