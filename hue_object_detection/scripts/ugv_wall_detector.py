@@ -11,10 +11,14 @@ from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped
 from mbzirc_comm_objs.msg import ObjectDetectionList, ObjectDetection
 
+from std_srvs.srv import SetBool, SetBoolResponse
+
 yellowLower = (0, 40, 150)
 yellowUpper = (35, 255, 255)
 purpleLower = (154, 40, 100)
 purpleUpper = (174, 255, 255)
+
+enable_node = True
 
 THRESHOLD = 0.7
 
@@ -39,27 +43,43 @@ class frame_detector:
     if self.debug_publisher:
       self.debug_image_pub = rospy.Publisher("ugv_wall_detector/debug_image", Image, queue_size=1)
 
+    self.enable_detection_srv = rospy.Service('ugv_wall_detector/enable', SetBool, self.enable_detection)
+
     rospy.wait_for_message("camera/color/image_rect_color", Image)
     # rospy.wait_for_message("ual/pose", PoseStamped)
 
+  def enable_detection(self, req):
+    global enable_node
+    enable_node = req.data
+    res = SetBoolResponse()
+    res.success = True
+    if enable_node:
+      res.message = "Node enabled"
+    else:
+      res.message = "Node disabled"
+    return res
+
   def callback_camera(self,data):
-    # set values for local variables
-    self.frame = data.header.frame_id
-    self.cam_height = data.height
-    self.cam_width = data.width
-    self.inv_fx = 1/data.K[0]
-    self.inv_fy = 1/data.K[4]
-    self.center_x = data.K[2]
-    self.center_y = data.K[5]
+    if enable_node:
+      # set values for local variables
+      self.frame = data.header.frame_id
+      self.cam_height = data.height
+      self.cam_width = data.width
+      self.inv_fx = 1/data.K[0]
+      self.inv_fy = 1/data.K[4]
+      self.center_x = data.K[2]
+      self.center_y = data.K[5]
 
   def callback_ual(self,ual_pose):
-    self.current_pose = ual_pose
+    if enable_node:
+      self.current_pose = ual_pose
 
   def callback_color(self,data):
-    try:
-      self.image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    except CvBridgeError as e:
-      print(e)
+    if enable_node:
+      try:
+        self.image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      except CvBridgeError as e:
+        print(e)
 
   def converte_xy(self, pixel_x, pixel_y):
     z = self.current_pose.pose.position.z
@@ -167,13 +187,16 @@ class frame_detector:
       cv2.waitKey(3)
 
 def main():
+  global enable_node
+
   rospy.init_node('ugv_wall_detector')
   rate = rospy.Rate(rospy.get_param("~rate")) 
   ic = frame_detector()
 
   try:
     while not rospy.is_shutdown():
-      ic.execute()
+      if enable_node:
+        ic.execute()
       rate.sleep() # TODO: Check strange behaviour when line is commented - warped image and false negative in detections
   except KeyboardInterrupt:
     print("Shutting down")
