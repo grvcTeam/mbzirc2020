@@ -450,6 +450,7 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 		// TODO. Distance to borders instead of to centroid?
 		distance = getDistance(z);
 
+		/*
 		for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
 		{
 			if(z->color == factorIdToColor(i))
@@ -461,7 +462,23 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 		}
 
 		if(prob_color < MIN_COLOR_DISTANCE)
-			distance = -1;	
+			distance = -1;
+		*/
+		double max_prob = -1.0;
+		int color_max;
+
+		for(int i = 0; i < ObjectDetection::BRICK_COLORS; i++)
+		{
+			if(fact_bel_[COLOR][i] > max_prob)
+			{
+				max_prob = fact_bel_[COLOR][i];
+				color_max = factorIdToColor(i);
+			}
+		}
+
+		if(color_max != z->color)
+			distance = -1;
+			
 	}
 	else if(obj_type_ == Object::TYPE_WALL)
 	{
