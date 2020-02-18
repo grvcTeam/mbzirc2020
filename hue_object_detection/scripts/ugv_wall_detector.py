@@ -19,7 +19,6 @@ purpleUpper = (174, 255, 255)
 class frame_detector:
   def __init__(self):
     self.current_pose = PoseStamped()
-    self.L_angle = [0.0,0.0,0.0,0.0] # TODO - To be calculated
 
     self.bridge = CvBridge()
     self.image = Image()
@@ -27,7 +26,6 @@ class frame_detector:
     self.image_sub = rospy.Subscriber("camera/color/image_rect_color",Image,self.callback_color, queue_size=1)
     self.depth_sub = rospy.Subscriber("ual/pose",PoseStamped,self.callback_ual, queue_size=1)
     self.camera_sub = rospy.Subscriber("camera/color/camera_info", CameraInfo, self.callback_camera, queue_size=1)
-    self.point_pub = rospy.Publisher("frame_corner", PoseStamped, queue_size=1)
     self.sensed_pub = rospy.Publisher("sensed_objects", ObjectDetectionList, queue_size=1)
 
     self.uav_id = rospy.get_param("~uav_id")
@@ -151,7 +149,7 @@ class frame_detector:
         object_list_detected.stamp = rospy.Time.now()
         object_list_detected.objects = [object_detected]
 
-        self.sensed_pub.publish(object_list_detected) # TODO - Publish new message
+        self.sensed_pub.publish(object_list_detected)
 
         if self.debug_view:
           print "Corner found - Angle:"+str(angle)
