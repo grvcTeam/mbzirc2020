@@ -18,7 +18,7 @@ yellowUpper = (35, 255, 255)
 purpleLower = (154, 40, 100)
 purpleUpper = (174, 255, 255)
 
-enable_node = True
+enable_node = False
 
 THRESHOLD = 0.7   # Threshold to detect the rectangle in image
 DELTA = 0.1       # Distance (m) between realsense and SF11
@@ -26,11 +26,14 @@ MAX_HIGHT = 20.0    # Known max hight to avoid failed measures from sf11
 
 class frame_detector:
   def __init__(self):
+    global enable_node
+
     self.bridge = CvBridge()
     self.image = Image()
     self.laser_measure = 0
 
     self.uav_id = rospy.get_param("~uav_id")
+    enable_node = rospy.get_param("~enable_node")
     self.debug_view = rospy.get_param("~debug_view")
     self.debug_publisher = rospy.get_param("~debug_publisher")
     sigma_pos = [rospy.get_param("~sigma_x"), rospy.get_param("~sigma_y"), rospy.get_param("~sigma_z")]

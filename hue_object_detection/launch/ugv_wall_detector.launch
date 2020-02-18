@@ -5,6 +5,7 @@
     <arg name="debug_view"            default="false"/>
     <arg name="debug_publisher"       default="false"/>
     <arg name="rate"                  default="10"/>
+    <arg name="enable_node"           default="false"/>
 
     <arg name="variance_x"            default="1"/>         <!-- meters -->
     <arg name="variance_y"            default="1"/>         <!-- meters -->
@@ -17,6 +18,7 @@
         <param name="debug_view"      value="$(arg debug_view)"/>
         <param name="debug_publisher" value="$(arg debug_publisher)"/>
         <param name="uav_id"          value="$(arg agent_id)"/>
+        <param name="enable_node"     value="$(arg enable_node)"/>
         <param name="rate"            value="$(arg rate)"/>
         <param name="sigma_x"         value="$(arg variance_x)"/>
         <param name="sigma_y"         value="$(arg variance_y)"/>
