@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import rospy, tf, cv2
 import numpy as np
+from math import sqrt, pi
 from tf import transformations
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -18,10 +19,7 @@ class frame_detector:
   def __init__(self):
     self.current_pose = PoseStamped()
     self.L_angle = [0.0,0.0,0.0,0.0] # TODO - To be calculated
-    self.cov_x, self.cov_y, self.cov_z, self.cov_pitch, self.cov_roll, self.cov_yaw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 # TODO - To pass as argument
-    self.covariance = np.diag([self.cov_x, self.cov_y, self.cov_z, self.cov_pitch, self.cov_roll, self.cov_yaw]).flatten()
 
-    # self.covariance[0], self.covariance[7] =self.cov_x, self.cov_y, self.cov_z, self.cov_qx, self.cov_qy, self.cov_qz, self.cov_qw]
     self.bridge = CvBridge()
     self.image = Image()
 
@@ -34,9 +32,12 @@ class frame_detector:
     self.uav_id = rospy.get_param("~uav_id")
     self.debug_view = rospy.get_param("~debug_view")
     self.debug_publisher = rospy.get_param("~debug_publisher")
+    sigma_pos = [rospy.get_param("~sigma_x"), rospy.get_param("~sigma_y"), rospy.get_param("~sigma_z")]
+    sigma_orientation = [rospy.get_param("~sigma_pitch"), rospy.get_param("~sigma_roll"), rospy.get_param("~sigma_yaw")]
+    self.covariance_matrix = np.diag(np.square(sigma_pos + sigma_orientation)).flatten()
 
     rospy.wait_for_message("camera/color/image_rect_color", Image)
-    rospy.wait_for_message("ual/pose", PoseStamped) # wait to init depth var with uav pose
+    # rospy.wait_for_message("ual/pose", PoseStamped)
 
   def callback_camera(self,data):
     # set values for local variables
@@ -141,11 +142,12 @@ class frame_detector:
         object_detected.pose.pose.orientation.y = self.L_angle[1] # TODO - Calculate L angle - mult quaternions
         object_detected.pose.pose.orientation.z = self.L_angle[2] # TODO - Calculate L angle - mult quaternions
         object_detected.pose.pose.orientation.w = self.L_angle[3] # TODO - Calculate L angle - mult quaternions
-        object_detected.pose.covariance = self.covariance # TODO - Calculate cov in class init
+        object_detected.pose.covariance = self.covariance_matrix # TODO - Calculate cov in class init
 
-        object_detected.scale.x = 4 # Size of L (m)
-        object_detected.scale.y = 4 # Size of L (m)
-        object_detected.scale.z = 0 # Size of L (m)
+        # Scale = size of L (m)
+        object_detected.scale.x = 4
+        object_detected.scale.y = 4
+        object_detected.scale.z = 0
 
         object_detected.type = object_detected.TYPE_LWALL
         object_detected.color = object_detected.COLOR_UNKNOWN
@@ -176,7 +178,6 @@ def main():
     while not rospy.is_shutdown():
       ic.execute()
       rate.sleep() # TODO: Check strange behaviour when line is commented - warped image and false negative in detections
-      # rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
 
