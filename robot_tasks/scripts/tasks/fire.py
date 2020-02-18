@@ -6,7 +6,6 @@ import mbzirc_comm_objs.srv as srv
 
 # from timing import SleepAndRetry
 from move import GoTo
-# from regions import FreeRegions
 
 
 class ExtinguishFacadeFire(smach.StateMachine):

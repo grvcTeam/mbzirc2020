@@ -7,7 +7,6 @@ import mbzirc_comm_objs.srv as srv
 from std_srvs.srv import SetBool, SetBoolRequest
 from timing import SleepAndRetry
 from move import GoTo
-from regions import FreeRegions
 
 
 class Pick(smach.StateMachine):
