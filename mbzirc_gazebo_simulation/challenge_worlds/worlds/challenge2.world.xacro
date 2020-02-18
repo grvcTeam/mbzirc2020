@@ -20,56 +20,95 @@
 <xacro:property name="ground" value="${[30,25,0,0]}"/>
 <!-- UAV BRICKS Location -->
 <!-- Change "basebrick" to modify location and yaw for the entire pile-->
-<xacro:property name="basebrick" value="${[15,30,0,0]}"/>
+<xacro:property name="basebrick" value="${[41,15,0,0]}"/>
 
-<xacro:property name="red01p" value="${[basebrick[0]+1.17,basebrick[1]-3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red01p" value="${[basebrick[0]+1.95,basebrick[1]-3.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red01" value="${[(red01p[0]-basebrick[0])*cos(basebrick[3])-(red01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red01p[0]-basebrick[0])*sin(basebrick[3])+(red01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red01p[2],red01p[3]+basebrick[3]]}"/>
-<xacro:property name="red02p" value="${[basebrick[0]+1.17,basebrick[1]-2.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red02p" value="${[basebrick[0]+1.95,basebrick[1]-2.7,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red02" value="${[(red02p[0]-basebrick[0])*cos(basebrick[3])-(red02p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red02p[0]-basebrick[0])*sin(basebrick[3])+(red02p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red02p[2],red02p[3]+basebrick[3]]}"/>
-<xacro:property name="red03p" value="${[basebrick[0]+1.17,basebrick[1]-2,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red03p" value="${[basebrick[0]+1.95,basebrick[1]-2.1,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red03" value="${[(red03p[0]-basebrick[0])*cos(basebrick[3])-(red03p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red03p[0]-basebrick[0])*sin(basebrick[3])+(red03p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red03p[2],red03p[3]+basebrick[3]]}"/>
-<xacro:property name="red04p" value="${[basebrick[0]+1.17,basebrick[1]-1.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red04p" value="${[basebrick[0]+1.95,basebrick[1]-1.5,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red04" value="${[(red04p[0]-basebrick[0])*cos(basebrick[3])-(red04p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red04p[0]-basebrick[0])*sin(basebrick[3])+(red04p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red04p[2],red04p[3]+basebrick[3]]}"/>
-<xacro:property name="red05p" value="${[basebrick[0]+1.17,basebrick[1]-1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red05p" value="${[basebrick[0]+1.95,basebrick[1]-0.9,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red05" value="${[(red05p[0]-basebrick[0])*cos(basebrick[3])-(red05p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red05p[0]-basebrick[0])*sin(basebrick[3])+(red05p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red05p[2],red05p[3]+basebrick[3]]}"/>
-<xacro:property name="red06p" value="${[basebrick[0]+1.17,basebrick[1]-0.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red06p" value="${[basebrick[0]+1.95,basebrick[1]-0.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red06" value="${[(red06p[0]-basebrick[0])*cos(basebrick[3])-(red06p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red06p[0]-basebrick[0])*sin(basebrick[3])+(red06p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red06p[2],red06p[3]+basebrick[3]]}"/>
-<xacro:property name="red07p" value="${[basebrick[0]+1.17,basebrick[1]+0,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red07p" value="${[basebrick[0]+1.95,basebrick[1]+0.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red07" value="${[(red07p[0]-basebrick[0])*cos(basebrick[3])-(red07p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red07p[0]-basebrick[0])*sin(basebrick[3])+(red07p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red07p[2],red07p[3]+basebrick[3]]}"/>
-<xacro:property name="red08p" value="${[basebrick[0]+1.17,basebrick[1]+3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red08p" value="${[basebrick[0]+1.95,basebrick[1]+0.9,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red08" value="${[(red08p[0]-basebrick[0])*cos(basebrick[3])-(red08p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red08p[0]-basebrick[0])*sin(basebrick[3])+(red08p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red08p[2],red08p[3]+basebrick[3]]}"/>
-<xacro:property name="red09p" value="${[basebrick[0]+1.17,basebrick[1]+2.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red09p" value="${[basebrick[0]+1.95,basebrick[1]+1.5,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red09" value="${[(red09p[0]-basebrick[0])*cos(basebrick[3])-(red09p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red09p[0]-basebrick[0])*sin(basebrick[3])+(red09p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red09p[2],red09p[3]+basebrick[3]]}"/>
-<xacro:property name="red20p" value="${[basebrick[0]+1.17,basebrick[1]+2,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red20p" value="${[basebrick[0]+1.95,basebrick[1]+2.1,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red20" value="${[(red20p[0]-basebrick[0])*cos(basebrick[3])-(red20p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red20p[0]-basebrick[0])*sin(basebrick[3])+(red20p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red20p[2],red20p[3]+basebrick[3]]}"/>
-<xacro:property name="red21p" value="${[basebrick[0]+1.17,basebrick[1]+1.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red21p" value="${[basebrick[0]+1.95,basebrick[1]+2.7,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red21" value="${[(red21p[0]-basebrick[0])*cos(basebrick[3])-(red21p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red21p[0]-basebrick[0])*sin(basebrick[3])+(red21p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red21p[2],red21p[3]+basebrick[3]]}"/>
-<xacro:property name="red22p" value="${[basebrick[0]+1.17,basebrick[1]+1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red22p" value="${[basebrick[0]+1.95,basebrick[1]+3.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red22" value="${[(red22p[0]-basebrick[0])*cos(basebrick[3])-(red22p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red22p[0]-basebrick[0])*sin(basebrick[3])+(red22p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red22p[2],red22p[3]+basebrick[3]]}"/>
-<xacro:property name="red23p" value="${[basebrick[0]+1.17,basebrick[1]+0.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red23p" value="${[basebrick[0]+2.73,basebrick[1]+3.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red23" value="${[(red23p[0]-basebrick[0])*cos(basebrick[3])-(red23p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red23p[0]-basebrick[0])*sin(basebrick[3])+(red23p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red23p[2],red23p[3]+basebrick[3]]}"/>
-<xacro:property name="blue01p" value="${[basebrick[0]-0.39,basebrick[1]-1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red24p" value="${[basebrick[0]+2.73,basebrick[1]-3.3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red24" value="${[(red24p[0]-basebrick[0])*cos(basebrick[3])-(red24p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red24p[0]-basebrick[0])*sin(basebrick[3])+(red24p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red24p[2],red24p[3]+basebrick[3]]}"/>
+<xacro:property name="red25p" value="${[basebrick[0]+2.73,basebrick[1]-2.7,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red25" value="${[(red25p[0]-basebrick[0])*cos(basebrick[3])-(red25p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red25p[0]-basebrick[0])*sin(basebrick[3])+(red25p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red25p[2],red25p[3]+basebrick[3]]}"/>
+<xacro:property name="red26p" value="${[basebrick[0]+2.73,basebrick[1]-2.1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red26" value="${[(red26p[0]-basebrick[0])*cos(basebrick[3])-(red26p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red26p[0]-basebrick[0])*sin(basebrick[3])+(red26p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red26p[2],red26p[3]+basebrick[3]]}"/>
+<xacro:property name="red27p" value="${[basebrick[0]+2.73,basebrick[1]-1.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red27" value="${[(red27p[0]-basebrick[0])*cos(basebrick[3])-(red27p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red27p[0]-basebrick[0])*sin(basebrick[3])+(red27p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red27p[2],red27p[3]+basebrick[3]]}"/>
+<xacro:property name="red28p" value="${[basebrick[0]+2.73,basebrick[1]-0.9,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red28" value="${[(red28p[0]-basebrick[0])*cos(basebrick[3])-(red28p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red28p[0]-basebrick[0])*sin(basebrick[3])+(red28p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red28p[2],red28p[3]+basebrick[3]]}"/>
+<xacro:property name="red29p" value="${[basebrick[0]+2.73,basebrick[1]-0.3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red29" value="${[(red29p[0]-basebrick[0])*cos(basebrick[3])-(red29p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red29p[0]-basebrick[0])*sin(basebrick[3])+(red29p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red29p[2],red29p[3]+basebrick[3]]}"/>
+<xacro:property name="red30p" value="${[basebrick[0]+2.73,basebrick[1]+0.3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red30" value="${[(red30p[0]-basebrick[0])*cos(basebrick[3])-(red30p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red30p[0]-basebrick[0])*sin(basebrick[3])+(red30p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red30p[2],red30p[3]+basebrick[3]]}"/>
+<xacro:property name="red31p" value="${[basebrick[0]+2.73,basebrick[1]+0.9,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red31" value="${[(red31p[0]-basebrick[0])*cos(basebrick[3])-(red31p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red31p[0]-basebrick[0])*sin(basebrick[3])+(red31p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red31p[2],red31p[3]+basebrick[3]]}"/>
+<xacro:property name="red32p" value="${[basebrick[0]+2.73,basebrick[1]+1.5,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red32" value="${[(red32p[0]-basebrick[0])*cos(basebrick[3])-(red32p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red32p[0]-basebrick[0])*sin(basebrick[3])+(red32p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red32p[2],red32p[3]+basebrick[3]]}"/>
+<xacro:property name="red33p" value="${[basebrick[0]+2.73,basebrick[1]+2.1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red33" value="${[(red33p[0]-basebrick[0])*cos(basebrick[3])-(red33p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red33p[0]-basebrick[0])*sin(basebrick[3])+(red33p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red33p[2],red33p[3]+basebrick[3]]}"/>
+<xacro:property name="red34p" value="${[basebrick[0]+2.73,basebrick[1]+2.7,basebrick[2]+0.03,0]}"/>
+<xacro:property name="red34" value="${[(red34p[0]-basebrick[0])*cos(basebrick[3])-(red34p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red34p[0]-basebrick[0])*sin(basebrick[3])+(red34p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red34p[2],red34p[3]+basebrick[3]]}"/>
+
+<xacro:property name="blue01p" value="${[basebrick[0]-0.39,basebrick[1]-3.33,basebrick[2]+0.03,0]}"/>
 <xacro:property name="blue01" value="${[(blue01p[0]-basebrick[0])*cos(basebrick[3])-(blue01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue01p[0]-basebrick[0])*sin(basebrick[3])+(blue01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue01p[2],blue01p[3]+basebrick[3]]}"/>
-<xacro:property name="blue02p" value="${[basebrick[0]-0.39,basebrick[1]-3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue02p" value="${[basebrick[0]-0.39,basebrick[1]-1.998,basebrick[2]+0.03,0]}"/>
 <xacro:property name="blue02" value="${[(blue02p[0]-basebrick[0])*cos(basebrick[3])-(blue02p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue02p[0]-basebrick[0])*sin(basebrick[3])+(blue02p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue02p[2],blue02p[3]+basebrick[3]]}"/>
-<xacro:property name="blue03p" value="${[basebrick[0]-0.39,basebrick[1]+1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue03p" value="${[basebrick[0]-0.39,basebrick[1]-0.666,basebrick[2]+0.03,0]}"/>
 <xacro:property name="blue03" value="${[(blue03p[0]-basebrick[0])*cos(basebrick[3])-(blue03p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue03p[0]-basebrick[0])*sin(basebrick[3])+(blue03p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue03p[2],blue03p[3]+basebrick[3]]}"/>
-<xacro:property name="blue04p" value="${[basebrick[0]-0.39,basebrick[1]+3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue04p" value="${[basebrick[0]-0.39,basebrick[1]+0.666,basebrick[2]+0.03,0]}"/>
 <xacro:property name="blue04" value="${[(blue04p[0]-basebrick[0])*cos(basebrick[3])-(blue04p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue04p[0]-basebrick[0])*sin(basebrick[3])+(blue04p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue04p[2],blue04p[3]+basebrick[3]]}"/>
-<xacro:property name="green01p" value="${[basebrick[0]+0.39,basebrick[1]-1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue05p" value="${[basebrick[0]-0.39,basebrick[1]+1.998,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue05" value="${[(blue05p[0]-basebrick[0])*cos(basebrick[3])-(blue05p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue05p[0]-basebrick[0])*sin(basebrick[3])+(blue05p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue05p[2],blue05p[3]+basebrick[3]]}"/>
+<xacro:property name="blue06p" value="${[basebrick[0]-0.39,basebrick[1]+3.33,basebrick[2]+0.03,0]}"/>
+<xacro:property name="blue06" value="${[(blue06p[0]-basebrick[0])*cos(basebrick[3])-(blue06p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(blue06p[0]-basebrick[0])*sin(basebrick[3])+(blue06p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],blue06p[2],blue06p[3]+basebrick[3]]}"/>
+
+<xacro:property name="green01p" value="${[basebrick[0]+0.39,basebrick[1]-3.25,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green01" value="${[(green01p[0]-basebrick[0])*cos(basebrick[3])-(green01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green01p[0]-basebrick[0])*sin(basebrick[3])+(green01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green01p[2],green01p[3]+basebrick[3]]}"/>
-<xacro:property name="green02p" value="${[basebrick[0]+0.39,basebrick[1]-3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green02p" value="${[basebrick[0]+0.39,basebrick[1]-1.95,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green02" value="${[(green02p[0]-basebrick[0])*cos(basebrick[3])-(green02p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green02p[0]-basebrick[0])*sin(basebrick[3])+(green02p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green02p[2],green02p[3]+basebrick[3]]}"/>
-<xacro:property name="green03p" value="${[basebrick[0]+0.39,basebrick[1]+1,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green03p" value="${[basebrick[0]+0.39,basebrick[1]-0.65,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green03" value="${[(green03p[0]-basebrick[0])*cos(basebrick[3])-(green03p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green03p[0]-basebrick[0])*sin(basebrick[3])+(green03p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green03p[2],green03p[3]+basebrick[3]]}"/>
-<xacro:property name="green04p" value="${[basebrick[0]+0.39,basebrick[1]+3,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green04p" value="${[basebrick[0]+0.39,basebrick[1]+0.65,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green04" value="${[(green04p[0]-basebrick[0])*cos(basebrick[3])-(green04p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green04p[0]-basebrick[0])*sin(basebrick[3])+(green04p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green04p[2],green04p[3]+basebrick[3]]}"/>
-<xacro:property name="green05p" value="${[basebrick[0]+0.39,basebrick[1]-2,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green05p" value="${[basebrick[0]+0.39,basebrick[1]+1.95,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green05" value="${[(green05p[0]-basebrick[0])*cos(basebrick[3])-(green05p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green05p[0]-basebrick[0])*sin(basebrick[3])+(green05p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green05p[2],green05p[3]+basebrick[3]]}"/>
-<xacro:property name="green06p" value="${[basebrick[0]+0.39,basebrick[1]+2,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green06p" value="${[basebrick[0]+0.39,basebrick[1]+3.25,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green06" value="${[(green06p[0]-basebrick[0])*cos(basebrick[3])-(green06p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green06p[0]-basebrick[0])*sin(basebrick[3])+(green06p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green06p[2],green06p[3]+basebrick[3]]}"/>
-<xacro:property name="green07p" value="${[basebrick[0]+0.39,basebrick[1]+0,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green07p" value="${[basebrick[0]+1.17,basebrick[1]-3.25,basebrick[2]+0.03,0]}"/>
 <xacro:property name="green07" value="${[(green07p[0]-basebrick[0])*cos(basebrick[3])-(green07p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green07p[0]-basebrick[0])*sin(basebrick[3])+(green07p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green07p[2],green07p[3]+basebrick[3]]}"/>
+<xacro:property name="green08p" value="${[basebrick[0]+1.17,basebrick[1]-1.95,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green08" value="${[(green08p[0]-basebrick[0])*cos(basebrick[3])-(green08p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green08p[0]-basebrick[0])*sin(basebrick[3])+(green08p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green08p[2],green08p[3]+basebrick[3]]}"/>
+<xacro:property name="green09p" value="${[basebrick[0]+1.17,basebrick[1]-0.65,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green09" value="${[(green09p[0]-basebrick[0])*cos(basebrick[3])-(green09p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green09p[0]-basebrick[0])*sin(basebrick[3])+(green09p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green09p[2],green09p[3]+basebrick[3]]}"/>
+<xacro:property name="green40p" value="${[basebrick[0]+1.17,basebrick[1]+0.65,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green40" value="${[(green40p[0]-basebrick[0])*cos(basebrick[3])-(green40p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green40p[0]-basebrick[0])*sin(basebrick[3])+(green40p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green40p[2],green40p[3]+basebrick[3]]}"/>
+<xacro:property name="green41p" value="${[basebrick[0]+1.17,basebrick[1]+1.95,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green41" value="${[(green41p[0]-basebrick[0])*cos(basebrick[3])-(green41p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green41p[0]-basebrick[0])*sin(basebrick[3])+(green41p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green41p[2],green41p[3]+basebrick[3]]}"/>
+<xacro:property name="green42p" value="${[basebrick[0]+1.17,basebrick[1]+3.25,basebrick[2]+0.03,0]}"/>
+<xacro:property name="green42" value="${[(green42p[0]-basebrick[0])*cos(basebrick[3])-(green42p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(green42p[0]-basebrick[0])*sin(basebrick[3])+(green42p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],green42p[2],green42p[3]+basebrick[3]]}"/>
+
 <xacro:property name="orange01p" value="${[basebrick[0]-1.17,basebrick[1]-1,basebrick[2]+0.03,0]}"/>
 <xacro:property name="orange01" value="${[(orange01p[0]-basebrick[0])*cos(basebrick[3])-(orange01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(orange01p[0]-basebrick[0])*sin(basebrick[3])+(orange01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],orange01p[2],orange01p[3]+basebrick[3]]}"/>
 <xacro:property name="orange02p" value="${[basebrick[0]-1.17,basebrick[1]-3,basebrick[2]+0.03,0]}"/>
@@ -80,7 +119,7 @@
 <xacro:property name="orange04" value="${[(orange04p[0]-basebrick[0])*cos(basebrick[3])-(orange04p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(orange04p[0]-basebrick[0])*sin(basebrick[3])+(orange04p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],orange04p[2],orange04p[3]+basebrick[3]]}"/>
 <!-- WALL 1 Location (L-SHAPE FRAME) -->
 <!-- Change "L_frame" to modify location and yaw -->
-<xacro:property name="L_frame" value="${[41,15,0.005,3.1416]}"/>
+<xacro:property name="L_frame" value="${[17,32,0.005,3.1416]}"/>
 <!-- WALL 2 Location-->
 <!-- Change "dropwall_center" to modify location and yaw -->
 <xacro:property name="dropwall_center" value="${[40,30,0,0]}"/>
@@ -95,7 +134,7 @@
 <xacro:property name="dropwall04" value="${[(dropwall04p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall04p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall04p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall04p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall04p[2],dropwall04p[3]+dropwall_center[3]]}"/>
 <!-- UGV Bricks Location-->
 <!-- Change ugvbricks to modify location and yaw for the entire pile-->
-<xacro:property name="ugvbricks" value="${[15,15,0,0]}"/>
+<xacro:property name="ugvbricks" value="${[15,12,0,0]}"/>
 
 <xacro:property name="ugv_orange_centerp" value="${[ugvbricks[0]+0.1,ugvbricks[1]+0.9,ugvbricks[2],0]}"/>
 <xacro:property name="ugv_orange_center" value="${[(ugv_orange_centerp[0]-ugvbricks[0])*cos(ugvbricks[3])-(ugv_orange_centerp[1]-ugvbricks[1])*sin(ugvbricks[3])+ugvbricks[0],(ugv_orange_centerp[0]-ugvbricks[0])*sin(ugvbricks[3])+(ugv_orange_centerp[1]-ugvbricks[1])*cos(ugvbricks[3])+ugvbricks[1],ugv_orange_centerp[2],ugv_orange_centerp[3]+ugvbricks[3]]}"/>
@@ -310,12 +349,78 @@
       </include>
       <pose frame=''>${red22[0]*cos(yaw)-red22[1]*sin(yaw)} ${red22[0]*sin(yaw)+red22[1]*cos(yaw)} ${red22[2]} 0 0 ${red22[3]+yaw} </pose>
     </model>
-    <!-- <single_red_brick id="Red_brick_23" pose="${red23[0]*cos(yaw)-red23[1]*sin(yaw)} ${red23[0]*sin(yaw)+red23[1]*cos(yaw)} ${red23[2]} 0 0 ${red23[3]+yaw}" sx="0.2" sy="0.3" sz="0.2" mass="1.0" mat="Gazebo/Red" /> -->
+    
     <model name="Red_brick_23">
       <include>
         <uri>model://single_red_brick</uri>
       </include>
       <pose frame=''>${red23[0]*cos(yaw)-red23[1]*sin(yaw)} ${red23[0]*sin(yaw)+red23[1]*cos(yaw)} ${red23[2]} 0 0 ${red23[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_24">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red24[0]*cos(yaw)-red24[1]*sin(yaw)} ${red24[0]*sin(yaw)+red24[1]*cos(yaw)} ${red24[2]} 0 0 ${red24[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_25">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red25[0]*cos(yaw)-red25[1]*sin(yaw)} ${red25[0]*sin(yaw)+red25[1]*cos(yaw)} ${red25[2]} 0 0 ${red25[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_26">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red26[0]*cos(yaw)-red26[1]*sin(yaw)} ${red26[0]*sin(yaw)+red26[1]*cos(yaw)} ${red26[2]} 0 0 ${red26[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_27">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red27[0]*cos(yaw)-red27[1]*sin(yaw)} ${red27[0]*sin(yaw)+red27[1]*cos(yaw)} ${red27[2]} 0 0 ${red27[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_28">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red28[0]*cos(yaw)-red28[1]*sin(yaw)} ${red28[0]*sin(yaw)+red28[1]*cos(yaw)} ${red28[2]} 0 0 ${red28[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_29">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red29[0]*cos(yaw)-red29[1]*sin(yaw)} ${red29[0]*sin(yaw)+red29[1]*cos(yaw)} ${red29[2]} 0 0 ${red29[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_30">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red30[0]*cos(yaw)-red30[1]*sin(yaw)} ${red30[0]*sin(yaw)+red30[1]*cos(yaw)} ${red30[2]} 0 0 ${red30[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_31">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red31[0]*cos(yaw)-red31[1]*sin(yaw)} ${red31[0]*sin(yaw)+red31[1]*cos(yaw)} ${red31[2]} 0 0 ${red31[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_32">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red32[0]*cos(yaw)-red32[1]*sin(yaw)} ${red32[0]*sin(yaw)+red32[1]*cos(yaw)} ${red32[2]} 0 0 ${red32[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_33">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red33[0]*cos(yaw)-red33[1]*sin(yaw)} ${red33[0]*sin(yaw)+red33[1]*cos(yaw)} ${red33[2]} 0 0 ${red33[3]+yaw} </pose>
+    </model>
+    <model name="Red_brick_34">
+      <include>
+        <uri>model://single_red_brick</uri>
+      </include>
+      <pose frame=''>${red34[0]*cos(yaw)-red34[1]*sin(yaw)} ${red34[0]*sin(yaw)+red34[1]*cos(yaw)} ${red34[2]} 0 0 ${red34[3]+yaw} </pose>
     </model>
 
     <!-- <single_blue_brick id="Blue_brick_01" pose="${blue01[0]*cos(yaw)-blue01[1]*sin(yaw)} ${blue01[0]*sin(yaw)+blue01[1]*cos(yaw)} ${blue01[2]} 0 0 ${blue01[3]+yaw}" sx="0.2" sy="1.2" sz="0.2" mass="1.5" mat="Gazebo/Blue" /> -->
@@ -346,7 +451,18 @@
       </include>
       <pose frame=''>${blue04[0]*cos(yaw)-blue04[1]*sin(yaw)} ${blue04[0]*sin(yaw)+blue04[1]*cos(yaw)} ${blue04[2]} 0 0 ${blue04[3]+yaw} </pose>
     </model>
-
+    <model name="Blue_brick_05">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue05[0]*cos(yaw)-blue05[1]*sin(yaw)} ${blue05[0]*sin(yaw)+blue05[1]*cos(yaw)} ${blue05[2]} 0 0 ${blue05[3]+yaw} </pose>
+    </model>
+    <model name="Blue_brick_06">
+      <include>
+        <uri>model://single_blue_brick</uri>
+      </include>
+      <pose frame=''>${blue06[0]*cos(yaw)-blue06[1]*sin(yaw)} ${blue06[0]*sin(yaw)+blue06[1]*cos(yaw)} ${blue06[2]} 0 0 ${blue06[3]+yaw} </pose>
+    </model>
     <!-- <single_green_brick id="Green_brick_01" pose="${green01[0]*cos(yaw)-green01[1]*sin(yaw)} ${green01[0]*sin(yaw)+green01[1]*cos(yaw)} ${green01[2]} 0 0 ${green01[3]+yaw}" sx="0.2" sy="0.6" sz="0.2" mass="1.0" mat="Gazebo/Green" /> -->
     <model name="Green_brick_01">
       <include>
@@ -396,7 +512,36 @@
       </include>
       <pose frame=''>${green07[0]*cos(yaw)-green07[1]*sin(yaw)} ${green07[0]*sin(yaw)+green07[1]*cos(yaw)} ${green07[2]} 0 0 ${green07[3]+yaw} </pose>
     </model>
-
+    <model name="Green_brick_08">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green08[0]*cos(yaw)-green08[1]*sin(yaw)} ${green08[0]*sin(yaw)+green08[1]*cos(yaw)} ${green08[2]} 0 0 ${green08[3]+yaw} </pose>
+    </model>
+    <model name="Green_brick_09">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green09[0]*cos(yaw)-green09[1]*sin(yaw)} ${green09[0]*sin(yaw)+green09[1]*cos(yaw)} ${green09[2]} 0 0 ${green09[3]+yaw} </pose>
+    </model>
+    <model name="Green_brick_40">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green40[0]*cos(yaw)-green40[1]*sin(yaw)} ${green40[0]*sin(yaw)+green40[1]*cos(yaw)} ${green40[2]} 0 0 ${green40[3]+yaw} </pose>
+    </model>
+    <model name="Green_brick_41">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green41[0]*cos(yaw)-green41[1]*sin(yaw)} ${green41[0]*sin(yaw)+green41[1]*cos(yaw)} ${green41[2]} 0 0 ${green41[3]+yaw} </pose>
+    </model>
+    <model name="Green_brick_42">
+      <include>
+        <uri>model://single_green_brick</uri>
+      </include>
+      <pose frame=''>${green42[0]*cos(yaw)-green42[1]*sin(yaw)} ${green42[0]*sin(yaw)+green42[1]*cos(yaw)} ${green42[2]} 0 0 ${green42[3]+yaw} </pose>
+    </model>
     <!-- <single_orange_brick id="Orange_brick_01" pose="${orange01[0]*cos(yaw)-orange01[1]*sin(yaw)} ${orange01[0]*sin(yaw)+orange01[1]*cos(yaw)} ${orange01[2]} 0 0 ${orange01[3]+yaw}" sx="0.2" sy="1.8" sz="0.2" mass="2.0" mat="Gazebo/Orange" /> -->
     <model name="Orange_brick_01">
       <include>
