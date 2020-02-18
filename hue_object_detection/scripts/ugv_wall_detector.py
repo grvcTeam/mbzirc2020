@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import rospy, tf, cv2
 import numpy as np
-from math import sqrt, pi
+from math import sqrt
 from tf import transformations
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -76,19 +76,7 @@ class frame_detector:
         closest = dist
         index = i
     return box[index], index
-
-  def create_point(self, x, y, z, frame, angle):
-    point = PoseStamped()
-    point.pose.position.x = x
-    point.pose.position.y = y
-    point.pose.position.z = z
-    quaternion = transformations.quaternion_from_euler(-np.pi, 0, angle*(np.pi/180))
-    point.pose.orientation.x = quaternion[0]
-    point.pose.orientation.y = quaternion[1]
-    point.pose.orientation.z = quaternion[2]
-    point.pose.orientation.w = quaternion[3]
-    point.header.stamp = rospy.Time(0)
-    point.header.frame_id = frame
+    
     return point
 
   def execute(self):
@@ -124,11 +112,10 @@ class frame_detector:
       self.warped = mask
 
       if (cv2.contourArea(contorno) < 0.7*(width*height - black_pixels)): # TODO - Why 0.7
-        if self.debug_view:
-          print "its a corner"
         corner, idx = self.closest_point(box, contorno)
         cv2.circle(self.update_img, (corner[0], corner[1]), 10, (255, 0, 0), 2)
         ponto = self.converte_xy(corner[0],corner[1])
+        angle = rect[2]+90*idx
 
         # Fill ObjectDetection msg
         object_detected = ObjectDetection()
@@ -136,12 +123,16 @@ class frame_detector:
         object_detected.header.stamp = rospy.Time.now()
         object_detected.header.frame_id = self.frame
 
-        point = self.create_point(ponto[0],ponto[1],ponto[2],self.frame, rect[2]+90*idx) # TODO - Remove function, do operation in line
-        object_detected.pose.pose.position = point.pose.position
-        object_detected.pose.pose.orientation.x = self.L_angle[0] # TODO - Calculate L angle - mult quaternions
-        object_detected.pose.pose.orientation.y = self.L_angle[1] # TODO - Calculate L angle - mult quaternions
-        object_detected.pose.pose.orientation.z = self.L_angle[2] # TODO - Calculate L angle - mult quaternions
-        object_detected.pose.pose.orientation.w = self.L_angle[3] # TODO - Calculate L angle - mult quaternions
+        object_detected.pose.pose.position.x = ponto[0]
+        object_detected.pose.pose.position.y = ponto[1]
+        object_detected.pose.pose.position.z = ponto[2]
+
+        quaternion = transformations.quaternion_from_euler(-np.pi, 0, angle*(np.pi/180)) # TODO: Why -pi roll angle
+        object_detected.pose.pose.orientation.x = quaternion[0]
+        object_detected.pose.pose.orientation.y = quaternion[1]
+        object_detected.pose.pose.orientation.z = quaternion[2]
+        object_detected.pose.pose.orientation.w = quaternion[3]
+
         object_detected.pose.covariance = self.covariance_matrix
 
         # Scale = size of L (m)
@@ -159,10 +150,12 @@ class frame_detector:
         object_list_detected.stamp = rospy.Time.now()
         object_list_detected.objects = [object_detected]
 
-        #self.point_pub.publish(self.create_point(ponto[0],ponto[1],ponto[2], self.frame, rect[2]+90*idx)) # TODO - Remove information related with old message
         self.sensed_pub.publish(object_list_detected) # TODO - Publish new message
+
+        if self.debug_view:
+          print "Corner found - Angle:"+str(angle)
       elif self.debug_view:
-        print "no cornerino"
+        print "Corner not found"
 
     if self.debug_view:
       cv2.imshow("image", self.update_img)
