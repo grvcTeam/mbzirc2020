@@ -268,7 +268,7 @@ class CentralUnit(object):
                 for i in range(len(piles_idx)):
 
                     pile_info = {
-                        'color': self.piles[piles_idx[i]].color, 
+                        'color': self.piles[piles_idx[i]].color, # TODO: IndexError: list index out of range
                         'id': self.piles[piles_idx[i]].id, 
                         'area': self.piles[piles_idx[i]].scale.x*self.piles[piles_idx[i]].scale.y, 
                         'x': self.piles[piles_idx[i]].pose.pose.position.x, 
