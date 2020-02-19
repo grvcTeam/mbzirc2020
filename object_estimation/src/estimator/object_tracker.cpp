@@ -74,6 +74,10 @@ ObjectTracker::~ObjectTracker()
 */
 void ObjectTracker::initialize(YAML::Node node)
 {
+	// Update timer
+	update_timer_.reset();
+	update_count_ = 0;
+	
 	if(node["sub_type"])
 	{
 		obj_subtype_ = subtype_from_string(node["sub_type"].as<string>());
@@ -163,10 +167,6 @@ void ObjectTracker::initialize(YAML::Node node)
 		scale_[2] = node["scale_z"].as<float>();
 		fixed_scale_ = true;
 	}
-
-	// Update timer
-	update_timer_.reset();
-	update_count_ = 0;
 }
 
 /**

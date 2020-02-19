@@ -107,7 +107,7 @@ class BrickTask(object):
 def get_brick_task_list(wall_pattern, brick_scales):
     brick_task_list = []
     for layer_index in range(2):
-        current_y = [0.0, 0.0, 0.0]
+        current_y = [-2.0, -2.0, -2.0]
         for brick_index in range(7):
             for segment_index in range(3):  # orange is last!
                 brick = BrickTask()
@@ -120,7 +120,7 @@ def get_brick_task_list(wall_pattern, brick_scales):
                 current_y[segment_index] = brick.position + 0.5 * brick_scales[brick.color].y + 0.065
 
     for layer_index in range(2):
-        current_y = 0.0
+        current_y = -2.0
         for brick_index in range(2):
             brick = BrickTask()
             brick.color = wall_pattern[3][layer_index][brick_index]

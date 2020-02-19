@@ -3,6 +3,7 @@
   <arg name="robot_model" default="mbzirc2020" />
   <arg name="agent_id" default="1" />
   <arg name="mode" default="real" />
+  <arg if="$(eval mode == 'sim')" name="append_xacro_args" default="challenge=2" />
   
   <arg name="color" default="Orange" />
   <arg name="x" default="10" />
@@ -25,7 +26,7 @@
     <arg if="$(eval mode == 'sim')" name="z" value="$(arg z)"/>
     <arg if="$(eval mode == 'sim')" name="yaw" value="$(arg yaw)"/>
     <arg if="$(eval mode == 'sim')" name="frame_id" value="arena"/>
-    <arg if="$(eval mode == 'sim')" name="append_xacro_args" value="challenge=2"/>
+    <arg if="$(eval mode == 'sim')" name="append_xacro_args" value="$(arg append_xacro_args)"/>
 
   </include>
 </launch>
