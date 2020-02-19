@@ -19,6 +19,7 @@
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="append_xacro_args"   value="challenge=2" />
         <arg name="agent_id" value="1"/>
         <arg name="color" value="Orange" />
         <arg name="x"     value="$(arg x1)" />
@@ -59,6 +60,7 @@
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="append_xacro_args"   value="challenge=2" />
         <arg name="agent_id" value="2"/>
         <arg name="color" value="Indigo" />
         <arg name="x"     value="$(arg x2)" />
@@ -99,6 +101,7 @@
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="append_xacro_args"   value="challenge=2" />
         <arg name="agent_id" value="3"/>
         <arg name="color" value="Yellow" />
         <arg name="x"     value="$(arg x3)" />
