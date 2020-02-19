@@ -281,7 +281,6 @@ protected:
         return estimators_[req.object_type]->setTargetStatus(req.object_id, object_status);
     }
 
-    // TODO: Move to some kind of utils lib, as it is repeated
     int obj_type_from_string(const string& type, vector<int> &detectors) 
     {
 

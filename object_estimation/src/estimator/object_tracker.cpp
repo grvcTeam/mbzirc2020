@@ -447,7 +447,6 @@ double ObjectTracker::getAssociationDistance(ObjectDetection* z)
 	{
 		double prob_z, prob_color = 0.0;
 
-		// TODO. Distance to borders instead of to centroid?
 		distance = getDistance(z);
 
 		/*
