@@ -39,7 +39,7 @@ import mbzirc_comm_objs.srv as srv
 import tf2_py as tf2
 import tf.transformations
 
-from geometry_msgs.msg import PoseStamped, Vector3
+from geometry_msgs.msg import PoseStamped, Vector3, Quaternion
 from tasks.move import TakeOff, FollowPath
 from tasks.build import Pick, Place
 from utils.manager import TaskManager
@@ -426,8 +426,36 @@ class CentralUnit(object):
 
         self.broadcaster.sendTransform(wall_transforms)
 
+    def reallignWalls(self):
+        for i in range(3):
+            orig_id = i
+            dest_id = i+1
+            if i == 4:
+                orig_id = i
+                dest_id = i-1
+
+            dx = self.uav_walls[self.wall_segment_ids[dest_id]].pose.position.x - self.uav_walls[self.wall_segment_ids[orig_id]].pose.position.x
+            dy = self.uav_walls[self.wall_segment_ids[dest_id]].pose.position.y - self.uav_walls[self.wall_segment_ids[orig_id]].pose.position.y
+            angle = atan2(dy,dx)
+            d_orig = dx*dx + dy*dy
+
+            wall_quaternion = [self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.x,self.wall_segment_ids[orig_id]].pose.orientation.y,self.wall_segment_ids[orig_id]].pose.orientation.z,self.wall_segment_ids[orig_id]].pose.orientation.w]
+            (wall_roll,wall_pitch,wall_yaw) = tf.transformations.euler_from_quaternion(wall_quaternion)
+            dx_moved = dx + 2 * sin(wall_yaw)
+            dy_moved = dy + 2 * cos(wall_yaw)
+            d_moved = dx_moved*dx_moved + dy_moved*dy_moved
+
+            if (d_moved > d_orig and i < 3) or (d_moved < d_orig and i == 3):
+                # The next wall is in the other direction, change orientation by 180 degrees
+                new_quaternion = tf.transformations.quaternion_from_euler(0.0,0.0,wall_yaw+pi)
+                self.wall_segment_ids[orig_id]].pose.orientation = Quaternion(*new_quaternion)
+
     # Return False if wall building is aborted
     def build_wall(self):
+
+        # Reallign walls and publish static wall tfs
+        self.reallignWalls()
+        self.publishWallTfs()
 
         # Take central position from walls and piles and compute waiting positions
         p1 = self.uav_walls[self.wall_segment_ids[1]]
