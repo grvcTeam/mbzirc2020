@@ -83,6 +83,7 @@ void ObjectTracker::initialize(YAML::Node node)
 	if(node["status"] && node["status"].as<string>() == "active" )
 	{
 		status_ = ACTIVE;
+		update_count_ = 10.0;
 	}
 	else 
 		status_ = INACTIVE;
