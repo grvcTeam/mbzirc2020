@@ -53,7 +53,7 @@ class Pick(smach.StateMachine):
                                     remapping = {'waypoint': 'above_pile_pose'},
                                     transitions = {'succeeded': 'BACK_TO_WAITING_AREA'})
 
-            smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
+            smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),TODO
                                     remapping = {'waypoint': 'waiting_pose'},
                                     transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
 
