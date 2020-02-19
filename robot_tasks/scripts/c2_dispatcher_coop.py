@@ -32,7 +32,7 @@ import copy
 import rospy
 import smach
 import yaml
-from math import pi,fabs,sin,cos,sqrt
+from math import pi,fabs,sin,cos,sqrt,atan2
 # from enum import Enum, unique
 import mbzirc_comm_objs.msg as msg
 import mbzirc_comm_objs.srv as srv
@@ -45,7 +45,7 @@ from tasks.build import Pick, Place
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import all_piles_are_found, all_walls_are_found, get_build_wall_sequence, parse_wall, uav_piles_are_found, uav_walls_are_found, get_brick_task_list, save_brick_task_list
+from utils.wall import all_piles_are_found, all_walls_are_found, parse_wall, uav_piles_are_found, uav_walls_are_found, get_brick_task_list, save_brick_task_list
 
 brick_scales = {}
 brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.2, y = 0.3, z = 0.2)
@@ -105,8 +105,6 @@ class CentralUnit(object):
         if len(self.available_robots) == 0:
             rospy.logerr('No available UAVs for Dispatcher')
         
-        # TODO: auto discovery (and update!)?
-
         self.robots = {}
         self.robot_states = {}
         for robot_id in self.available_robots:
@@ -118,22 +116,17 @@ class CentralUnit(object):
         for robot_id in self.available_robots:
             self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 5.0)
 
+        self.waiting_pose = []
+        self.piles = []
 
-        self.ugv_piles = {}
-        self.ugv_pile_areas = {}
-        self.ugv_wall = None
         self.uav_piles = {}
-        self.uav_pile_areas = {}
-        self.uav_pile_ids = {}
+        self.ugv_piles = {}
+
+        self.ugv_wall = None
         self.uav_walls = {}
-        self.objects_locked = False
-
-        self.build_wall_sequence = {}
-        self.current_wall_segment = 0 
-        self.current_wall_layer = 0
-        self.current_wall_brick = 0
-
         self.wall_segment_ids = []
+
+        self.objects_locked = False
         
         rospy.Subscriber("estimated_objects", msg.ObjectList, self.estimation_callback)
 
@@ -142,54 +135,30 @@ class CentralUnit(object):
     def estimation_callback(self, data):
 
         if not self.objects_locked:
-
-            # Reset information
             if len(data.objects) >= 0 and data.objects[0].type == msg.Object.TYPE_PILE:
-                self.uav_piles = {}
-                self.uav_pile_areas = {}
-                self.ugv_piles = {}
-                self.ugv_pile_areas = {}
+                self.piles = copy.deepcopy(data.objects)
+
             elif len(data.objects) >= 0 and data.objects[0].type == msg.Object.TYPE_WALL:
                 self.ugv_wall = None
                 self.uav_walls = {}
             
-            for obj in data.objects:
-                color = obj.color 
-                pose = PoseStamped()
-                pose.header = obj.header
-                pose.pose = obj.pose.pose
-                obj_area = obj.scale.x*obj.scale.y
-
-                
-                if obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UAV:
-
-                    # We keep largest piles for each color
-                    if color not in self.uav_piles or obj_area >= self.uav_pile_areas[color]:
-                        
-                        self.uav_piles[color] = pose
-                        self.uav_pile_areas[color] = obj_area
-                        self.uav_pile_ids[color] = obj.id  
-
-                elif obj.type == msg.Object.TYPE_PILE and obj.sub_type == msg.Object.SUBTYPE_UGV:
-
-                    if color not in self.ugv_piles or obj_area >= self.ugv_pile_areas[color]:
-                        
-                        self.ugv_piles[color] = pose
-                        self.ugv_pile_areas[color] = obj_area 
-                
-                elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
-                    self.uav_walls[obj.id] = pose
-                
-                elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UGV:
-                    # If several UGV walls, we keep the most recent one
-                    self.ugv_wall = pose
+                for obj in data.objects:
+                    pose = PoseStamped()
+                    pose.header = obj.header
+                    pose.pose = obj.pose.pose
+                   
+                    elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
+                        self.uav_walls[obj.id] = pose
+                    
+                    elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UGV:
+                        # If several UGV walls, we keep the most recent one
+                        self.ugv_wall = pose
 
 
     def take_off(self):
         for robot_id in self.available_robots:
-            # TODO: clear all regions?
             userdata = smach.UserData()
-            userdata.height = self.flight_levels[robot_id]  # TODO: Why not directly inside tasks?
+            userdata.height = self.flight_levels[robot_id]  
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
@@ -244,7 +213,74 @@ class CentralUnit(object):
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
         
-    def clustersConnected(self, top_segment, bottom_segment):
+    def compute_waiting_poses(self, wall_position, pile_position):
+        center = [(wall_position.x+pile_position.x)/2.0, (wall_position.y+pile_position.y)/2.0]
+        wall_to_pile = [pile_position.x-wall_position.x, pile_position.y-wall_position.y]
+        yaw = atan2(wall_to_pile.y, wall_to_pile.x)
+
+        # Waiting poses: [UAV1-pile, UAV2-pile, UAV1-wall, UAV2-wall]
+        d = 5.0
+        self.waiting_pose = [[center[0]+d*cos(pi/4.0+yaw),center[1]+d*sin(pi/4.0+yaw)],
+                             [center[0]+d*cos(3*pi/4.0+yaw),center[1]+d*sin(3*pi/4.0+yaw)],
+                             [center[0]+d*cos(-pi/4.0+yaw),center[1]+d*sin(-pi/4.0+yaw)],
+                             [center[0]+d*cos(-3*pi/4.0+yaw),center[1]+d*sin(-3*pi/4.0+yaw)]]
+
+    def cluster_piles(self):
+
+        dist_th = 7.0 
+
+        if len(self.piles) == 0:
+            rospy.logerr('No piles in cached')
+
+        else:
+            piles_idx = range(len(self.piles))
+            
+            # clusters: list. Each cluster dict with 'centroid'->[x,y], 'color'->{id,area} 
+            clusters = []
+
+            while(len(piles_idx) > 0):
+
+                # {color, id, area, x, y}
+                pile_info = {
+                    'color': self.piles[piles_idx[0]].color, 
+                    'id': self.pile[piles_idx[0]].id,
+                    'area': self.pile[piles_idx[0]].scale[0]*self.pile[piles_idx[0]].scale[1], 
+                    'x': self.pile[piles_idx[0]].pose.pose.position.x, 
+                    'y': self.pile[piles_idx[0]].pose.pose.position.y
+                }
+
+                # Init cluster with first pile available
+                cluster = {}
+                cluster['centroid'] = [pile_info['x'], pile_info['y'] ]
+                cluster[pile_info['color']] = {'id': pile_info['id'], 'area': pile_info['area'] ]
+
+                del piles_idx[0]
+
+                for i in range(len(piles_idx)):
+
+                    pile_info = {
+                        'color': self.piles[piles_idx[i]].color, 
+                        'id': self.pile[piles_idx[i]].id, 
+                        'area': self.pile[piles_idx[i]].scale[0]*self.pile[piles_idx[i]].scale[1], 
+                        'x': self.pile[piles_idx[i]].pose.pose.position.x, 
+                        'y': self.pile[piles_idx[i]].pose.pose.position.y
+                    }
+
+                    dist = sqrt( (pile_info['x']-cluster['centroid'][0])**2 + (pile_info['y']-cluster['centroid'][1])**2 ) 
+                    if dist <= dist_th:
+                        
+                        if pile_info['color'] in cluster and pile_info['area'] > cluster[pile_info['color']]['area']:
+
+                            cluster['centroid'] = [ (cluster['centroid'][0]+pile_info['x'])/2.0 , (cluster['centroid'][1]+pile_info['y'])/2.0 ]                       
+                            cluster[pile_info['color']]['id'] = pile_info['id']
+                            cluster[pile_info['color']]['area'] = pile_info['area']
+
+                        # Delete pile
+                        del piles_idx[i]
+                
+                clusters.append(cluster)
+
+    def clusters_connected(self, top_segment, bottom_segment):
 
         result = False
 
@@ -298,7 +334,7 @@ class CentralUnit(object):
                     top_segment = self.uav_walls[clusters[i][-1]]
                     bottom_segment = self.uav_walls[clusters[j][0]]
 
-                    if self.clustersConnected(top_segment,bottom_segment):
+                    if self.clusters_connected(top_segment,bottom_segment):
                         clusters[i].extend(clusters[j])
                         changed = True
                         del clusters[j]
@@ -307,7 +343,7 @@ class CentralUnit(object):
                         top_segment = self.uav_walls[clusters[j][-1]]
                         bottom_segment = self.uav_walls[clusters[i][0]]
 
-                        if self.clustersConnected(top_segment,bottom_segment):
+                        if self.clusters_connected(top_segment,bottom_segment):
                             clusters[j].extend(clusters[i])  
                             clusters[i] = clusters[j]
                             changed = True
@@ -328,19 +364,6 @@ class CentralUnit(object):
 
         return found
 
-    def calculate_wall_sequence(self):
-
-        self.build_wall_sequence = {}
-        for segment,wall_id in enumerate(self.wall_segment_ids):
-        
-            if segment != self.n_segments-1:    
-                offset = 0.065
-            else:
-                offset = 0.4
-
-            wall_pose = self.uav_walls[wall_id]
-            self.build_wall_sequence[segment] = get_build_wall_sequence(self.wall_pattern[segment], brick_scales, wall_pose, offset)
-
     # Return False if wall building is aborted
     def build_wall(self):
         while not rospy.is_shutdown():
@@ -357,7 +380,7 @@ class CentralUnit(object):
                             self.assigned_brick_task[robot_id] = brick_task
                             userdata = smach.UserData()
                             userdata.color = color_int_to_string(self.assigned_brick_task[robot_id].color)
-                            # userdata.waiting_pose = self.piles_waiting_pose[robot_id]  # TODO!
+                            userdata.waiting_pose = PoseStamped() #self.piles_waiting_pose[robot_id]  # TODO!
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
                             userdata.above_pile_pose.pose.position.z = 10.0  # TODO: lower?
                             self.task_manager.start_task(robot_id, Pick(), userdata)
@@ -438,7 +461,6 @@ def main():
         central_unit.lock_objects()
         
         if central_unit.cluster_wall_segments() == True:
-            # central_unit.calculate_wall_sequence()
             finished = central_unit.build_wall()
         else:
             rospy.logwarn("No wall find with enough segments")
