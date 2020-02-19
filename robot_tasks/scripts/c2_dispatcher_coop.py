@@ -45,7 +45,7 @@ from tasks.build import Pick, Place
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from utils.path import generate_uav_paths, set_z
-from utils.wall import all_piles_are_found, all_walls_are_found, parse_wall, uav_piles_are_found, uav_walls_are_found, get_brick_task_list, save_brick_task_list
+from utils.wall import *
 
 brick_scales = {}
 brick_scales[msg.ObjectDetection.COLOR_RED]    = Vector3(x = 0.2, y = 0.3, z = 0.2)
@@ -172,7 +172,7 @@ class CentralUnit(object):
     def look_for_objects(self):
         for robot_id in self.available_robots:
             service_url = 'mbzirc2020_' + robot_id + '/set_types'
-            rospy.wait_for_service(service_url)  # TODO: wait?
+            rospy.wait_for_service(service_url)
             detect_types = srv.DetectTypesRequest()
             detect_types.types = []
             detect_types.command = srv.DetectTypesRequest.COMMAND_DETECT_ALL
@@ -205,7 +205,9 @@ class CentralUnit(object):
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
-        while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.uav_walls,self.ugv_wall)):
+        while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.wall_segment_ids,self.ugv_wall)):
+            self.cluster_piles()
+            self.cluster_wall_segments()
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.sleep(1.0)
@@ -221,10 +223,16 @@ class CentralUnit(object):
 
         # Waiting poses: [UAV1-pile, UAV2-pile, UAV1-wall, UAV2-wall]
         d = 5.0
-        self.waiting_pose = [[center[0]+d*cos(pi/4.0+yaw),center[1]+d*sin(pi/4.0+yaw)],
-                             [center[0]+d*cos(3*pi/4.0+yaw),center[1]+d*sin(3*pi/4.0+yaw)],
-                             [center[0]+d*cos(-pi/4.0+yaw),center[1]+d*sin(-pi/4.0+yaw)],
-                             [center[0]+d*cos(-3*pi/4.0+yaw),center[1]+d*sin(-3*pi/4.0+yaw)]]
+        self.waiting_pose = {
+            self.available_robots[0]: [
+                [center[0]+d*cos(pi/4.0+yaw),center[1]+d*sin(pi/4.0+yaw)],
+                [center[0]+d*cos(3*pi/4.0+yaw),center[1]+d*sin(3*pi/4.0+yaw)]
+            ],
+            self.available_robots[1]: [
+                [center[0]+d*cos(-pi/4.0+yaw),center[1]+d*sin(-pi/4.0+yaw)],
+                [center[0]+d*cos(-3*pi/4.0+yaw),center[1]+d*sin(-3*pi/4.0+yaw)]
+            ]
+        }
 
     def cluster_piles(self):
 
@@ -280,6 +288,45 @@ class CentralUnit(object):
                         del piles_idx[i]
                 
                 clusters.append(cluster)
+
+            #TODO Read pile/wall area
+
+            uav_cluster = {}
+            for cluster in clusters:
+                if cluster['centroid'][0] > 30:
+                    if len(cluster) > len(uav_cluster):
+                        uav_cluster = cluster
+
+            if(len(uav_cluster) > 0 ):
+                for key in uav_cluster.keys():
+                    if key != 'centroid':
+                        self.uav_piles[key] = PoseStamped()
+                        for pile in self.piles:
+                            if pile.id == self.uav_cluster[key][id]:
+                                self.uav_piles[key].header = pile.header
+                                self.uav_piles[key].pose = pile.pose.pose
+            else: 
+                self.uav_piles = {}
+
+            ugv_cluster = {}
+            for cluster in clusters:
+                if cluster['centroid'][0] < 30:
+                    if len(cluster) > len(ugv_cluster):
+                        ugv_cluster = cluster
+            
+            if(len(ugv_cluster) > 0 ):
+                for key in ugv_cluster.keys():
+                    if key != 'centroid':
+                        self.ugv_piles[key] = PoseStamped()
+                        for pile in self.piles:
+                            if pile.id == self.ugv_cluster[key][id]:
+                                self.ugv_piles[key].header = pile.header
+                                self.ugv_piles[key].pose = pile.pose.pose
+            else: 
+                self.ugv_piles = {}
+
+            #TODO: fill in automatically piles if any of them was found?
+            
 
     def clusters_connected(self, top_segment, bottom_segment):
 
@@ -357,6 +404,7 @@ class CentralUnit(object):
                     break
  
         found = False
+        self.wall_segment_ids = []
         for cluster in clusters:
             if len(cluster) == self.n_segments:
                 self.wall_segment_ids = cluster[:]
@@ -380,6 +428,16 @@ class CentralUnit(object):
 
     # Return False if wall building is aborted
     def build_wall(self):
+
+        # Take central position from walls and piles and compute waiting positions
+        p1 = self.uav_walls[self.wall_segment_ids[1]]
+        p2 = self.uav_walls[self.wall_segment_ids[2]]
+        p_wall = Vector3(x=(p1.pose.position.x + p2.pose.position.x)/2.0, y=(p1.pose.position.y + p2.pose.position.y)/2.0, z=0.0)
+       
+        pose_pile = self.uav_piles[msg.ObjectDetection.COLOR_GREEN].pose.position
+
+        self.compute_waiting_poses(p_wall, pose_pile)
+
         while not rospy.is_shutdown():
 
             for robot_id in self.available_robots:
@@ -394,9 +452,12 @@ class CentralUnit(object):
                             self.assigned_brick_task[robot_id] = brick_task
                             userdata = smach.UserData()
                             userdata.color = color_int_to_string(self.assigned_brick_task[robot_id].color)
-                            userdata.waiting_pose = PoseStamped() #self.piles_waiting_pose[robot_id]  # TODO!
+                            userdata.waiting_pose = PoseStamped() 
+                            userdata.waiting_pose.header.frame_id = 'arena'
+                            userdata.waiting_pose.pose.position.x = self.piles_waiting_pose[robot_id][0][0]
+                            userdata.waiting_pose.pose.position.y = self.piles_waiting_pose[robot_id][0][1]
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
-                            userdata.above_pile_pose.pose.position.z = 10.0  # TODO: lower?
+                            userdata.above_pile_pose.pose.position.z = 5.0
                             self.task_manager.start_task(robot_id, Pick(), userdata)
                             self.robot_states[robot_id] = STATE_PICKING
                             rospy.loginfo('robot {} going to pick {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
@@ -407,9 +468,11 @@ class CentralUnit(object):
                         if self.task_manager.outcomes[robot_id] == 'succeeded':
                             # TODO: Place
                             userdata = smach.UserData()
-                            # userdata.waiting_pose = self.wall_waiting_pose[robot_id]  # TODO
-                            # userdata.segment_pose = copy.deepcopy(self.segment_pose[self.assigned_brick_task[robot_id].segment])  # TODO
-                            userdata.segment_offset = self.assigned_brick_task[robot_id].position
+                            userdata.waiting_pose.header.frame_id = 'arena'
+                            userdata.waiting_pose.pose.position.x = self.piles_waiting_pose[robot_id][1][0]
+                            userdata.waiting_pose.pose.position.y = self.piles_waiting_pose[robot_id][1][1]
+                            userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
+                            userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
                             rospy.loginfo('robot {} going to place {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
@@ -458,8 +521,6 @@ def main():
         rospy.sleep(1)
 
     central_unit = CentralUnit()
-    # rospy.sleep(3)
-
     central_unit.take_off()
 
     finished = False
@@ -468,16 +529,12 @@ def main():
         central_unit.unlock_objects()
         rospy.sleep(3)
 
-        while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.uav_walls) and not rospy.is_shutdown(): 
+        while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown(): 
             central_unit.look_for_objects()
-            #TODO: fill in automatically piles if any of them was found?
 
         central_unit.lock_objects()
         
-        if central_unit.cluster_wall_segments() == True:
-            finished = central_unit.build_wall()
-        else:
-            rospy.logwarn("No wall find with enough segments")
+        finished = central_unit.build_wall()
 
     rospy.spin()
 

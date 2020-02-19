@@ -16,9 +16,9 @@ class Pick(smach.StateMachine):
     def define_for(self, robot):
         with self:
 
-            # smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
-            #                         remapping = {'waypoint': 'waiting_pose'},
-            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+            smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
+                                    remapping = {'waypoint': 'waiting_pose'},
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             def ask_for_region_to_pick_request_callback(userdata, request):
                 request = SetBoolRequest()
@@ -51,9 +51,11 @@ class Pick(smach.StateMachine):
 
             smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
                                     remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
+                                    transitions = {'succeeded': 'BACK_TO_WAITING_AREA'})
 
-            # TODO: BACK_TO_WAITING_POSE
+            smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
+                                    remapping = {'waypoint': 'waiting_pose'},
+                                    transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
 
             def free_pick_region_request_callback(userdata, request):
                 request = SetBoolRequest()
@@ -78,9 +80,9 @@ class Place(smach.StateMachine):
     def define_for(self, robot):
         with self:
 
-            # smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
-            #                         remapping = {'waypoint': 'waiting_pose'},
-            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
+            smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
+                                    remapping = {'waypoint': 'waiting_pose'},
+                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             def ask_for_region_to_place_request_callback(userdata, request):
                 request = SetBoolRequest()
@@ -109,13 +111,15 @@ class Place(smach.StateMachine):
             smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', mbzirc_comm_objs.msg.PlaceAction,
                                     input_keys = ['segment_offset'],
                                     goal_cb = place_goal_callback),
-                                    transitions = {'succeeded': 'GO_UP'})
+                                    transitions = {'succeeded': 'BACK_TO_WAITING_AREA'})
 
-            smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
-                                    remapping = {'waypoint': 'segment_to_the_left_pose'},
+            # smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
+            #                         remapping = {'waypoint': 'segment_to_the_left_pose'},
+            #                         transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
+
+            smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
+                                    remapping = {'waypoint': 'waiting_pose'},
                                     transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
-
-            # TODO: BACK_TO_WAITING_POSE
 
             def free_place_region_request_callback(userdata, request):
                 request = SetBoolRequest()
