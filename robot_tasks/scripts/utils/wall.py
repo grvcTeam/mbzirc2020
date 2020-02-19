@@ -1,6 +1,7 @@
 import copy
 import rospkg
 import yaml
+import rospy
 from geometry_msgs.msg import PoseStamped, Point
 from mbzirc_comm_objs.msg import ObjectDetection as ObjectDetection
 from utils.translate import int_from_color

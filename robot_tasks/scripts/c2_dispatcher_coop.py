@@ -36,7 +36,7 @@ from math import pi,fabs,sin,cos,sqrt,atan2
 # from enum import Enum, unique
 import mbzirc_comm_objs.msg as msg
 import mbzirc_comm_objs.srv as srv
-import tf2_py as tf2
+import tf2_ros
 import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3, Quaternion
@@ -148,7 +148,7 @@ class CentralUnit(object):
                     pose.header = obj.header
                     pose.pose = obj.pose.pose
                    
-                    elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
+                    if obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UAV:
                         self.uav_walls[obj.id] = pose
                     
                     elif obj.type == msg.Object.TYPE_WALL and obj.sub_type == msg.Object.SUBTYPE_UGV:
@@ -207,7 +207,7 @@ class CentralUnit(object):
 
         while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.wall_segment_ids,self.ugv_wall)):
             self.cluster_piles()
-            self.cluster_wall_segments()
+            # self.cluster_wall_segments()
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.sleep(1.0)
@@ -219,7 +219,7 @@ class CentralUnit(object):
     def compute_waiting_poses(self, wall_position, pile_position):
         center = [(wall_position.x+pile_position.x)/2.0, (wall_position.y+pile_position.y)/2.0]
         wall_to_pile = [pile_position.x-wall_position.x, pile_position.y-wall_position.y]
-        yaw = atan2(wall_to_pile.y, wall_to_pile.x)
+        yaw = atan2(wall_to_pile[1], wall_to_pile[0])
 
         # Waiting poses: [UAV1-pile, UAV2-pile, UAV1-wall, UAV2-wall]
         d = 5.0
@@ -252,16 +252,16 @@ class CentralUnit(object):
                 # {color, id, area, x, y}
                 pile_info = {
                     'color': self.piles[piles_idx[0]].color, 
-                    'id': self.pile[piles_idx[0]].id,
-                    'area': self.pile[piles_idx[0]].scale[0]*self.pile[piles_idx[0]].scale[1], 
-                    'x': self.pile[piles_idx[0]].pose.pose.position.x, 
-                    'y': self.pile[piles_idx[0]].pose.pose.position.y
+                    'id': self.piles[piles_idx[0]].id,
+                    'area': self.piles[piles_idx[0]].scale.x*self.piles[piles_idx[0]].scale.y, 
+                    'x': self.piles[piles_idx[0]].pose.pose.position.x, 
+                    'y': self.piles[piles_idx[0]].pose.pose.position.y
                 }
 
                 # Init cluster with first pile available
                 cluster = {}
                 cluster['centroid'] = [pile_info['x'], pile_info['y'] ]
-                cluster[pile_info['color']] = {'id': pile_info['id'], 'area': pile_info['area'] ]
+                cluster[pile_info['color']] = {'id': pile_info['id'], 'area': pile_info['area'] }
 
                 del piles_idx[0]
 
@@ -269,10 +269,10 @@ class CentralUnit(object):
 
                     pile_info = {
                         'color': self.piles[piles_idx[i]].color, 
-                        'id': self.pile[piles_idx[i]].id, 
-                        'area': self.pile[piles_idx[i]].scale[0]*self.pile[piles_idx[i]].scale[1], 
-                        'x': self.pile[piles_idx[i]].pose.pose.position.x, 
-                        'y': self.pile[piles_idx[i]].pose.pose.position.y
+                        'id': self.piles[piles_idx[i]].id, 
+                        'area': self.piles[piles_idx[i]].scale.x*self.piles[piles_idx[i]].scale.y, 
+                        'x': self.piles[piles_idx[i]].pose.pose.position.x, 
+                        'y': self.piles[piles_idx[i]].pose.pose.position.y
                     }
 
                     dist = sqrt( (pile_info['x']-cluster['centroid'][0])**2 + (pile_info['y']-cluster['centroid'][1])**2 ) 
@@ -302,7 +302,7 @@ class CentralUnit(object):
                     if key != 'centroid':
                         self.uav_piles[key] = PoseStamped()
                         for pile in self.piles:
-                            if pile.id == self.uav_cluster[key][id]:
+                            if pile.id == uav_cluster[key][id]:
                                 self.uav_piles[key].header = pile.header
                                 self.uav_piles[key].pose = pile.pose.pose
             else: 
@@ -319,7 +319,7 @@ class CentralUnit(object):
                     if key != 'centroid':
                         self.ugv_piles[key] = PoseStamped()
                         for pile in self.piles:
-                            if pile.id == self.ugv_cluster[key][id]:
+                            if pile.id == ugv_cluster[key][id]:
                                 self.ugv_piles[key].header = pile.header
                                 self.ugv_piles[key].pose = pile.pose.pose
             else: 
@@ -439,7 +439,12 @@ class CentralUnit(object):
             angle = atan2(dy,dx)
             d_orig = dx*dx + dy*dy
 
-            wall_quaternion = [self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.x,self.wall_segment_ids[orig_id]].pose.orientation.y,self.wall_segment_ids[orig_id]].pose.orientation.z,self.wall_segment_ids[orig_id]].pose.orientation.w]
+            wall_quaternion = [
+                self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.x,
+                self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.y,
+                self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.z,
+                self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.w
+            ]
             (wall_roll,wall_pitch,wall_yaw) = tf.transformations.euler_from_quaternion(wall_quaternion)
             dx_moved = dx + 2 * sin(wall_yaw)
             dy_moved = dy + 2 * cos(wall_yaw)
@@ -448,7 +453,7 @@ class CentralUnit(object):
             if (d_moved > d_orig and i < 3) or (d_moved < d_orig and i == 3):
                 # The next wall is in the other direction, change orientation by 180 degrees
                 new_quaternion = tf.transformations.quaternion_from_euler(0.0,0.0,wall_yaw+pi)
-                self.wall_segment_ids[orig_id]].pose.orientation = Quaternion(*new_quaternion)
+                self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation = Quaternion(*new_quaternion)
 
     # Return False if wall building is aborted
     def build_wall(self):
