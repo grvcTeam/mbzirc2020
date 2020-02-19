@@ -89,6 +89,7 @@ class CentralUnit(object):
         self.wall_pattern = parse_wall(wall_file, n_segments=self.n_segments, n_layers=self.n_layers, n_bricks=7)
         self.brick_task_list = get_brick_task_list(self.wall_pattern, brick_scales)
         # save_brick_task_list(self.brick_task_list)  # TODO: Only if START
+        self.broadcaster = tf2_ros.StaticTransformBroadcaster()
 
         with open(conf_file,'r') as file:
             arena_conf = yaml.safe_load(file)
@@ -363,6 +364,19 @@ class CentralUnit(object):
                 break
 
         return found
+
+    def publishWallTfs(self):
+        wall_transforms = []
+        for i in range(4):
+            wall_transforms[i] = geometry_msgs.msg.TransformStamped()
+
+            wall_transforms[i].header.stamp = rospy.Time.now()
+            wall_transforms[i].header.frame_id = "arena"
+            wall_transforms[i].child_frame_id = "uav_wall_" + str(i)
+            wall_transforms[i].transform.translation = self.uav_walls[self.wall_segment_ids[i]].pose.position
+            wall_transforms[i].transform.rotation = self.uav_walls[self.wall_segment_ids[i]].pose.orientation
+
+        self.broadcaster.sendTransform(wall_transforms)
 
     # Return False if wall building is aborted
     def build_wall(self):

@@ -146,3 +146,28 @@ def load_brick_test_list():
         recovered_task_list = yaml.load(config)['brick_task_list']
 
     return recovered_task_list
+
+def getSegmentToTheLeftPose(task):
+    segment_to_the_left_pose = PoseStamped()
+    segment_to_the_left_pose.header.stamp = rospy.Time.now()
+    segment_to_the_left_pose.header.frame_id = "uav_wall_" + str(task.segment)
+    if task.position < 0.0:
+        # Left and -90 degrees
+        segment_to_the_left_pose.pose.position.x = -2.0
+        segment_to_the_left_pose.pose.position.y = 3.0
+        segment_to_the_left_pose.pose.position.z = 0.0
+        segment_to_the_left_pose.pose.orientation.x = 0.0
+        segment_to_the_left_pose.pose.orientation.y = 0.0
+        segment_to_the_left_pose.pose.orientation.z = -0.7071
+        segment_to_the_left_pose.pose.orientation.w = 0.7071
+    else:
+        # Right and 90 degrees
+        segment_to_the_left_pose.pose.position.x = 2.0
+        segment_to_the_left_pose.pose.position.y = 3.0
+        segment_to_the_left_pose.pose.position.z = 0.0
+        segment_to_the_left_pose.pose.orientation.x = 0.0
+        segment_to_the_left_pose.pose.orientation.y = 0.0
+        segment_to_the_left_pose.pose.orientation.z = 0.7071
+        segment_to_the_left_pose.pose.orientation.w = 0.7071
+
+    return segment_to_the_left_pose
