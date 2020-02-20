@@ -100,6 +100,30 @@ class CentralUnit(object):
         else:
             rospy.logerr('No arena limits specified in conf file')
 
+        if 'uav_pile_zone' in arena_conf and 'x_min' in arena_conf['uav_pile_zone']:
+            self.uav_pile_zone = arena_conf['uav_pile_zone']
+        else:
+            rospy.logwarn('No UAV pile zone specified in conf file')
+            self.uav_pile_zone = None
+
+        if 'uav_wall_zone' in arena_conf and 'x_min' in arena_conf['uav_wall_zone']:
+            self.uav_wall_zone = arena_conf['uav_wall_zone']
+        else:
+            rospy.logwarn('No UAV wall zone specified in conf file')
+            self.uav_wall_zone = None
+
+        if 'ugv_pile_zone' in arena_conf and 'x_min' in arena_conf['ugv_pile_zone']:
+            self.ugv_pile_zone = arena_conf['ugv_pile_zone']
+        else:
+            rospy.logwarn('No UGV pile zone specified in conf file')
+            self.ugv_pile_zone = None
+
+        if 'ugv_wall_zone' in arena_conf and 'x_min' in arena_conf['ugv_wall_zone']:
+            self.ugv_wall_zone = arena_conf['ugv_wall_zone']
+        else:
+            rospy.logwarn('No UGV wall zone specified in conf file')
+            self.ugv_wall_zone = None
+
         self.column_count = rospy.get_param('~column_count', 4)
         self.available_robots = rospy.get_param('~uav_ids', [])
 
@@ -289,11 +313,11 @@ class CentralUnit(object):
                 
                 clusters.append(cluster)
 
-            #TODO Read pile/wall area
+            # Take clusters with more colors 
 
             uav_cluster = {}
             for cluster in clusters:
-                if cluster['centroid'][0] > 30:
+                if is_within_limits(self.uav_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
                     if len(cluster) > len(uav_cluster):
                         uav_cluster = cluster
 
@@ -310,7 +334,7 @@ class CentralUnit(object):
 
             ugv_cluster = {}
             for cluster in clusters:
-                if cluster['centroid'][0] < 30:
+                if is_within_limits(self.ugv_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
                     if len(cluster) > len(ugv_cluster):
                         ugv_cluster = cluster
             

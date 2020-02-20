@@ -19,6 +19,13 @@ def uav_piles_are_found(uav_piles):
 def uav_walls_are_found(uav_wall):
     return len(uav_wall) >= 4
 
+def is_within_limits(zone,x,y):
+
+    if(zone['x_min'] <= x and x <= zone['x_max'] and zone['y_min'] <= y and y <= zone['y_max']):
+        return True
+    else:
+        return False
+                
 def parse_wall(wall_file, n_segments, n_layers, n_bricks):
 
     wall_pattern = {}
