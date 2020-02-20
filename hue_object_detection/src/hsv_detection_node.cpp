@@ -260,10 +260,12 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "hsv_detection_node");
   ros::NodeHandle nh;
 
+  int challenge;
   std::string agent_id;
   std::string tf_prefix;
   std::string camera_url;
   std::string config_filename;
+  ros::param::param<int>("~challenge", challenge, 2);
   ros::param::param<std::string>("~agent_id", agent_id, "1");
   ros::param::param<std::string>("~tf_prefix", tf_prefix, "default_prefix");
   ros::param::param<std::string>("~camera_url", camera_url, "camera/color");
@@ -292,12 +294,15 @@ int main(int argc, char** argv) {
 
   HSVDetection detection;
   detection.setConfig(detection_config);
-  detection.addDetector("red", range_map["red"], cvScalar(0, 255, 0));
-  detection.addDetector("green", range_map["green"], cvScalar(0, 0, 255));
-  detection.addDetector("blue", range_map["blue"], cvScalar(0, 255, 255));
-  detection.addDetector("orange", range_map["orange"], cvScalar(255, 255, 0));
-  detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
-  detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));  // TODO: Only for C3!
+  if (challenge == 2) {
+    detection.addDetector("red", range_map["red"], cvScalar(0, 255, 0));
+    detection.addDetector("green", range_map["green"], cvScalar(0, 0, 255));
+    detection.addDetector("blue", range_map["blue"], cvScalar(0, 255, 255));
+    detection.addDetector("orange", range_map["orange"], cvScalar(255, 255, 0));
+    detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
+  } else if (challenge == 3) {
+    detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));  // TODO: Only for C3!
+  }
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
     // TODO(performance): If camera info is constant, having a subscriber is overkill
