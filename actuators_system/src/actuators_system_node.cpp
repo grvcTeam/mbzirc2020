@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
 
     std_srvs::Trigger::Request dummy_req;
     std_srvs::Trigger::Response dummy_res;
-    open_gripper(dummy_req, dummy_res);  // TODO: Sure?
+    demagnetize_gripper(dummy_req, dummy_res);  // TODO: Sure?
 
     ros::Rate rate(10);  // [Hz]
     while (ros::ok()) {
