@@ -38,7 +38,7 @@
       <arg name="color_height"        value="480"/>
     </include>
 
-    <node if="$(eval mode == 'real')" pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen">
+    <node if="$(eval mode == 'real')" pkg="teraranger" type="evo_thermal.py" name="thermal_camera" output="screen" respawn="true">
       <param name="portname" value="/dev/evot33"/>
     </node>
 
