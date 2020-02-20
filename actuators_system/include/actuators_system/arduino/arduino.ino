@@ -27,7 +27,7 @@
 #define SERIAL_BAUDRATE 9600
 
 #define PERIOD_IN_MS 20
-#define INI_SERVO_PWM 1800
+#define INI_SERVO_PWM 560
 
 #define PIN_PWM_0   5
 #define PIN_PWM_1   6
@@ -73,8 +73,8 @@ BoardOutput board_output;
 Timer timer = Timer(PERIOD_IN_MS);
 
 Servo servo[5];
-uint16_t pwm_min[5] = { 500,  900,  900,  900,  900};
-uint16_t pwm_max[5] = {2500, 2100, 2100, 2100, 2100};
+uint16_t pwm_min[5] = { 500,  500,  500,  500,  500};
+uint16_t pwm_max[5] = {2500, 2500, 2500, 2500, 2500};
 
 void setup() {
 

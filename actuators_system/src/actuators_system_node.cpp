@@ -96,14 +96,18 @@ bool close_central_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::
 
 bool magnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
-    board_input.pwm[0] = 2500;  // TODO: From config file?
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 2500;  // TODO: From config file?
+    }
     input_mutex.unlock();
     return true;
 }
 
 bool demagnetize_gripper(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res) {
     input_mutex.lock();
-    board_input.pwm[0] = 560;  // TODO: From config file?
+    for (int i = 0; i < 5; i++) {
+        board_input.pwm[i] = 560;  // TODO: From config file?
+    }
     input_mutex.unlock();
     return true;
 }
