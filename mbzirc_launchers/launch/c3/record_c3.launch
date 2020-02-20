@@ -3,24 +3,23 @@
 
     <arg name="bag_dir" default="/home/grvc/bags"/> 
     <arg name="bag_name" default="MBZIRC_C3"/>
-    <arg name="robot_ns" default="/mbzirc2020_1"/>
+    <arg name="agent_id" default="1"/>
+    <arg name="robot_ns" default="/mbzirc2020_$(arg agent_id)"/>
  
-    <node pkg="rosbag" type="record" name="rosbag_record_uav" output="screen"
+    <node pkg="rosbag" type="record" name="$(anon rosbag_record_uav)" output="screen"
           args="-o $(arg bag_dir)/$(arg bag_name)
                 
+          $(arg robot_ns)/camera/color/image_raw
           $(arg robot_ns)/camera/color/image_rect_color
           $(arg robot_ns)/camera/color/camera_info
           $(arg robot_ns)/camera/aligned_depth_to_color/image_raw
           $(arg robot_ns)/camera/aligned_depth_to_color/camera_info
 
-          $(arg robot_ns)/teraranger_evo_thermal/rgb_image
-          $(arg robot_ns)/teraranger_evo_thermal/raw_temp_array
-          $(arg robot_ns)/teraranger_evo_thermal/ptat
-
           $(arg robot_ns)/scan
           $(arg robot_ns)/sf11
 
           $(arg robot_ns)/ual/pose
+          $(arg robot_ns)/ual/odometry
           $(arg robot_ns)/ual/state
           $(arg robot_ns)/mavros/state
           $(arg robot_ns)/mavros/global_position/global
@@ -30,8 +29,13 @@
           $(arg robot_ns)/mavros/setpoint_velocity/cmd_vel
           $(arg robot_ns)/mavros/rc/in
 
+          /diagnostics
           /tf_static
-          /tf"
+          /tf
+
+          $(arg robot_ns)/teraranger_evo_thermal/rgb_image
+          $(arg robot_ns)/teraranger_evo_thermal/raw_temp_array
+          $(arg robot_ns)/teraranger_evo_thermal/ptat"
     />
 
 </launch>

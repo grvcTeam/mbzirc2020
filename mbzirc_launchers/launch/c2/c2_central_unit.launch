@@ -3,7 +3,7 @@
 
 	<arg name="mode" default="real"/>
     <arg name="robot_model" default="mbzirc2020"/>
-    <arg name="arena_yaw" default="0"/>
+    <arg name="arena_yaw" default="-0.2968107"/>
 
 	<group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->

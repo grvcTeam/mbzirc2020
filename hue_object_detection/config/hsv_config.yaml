@@ -1,24 +1,24 @@
 colors:
 
   red:
-    H_range: [140, 10]
-    S_range: [140, 255]
-    V_range: [140, 255]
+    H_range: [170, 1]
+    S_range: [100, 255]
+    V_range: [100, 255]
 
   green:
-    H_range: [28, 100]
-    S_range: [90, 255]
-    V_range: [85, 255]
+    H_range: [60, 89]
+    S_range: [100, 255]
+    V_range: [100, 255]
 
   blue:
-    H_range: [39, 140]
-    S_range: [113, 255]
-    V_range: [140, 255]
+    H_range: [90, 120]
+    S_range: [100, 255]
+    V_range: [100, 255]
 
   orange:
-    H_range: [0, 11]
-    S_range: [69, 255]
-    V_range: [133, 255]
+    H_range: [5, 25]
+    S_range: [130, 255]
+    V_range: [130, 255]
 
   white:
     H_range: [0, 180]
@@ -26,12 +26,17 @@ colors:
     V_range: [200, 255]
 
   fire:
-    H_range: [140, 180]
-    S_range: [140, 255]
-    V_range: [140, 255]
+    H_range: [170, 5]
+    S_range: [80, 255]
+    V_range: [80, 255]
+
+  fire_box:
+    H_range: [7, 30]
+    S_range: [80, 255]
+    V_range: [80, 255]
 
 detection_config:
-  min_area: 60.0
+  min_area: 20.0
   poly_epsilon: 3.0
   kernel_type: 0
   kernel_size: 0

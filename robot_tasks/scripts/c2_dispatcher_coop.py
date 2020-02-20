@@ -100,6 +100,30 @@ class CentralUnit(object):
         else:
             rospy.logerr('No arena limits specified in conf file')
 
+        if 'uav_pile_zone' in arena_conf and 'x_min' in arena_conf['uav_pile_zone']:
+            self.uav_pile_zone = arena_conf['uav_pile_zone']
+        else:
+            rospy.logwarn('No UAV pile zone specified in conf file')
+            self.uav_pile_zone = None
+
+        if 'uav_wall_zone' in arena_conf and 'x_min' in arena_conf['uav_wall_zone']:
+            self.uav_wall_zone = arena_conf['uav_wall_zone']
+        else:
+            rospy.logwarn('No UAV wall zone specified in conf file')
+            self.uav_wall_zone = None
+
+        if 'ugv_pile_zone' in arena_conf and 'x_min' in arena_conf['ugv_pile_zone']:
+            self.ugv_pile_zone = arena_conf['ugv_pile_zone']
+        else:
+            rospy.logwarn('No UGV pile zone specified in conf file')
+            self.ugv_pile_zone = None
+
+        if 'ugv_wall_zone' in arena_conf and 'x_min' in arena_conf['ugv_wall_zone']:
+            self.ugv_wall_zone = arena_conf['ugv_wall_zone']
+        else:
+            rospy.logwarn('No UGV wall zone specified in conf file')
+            self.ugv_wall_zone = None
+
         self.column_count = rospy.get_param('~column_count', 4)
         self.available_robots = rospy.get_param('~uav_ids', [])
 
@@ -289,15 +313,26 @@ class CentralUnit(object):
                 
                 clusters.append(cluster)
 
-            #TODO Read pile/wall area
+            # Take clusters with more colors 
+        
+            pile_layout = [
+                msg.ObjectDetection.COLOR_ORANGE, 
+                msg.ObjectDetection.COLOR_BLUE, 
+                msg.ObjectDetection.COLOR_GREEN,
+                msg.ObjectDetection.COLOR_RED]
+            }
 
             uav_cluster = {}
             for cluster in clusters:
-                if cluster['centroid'][0] > 30:
+                if is_within_limits(self.uav_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
                     if len(cluster) > len(uav_cluster):
                         uav_cluster = cluster
-
+            
             if(len(uav_cluster) > 0 ):
+
+                any_header = uav_cluster[uav_cluster.keys()[0]].header
+                any_orientation = uav_cluster[uav_cluster.keys()[0]].pose.orientation
+
                 for key in uav_cluster.keys():
                     if key != 'centroid':
                         self.uav_piles[key] = PoseStamped()
@@ -305,16 +340,29 @@ class CentralUnit(object):
                             if pile.id == uav_cluster[key][id]:
                                 self.uav_piles[key].header = pile.header
                                 self.uav_piles[key].pose = pile.pose.pose
+
+                # Fill in not found piles with cluster centroid and any of the orientations
+                for color in pile_layout:
+                    if color not in self.uav_piles:
+                        self.uav_piles[color] = PoseStamped()
+                        self.uav_piles[color].header = any_header 
+                        self.uav_piles[color].pose.position.x = uav_cluster['centroid'][0]
+                        self.uav_piles[color].pose.position.y = uav_cluster['centroid'][1]
+                        self.uav_piles[color].pose.position.z = 0.0
             else: 
                 self.uav_piles = {}
 
             ugv_cluster = {}
             for cluster in clusters:
-                if cluster['centroid'][0] < 30:
+                if is_within_limits(self.ugv_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
                     if len(cluster) > len(ugv_cluster):
                         ugv_cluster = cluster
             
             if(len(ugv_cluster) > 0 ):
+
+                any_header = ugv_cluster[ugv_cluster.keys()[0]].header
+                any_orientation = ugv_cluster[ugv_cluster.keys()[0]].pose.orientation
+
                 for key in ugv_cluster.keys():
                     if key != 'centroid':
                         self.ugv_piles[key] = PoseStamped()
@@ -322,11 +370,17 @@ class CentralUnit(object):
                             if pile.id == ugv_cluster[key][id]:
                                 self.ugv_piles[key].header = pile.header
                                 self.ugv_piles[key].pose = pile.pose.pose
+
+                # Fill in not found piles with cluster centroid and any of the orientations
+                for color in pile_layout:
+                    if color not in self.ugv_piles:
+                        self.ugv_piles[color] = PoseStamped()
+                        self.ugv_piles[color].header = any_header 
+                        self.ugv_piles[color].pose.position.x = ugv_cluster['centroid'][0]
+                        self.ugv_piles[color].pose.position.y = ugv_cluster['centroid'][1]
+                        self.ugv_piles[color].pose.position.z = 0.0
             else: 
                 self.ugv_piles = {}
-
-            #TODO: fill in automatically piles if any of them was found?
-            
 
     def clusters_connected(self, top_segment, bottom_segment):
 
@@ -499,7 +553,7 @@ class CentralUnit(object):
                 elif self.robot_states[robot_id] == STATE_PICKING:
                     if self.task_manager.is_idle(robot_id):
                         if self.task_manager.outcomes[robot_id] == 'succeeded':
-                            # TODO: Place
+                            # Place
                             userdata = smach.UserData()
                             userdata.waiting_pose.header.frame_id = 'arena'
                             userdata.waiting_pose.pose.position.x = self.piles_waiting_pose[robot_id][1][0]
