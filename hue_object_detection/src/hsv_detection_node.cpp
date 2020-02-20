@@ -287,6 +287,7 @@ int main(int argc, char** argv) {
   config_yaml["colors"]["orange"] >> range_map["orange"];
   config_yaml["colors"]["white"]  >> range_map["white"];
   config_yaml["colors"]["fire"]   >> range_map["fire"];
+  config_yaml["colors"]["fire_box"]   >> range_map["fire_box"];
 
   HSVDetectionConfig detection_config;
   config_yaml["detection_config"] >> detection_config;
@@ -301,7 +302,8 @@ int main(int argc, char** argv) {
     detection.addDetector("orange", range_map["orange"], cvScalar(255, 255, 0));
     detection.addDetector("white", range_map["white"], cvScalar(0, 0, 0));
   } else if (challenge == 3) {
-    detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));  // TODO: Only for C3!
+    detection.addDetector("fire", range_map["fire"], cvScalar(255, 255, 255));
+    detection.addDetector("fire_box", range_map["fire_box"], cvScalar(0, 0, 0));
   }
 
   while (!image_converter.hasCameraInfo() && ros::ok()) {
