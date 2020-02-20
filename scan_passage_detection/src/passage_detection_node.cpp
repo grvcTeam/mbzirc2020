@@ -6,6 +6,7 @@
 #include <mbzirc_comm_objs/WallList.h>
 #include <scan_passage_detection/wall_utils.h>
 #include <random_numbers/random_numbers.h>
+#include <tf2/utils.h>
 
 struct LineModel {
     // a*x + b*y + c = 0
@@ -152,10 +153,13 @@ std_msgs::ColorRGBA colorFromIndex(int _index) {
 class PassageDetectionNode {
 public:
     PassageDetectionNode() {
+
         marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
         sensed_pub_ = n_.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 3);
         walls_pub_ = n_.advertise<mbzirc_comm_objs::WallList>("walls", 3);
         scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
+        
+        ros::param::param<std::string>("~agent_id", agent_id_, "1"); // TODO - Check why not change param default
     }
 
     void scanCallback(const sensor_msgs::LaserScan::ConstPtr& _msg) {
@@ -208,34 +212,34 @@ public:
                 // ROS_INFO("sq_distance = % f", sq_distance);
                 if (sq_distance > sq_passage_th) {
                     float distance = sqrt(sq_distance);
-                    mbzirc_comm_objs::ObjectDetection object;
-                    object.header.frame_id = _msg->header.frame_id;
-                    object.header.stamp = ros::Time::now();
-                    object.type = mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE;
+                    // mbzirc_comm_objs::ObjectDetection object;
+                    // object.header.frame_id = _msg->header.frame_id;
+                    // object.header.stamp = ros::Time::now();
+                    // object.type = mbzirc_comm_objs::ObjectDetection::TYPE_PASSAGE;
 
-                    // TODO: relative_position has sense?
-                    // object.relative_position.x = 
-                    // object.relative_position.y = 
-                    // object.relative_position.z = 
-                    object.pose.pose.position.x = line.inliers[j].x + 0.5 * delta_x;
-                    object.pose.pose.position.y = line.inliers[j].y + 0.5 * delta_y;
-                    object.pose.pose.position.z = line.inliers[j].z + 0.5 * delta_z;
+                    // // TODO: relative_position has sense?
+                    // // object.relative_position.x = 
+                    // // object.relative_position.y = 
+                    // // object.relative_position.z = 
+                    // object.pose.pose.position.x = line.inliers[j].x + 0.5 * delta_x;
+                    // object.pose.pose.position.y = line.inliers[j].y + 0.5 * delta_y;
+                    // object.pose.pose.position.z = line.inliers[j].z + 0.5 * delta_z;
 
-                    float theta = atan2(line.model.b, line.model.a);
-                    object.relative_yaw = theta;
-                    object.pose.pose.orientation.x = 0;
-                    object.pose.pose.orientation.y = 0;
-                    object.pose.pose.orientation.z = sin(0.5*theta);
-                    object.pose.pose.orientation.w = cos(0.5*theta);
-                    object.pose.covariance[0] = 0.01;  // TODO: Covariance?
-                    object.pose.covariance[7] = 0.01;
-                    object.pose.covariance[14] = 0.01;
+                    // float theta = atan2(line.model.b, line.model.a);
+                    // object.relative_yaw = theta;
+                    // object.pose.pose.orientation.x = 0;
+                    // object.pose.pose.orientation.y = 0;
+                    // object.pose.pose.orientation.z = sin(0.5*theta);
+                    // object.pose.pose.orientation.w = cos(0.5*theta);
+                    // object.pose.covariance[0] = 0.01;  // TODO: Covariance?
+                    // object.pose.covariance[7] = 0.01;
+                    // object.pose.covariance[14] = 0.01;
 
-                    object.scale.x = 0.1;
-                    object.scale.y = distance;
-                    object.scale.z = 0.1;
-                    object.color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;  // TODO!
-                    object_list.objects.push_back(object);
+                    // object.scale.x = 0.1;
+                    // object.scale.y = distance;
+                    // object.scale.z = 0.1;
+                    // object.color = mbzirc_comm_objs::ObjectDetection::COLOR_GREEN;  // TODO!
+                    // // object_list.objects.push_back(object);
 
                     wall_list.walls.push_back(fromPoints(start, line.inliers[j]));
                     start = line.inliers[j+1];
@@ -249,10 +253,59 @@ public:
         wall_list.header.stamp = _msg->header.stamp;
 
         for (int i = 0; i < wall_list.walls.size(); i++) {
-            marker_array.markers.push_back(getLineMarker(wall_list.walls[i], _msg->header.frame_id, colorFromIndex(i), i));
+            double wall_size = squaredLength(wall_list.walls[i]);
+            if ( wall_size > 9.0 && wall_size < 25.0){
+
+                mbzirc_comm_objs::ObjectDetection object;
+                object.header.frame_id = _msg->header.frame_id;
+                object.header.stamp = ros::Time::now();
+                object.type = mbzirc_comm_objs::ObjectDetection::TYPE_UCHANNEL;
+
+                double c_wall_x = (wall_list.walls[i].start[0] + wall_list.walls[i].end[0])/2;
+                double c_wall_y = (wall_list.walls[i].start[1] + wall_list.walls[i].end[1])/2;
+                object.pose.pose.position.x = c_wall_x;
+                object.pose.pose.position.y = c_wall_y;
+                object.pose.pose.position.z = 1.7;
+                
+                double p_wall_x;
+                double p_wall_y;
+                if(wall_list.walls[i].start[1] > wall_list.walls[i].end[1]){
+                    p_wall_x = wall_list.walls[i].start[1];
+                    p_wall_y = wall_list.walls[i].end[1];
+                }
+                else{
+                    p_wall_x = wall_list.walls[i].start[0];
+                    p_wall_y = wall_list.walls[i].end[0];
+                }
+
+                tf2::Quaternion wall_orientation;
+                wall_orientation.setRPY( 0, 0, atan2( p_wall_x - c_wall_x, p_wall_y - c_wall_y)); // angle in rad from center point of wall to the farest point
+
+                object.pose.pose.orientation = tf2::toMsg(wall_orientation);
+                
+                object.pose.covariance[0] = 1.0;  // TODO: Covariance?
+                object.pose.covariance[7] = 1.0;
+                object.pose.covariance[14] = 1.0;
+
+                object.pose.covariance[21] = 3.0;  // TODO: Covariance?
+                object.pose.covariance[28] = 3.0;
+                object.pose.covariance[35] = 3.0;
+
+                object.scale.x = 0.4;
+                object.scale.y = sqrt(wall_size);
+                object.scale.z = 1.7;
+
+                object_list.objects.push_back(object);
+            }
         }
+
+        object_list.agent_id = agent_id_;
+        object_list.stamp = ros::Time::now();
+
         marker_pub_.publish(marker_array);  // TODO: Make visalization optional!
-        // sensed_pub_.publish(object_list);
+        if(object_list.objects.size() > 0)
+            sensed_pub_.publish(object_list);
+        
         walls_pub_.publish(wall_list);
     }
 
@@ -262,6 +315,7 @@ protected:
     ros::Publisher sensed_pub_;
     ros::Publisher walls_pub_;
     ros::Subscriber scan_sub_;
+    std::string agent_id_;
     random_numbers::RandomNumberGenerator random_;
 };
 

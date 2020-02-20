@@ -35,5 +35,8 @@
       <param name="scan_mode"           type="string" value="Stability"/>
     </node>
 
-    <node if="$(eval laser == 'yes')" pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen"/>  </group>
+    <node if="$(eval laser == 'yes')" pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen">
+      <param name="uav_id"              type="string" value="$(arg agent_id)"/>
+    </node>  
+  </group>
 </launch>
