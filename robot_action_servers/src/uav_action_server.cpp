@@ -32,7 +32,8 @@ UalActionServer::UalActionServer():
   land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
   move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false),
   extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false),
-  extinguish_ground_fire_server_(nh_, "extinguish_ground_fire_action", boost::bind(&UalActionServer::extinguishGroundFireCallback, this, _1), false) {
+  extinguish_ground_fire_server_(nh_, "extinguish_ground_fire_action", boost::bind(&UalActionServer::extinguishGroundFireCallback, this, _1), false),
+  look_for_ground_fires_server_(nh_, "look_for_ground_fires_action", boost::bind(&UalActionServer::lookForGroundFiresCallback, this, _1), false) {
 
   std::string ual_backend;
   ros::param::param<std::string>("~ual_backend", ual_backend, "mavros");
@@ -65,6 +66,7 @@ UalActionServer::UalActionServer():
   move_in_circles_server_.start();
   extinguish_facade_fire_server_.start();
   extinguish_ground_fire_server_.start();
+  look_for_ground_fires_server_.start();
 }
 
 UalActionServer::~UalActionServer() {

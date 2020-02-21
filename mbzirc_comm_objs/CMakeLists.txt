@@ -81,6 +81,7 @@ add_action_files(
   MoveInCircles.action
   ExtinguishFacadeFire.action
   ExtinguishGroundFire.action
+  LookForGroundFires.action
 )
 
 ## Generate added messages and services with any dependencies listed here

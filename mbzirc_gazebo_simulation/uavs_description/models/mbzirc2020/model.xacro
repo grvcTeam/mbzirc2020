@@ -534,11 +534,11 @@
           <alwaysOn>1</alwaysOn>
           <updateRate>0.0</updateRate>
           <robotNamespace>${namespace}</robotNamespace>
-          <cameraName>camera_kinect</cameraName>
-          <imageTopicName>depth/image_raw</imageTopicName>
-          <cameraInfoTopicName>depth/camera_info</cameraInfoTopicName>
+          <cameraName>camera</cameraName>
+          <imageTopicName>color/image_rect_color</imageTopicName>
+          <cameraInfoTopicName>color/camera_info</cameraInfoTopicName>
           <depthImageTopicName>depth/depth_image_raw</depthImageTopicName>
-          <depthImageInfoTopicName>depth/camera_info_depth</depthImageInfoTopicName>
+          <depthImageInfoTopicName>depth/camera_info</depthImageInfoTopicName>
           <pointCloudTopicName>depth/pointsCloud</pointCloudTopicName>
           <frameName>/uav_1</frameName>
           <!-- <frameName>${namespace}/kinect_${camera_suffix}_link</frameName> -->

@@ -1,0 +1,7 @@
+#goal definition
+geometry_msgs/PoseStamped[] path
+---
+#result definition
+string message
+---
+#feedback
