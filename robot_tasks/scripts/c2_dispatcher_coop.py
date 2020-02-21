@@ -326,11 +326,33 @@ class CentralUnit(object):
                 msg.ObjectDetection.COLOR_RED
             ]
 
-            uav_cluster = {}
+            first_bigger = {}
+            second_bigger = {}
             for cluster in clusters:
-                if is_within_limits(self.uav_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
-                    if len(cluster) > len(uav_cluster):
-                        uav_cluster = cluster
+                if len(cluster) > len(first_bigger):
+                    second_bigger = first_bigger
+                    first_bigger = cluster
+                elif len(cluster) > len(second_bigger):
+                    second_bigger = cluster
+
+            if len(first_bigger) == 0 or len(second_bigger) == 0:
+                rospy.logwarn("No enough clusters!")
+                self.uav_piles = {}
+                self.ugv_piles = {}
+                return
+
+            if first_bigger['centroid'][0] > second_bigger['centroid'][0]:
+                uav_cluster = first_bigger
+                ugv_cluster = second_bigger
+            else:
+                uav_cluster = second_bigger
+                ugv_cluster = first_bigger
+
+            # uav_cluster = {}
+            # for cluster in clusters:
+            #     if is_within_limits(self.uav_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
+            #         if len(cluster) > len(uav_cluster):
+            #             uav_cluster = cluster
             
             if(len(uav_cluster) > 0 ):
 
@@ -357,11 +379,11 @@ class CentralUnit(object):
             else: 
                 self.uav_piles = {}
 
-            ugv_cluster = {}
-            for cluster in clusters:
-                if is_within_limits(self.ugv_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
-                    if len(cluster) > len(ugv_cluster):
-                        ugv_cluster = cluster
+            # ugv_cluster = {}
+            # for cluster in clusters:
+            #     if is_within_limits(self.ugv_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
+            #         if len(cluster) > len(ugv_cluster):
+            #             ugv_cluster = cluster
             
             if(len(ugv_cluster) > 0 ):
 
@@ -549,9 +571,9 @@ class CentralUnit(object):
                             userdata.waiting_pose.header.frame_id = 'arena'
                             userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][0][0]
                             userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][0][1]
-                            userdata.waiting_pose.pose.position.z = self.flight_levels[robot_id]
+                            userdata.waiting_pose.pose.position.z = 4.0  # TODO: magic!
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
-                            userdata.above_pile_pose.pose.position.z = 5.0
+                            userdata.above_pile_pose.pose.position.z = 5.0  # TODO: magic!
                             self.task_manager.start_task(robot_id, Pick(), userdata)
                             self.robot_states[robot_id] = STATE_PICKING
                             rospy.loginfo('robot {} going to pick {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
@@ -562,11 +584,13 @@ class CentralUnit(object):
                         if self.task_manager.outcomes[robot_id] == 'succeeded':
                             # Place
                             userdata = smach.UserData()
+                            userdata.waiting_pose = PoseStamped()
                             userdata.waiting_pose.header.frame_id = 'arena'
                             userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][1][0]
                             userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][1][1]
-                            userdata.waiting_pose.pose.position.z = self.flight_levels[robot_id]
+                            userdata.waiting_pose.pose.position.z = 4.0  # TODO: magic!
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
+                            userdata.segment_to_the_left_pose.pose.position.z = 4.0  # TODO: magic!
                             userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
