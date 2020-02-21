@@ -483,6 +483,7 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::ServiceClient release_blanket_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/release_blanket");
   ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
+  ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
   // TODO: Add other subscribers (e.g. fire estimation)
   // TODO: Markers?
   //ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
@@ -532,6 +533,19 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
 
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_ground_control");
+
+  // TODO: Where do we check this?
+  // ros::Duration(3).sleep();
+  // mbzirc_comm_objs::CheckFire check_fire_srv;
+  // check_fire_client.call(check_fire_srv);
+  // bool fire_detected = check_fire_srv.response.fire_detected;
+  // // bool fire_detected = true;
+  // if (!fire_detected) {
+  //   ual_->setPose(ual_->pose());
+  //   result.message = "Fire is not detected";
+  //   extinguish_ground_fire_server_.setAborted(result);
+  //   return;
+  // }
 
   std::string fire_color = _goal->color;
   if ((fire_color != "fire") && (fire_color != "fire_box")) {
