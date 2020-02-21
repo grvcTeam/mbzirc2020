@@ -33,6 +33,7 @@
 #include <mbzirc_comm_objs/MoveInCirclesAction.h>
 #include <mbzirc_comm_objs/ExtinguishFacadeFireAction.h>
 #include <mbzirc_comm_objs/ExtinguishGroundFireAction.h>
+#include <mbzirc_comm_objs/LookForGroundFiresAction.h>
 #include <mbzirc_comm_objs/RobotDataFeed.h>
 #include <mbzirc_comm_objs/ObjectDetection.h>
 #include <mbzirc_comm_objs/ObjectDetectionList.h>
@@ -57,7 +58,7 @@
 #define Z_RETRY_CATCH 1.0
 #define CANDIDATE_TIMEOUT 1.5  // [s]
 #define CATCHING_LOOP_RATE 20  // [Hz]
-#define GROUND_EXTINGUISH_LOOP_RATE 10  // [Hz]
+#define GROUND_EXTINGUISH_LOOP_RATE 20  // [Hz]
 #define FACADE_EXTINGUISH_LOOP_RATE 20  // [Hz]
 #define AVG_XY_ERROR_WINDOW_SIZE 13
 #define AVG_Z_ERROR_WINDOW_SIZE 13
@@ -95,6 +96,7 @@ protected:
   actionlib::SimpleActionServer<mbzirc_comm_objs::MoveInCirclesAction> move_in_circles_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishFacadeFireAction> extinguish_facade_fire_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishGroundFireAction> extinguish_ground_fire_server_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::LookForGroundFiresAction> look_for_ground_fires_server_;
 
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener *tf_listener_;
@@ -136,6 +138,7 @@ public:
   void extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal);
   void extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal);
   geometry_msgs::PoseStamped errorPoseFromFireData(const FireData& _target_fire, bool _publish_markers = false);
+  void lookForGroundFiresCallback(const mbzirc_comm_objs::LookForGroundFiresGoalConstPtr &_goal);
 
   // Communications
   bool waitForFreshMatchedCandidateMsg(uint8_t seconds);

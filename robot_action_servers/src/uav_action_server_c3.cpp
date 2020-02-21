@@ -495,20 +495,20 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   }
 
   grvc::ual::PIDParams pid_x;
-  pid_x.kp = 0.82;
+  pid_x.kp = 0.5;
   pid_x.ki = 0.0;
   pid_x.kd = 0.0;
-  pid_x.min_sat = -0.5;
-  pid_x.max_sat = 0.5;
+  pid_x.min_sat = -0.3;
+  pid_x.max_sat = 0.3;
   pid_x.min_wind = -0.5;
   pid_x.max_wind = 0.5;
 
   grvc::ual::PIDParams pid_y;
-  pid_y.kp = 0.82;
+  pid_y.kp = 0.5;
   pid_y.ki = 0.0;
   pid_y.kd = 0.0;
-  pid_y.min_sat = -0.5;
-  pid_y.max_sat = 0.5;
+  pid_y.min_sat = -0.3;
+  pid_y.max_sat = 0.3;
   pid_y.min_wind = -0.5;
   pid_y.max_wind = 0.5;
 
@@ -525,8 +525,8 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   pid_yaw.kp = 0.4;
   pid_yaw.ki = 0.02;
   pid_yaw.kd = 0.0;
-  pid_yaw.min_sat = -0.5;
-  pid_yaw.max_sat = 0.5;
+  pid_yaw.min_sat = -0.2;
+  pid_yaw.max_sat = 0.2;
   pid_yaw.min_wind = -0.5;
   pid_yaw.max_wind = 0.5;
   pid_yaw.is_angular = true;
@@ -577,7 +577,7 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
     ros::Duration since_last_candidate = ros::Time::now() - matched_candidate_.header.stamp;
     // ROS_INFO("since_last_candidate = %lf, timeout = %lf", since_last_candidate.toSec(), timeout.toSec());
 
-    const float release_height = 1.5;
+    const float release_height = 2.5;
     geometry_msgs::PoseStamped fire_pose;
     fire_pose.header = matched_candidate_.header;
     fire_pose.pose = matched_candidate_.pose.pose;
@@ -645,5 +645,80 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   set_detection_srv.request.visualize = true;
   if (!set_detection_client.call(set_detection_srv)) {
     ROS_ERROR("Failed to call set detection service");
+  }
+}
+
+void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookForGroundFiresGoalConstPtr &_goal) {
+  mbzirc_comm_objs::LookForGroundFiresFeedback feedback;
+  mbzirc_comm_objs::LookForGroundFiresResult result;
+
+  if (ual_->state().state != uav_abstraction_layer::State::FLYING_AUTO) {
+    result.message = "UAL is not flying auto!";
+    look_for_ground_fires_server_.setAborted(result);
+    return;
+  }
+
+  ros::NodeHandle nh;
+  ros::ServiceClient set_detection_client = nh.serviceClient<mbzirc_comm_objs::DetectTypes>("set_types");
+  ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
+  ros::Subscriber sensed_sub = nh.subscribe<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
+
+  mbzirc_comm_objs::DetectTypes set_detection_srv;
+  set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_DETECT_ALL;
+  set_detection_srv.request.visualize = true;
+  if (!set_detection_client.call(set_detection_srv)) {
+    ROS_ERROR("Failed to call set detection service");
+  }
+
+  bool fire_found = false;
+  bool fire_detected = false;
+  int waypoint_id = 0;
+  std::vector<geometry_msgs::PoseStamped> path = _goal->path;
+  if(path.size()==0) {
+    result.message = "Empty path given!";
+    look_for_ground_fires_server_.setAborted(result);
+    return;
+  }
+  ros::Rate loop_rate(GROUND_EXTINGUISH_LOOP_RATE);
+
+  while(!fire_detected && ros::ok()) {
+    if (look_for_ground_fires_server_.isPreemptRequested()) {
+      ual_->setPose(ual_->pose());
+      look_for_ground_fires_server_.setPreempted();
+      break;
+    }
+
+    for (size_t i = 0; i < sensed_objects_.objects.size(); i++) {
+      auto object = sensed_objects_.objects[i];
+      if (object.color == mbzirc_comm_objs::ObjectDetection::COLOR_FIRE) {
+        fire_found = true;
+        }
+      }
+
+    if(fire_found) {
+      mbzirc_comm_objs::CheckFire check_fire_srv;
+      check_fire_client.call(check_fire_srv);
+      fire_detected = check_fire_srv.response.fire_detected;
+      if(fire_detected) {
+        ual_->setPose(ual_->pose());
+        result.message = "Fire detected!";
+        look_for_ground_fires_server_.setSucceeded(result);
+        break;
+      }
+    }
+
+    if(ual_->isIdle() && !fire_detected) {
+      waypoint_id++;
+      if(waypoint_id < path.size()) {
+        ual_->goToWaypoint(path[waypoint_id], false);
+      }
+      else {
+        result.message = "Path finalized without finding fires!";
+        look_for_ground_fires_server_.setAborted(result);
+        break;
+      }
+    }
+
+    loop_rate.sleep();
   }
 }

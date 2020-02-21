@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="mode" default="real"/>
+    <arg name="robot_model" default="mbzirc2020"/>
+    <arg name="arena_yaw" default="-0.2968107"/>
+
+	<group if="$(eval mode == 'sim')">
+        <!-- Launch Gazebo simulation -->
+        <rosparam param="/use_sim_time">true</rosparam>
+        <include file="$(find challenge_worlds)/launch/challenge3.launch">
+            <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        </include>
+    </group>
+
+	<node name="c3_dispatcher" pkg="robot_tasks" type="c3_ground.py" respawn="false" output="screen">
+
+		<param name="uav_id" type="string" value="6"/>
+		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch3_ground.yaml" />
+		<param name="height" value="3.0"/>
+			
+	</node>
+
+	<!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
+    
+    <!--node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
+
+		<param name="frequency" value="1.0"/>
+		<param name="robot_ns" value="$(arg robot_model)"/>
+
+		<rosparam param="object_types">["fire","passage"]</rosparam>	
+		<rosparam param="uav_ids">["2", "4", "6"]</rosparam>
+		<param name="a_priori_info" value="true" />
+		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch3.yaml" />
+		
+		<param name="lost_time_th" value="20.0" />
+		<rosparam param="association_th">[4.0,4.0]</rosparam>
+		<param name="min_update_count" value="5" />
+		<param name="delay_max" value="2.0" />
+				
+     </node-->
+
+    <!--node name="shared_regions_manager" pkg="shared_regions_manager" type="shared_regions_manager.py"/-->
+
+</launch>
