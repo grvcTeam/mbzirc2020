@@ -150,14 +150,20 @@ def save_brick_task_list(brick_task_list):
     with open(brick_task_config_url, 'w') as config:
         yaml.dump({'brick_task_list': brick_task_list}, config)
 
-def load_brick_test_list():
+def load_brick_task_list():
     brick_task_config_filename = 'saved_brick_task_list.yaml'
     brick_task_config_url = rospkg.RosPack().get_path('mbzirc_launchers') + '/config/' + brick_task_config_filename
-    with open(brick_task_config_url, 'r') as config:
-        recovered_task_list = yaml.load(config)['brick_task_list']
 
-    return recovered_task_list
+    try:
+        with open(brick_task_config_url, 'r') as config:
+            recovered_task_list = yaml.load(config)['brick_task_list']
+        
+        return recovered_task_list
 
+    except FileNotFoundError:
+        
+        return []
+    
 def getSegmentToTheLeftPose(task):
     segment_to_the_left_pose = PoseStamped()
     segment_to_the_left_pose.header.stamp = rospy.Time.now()

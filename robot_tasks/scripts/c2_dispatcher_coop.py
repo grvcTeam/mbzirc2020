@@ -89,7 +89,6 @@ class CentralUnit(object):
         self.n_layers = 2 
         self.wall_pattern = parse_wall(wall_file, n_segments=self.n_segments, n_layers=self.n_layers, n_bricks=7)
         self.brick_task_list = get_brick_task_list(self.wall_pattern, brick_scales)
-        # save_brick_task_list(self.brick_task_list)  # TODO: Only if START
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
 
         with open(conf_file,'r') as file:
@@ -180,7 +179,6 @@ class CentralUnit(object):
                         # If several UGV walls, we keep the most recent one
                         self.ugv_wall = pose
 
-
     def take_off(self):
         for robot_id in self.available_robots:
             userdata = smach.UserData()
@@ -194,6 +192,32 @@ class CentralUnit(object):
 
     def unlock_objects(self):
         self.objects_locked = False
+
+    def save_objects_file(self):
+        filename = 'saved_objects.yaml'
+        config_url = rospkg.RosPack().get_path('mbzirc_launchers') + '/config/' + filename
+        with open(config_url, 'w') as config:
+            yaml.dump({'uav_pile': self.uav_piles}, config)
+            yaml.dump({'uav_walls': self.uav_walls}, config)
+            yaml.dump({'uav_segment_ids': self.wall_segment_ids}, config)
+
+    def load_objects_file(self):
+        filename = 'saved_objects.yaml'
+        config_url = rospkg.RosPack().get_path('mbzirc_launchers') + '/config/' + filename
+    
+        try:
+            with open(config_url, 'r') as config:
+                recovered_objects = yaml.safe_load(config)
+            
+            self.uav_piles = recovered_objects['uav_piles']
+            self.uav_walls = recovered_objects['uav_walls']
+            self.wall_segment_ids = recovered_objects['uav_segment_ids']
+        
+            return True
+
+        except FileNotFoundError:
+        
+            return False
 
     def look_for_objects(self):
         for robot_id in self.available_robots:
@@ -476,7 +500,6 @@ class CentralUnit(object):
 
         return result
 
-
     def cluster_wall_segments(self):
     
         changed = True
@@ -638,7 +661,9 @@ class CentralUnit(object):
                     if self.task_manager.is_idle(robot_id):
                         if self.task_manager.outcomes[robot_id] == 'succeeded':
                             self.assigned_brick_task[robot_id].state = 'DONE'
-                            # TODO: save brick_task_list
+
+                            # Save in file actual state of tasks
+                            save_brick_task_list(self.brick_task_list)
                             self.robot_states[robot_id] = STATE_UNASSIGNED
                             rospy.loginfo('robot {} finished task!'.format(robot_id))
 
@@ -675,13 +700,21 @@ def main():
     finished = False
     while not finished and not rospy.is_shutdown():
 
-        central_unit.unlock_objects()
-        rospy.sleep(3)
+        # If there was list of pending tasks, resume
+        recovered_brick_task = load_brick_task_list()
+        if len(recovered_brick_task) > 0:
+            self.brick_task_list = recovered_brick_task
 
-        while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown(): 
-            central_unit.look_for_objects()
+        if(not central_unit.load_objects_file()):
 
-        central_unit.lock_objects()
+            central_unit.unlock_objects()
+            rospy.sleep(3)
+
+            while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown(): 
+                central_unit.look_for_objects()
+
+            central_unit.lock_objects()
+            central_unit.save_objects_file()
         
         finished = central_unit.build_wall()
 
