@@ -91,7 +91,7 @@ void setup() {
   pinMode(PIN_IN_3, INPUT);
 
   deframer.connect(&board_input_reader);
-  board_input_reader.data.pwm[0] = INI_SERVO_PWM;
+  board_input_reader.data.pwm[0] = 560;
   board_input_reader.data.pwm[1] = INI_SERVO_PWM;
   board_input_reader.data.pwm[2] = INI_SERVO_PWM;
   board_input_reader.data.pwm[3] = INI_SERVO_PWM;

@@ -40,5 +40,6 @@
 
   <node name="master_sync" pkg="master_sync_fkie" type="master_sync">
     <!-- TODO: specify nodes and/or topics to sync -->
+    <rosparam param="ignore_hosts">["mbzirc-NUC7"]</rosparam>
   </node>
 </launch>
