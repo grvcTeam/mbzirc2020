@@ -25,7 +25,7 @@
     <!-- Install magnetic gripper -->
     <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/magnetic_gripper.xacro" />
     <xacro:magnetic_gripper parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
-      <origin xyz="0 0 -0.3" rpy="0 0 0" />
+      <origin xyz="0 0 -0.275" rpy="0 0 0" />
     </xacro:magnetic_gripper>
     <!-- Install camera facing down -->
     <!-- <xacro:camera_macro 
