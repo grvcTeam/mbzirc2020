@@ -36,7 +36,7 @@
       <param name="portname" value="/dev/evot33"/>
     </node>
 
-    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+    <node if="$(eval mode == 'real')" pkg="fire_detector" name="fire_detector" type="fire_detector" respawn="false" output="screen">
       <param name="thermal_threshold" value="60"/>
       <param name="angle_amplitude"   value="5"/>
       <param name="camera_config"     value="DOWNWARD"/>
