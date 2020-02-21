@@ -113,9 +113,12 @@ class BrickTask(object):
 
 
 def get_brick_task_list(wall_pattern, brick_scales):
+    initial_y = -1.25   # TODO: Tune! (nominal: -2.0)
+    small_gap =  1.0  # TODO: Tune! (nominal:  0.065)
+    big_gap =    0.4    # TODO: Tune! (nominal:  0.4)
     brick_task_list = []
     for layer_index in range(2):
-        current_y = [-2.0, -2.0, -2.0]
+        current_y = [initial_y, initial_y, initial_y]
         for brick_index in range(7):
             for segment_index in range(3):  # orange is last!
                 brick = BrickTask()
@@ -125,10 +128,10 @@ def get_brick_task_list(wall_pattern, brick_scales):
                 brick.position = current_y[segment_index] + 0.5 * brick_scales[brick.color].y
                 brick.state = 'TODO'
                 brick_task_list.append(copy.deepcopy(brick))
-                current_y[segment_index] = brick.position + 0.5 * brick_scales[brick.color].y + 0.065
+                current_y[segment_index] = brick.position + 0.5 * brick_scales[brick.color].y + small_gap
 
     for layer_index in range(2):
-        current_y = -2.0
+        current_y = initial_y
         for brick_index in range(2):
             brick = BrickTask()
             brick.color = wall_pattern[3][layer_index][brick_index]
@@ -137,7 +140,7 @@ def get_brick_task_list(wall_pattern, brick_scales):
             brick.position = current_y + 0.5 * brick_scales[brick.color].y
             brick.state = 'TODO'
             brick_task_list.append(copy.deepcopy(brick))
-            current_y = brick.position + 0.5 * brick_scales[brick.color].y + 0.4
+            current_y = brick.position + 0.5 * brick_scales[brick.color].y + big_gap
 
     return brick_task_list
 
