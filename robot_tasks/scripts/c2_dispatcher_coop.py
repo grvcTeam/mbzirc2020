@@ -40,6 +40,7 @@ import tf2_ros
 import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3, Quaternion, TransformStamped
+from std_srvs.srv import SetBool
 from tasks.move import TakeOff, FollowPath
 from tasks.build import Pick, Place
 from utils.manager import TaskManager
@@ -208,14 +209,27 @@ class CentralUnit(object):
                     rospy.logerr("Service call failed!")
             except rospy.ServiceException, e:
                 rospy.logerr("Service call failed: {}".format(e))
-        # TODO: Activate also L and wall detector! And deactivate at the end!?
 
+            # Activate also L
+            service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
+            
+            rospy.wait_for_service(service_url)
+            try:
+                enable_detector = rospy.ServiceProxy(service_url, SetBool)
+                response = enable_detector(True)
+                if not response.success:
+                    rospy.logerr("Service call failed!")
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: {}".format(e))
+    
         robot_paths = {}
-        point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
+        #point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
+        point_paths = predefined_uav_paths()
+
         for i, robot_id in enumerate(self.available_robots):
             robot_path = []
-            flight_level = self.flight_levels[robot_id]
-            point_path = set_z(point_paths[i], flight_level)
+            #flight_level = self.flight_levels[robot_id]
+            #point_path = set_z(point_paths[i], flight_level)
             for point in point_path:
                 waypoint = PoseStamped()
                 waypoint.header.frame_id = 'arena'
@@ -239,7 +253,20 @@ class CentralUnit(object):
         for robot_id in self.available_robots:
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
+
+            # Deactivate L detector
+            service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
+            
+            rospy.wait_for_service(service_url)
+            try:
+                enable_detector = rospy.ServiceProxy(service_url, SetBool)
+                response = enable_detector(False)
+                if not response.success:
+                    rospy.logerr("Service call failed!")
+            except rospy.ServiceException, e:
+                rospy.logerr("Service call failed: {}".format(e))
         
+
     def compute_waiting_poses(self, wall_position, pile_position):
         center = [(wall_position.x+pile_position.x)/2.0, (wall_position.y+pile_position.y)/2.0]
         wall_to_pile = [pile_position.x-wall_position.x, pile_position.y-wall_position.y]
@@ -294,7 +321,7 @@ class CentralUnit(object):
                     if id != -1:
 
                         pile_info = {
-                            'color': self.piles[id].color, # TODO: IndexError: list index out of range
+                            'color': self.piles[id].color, 
                             'id': self.piles[id].id, 
                             'area': self.piles[id].scale.x*self.piles[id].scale.y, 
                             'x': self.piles[id].pose.pose.position.x, 
