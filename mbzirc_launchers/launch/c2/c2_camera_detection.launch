@@ -11,7 +11,7 @@
 
     <node name="object_detection" pkg="hue_object_detection" type="hsv_detection_node" output="screen">
       <param name="challenge" value="2" />
-      <param name="agent_id" value="$(arg agent_id)" />
+      <param name="agent_id" type="string" value="$(arg agent_id)"/>
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="camera_url" value="camera/color" />
       <param if="$(eval mode == 'sim')" name="config_filename" value="hsv_config_sim.yaml" />
@@ -22,7 +22,7 @@
         <param name="enable_node"     value="false"/>
         <param name="debug_view"      value="false"/>
         <param name="debug_publisher" value="false"/>
-        <param name="uav_id"          value="$(arg agent_id)"/>
+        <param name="uav_id"          type="string"   value="$(arg agent_id)"/>
         <param name="rate"            value="10"/>
         <param name="sigma_x"         value="1"/>
         <param name="sigma_y"         value="1"/>

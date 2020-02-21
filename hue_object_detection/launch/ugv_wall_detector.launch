@@ -17,7 +17,7 @@
     <node pkg="hue_object_detection" name="ugv_wall_detector" type="ugv_wall_detector.py" respawn="false" output="screen">
         <param name="debug_view"      value="$(arg debug_view)"/>
         <param name="debug_publisher" value="$(arg debug_publisher)"/>
-        <param name="uav_id"          value="$(arg agent_id)"/>
+        <param name="uav_id"          type="string" value="$(arg agent_id)"/>
         <param name="enable_node"     value="$(arg enable_node)"/>
         <param name="rate"            value="$(arg rate)"/>
         <param name="sigma_x"         value="$(arg variance_x)"/>
