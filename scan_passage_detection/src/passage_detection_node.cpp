@@ -159,7 +159,7 @@ public:
         walls_pub_ = n_.advertise<mbzirc_comm_objs::WallList>("walls", 3);
         scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
         
-        ros::param::param<std::string>("~agent_id", agent_id_, "1"); // TODO - Check why not change param default
+        ros::param::param<std::string>("~uav_id", agent_id_, "1"); // TODO - Check why not change param default
     }
 
     void scanCallback(const sensor_msgs::LaserScan::ConstPtr& _msg) {
