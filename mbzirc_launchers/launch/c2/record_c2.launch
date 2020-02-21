@@ -6,7 +6,7 @@
     <arg name="agent_id" default="1"/>
     <arg name="robot_ns" default="/mbzirc2020_$(arg agent_id)"/>
 
-    <node pkg="rosbag" type="record" name="$(anon rosbag_record_uav)" output="screen"
+    <node pkg="rosbag" type="record" name="rosbag_record_c2_uav_$(arg agent_id)" output="screen"
           args="-o $(arg bag_dir)/$(arg bag_name)
 
           $(arg robot_ns)/camera/color/image_raw
