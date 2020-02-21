@@ -34,8 +34,8 @@ pile:
     sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 42.0
-    position_y: 15.0
+    position_x: 15.0
+    position_y: 4.5
     position_z: 0.1
     yaw: 0.0
 
@@ -43,8 +43,8 @@ pile:
     sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 41.0
-    position_y: 15.0
+    position_x: 15.0
+    position_y: 6.0
     position_z: 0.1
     yaw: 0.0
 
@@ -52,8 +52,8 @@ pile:
     sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 39.5
-    position_y: 15.0
+    position_x: 15
+    position_y: 7.0
     position_z: 0.1
     yaw: 0.0
 
@@ -61,8 +61,8 @@ pile:
     sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 39.0
-    position_y: 15.0
+    position_x: 15.0
+    position_y: 8.0
     position_z: 0.1
     yaw: 0.0
 
@@ -70,8 +70,8 @@ pile:
     sub_type: "ugv"
     status: "active"
     frame_id: "arena"
-    position_x: 25.0
-    position_y: 12.0
+    position_x: -7.0
+    position_y: 7.0
     position_z: 0.1
     yaw: 0.0
 
@@ -79,8 +79,8 @@ pile:
     sub_type: "ugv"
     status: "active"
     frame_id: "arena"
-    position_x: 25.0
-    position_y: 11.0
+    position_x: -9.0
+    position_y: 7.0
     position_z: 0.1
     yaw: 0.0
 
@@ -88,8 +88,8 @@ pile:
     sub_type: "ugv"
     status: "active"
     frame_id: "arena"
-    position_x: 25.0
-    position_y: 10.0
+    position_x: -11.0
+    position_y: 7.0
     position_z: 0.1
     yaw: 0.0
 
@@ -97,8 +97,8 @@ pile:
     sub_type: "ugv"
     status: "active"
     frame_id: "arena"
-    position_x: 25.0
-    position_y: 9.0
+    position_x: -13.0
+    position_y: 7.0
     position_z: 0.1
     yaw: 0.0
 
@@ -106,34 +106,34 @@ wall:
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 38.1
-    position_y: 32.2
+    position_x: 8.0
+    position_y: 28.0
     position_z: 1.7
-    yaw: -1.57
+    yaw: 0.78
 
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 40.0
-    position_y: 30.0
+    position_x: 11.0
+    position_y: 28.0
     position_z: 1.7
-    yaw: -3.14
+    yaw: -0.78
   
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 42.2
-    position_y: 28.1
+    position_x: 14.2
+    position_y: 28.0
     position_z: 1.7
-    yaw: -1.57
+    yaw: 0.78
   
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: 44.1
-    position_y: 25.9
+    position_x: 17.1
+    position_y: 28.0
     position_z: 1.7
-    yaw: -3.14
+    yaw: -0.78
 
 #  - sub_type: "ugv"
 #    frame_id: "arena"
