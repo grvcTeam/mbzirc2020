@@ -15,12 +15,12 @@
     <arg name="y3" default="37.5"/>
     <arg name="yaw3" default="0"/>
 
-    <!-- UAV 1 -->
+    <!-- UAV DON PIN-PON 1 -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=30" />
-        <arg name="agent_id" value="1"/>
+        <arg name="agent_id" value="2"/>
         <arg name="color" value="Orange" />
         <arg name="x"     value="$(arg x1)" />
         <arg name="y"     value="$(arg y1)" />
@@ -31,7 +31,7 @@
     <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
         
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="1"/>
+        <arg name="agent_id" value="2"/>
         <arg name="flight_level" default="2.0" />
         <arg name="x" default="$(arg x1)" />
         <arg name="y" default="$(arg y1)" />
@@ -43,7 +43,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="1"/>
+        <arg name="agent_id" value="2"/>
         <arg name="laser" value="no"/>
 
     </include>
@@ -52,16 +52,16 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="1"/>
+        <arg name="agent_id" value="2"/>
         
     </include>
 
-    <!-- UAV 2 -->
+    <!-- UAV DON PIN-PON 2 -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="append_xacro_args"   value="challenge=31" />
-        <arg name="agent_id" value="2"/>
+        <arg name="append_xacro_args"   value="challenge=30" />
+        <arg name="agent_id" value="4"/>
         <arg name="color" value="Indigo" />
         <arg name="x"     value="$(arg x2)" />
         <arg name="y"     value="$(arg y2)" />
@@ -72,7 +72,7 @@
     <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
         
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" value="4"/>
         <arg name="flight_level" default="2.0" />
         <arg name="x" default="$(arg x2)" />
         <arg name="y" default="$(arg y2)" />
@@ -84,7 +84,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id"  type="string" value="2"/>
+        <arg name="agent_id" value="4"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -93,16 +93,16 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="2"/>
+        <arg name="agent_id" value="4"/>
         
     </include>
   
-    <!-- UAV 3 -->
+    <!-- UAV BATA-MANTA -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=31" />
-        <arg name="agent_id" value="3"/>
+        <arg name="agent_id" value="6"/>
         <arg name="color" value="Yellow" />
         <arg name="x"     value="$(arg x3)" />
         <arg name="y"     value="$(arg y3)" />
@@ -113,7 +113,7 @@
     <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
         
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="3"/>
+        <arg name="agent_id" value="6"/>
         <arg name="flight_level" default="2.0" />
         <arg name="x" default="$(arg x3)" />
         <arg name="y" default="$(arg y3)" />
@@ -125,7 +125,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="3"/>
+        <arg name="agent_id" value="6"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -134,7 +134,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="3"/>
+        <arg name="agent_id" value="6"/>
         
     </include>
 

@@ -15,7 +15,7 @@
     <arg name="y3" default="2.0"/>
     <arg name="yaw3" default="1.57"/>
 
-    <!-- UAV 1 -->
+    <!-- UAV TENACITAS 1 -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -43,7 +43,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="2"/>
+        <arg name="agent_id" value="2"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -52,11 +52,11 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="2"/>
+        <arg name="agent_id" value="2"/>
         
     </include>
 
-    <!-- UAV 2 -->
+    <!-- UAV TENACITAS 2 -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -84,7 +84,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="6"/>
+        <arg name="agent_id" value="6"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -93,7 +93,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="6"/>
+        <arg name="agent_id" value="6"/>
         
     </include>
   
@@ -125,7 +125,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="3"/>
+        <arg name="agent_id" value="3"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -134,7 +134,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" type="string" value="3"/>
+        <arg name="agent_id" value="3"/>
         
     </include> -->
 
