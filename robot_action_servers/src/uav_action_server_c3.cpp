@@ -533,8 +533,14 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   pose_pid.enableRosInterface("extinguish_ground_control");
 
+  std::string fire_color = _goal->color;
+  if ((fire_color != "fire") && (fire_color != "fire_box")) {
+    ROS_WARN("Unexpected fire color [%s], setting it to fire", fire_color.c_str());
+    fire_color = "fire";
+  }
+
   mbzirc_comm_objs::DetectTypes set_detection_srv;
-  set_detection_srv.request.types.push_back("fire");
+  set_detection_srv.request.types.push_back(fire_color);
   set_detection_srv.request.command = mbzirc_comm_objs::DetectTypes::Request::COMMAND_TRACK_FIRE;
   set_detection_srv.request.visualize = true;
   if (!set_detection_client.call(set_detection_srv)) {
