@@ -511,7 +511,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
     float mid_x = 0.5 * (best_wall.start[0] + best_wall.end[0]);
     float mid_y = 0.5 * (best_wall.start[1] + best_wall.end[1]);
 
-    float desired_distance = 0.0;  // TODO: From wall_center, take it from action goal! Must be positive?
+    float desired_distance = _goal->wall_y_offset;  // 0.0;  // TODO: From wall_center, take it from action goal! Must be positive?
     float corrected_distance = desired_distance - 0.19;  // TODO: Values! Also 0.4 if segment is not first!?
     geometry_msgs::PoseStamped next_to_wall;
     next_to_wall.header.stamp = ros::Time::now();
