@@ -39,7 +39,7 @@ import mbzirc_comm_objs.srv as srv
 import tf2_ros
 import tf.transformations
 
-from geometry_msgs.msg import PoseStamped, Vector3, Quaternion
+from geometry_msgs.msg import PoseStamped, Vector3, Quaternion, TransformStamped
 from tasks.move import TakeOff, FollowPath
 from tasks.build import Pick, Place
 from utils.manager import TaskManager
@@ -231,7 +231,7 @@ class CentralUnit(object):
 
         while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.wall_segment_ids,self.ugv_wall)):
             self.cluster_piles()
-            # self.cluster_wall_segments()
+            self.cluster_wall_segments()
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.sleep(1.0)
@@ -287,30 +287,34 @@ class CentralUnit(object):
                 cluster['centroid'] = [pile_info['x'], pile_info['y'] ]
                 cluster[pile_info['color']] = {'id': pile_info['id'], 'area': pile_info['area'] }
 
-                del piles_idx[0]
+                piles_idx[0] = -1
 
-                for i in range(len(piles_idx)):
+                for i,id in enumerate(piles_idx):
+                    
+                    if id != -1:
 
-                    pile_info = {
-                        'color': self.piles[piles_idx[i]].color, # TODO: IndexError: list index out of range
-                        'id': self.piles[piles_idx[i]].id, 
-                        'area': self.piles[piles_idx[i]].scale.x*self.piles[piles_idx[i]].scale.y, 
-                        'x': self.piles[piles_idx[i]].pose.pose.position.x, 
-                        'y': self.piles[piles_idx[i]].pose.pose.position.y
-                    }
+                        pile_info = {
+                            'color': self.piles[id].color, # TODO: IndexError: list index out of range
+                            'id': self.piles[id].id, 
+                            'area': self.piles[id].scale.x*self.piles[id].scale.y, 
+                            'x': self.piles[id].pose.pose.position.x, 
+                            'y': self.piles[id].pose.pose.position.y
+                        }
 
-                    dist = sqrt( (pile_info['x']-cluster['centroid'][0])**2 + (pile_info['y']-cluster['centroid'][1])**2 ) 
-                    if dist <= dist_th:
-                        
-                        if pile_info['color'] in cluster and pile_info['area'] > cluster[pile_info['color']]['area']:
+                        dist = sqrt( (pile_info['x']-cluster['centroid'][0])**2 + (pile_info['y']-cluster['centroid'][1])**2 ) 
+                        if dist <= dist_th:
+                            
+                            if pile_info['color'] in cluster and pile_info['area'] > cluster[pile_info['color']]['area']:
 
-                            cluster['centroid'] = [ (cluster['centroid'][0]+pile_info['x'])/2.0 , (cluster['centroid'][1]+pile_info['y'])/2.0 ]                       
-                            cluster[pile_info['color']]['id'] = pile_info['id']
-                            cluster[pile_info['color']]['area'] = pile_info['area']
+                                cluster['centroid'] = [ (cluster['centroid'][0]+pile_info['x'])/2.0 , (cluster['centroid'][1]+pile_info['y'])/2.0 ]                       
+                                cluster[pile_info['color']]['id'] = pile_info['id']
+                                cluster[pile_info['color']]['area'] = pile_info['area']
 
-                        # Delete pile
-                        del piles_idx[i]
-                
+                            # Delete pile
+                            piles_idx[i] = -1
+                    
+                piles_idx = [id for id in piles_idx if id != -1]
+
                 clusters.append(cluster)
 
             # Take clusters with more colors 
@@ -319,8 +323,8 @@ class CentralUnit(object):
                 msg.ObjectDetection.COLOR_ORANGE, 
                 msg.ObjectDetection.COLOR_BLUE, 
                 msg.ObjectDetection.COLOR_GREEN,
-                msg.ObjectDetection.COLOR_RED]
-            }
+                msg.ObjectDetection.COLOR_RED
+            ]
 
             uav_cluster = {}
             for cluster in clusters:
@@ -330,18 +334,18 @@ class CentralUnit(object):
             
             if(len(uav_cluster) > 0 ):
 
-                any_header = uav_cluster[uav_cluster.keys()[0]].header
-                any_orientation = uav_cluster[uav_cluster.keys()[0]].pose.orientation
-
                 for key in uav_cluster.keys():
                     if key != 'centroid':
                         self.uav_piles[key] = PoseStamped()
                         for pile in self.piles:
-                            if pile.id == uav_cluster[key][id]:
+                            if pile.id == uav_cluster[key]['id']:
                                 self.uav_piles[key].header = pile.header
                                 self.uav_piles[key].pose = pile.pose.pose
 
                 # Fill in not found piles with cluster centroid and any of the orientations
+                any_header = self.uav_piles[self.uav_piles.keys()[0]].header
+                any_orientation = self.uav_piles[self.uav_piles.keys()[0]].pose.orientation
+
                 for color in pile_layout:
                     if color not in self.uav_piles:
                         self.uav_piles[color] = PoseStamped()
@@ -349,6 +353,7 @@ class CentralUnit(object):
                         self.uav_piles[color].pose.position.x = uav_cluster['centroid'][0]
                         self.uav_piles[color].pose.position.y = uav_cluster['centroid'][1]
                         self.uav_piles[color].pose.position.z = 0.0
+                        self.uav_piles[color].pose.orientation = copy.deepcopy(any_orientation)
             else: 
                 self.uav_piles = {}
 
@@ -360,18 +365,18 @@ class CentralUnit(object):
             
             if(len(ugv_cluster) > 0 ):
 
-                any_header = ugv_cluster[ugv_cluster.keys()[0]].header
-                any_orientation = ugv_cluster[ugv_cluster.keys()[0]].pose.orientation
-
                 for key in ugv_cluster.keys():
                     if key != 'centroid':
                         self.ugv_piles[key] = PoseStamped()
                         for pile in self.piles:
-                            if pile.id == ugv_cluster[key][id]:
+                            if pile.id == ugv_cluster[key]['id']:
                                 self.ugv_piles[key].header = pile.header
                                 self.ugv_piles[key].pose = pile.pose.pose
 
                 # Fill in not found piles with cluster centroid and any of the orientations
+                any_header = self.ugv_piles[self.ugv_piles.keys()[0]].header
+                any_orientation = self.ugv_piles[self.ugv_piles.keys()[0]].pose.orientation
+
                 for color in pile_layout:
                     if color not in self.ugv_piles:
                         self.ugv_piles[color] = PoseStamped()
@@ -379,6 +384,8 @@ class CentralUnit(object):
                         self.ugv_piles[color].pose.position.x = ugv_cluster['centroid'][0]
                         self.ugv_piles[color].pose.position.y = ugv_cluster['centroid'][1]
                         self.ugv_piles[color].pose.position.z = 0.0
+                        self.ugv_piles[color].pose.orientation = copy.deepcopy(any_orientation)
+
             else: 
                 self.ugv_piles = {}
 
@@ -470,13 +477,13 @@ class CentralUnit(object):
     def publishWallTfs(self):
         wall_transforms = []
         for i in range(4):
-            wall_transforms[i] = geometry_msgs.msg.TransformStamped()
-
-            wall_transforms[i].header.stamp = rospy.Time.now()
-            wall_transforms[i].header.frame_id = "arena"
-            wall_transforms[i].child_frame_id = "uav_wall_" + str(i)
-            wall_transforms[i].transform.translation = self.uav_walls[self.wall_segment_ids[i]].pose.position
-            wall_transforms[i].transform.rotation = self.uav_walls[self.wall_segment_ids[i]].pose.orientation
+            transform = TransformStamped()
+            transform.header.stamp = rospy.Time.now()
+            transform.header.frame_id = "arena"
+            transform.child_frame_id = "uav_wall_" + str(i)
+            transform.transform.translation = self.uav_walls[self.wall_segment_ids[i]].pose.position
+            transform.transform.rotation = self.uav_walls[self.wall_segment_ids[i]].pose.orientation
+            wall_transforms.append(transform)
 
         self.broadcaster.sendTransform(wall_transforms)
 
@@ -490,7 +497,6 @@ class CentralUnit(object):
 
             dx = self.uav_walls[self.wall_segment_ids[dest_id]].pose.position.x - self.uav_walls[self.wall_segment_ids[orig_id]].pose.position.x
             dy = self.uav_walls[self.wall_segment_ids[dest_id]].pose.position.y - self.uav_walls[self.wall_segment_ids[orig_id]].pose.position.y
-            angle = atan2(dy,dx)
             d_orig = dx*dx + dy*dy
 
             wall_quaternion = [
@@ -499,7 +505,7 @@ class CentralUnit(object):
                 self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.z,
                 self.uav_walls[self.wall_segment_ids[orig_id]].pose.orientation.w
             ]
-            (wall_roll,wall_pitch,wall_yaw) = tf.transformations.euler_from_quaternion(wall_quaternion)
+            (_,_,wall_yaw) = tf.transformations.euler_from_quaternion(wall_quaternion)
             dx_moved = dx + 2 * sin(wall_yaw)
             dy_moved = dy + 2 * cos(wall_yaw)
             d_moved = dx_moved*dx_moved + dy_moved*dy_moved
@@ -541,8 +547,9 @@ class CentralUnit(object):
                             userdata.color = color_int_to_string(self.assigned_brick_task[robot_id].color)
                             userdata.waiting_pose = PoseStamped() 
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = self.piles_waiting_pose[robot_id][0][0]
-                            userdata.waiting_pose.pose.position.y = self.piles_waiting_pose[robot_id][0][1]
+                            userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][0][0]
+                            userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][0][1]
+                            userdata.waiting_pose.pose.position.z = self.flight_levels[robot_id]
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
                             userdata.above_pile_pose.pose.position.z = 5.0
                             self.task_manager.start_task(robot_id, Pick(), userdata)
@@ -556,8 +563,9 @@ class CentralUnit(object):
                             # Place
                             userdata = smach.UserData()
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = self.piles_waiting_pose[robot_id][1][0]
-                            userdata.waiting_pose.pose.position.y = self.piles_waiting_pose[robot_id][1][1]
+                            userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][1][0]
+                            userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][1][1]
+                            userdata.waiting_pose.pose.position.z = self.flight_levels[robot_id]
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
                             userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
                             self.task_manager.start_task(robot_id, Place(), userdata)
