@@ -7,60 +7,73 @@
 <xacro:property name="yaw" value="$(arg arena_yaw)"/>
 <!-- Properties for every object in the world -->
  <!-- 0 => X position , 1 => Y position , 2 => Z position , 3 => Item yaw -->
-<!-- <xacro:property name="f1" value="${[15,27,0,1.570795]}"/> 
-<xacro:property name="f2" value="${[36,17,0,0]}"/> 
-<xacro:property name="f3" value="${[32,45,0,1.570795]}"/> 
-<xacro:property name="f5" value="${[33,22,10.5,1.570795]}"/> -->
 
-<xacro:property name="f4ap" value="${[b[0]+0,b[1]+7.5,b[2]+5.3, -1.57]}"/>
+<!-- FACADE A (1) -->
+<xacro:property name="f6ap" value="${[b[0]+0, b[1]+11.3, b[2]+12.75, -1.57]}"/>
+<xacro:property name="f6a" value="${[(f6ap[0]-b[0])*cos(b[3])-(f6ap[1]-b[1])*sin(b[3])+b[0],(f6ap[0]-b[0])*sin(b[3])+(f6ap[1]-b[1])*cos(b[3])+b[1],f6ap[2],f6ap[3]+b[3]]}"/>
+<xacro:property name="f5ap" value="${[b[0]+0, b[1]+6, b[2]+10.5, -1.57]}"/>
+<xacro:property name="f5a" value="${[(f5ap[0]-b[0])*cos(b[3])-(f5ap[1]-b[1])*sin(b[3])+b[0],(f5ap[0]-b[0])*sin(b[3])+(f5ap[1]-b[1])*cos(b[3])+b[1],f5ap[2],f5ap[3]+b[3]]}"/>
+<xacro:property name="f4ap" value="${[b[0]+0,b[1]+1,b[2]+6.5, -1.57]}"/>
 <xacro:property name="f4a" value="${[(f4ap[0]-b[0])*cos(b[3])-(f4ap[1]-b[1])*sin(b[3])+b[0],(f4ap[0]-b[0])*sin(b[3])+(f4ap[1]-b[1])*cos(b[3])+b[1],f4ap[2],f4ap[3]+b[3]]}"/>
+<xacro:property name="f42ap" value="${[b[0]+0,b[1]+12.3,b[2]+0.75, -1.57]}"/>
+<xacro:property name="f42a" value="${[(f42ap[0]-b[0])*cos(b[3])-(f42ap[1]-b[1])*sin(b[3])+b[0],(f42ap[0]-b[0])*sin(b[3])+(f42ap[1]-b[1])*cos(b[3])+b[1],f42ap[2],f42ap[3]+b[3]]}"/>
+<xacro:property name="f62ap" value="${[b[0]+0,b[1]+1,b[2]+12.75, -1.57]}"/>
+<xacro:property name="f62a" value="${[(f62ap[0]-b[0])*cos(b[3])-(f62ap[1]-b[1])*sin(b[3])+b[0],(f62ap[0]-b[0])*sin(b[3])+(f62ap[1]-b[1])*cos(b[3])+b[1],f62ap[2],f62ap[3]+b[3]]}"/>
+<!-- <xacro:property name="f52ap" value="${[b[0]+0,b[1]+0,b[2]+7.5, -1.57]}"/>
+<xacro:property name="f52a" value="${[(f52ap[0]-b[0])*cos(b[3])-(f52ap[1]-b[1])*sin(b[3])+b[0],(f52ap[0]-b[0])*sin(b[3])+(f52ap[1]-b[1])*cos(b[3])+b[1],f52ap[2],f52ap[3]+b[3]]}"/> -->
 
-<xacro:property name="f4bp" value="${[b[0]+10, b[1]+6, b[2]+5.3, 1.57]}"/>
-<xacro:property name="f4b" value="${[(f4bp[0]-b[0])*cos(b[3])-(f4bp[1]-b[1])*sin(b[3])+b[0],(f4bp[0]-b[0])*sin(b[3])+(f4bp[1]-b[1])*cos(b[3])+b[1],f4bp[2],f4bp[3]+b[3]]}"/>
-
-<xacro:property name="f4cp" value="${[b[0]+4.5, b[1]+0, b[2]+5.3, 0]}"/>
-<xacro:property name="f4c" value="${[(f4cp[0]-b[0])*cos(b[3])-(f4cp[1]-b[1])*sin(b[3])+b[0],(f4cp[0]-b[0])*sin(b[3])+(f4cp[1]-b[1])*cos(b[3])+b[1],f4cp[2],f4cp[3]+b[3]]}"/>
-
-<xacro:property name="f4dp" value="${[b[0]+4.7, b[1]+10, b[2]+5.5, -3.1416]}"/>
-<xacro:property name="f4d" value="${[(f4dp[0]-b[0])*cos(b[3])-(f4dp[1]-b[1])*sin(b[3])+b[0],(f4dp[0]-b[0])*sin(b[3])+(f4dp[1]-b[1])*cos(b[3])+b[1],f4dp[2],f4dp[3]+b[3]]}"/>
-
+<!-- FACADE E (1) -->
 <xacro:property name="f4ep" value="${[b[0]+0, b[1]+11.3, b[2]+2, -1.57]}"/>
 <xacro:property name="f4e" value="${[(f4ep[0]-b[0])*cos(b[3])-(f4ep[1]-b[1])*sin(b[3])+b[0],(f4ep[0]-b[0])*sin(b[3])+(f4ep[1]-b[1])*cos(b[3])+b[1],f4ep[2],f4ep[3]+b[3]]}"/>
 
-
-<xacro:property name="f5ap" value="${[b[0]+0, b[1]+5, b[2]+7.5, -1.57]}"/>
-<xacro:property name="f5a" value="${[(f5ap[0]-b[0])*cos(b[3])-(f5ap[1]-b[1])*sin(b[3])+b[0],(f5ap[0]-b[0])*sin(b[3])+(f5ap[1]-b[1])*cos(b[3])+b[1],f5ap[2],f5ap[3]+b[3]]}"/>
-
-<xacro:property name="f5bp" value="${[b[0]+10, b[1]+8.7, b[2]+8.25, 1.57]}"/>
-<xacro:property name="f5b" value="${[(f5bp[0]-b[0])*cos(b[3])-(f5bp[1]-b[1])*sin(b[3])+b[0],(f5bp[0]-b[0])*sin(b[3])+(f5bp[1]-b[1])*cos(b[3])+b[1],f5bp[2],f5bp[3]+b[3]]}"/>
-
-<xacro:property name="f5cp" value="${[b[0]+2, b[1]+0, b[2]+9.2, 0]}"/>
-<xacro:property name="f5c" value="${[(f5cp[0]-b[0])*cos(b[3])-(f5cp[1]-b[1])*sin(b[3])+b[0],(f5cp[0]-b[0])*sin(b[3])+(f5cp[1]-b[1])*cos(b[3])+b[1],f5cp[2],f5cp[3]+b[3]]}"/>
-
-<xacro:property name="f5dp" value="${[b[0]+1.5, b[1]+10, b[2]+9.2, 3.1416]}"/>
+<!-- FACADE D(2) -->
+<xacro:property name="f6dp" value="${[b[0]+11.3, b[1]+12.8, b[2]+12.5, 3.1416]}"/>
+<xacro:property name="f6d" value="${[(f6dp[0]-b[0])*cos(b[3])-(f6dp[1]-b[1])*sin(b[3])+b[0],(f6dp[0]-b[0])*sin(b[3])+(f6dp[1]-b[1])*cos(b[3])+b[1],f6dp[2],f6dp[3]+b[3]]}"/>
+<xacro:property name="f5dp" value="${[b[0]+6.8, b[1]+12.8, b[2]+10.5, 3.1416]}"/>
 <xacro:property name="f5d" value="${[(f5dp[0]-b[0])*cos(b[3])-(f5dp[1]-b[1])*sin(b[3])+b[0],(f5dp[0]-b[0])*sin(b[3])+(f5dp[1]-b[1])*cos(b[3])+b[1],f5dp[2],f5dp[3]+b[3]]}"/>
-
-
-<xacro:property name="f6ap" value="${[b[0]+0, b[1]+6.5, b[2]+10.3, -1.57]}"/>
-<xacro:property name="f6a" value="${[(f6ap[0]-b[0])*cos(b[3])-(f6ap[1]-b[1])*sin(b[3])+b[0],(f6ap[0]-b[0])*sin(b[3])+(f6ap[1]-b[1])*cos(b[3])+b[1],f6ap[2],f6ap[3]+b[3]]}"/>
-
+<xacro:property name="f4dp" value="${[b[0]+1.75, b[1]+12.8, b[2]+6.0, -3.1416]}"/>
+<xacro:property name="f4d" value="${[(f4dp[0]-b[0])*cos(b[3])-(f4dp[1]-b[1])*sin(b[3])+b[0],(f4dp[0]-b[0])*sin(b[3])+(f4dp[1]-b[1])*cos(b[3])+b[1],f4dp[2],f4dp[3]+b[3]]}"/>
+<xacro:property name="f62dp" value="${[b[0]+0.5,b[1]+12.8,b[2]+12.5, 3.1416]}"/>
+<xacro:property name="f62d" value="${[(f62dp[0]-b[0])*cos(b[3])-(f62dp[1]-b[1])*sin(b[3])+b[0],(f62dp[0]-b[0])*sin(b[3])+(f62dp[1]-b[1])*cos(b[3])+b[1],f62dp[2],f62dp[3]+b[3]]}"/>
+<!-- <xacro:property name="f52dcp" value="${[b[0]+0,b[1]+10,b[2]+0, 3.1416]}"/>
+<xacro:property name="f52dc" value="${[(f52dcp[0]-b[0])*cos(b[3])-(f52dcp[1]-b[1])*sin(b[3])+b[0],(f52dcp[0]-b[0])*sin(b[3])+(f52dcp[1]-b[1])*cos(b[3])+b[1],f52dcp[2],f52dcp[3]+b[3]]}"/> -->
+<xacro:property name="f42dp" value="${[b[0]+11.3,b[1]+12.8,b[2]+8.25, 3.1416]}"/>
+<xacro:property name="f42d" value="${[(f42dp[0]-b[0])*cos(b[3])-(f42dp[1]-b[1])*sin(b[3])+b[0],(f42dp[0]-b[0])*sin(b[3])+(f42dp[1]-b[1])*cos(b[3])+b[1],f42dp[2],f42dp[3]+b[3]]}"/>
+<!-- FACADE B (3) -->
 <xacro:property name="f6bp" value="${[b[0]+10, b[1]+1.3, b[2]+11.25, 1.57]}"/>
 <xacro:property name="f6b" value="${[(f6bp[0]-b[0])*cos(b[3])-(f6bp[1]-b[1])*sin(b[3])+b[0],(f6bp[0]-b[0])*sin(b[3])+(f6bp[1]-b[1])*cos(b[3])+b[1],f6bp[2],f6bp[3]+b[3]]}"/>
+<xacro:property name="f5bp" value="${[b[0]+10, b[1]+8.7, b[2]+8.25, 1.57]}"/>
+<xacro:property name="f5b" value="${[(f5bp[0]-b[0])*cos(b[3])-(f5bp[1]-b[1])*sin(b[3])+b[0],(f5bp[0]-b[0])*sin(b[3])+(f5bp[1]-b[1])*cos(b[3])+b[1],f5bp[2],f5bp[3]+b[3]]}"/>
+<xacro:property name="f4bp" value="${[b[0]+10, b[1]+6, b[2]+5.3, 1.57]}"/>
+<xacro:property name="f4b" value="${[(f4bp[0]-b[0])*cos(b[3])-(f4bp[1]-b[1])*sin(b[3])+b[0],(f4bp[0]-b[0])*sin(b[3])+(f4bp[1]-b[1])*cos(b[3])+b[1],f4bp[2],f4bp[3]+b[3]]}"/>
+<!-- <xacro:property name="f62bp" value="${[b[0]+10,b[1]+0,b[2]+12.5, -1.57]}"/>
+<xacro:property name="f62b" value="${[(f62bp[0]-b[0])*cos(b[3])-(f62bp[1]-b[1])*sin(b[3])+b[0],(f62bp[0]-b[0])*sin(b[3])+(f62bp[1]-b[1])*cos(b[3])+b[1],f62bp[2],f62bp[3]+b[3]]}"/>
+<xacro:property name="f52bp" value="${[b[0]+10,b[1]+0,b[2]+7.5, -1.57]}"/>
+<xacro:property name="f52b" value="${[(f52bp[0]-b[0])*cos(b[3])-(f52bp[1]-b[1])*sin(b[3])+b[0],(f52bp[0]-b[0])*sin(b[3])+(f52bp[1]-b[1])*cos(b[3])+b[1],f52bp[2],f52bp[3]+b[3]]}"/>
+<xacro:property name="f42bp" value="${[b[0]+10,b[1]+0,b[2]+1.5, -1.57]}"/>
+<xacro:property name="f42b" value="${[(f42bp[0]-b[0])*cos(b[3])-(f42bp[1]-b[1])*sin(b[3])+b[0],(f42bp[0]-b[0])*sin(b[3])+(f42bp[1]-b[1])*cos(b[3])+b[1],f42bp[2],f42bp[3]+b[3]]}"/> -->
 
-<xacro:property name="f6cp" value="${[b[0]+8.7, b[1]+0, b[2]+12, 0]}"/>
+<!-- FACADE C (4) -->
+<xacro:property name="f6cp" value="${[b[0]+11, b[1]+0, b[2]+12.5, 0]}"/>
 <xacro:property name="f6c" value="${[(f6cp[0]-b[0])*cos(b[3])-(f6cp[1]-b[1])*sin(b[3])+b[0],(f6cp[0]-b[0])*sin(b[3])+(f6cp[1]-b[1])*cos(b[3])+b[1],f6cp[2],f6cp[3]+b[3]]}"/>
+<xacro:property name="f62cp" value="${[b[0]+5,b[1]+0,b[2]+10.5, 0]}"/>
+<xacro:property name="f62c" value="${[(f62cp[0]-b[0])*cos(b[3])-(f62cp[1]-b[1])*sin(b[3])+b[0],(f62cp[0]-b[0])*sin(b[3])+(f62cp[1]-b[1])*cos(b[3])+b[1],f62cp[2],f62cp[3]+b[3]]}"/>
+<xacro:property name="f5cp" value="${[b[0]+1, b[1]+0, b[2]+10.25, 0]}"/>
+<xacro:property name="f5c" value="${[(f5cp[0]-b[0])*cos(b[3])-(f5cp[1]-b[1])*sin(b[3])+b[0],(f5cp[0]-b[0])*sin(b[3])+(f5cp[1]-b[1])*cos(b[3])+b[1],f5cp[2],f5cp[3]+b[3]]}"/>
+<xacro:property name="f4cp" value="${[b[0]+11, b[1]+0, b[2]+6.0, 0]}"/>
+<xacro:property name="f4c" value="${[(f4cp[0]-b[0])*cos(b[3])-(f4cp[1]-b[1])*sin(b[3])+b[0],(f4cp[0]-b[0])*sin(b[3])+(f4cp[1]-b[1])*cos(b[3])+b[1],f4cp[2],f4cp[3]+b[3]]}"/>
+<xacro:property name="f42cp" value="${[b[0]+1,b[1]+0,b[2]+2.75, 0]}"/>
+<xacro:property name="f42c" value="${[(f42cp[0]-b[0])*cos(b[3])-(f42cp[1]-b[1])*sin(b[3])+b[0],(f42cp[0]-b[0])*sin(b[3])+(f42cp[1]-b[1])*cos(b[3])+b[1],f42cp[2],f42cp[3]+b[3]]}"/>
+<!-- <xacro:property name="f52cp" value="${[b[0]+0,b[1]+0,b[2]+7.5, -1.57]}"/>
+<xacro:property name="f52c" value="${[(f52cp[0]-b[0])*cos(b[3])-(f52cp[1]-b[1])*sin(b[3])+b[0],(f52cp[0]-b[0])*sin(b[3])+(f52cp[1]-b[1])*cos(b[3])+b[1],f52cp[2],f52cp[3]+b[3]]}"/> -->
 
-<xacro:property name="f6dp" value="${[b[0]+8.7, b[1]+10, b[2]+12.5, 3.1416]}"/>
-<xacro:property name="f6d" value="${[(f6dp[0]-b[0])*cos(b[3])-(f6dp[1]-b[1])*sin(b[3])+b[0],(f6dp[0]-b[0])*sin(b[3])+(f6dp[1]-b[1])*cos(b[3])+b[1],f6dp[2],f6dp[3]+b[3]]}"/>
 
-
-<xacro:property name="f7" value="${[30,10,0,0]}"/>
-<xacro:property name="f8" value="${[10,40,0,-1.570795]}"/>
+<!-- OUTDOOR FIRES -->
+<xacro:property name="f7" value="${[5,17,0,0]}"/>
+<xacro:property name="f8" value="${[15,11,0,-1.570795]}"/>
  
-<xacro:property name="b" value="${[40,20,0,1.57]}"/> 
+<xacro:property name="b" value="${[26,22.,0,-1.57]}"/> 
 <xacro:property name="g" value="${[30,25,0,0]}"/> 
-
-<!-- 4.7124 -->
 
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
@@ -73,23 +86,40 @@
       <pose frame=''>${g[0]*cos(yaw)-g[1]*sin(yaw)} ${g[0]*sin(yaw)+g[1]*cos(yaw)} ${g[2]} 0 0 ${g[3]+yaw} </pose>
     </model>
 
-    
-    <vertical_fire_holder pose="${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw}" id="f4a" on="True" />
-    <vertical_fire_holder pose="${f4b[0]*cos(yaw)-f4b[1]*sin(yaw)} ${f4b[0]*sin(yaw)+f4b[1]*cos(yaw)} ${f4b[2]} 0 0 ${f4b[3]+yaw}" id="f4b" on="True" />
-    <vertical_fire_holder pose="${f4c[0]*cos(yaw)-f4c[1]*sin(yaw)} ${f4c[0]*sin(yaw)+f4c[1]*cos(yaw)} ${f4c[2]} 0 0 ${f4c[3]+yaw}" id="f4c" on="True" />
-    <vertical_fire_holder pose="${f4d[0]*cos(yaw)-f4d[1]*sin(yaw)} ${f4d[0]*sin(yaw)+f4d[1]*cos(yaw)} ${f4d[2]} 0 0 ${f4d[3]+yaw}" id="f4d" on="True" />
-    <vertical_fire_holder pose="${f4e[0]*cos(yaw)-f4e[1]*sin(yaw)} ${f4e[0]*sin(yaw)+f4e[1]*cos(yaw)} ${f4e[2]} 0 0 ${f4e[3]+yaw}" id="f4e" on="True" />
-
-    <vertical_fire_holder pose="${f5a[0]*cos(yaw)-f5a[1]*sin(yaw)} ${f5a[0]*sin(yaw)+f5a[1]*cos(yaw)} ${f5a[2]} 0 0 ${f5a[3]+yaw}" id="f5a" on="True" />
-    <vertical_fire_holder pose="${f5b[0]*cos(yaw)-f5b[1]*sin(yaw)} ${f5b[0]*sin(yaw)+f5b[1]*cos(yaw)} ${f5b[2]} 0 0 ${f5b[3]+yaw}" id="f5b" on="True" />
-    <vertical_fire_holder pose="${f5c[0]*cos(yaw)-f5c[1]*sin(yaw)} ${f5c[0]*sin(yaw)+f5c[1]*cos(yaw)} ${f5c[2]} 0 0 ${f5c[3]+yaw}" id="f5c" on="True" />
-    <vertical_fire_holder pose="${f5d[0]*cos(yaw)-f5d[1]*sin(yaw)} ${f5d[0]*sin(yaw)+f5d[1]*cos(yaw)} ${f5d[2]} 0 0 ${f5d[3]+yaw}" id="f5d" on="True" />
-
     <vertical_fire_holder pose="${f6a[0]*cos(yaw)-f6a[1]*sin(yaw)} ${f6a[0]*sin(yaw)+f6a[1]*cos(yaw)} ${f6a[2]} 0 0 ${f6a[3]+yaw}" id="f6a" on="True" />
-    <vertical_fire_holder pose="${f6b[0]*cos(yaw)-f6b[1]*sin(yaw)} ${f6b[0]*sin(yaw)+f6b[1]*cos(yaw)} ${f6b[2]} 0 0 ${f6b[3]+yaw}" id="f6b" on="True" />
-    <vertical_fire_holder pose="${f6c[0]*cos(yaw)-f6c[1]*sin(yaw)} ${f6c[0]*sin(yaw)+f6c[1]*cos(yaw)} ${f6c[2]} 0 0 ${f6c[3]+yaw}" id="f6c" on="True" />
-    <vertical_fire_holder pose="${f6d[0]*cos(yaw)-f6d[1]*sin(yaw)} ${f6d[0]*sin(yaw)+f6d[1]*cos(yaw)} ${f6d[2]} 0 0 ${f6d[3]+yaw}" id="f6d" on="True" />
+    <vertical_fire_holder pose="${f5a[0]*cos(yaw)-f5a[1]*sin(yaw)} ${f5a[0]*sin(yaw)+f5a[1]*cos(yaw)} ${f5a[2]} 0 0 ${f5a[3]+yaw}" id="f5a" on="True" />
+    <vertical_fire_holder pose="${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw}" id="f4a" on="True" />
+    <vertical_fire_holder pose="${f42a[0]*cos(yaw)-f42a[1]*sin(yaw)} ${f42a[0]*sin(yaw)+f42a[1]*cos(yaw)} ${f42a[2]} 0 0 ${f42a[3]+yaw}" id="f42a" on="True" />
+    <vertical_fire_holder pose="${f62a[0]*cos(yaw)-f62a[1]*sin(yaw)} ${f62a[0]*sin(yaw)+f62a[1]*cos(yaw)} ${f62a[2]} 0 0 ${f62a[3]+yaw}" id="f62a" on="True" />
+    <!-- <vertical_fire_holder pose="${f52a[0]*cos(yaw)-f52a[1]*sin(yaw)} ${f52a[0]*sin(yaw)+f52a[1]*cos(yaw)} ${f52ac[2]} 0 0 ${f52a[3]+yaw}" id="f52a" on="True" /> -->
 
+
+    <!-- <vertical_fire_holder pose="${f4e[0]*cos(yaw)-f4e[1]*sin(yaw)} ${f4e[0]*sin(yaw)+f4e[1]*cos(yaw)} ${f4e[2]} 0 0 ${f4e[3]+yaw}" id="f4e" on="True" /> -->
+
+    <!-- <vertical_fire_holder pose="${f6b[0]*cos(yaw)-f6b[1]*sin(yaw)} ${f6b[0]*sin(yaw)+f6b[1]*cos(yaw)} ${f6b[2]} 0 0 ${f6b[3]+yaw}" id="f6b" on="True" />
+    <vertical_fire_holder pose="${f5b[0]*cos(yaw)-f5b[1]*sin(yaw)} ${f5b[0]*sin(yaw)+f5b[1]*cos(yaw)} ${f5b[2]} 0 0 ${f5b[3]+yaw}" id="f5b" on="True" />
+    <vertical_fire_holder pose="${f4b[0]*cos(yaw)-f4b[1]*sin(yaw)} ${f4b[0]*sin(yaw)+f4b[1]*cos(yaw)} ${f4b[2]} 0 0 ${f4b[3]+yaw}" id="f4b" on="True" /> -->
+
+
+    <!-- <vertical_fire_holder pose="${f62b[0]*cos(yaw)-f62b[1]*sin(yaw)} ${f62b[0]*sin(yaw)+f62b[1]*cos(yaw)} ${f62b[2]} 0 0 ${f62b[3]+yaw}" id="f62b" on="True" />
+    <vertical_fire_holder pose="${f52b[0]*cos(yaw)-f52b[1]*sin(yaw)} ${f52b[0]*sin(yaw)+f52b[1]*cos(yaw)} ${f52b[2]} 0 0 ${f52b[3]+yaw}" id="f52b" on="True" />
+    <vertical_fire_holder pose="${f42b[0]*cos(yaw)-f42b[1]*sin(yaw)} ${f42b[0]*sin(yaw)+f42b[1]*cos(yaw)} ${f42b[2]} 0 0 ${f42b[3]+yaw}" id="f42b" on="True" /> -->
+   
+    <vertical_fire_holder pose="${f6d[0]*cos(yaw)-f6d[1]*sin(yaw)} ${f6d[0]*sin(yaw)+f6d[1]*cos(yaw)} ${f6d[2]} 0 0 ${f6d[3]+yaw}" id="f6d" on="True" />
+    <vertical_fire_holder pose="${f5d[0]*cos(yaw)-f5d[1]*sin(yaw)} ${f5d[0]*sin(yaw)+f5d[1]*cos(yaw)} ${f5d[2]} 0 0 ${f5d[3]+yaw}" id="f5d" on="True" />
+    <vertical_fire_holder pose="${f4d[0]*cos(yaw)-f4d[1]*sin(yaw)} ${f4d[0]*sin(yaw)+f4d[1]*cos(yaw)} ${f4d[2]} 0 0 ${f4d[3]+yaw}" id="f4d" on="True" />
+    <vertical_fire_holder pose="${f62d[0]*cos(yaw)-f62d[1]*sin(yaw)} ${f62d[0]*sin(yaw)+f62d[1]*cos(yaw)} ${f62d[2]} 0 0 ${f62d[3]+yaw}" id="f62d" on="True" />
+    <!-- <vertical_fire_holder pose="${f52dc[0]*cos(yaw)-f52dc[1]*sin(yaw)} ${f52dc[0]*sin(yaw)+f52dc[1]*cos(yaw)} ${f52dc[2]} 0 0 ${f52dc[3]+yaw}" id="f52dc" on="True" /> -->
+    <vertical_fire_holder pose="${f42d[0]*cos(yaw)-f42d[1]*sin(yaw)} ${f42d[0]*sin(yaw)+f42d[1]*cos(yaw)} ${f42d[2]} 0 0 ${f42d[3]+yaw}" id="f42d" on="True" />
+    
+    <vertical_fire_holder pose="${f6c[0]*cos(yaw)-f6c[1]*sin(yaw)} ${f6c[0]*sin(yaw)+f6c[1]*cos(yaw)} ${f6c[2]} 0 0 ${f6c[3]+yaw}" id="f6c" on="True" />
+    <vertical_fire_holder pose="${f62c[0]*cos(yaw)-f62c[1]*sin(yaw)} ${f62c[0]*sin(yaw)+f62c[1]*cos(yaw)} ${f62c[2]} 0 0 ${f62c[3]+yaw}" id="f62c" on="True" />
+    <vertical_fire_holder pose="${f5c[0]*cos(yaw)-f5c[1]*sin(yaw)} ${f5c[0]*sin(yaw)+f5c[1]*cos(yaw)} ${f5c[2]} 0 0 ${f5c[3]+yaw}" id="f5c" on="True" />
+    <vertical_fire_holder pose="${f4c[0]*cos(yaw)-f4c[1]*sin(yaw)} ${f4c[0]*sin(yaw)+f4c[1]*cos(yaw)} ${f4c[2]} 0 0 ${f4c[3]+yaw}" id="f4c" on="True" />
+    <vertical_fire_holder pose="${f42c[0]*cos(yaw)-f42c[1]*sin(yaw)} ${f42c[0]*sin(yaw)+f42c[1]*cos(yaw)} ${f42c[2]} 0 0 ${f42c[3]+yaw}" id="f42c" on="True" />
+    <!-- <vertical_fire_holder pose="${f52c[0]*cos(yaw)-f52c[1]*sin(yaw)} ${f52c[0]*sin(yaw)+f52c[1]*cos(yaw)} ${f52c[2]} 0 0 ${f52c[3]+yaw}" id="f52c" on="True" /> -->
+
+    
     <model name="outdoor_fire_holder_1">
       <include>
         <uri>model://outdoor_fire_holder</uri>
@@ -102,42 +132,6 @@
       </include>
       <pose frame=''>${f8[0]*cos(yaw)-f8[1]*sin(yaw)} ${f8[0]*sin(yaw)+f8[1]*cos(yaw)} ${f8[2]} 0 0 ${f8[3]+yaw} </pose>
     </model>
-
-    <!-- <model name="cubewithflames_1">
-      <include>
-        <uri>model://cubewithflames</uri>
-      </include>
-      <pose frame=''>${f1[0]*cos(yaw)-f1[1]*sin(yaw)} ${f1[0]*sin(yaw)+f1[1]*cos(yaw)} ${f1[2]} 0 0 ${f1[3]+yaw} </pose>
-    </model> -->
-    
-    <!-- <model name="cubewithflames_2">
-      <include>
-      <uri>model://cubewithflames</uri>
-      </include>
-      <pose frame=''>${f2[0]*cos(yaw)-f2[1]*sin(yaw)} ${f2[0]*sin(yaw)+f2[1]*cos(yaw)} ${f2[2]} 0 0 ${f2[3]+yaw} </pose>
-    </model> -->
-
-    <!-- <model name="cubewithflames_3">
-      <include>
-        <uri>model://cubewithflames</uri>
-      </include>
-      <pose frame=''>${f3[0]*cos(yaw)-f3[1]*sin(yaw)} ${f3[0]*sin(yaw)+f3[1]*cos(yaw)} ${f3[2]} 0 0 ${f3[3]+yaw} </pose>
-    </model> -->
-
-    <!-- <model name="f4a">
-      <include>
-        <uri>model://vertical_fire_holder</uri>
-      </include>
-      <pose frame=''>${f4a[0]*cos(yaw)-f4a[1]*sin(yaw)} ${f4a[0]*sin(yaw)+f4a[1]*cos(yaw)} ${f4a[2]} 0 0 ${f4a[3]+yaw} </pose>
-      <static>true</static>
-    </model> -->
-
-    <!-- <model name="cubewithflames_5">
-      <include>
-        <uri>model://cubewithflames</uri>
-      </include>
-      <pose frame=''>${f5[0]*cos(yaw)-f5[1]*sin(yaw)} ${f5[0]*sin(yaw)+f5[1]*cos(yaw)} ${f5[2]} 0 0 ${f5[3]+yaw} </pose>
-    </model> -->
 
     <model name="building">
       <include>
