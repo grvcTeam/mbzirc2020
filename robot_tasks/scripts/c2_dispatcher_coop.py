@@ -184,7 +184,8 @@ class CentralUnit(object):
     def take_off(self):
         for robot_id in self.available_robots:
             userdata = smach.UserData()
-            userdata.height = self.flight_levels[robot_id]  
+            #userdata.height = self.flight_levels[robot_id]
+            userdata.height = 7.0 #TODO: take off altitude fixed    
             self.task_manager.start_task(robot_id, TakeOff(), userdata)
             self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
@@ -238,7 +239,7 @@ class CentralUnit(object):
             robot_paths[robot_id] = robot_path
 
         #TODO: remove from second UAV's path the points at low altitude. Descend with an additional action
-        
+
         for robot_id in self.available_robots:
             print('sending goal to search_objects server {}'.format(robot_id))
             userdata = smach.UserData()
