@@ -201,8 +201,8 @@ public:
                 continue;
             }
             std_msgs::ColorRGBA color = colorFromIndex(i);
-            // marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
-            // marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
+            marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
+            marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
             auto start = line.inliers[0];
             for (int j = 0; j < line.inliers.size()-1; j++) {
                 float delta_x = line.inliers[j+1].x - line.inliers[j].x;
