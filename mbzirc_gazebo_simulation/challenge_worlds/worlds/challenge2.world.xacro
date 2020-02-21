@@ -17,10 +17,10 @@
     <!-- X'-x= (X-x)*cos(yaw)-(Y-y)*sin(yaw) -->
     <!-- Y'-y= (X-x)*sin(yaw)+(Y-y)*cos(yaw)  -->
 
-<xacro:property name="ground" value="${[30,25,0,0]}"/>
+<xacro:property name="ground" value="${[8,17,0,0]}"/>
 <!-- UAV BRICKS Location -->
 <!-- Change "basebrick" to modify location and yaw for the entire pile-->
-<xacro:property name="basebrick" value="${[41,15,0,0]}"/>
+<xacro:property name="basebrick" value="${[14,7,0,-1.57]}"/>
 
 <xacro:property name="red01p" value="${[basebrick[0]+1.95,basebrick[1]-3.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red01" value="${[(red01p[0]-basebrick[0])*cos(basebrick[3])-(red01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red01p[0]-basebrick[0])*sin(basebrick[3])+(red01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red01p[2],red01p[3]+basebrick[3]]}"/>
@@ -119,10 +119,10 @@
 <xacro:property name="orange04" value="${[(orange04p[0]-basebrick[0])*cos(basebrick[3])-(orange04p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(orange04p[0]-basebrick[0])*sin(basebrick[3])+(orange04p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],orange04p[2],orange04p[3]+basebrick[3]]}"/>
 <!-- WALL 1 Location (L-SHAPE FRAME) -->
 <!-- Change "L_frame" to modify location and yaw -->
-<xacro:property name="L_frame" value="${[17,32,0.005,3.1416]}"/>
+<xacro:property name="L_frame" value="${[-14,28,0.005,-1.57]}"/>
 <!-- WALL 2 Location-->
 <!-- Change "dropwall_center" to modify location and yaw -->
-<xacro:property name="dropwall_center" value="${[40,30,0,0]}"/>
+<xacro:property name="dropwall_center" value="${[14,28,0,3.9278]}"/>
 
 <xacro:property name="dropwall01p" value="${[dropwall_center[0]-1.9,dropwall_center[1]+2.2,dropwall_center[2],1.570795]}"/>
 <xacro:property name="dropwall01" value="${[(dropwall01p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall01p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall01p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall01p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall01p[2],dropwall01p[3]+dropwall_center[3]]}"/>
@@ -134,7 +134,7 @@
 <xacro:property name="dropwall04" value="${[(dropwall04p[0]-dropwall_center[0])*cos(dropwall_center[3])-(dropwall04p[1]-dropwall_center[1])*sin(dropwall_center[3])+dropwall_center[0],(dropwall04p[0]-dropwall_center[0])*sin(dropwall_center[3])+(dropwall04p[1]-dropwall_center[1])*cos(dropwall_center[3])+dropwall_center[1],dropwall04p[2],dropwall04p[3]+dropwall_center[3]]}"/>
 <!-- UGV Bricks Location-->
 <!-- Change ugvbricks to modify location and yaw for the entire pile-->
-<xacro:property name="ugvbricks" value="${[15,12,0,0]}"/>
+<xacro:property name="ugvbricks" value="${[-14,7,0,-1.57]}"/>
 
 <xacro:property name="ugv_orange_centerp" value="${[ugvbricks[0]+0.1,ugvbricks[1]+0.9,ugvbricks[2],0]}"/>
 <xacro:property name="ugv_orange_center" value="${[(ugv_orange_centerp[0]-ugvbricks[0])*cos(ugvbricks[3])-(ugv_orange_centerp[1]-ugvbricks[1])*sin(ugvbricks[3])+ugvbricks[0],(ugv_orange_centerp[0]-ugvbricks[0])*sin(ugvbricks[3])+(ugv_orange_centerp[1]-ugvbricks[1])*cos(ugvbricks[3])+ugvbricks[1],ugv_orange_centerp[2],ugv_orange_centerp[3]+ugvbricks[3]]}"/>

@@ -69,11 +69,11 @@
 
 
 <!-- OUTDOOR FIRES -->
-<xacro:property name="f7" value="${[5,17,0,0]}"/>
-<xacro:property name="f8" value="${[15,11,0,-1.570795]}"/>
+<xacro:property name="f7" value="${[-25,17,0,0]}"/>
+<xacro:property name="f8" value="${[-15,11,0,-1.570795]}"/>
  
-<xacro:property name="b" value="${[26,22.,0,-1.57]}"/> 
-<xacro:property name="g" value="${[30,25,0,0]}"/> 
+<xacro:property name="b" value="${[-4.1,21.93,0,-1.57]}"/> 
+<xacro:property name="g" value="${[0,25,0,0]}"/> 
 
    <!-- The following is the geometric expresion for an axis rotation -->
    <!-- X'= X*cos(yaw)-Y*sin(yaw) -->
