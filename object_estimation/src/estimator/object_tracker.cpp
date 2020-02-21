@@ -167,6 +167,14 @@ void ObjectTracker::initialize(YAML::Node node)
 		scale_[2] = node["scale_z"].as<float>();
 		fixed_scale_ = true;
 	}
+	else
+	{
+		scale_.resize(3);
+		scale_[0] = 1.0;
+		scale_[1] = 1.0;
+		scale_[2] = 0.2;
+		fixed_scale_ = true;
+	}
 }
 
 /**
