@@ -13,7 +13,7 @@
     <arg name="covariance_z"            default="0.5"/>
     <arg name="thermal_threshold"       default="37 "/>
     
-    <node name="thermal" pkg="fire_detector" type="therm" respawn="false" output="screen">
+    <node name="thermal" pkg="fire_detector" type="fire_detector" respawn="false" output="screen">
         <param name="angle_amplitude"   value="$(arg angle_amplitude)"/>
         <param name="camera_config"     value="$(arg camera_config)"/>
         <param name="covariance_x"      value="$(arg covariance_x)"/>
