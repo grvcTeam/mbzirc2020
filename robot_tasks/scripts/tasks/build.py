@@ -47,11 +47,11 @@ class Pick(smach.StateMachine):
             smach.StateMachine.add('PICK', smach_ros.SimpleActionState(robot.url + 'pick_action', mbzirc_comm_objs.msg.PickAction,
                                     input_keys = ['color'],
                                     goal_cb = pick_goal_callback),
-                                    transitions = {'succeeded': 'GO_UP'})
-
-            smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
-                                    remapping = {'waypoint': 'above_pile_pose'},
                                     transitions = {'succeeded': 'BACK_TO_WAITING_AREA'})
+
+            # smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
+            #                         remapping = {'waypoint': 'above_pile_pose'},
+            #                         transitions = {'succeeded': 'BACK_TO_WAITING_AREA'})
 
             smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
                                     remapping = {'waypoint': 'waiting_pose'},
