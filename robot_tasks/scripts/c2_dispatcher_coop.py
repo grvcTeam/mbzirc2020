@@ -237,6 +237,8 @@ class CentralUnit(object):
                 robot_path.append(waypoint)
             robot_paths[robot_id] = robot_path
 
+        #TODO: remove from second UAV's path the points at low altitude. Descend with an additional action
+        
         for robot_id in self.available_robots:
             print('sending goal to search_objects server {}'.format(robot_id))
             userdata = smach.UserData()
