@@ -43,7 +43,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="1"/>
+        <arg name="agent_id" type="string" value="1"/>
         <arg name="laser" value="no"/>
 
     </include>
@@ -52,7 +52,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="1"/>
+        <arg name="agent_id" type="string" value="1"/>
         
     </include>
 
@@ -84,7 +84,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id"  type="string" value="2"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -93,7 +93,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" type="string" value="2"/>
         
     </include>
   
@@ -125,7 +125,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="3"/>
+        <arg name="agent_id" type="string" value="3"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -134,7 +134,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="3"/>
+        <arg name="agent_id" type="string" value="3"/>
         
     </include>
 
