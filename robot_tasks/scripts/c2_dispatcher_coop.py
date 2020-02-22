@@ -41,7 +41,7 @@ import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3, Quaternion, TransformStamped
 from std_srvs.srv import SetBool
-from tasks.move import TakeOff, FollowPath
+from tasks.move import TakeOff, FollowPath, GoTo
 from tasks.build import Pick, Place
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
@@ -301,9 +301,10 @@ class CentralUnit(object):
 
 
         for robot_id in self.available_robots:
-            rospy.logwarn('preempting {}'.format(robot_id))
-            self.task_manager.preempt_task(robot_id)
-            self.task_manager.wait_for([robot_id])
+            if not self.task_manager.is_idle(robot_id):
+                rospy.logwarn('preempting {}'.format(robot_id))
+                self.task_manager.preempt_task(robot_id)
+                self.task_manager.wait_for([robot_id])
 
             # Deactivate L detector
             # service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
@@ -631,10 +632,29 @@ class CentralUnit(object):
         p1 = self.uav_walls[self.wall_segment_ids[1]]
         p2 = self.uav_walls[self.wall_segment_ids[2]]
         p_wall = Vector3(x=(p1.pose.position.x + p2.pose.position.x)/2.0, y=(p1.pose.position.y + p2.pose.position.y)/2.0, z=0.0)
-       
+
         pose_pile = self.uav_piles[msg.ObjectDetection.COLOR_GREEN].pose.position
 
-        self.compute_waiting_poses(p_wall, pose_pile)
+        #self.compute_waiting_poses(p_wall, pose_pile)
+        # Magic waiting poses
+        waiting_poses = []
+        waiting_poses.append([0.0, 6.0, 4.0])
+        waiting_poses.append([0.0, 15.0, 6.0])
+
+        # Send robots to waiting positions
+        for i,robot_id in enumerate(self.available_robots):
+            userdata = smach.UserData()
+            userdata.waypoint = PoseStamped()
+            userdata.waypoint.header.frame_id = 'arena'
+            userdata.waypoint.pose.position.x = waiting_poses[i][0]
+            userdata.waypoint.pose.position.y = waiting_poses[i][1]
+            userdata.waypoint.pose.position.z = waiting_poses[i][2]
+            userdata.waypoint.pose.orientation.x = 0
+            userdata.waypoint.pose.orientation.y = 0
+            userdata.waypoint.pose.orientation.z = 0
+            userdata.waypoint.pose.orientation.w = 0
+            self.task_manager.start_task(robot_id, GoTo(), userdata)
+            self.task_manager.wait_for([robot_id])
 
         while not rospy.is_shutdown():
 
@@ -652,11 +672,11 @@ class CentralUnit(object):
                             userdata.color = color_int_to_string(self.assigned_brick_task[robot_id].color)
                             userdata.waiting_pose = PoseStamped() 
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][0][0]
-                            userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][0][1]
-                            userdata.waiting_pose.pose.position.z = 4.0  # TODO: magic!
+                            userdata.waiting_pose.pose.position.x = waiting_poses[0][0] #self.waiting_pose[robot_id][0][0]
+                            userdata.waiting_pose.pose.position.y = waiting_poses[0][1] #self.waiting_pose[robot_id][0][1]
+                            userdata.waiting_pose.pose.position.z = waiting_poses[0][2] # TODO: magic!
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
-                            userdata.above_pile_pose.pose.position.z = 5.0  # TODO: magic!
+                            userdata.above_pile_pose.pose.position.z = 4.0  # TODO: magic!
                             self.task_manager.start_task(robot_id, Pick(), userdata)
                             self.robot_states[robot_id] = STATE_PICKING
                             rospy.loginfo('robot {} going to pick {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
@@ -669,9 +689,9 @@ class CentralUnit(object):
                             userdata = smach.UserData()
                             userdata.waiting_pose = PoseStamped()
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = self.waiting_pose[robot_id][1][0]
-                            userdata.waiting_pose.pose.position.y = self.waiting_pose[robot_id][1][1]
-                            userdata.waiting_pose.pose.position.z = 4.0  # TODO: magic!
+                            userdata.waiting_pose.pose.position.x = waiting_poses[1][0] #self.waiting_pose[robot_id][1][0]
+                            userdata.waiting_pose.pose.position.y = waiting_poses[1][1] #self.waiting_pose[robot_id][1][1]
+                            userdata.waiting_pose.pose.position.z = waiting_poses[1][2] # TODO: magic!
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
                             userdata.segment_to_the_left_pose.pose.position.z = 4.0  # TODO: magic!
                             userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
@@ -740,7 +760,7 @@ def main():
             central_unit.unlock_objects()
             rospy.sleep(3)
 
-            while not uav_piles_are_found(central_unit.uav_piles) and not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown(): 
+            while (not uav_piles_are_found(central_unit.uav_piles) or not uav_walls_are_found(central_unit.wall_segment_ids)) and not rospy.is_shutdown(): 
                 central_unit.look_for_objects()
 
             central_unit.lock_objects()
