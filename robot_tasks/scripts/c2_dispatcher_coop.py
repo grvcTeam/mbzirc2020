@@ -84,11 +84,12 @@ class CentralUnit(object):
         # Read parameters
         conf_file = rospy.get_param('~conf_file', 'config/conf.yaml')
         wall_file = rospy.get_param('~wall_file', 'config/uav_wall.txt')
+        init_task = rospy.get_param('~init_task', 0)
         
         self.n_segments = 4
         self.n_layers = 2 
         self.wall_pattern = parse_wall(wall_file, n_segments=self.n_segments, n_layers=self.n_layers, n_bricks=7)
-        self.brick_task_list = get_brick_task_list(self.wall_pattern, brick_scales)
+        self.brick_task_list = get_brick_task_list(self.wall_pattern, brick_scales, init_task)
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
 
         with open(conf_file,'r') as file:
