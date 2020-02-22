@@ -197,9 +197,28 @@ class CentralUnit(object):
         filename = 'saved_objects.yaml'
         config_url = rospkg.RosPack().get_path('mbzirc_launchers') + '/config/' + filename
         with open(config_url, 'w') as config:
-            yaml.dump({'uav_pile': self.uav_piles}, config)
-            yaml.dump({'uav_walls': self.uav_walls}, config)
-            yaml.dump({'uav_segment_ids': self.wall_segment_ids}, config)
+
+            yaml_dict_piles = {}
+
+            for color,centroid in self.uav_piles:
+                orientation = [centroid.pose.orientation.x, centroid.pose.orientation.y, centroid.pose.orientation.z, centroid.pose.orientation.w]
+                (_,_,yaw) = tf.transformations.euler_from_quaternion(orientation)
+
+                yaml_dict_piles[color] = {'x': centroid.pose.position.x,'y': centroid.pose.position.y,'yaw': yaw}
+
+            yaml.dump({'uav_piles': yaml_dict_piles}, config)
+
+            yaml_dict_walls = {}
+
+            for i,wall_id in enumerate(self.wall_segment_ids):
+                centroid = self.uav_walls[wall_id]
+                orientation = [centroid.pose.orientation.x, centroid.pose.orientation.y, centroid.pose.orientation.z, centroid.pose.orientation.w]
+                (_,_,yaw) = tf.transformations.euler_from_quaternion(orientation)
+
+                yaml_dict_walls[i] = {'x': centroid.pose.position.x,'y': centroid.pose.position.y,'yaw': yaw}
+
+            yaml.dump({'uav_walls': yaml_dict_walls}, config)
+
 
     def load_objects_file(self):
         filename = 'saved_objects.yaml'
@@ -239,14 +258,14 @@ class CentralUnit(object):
             # Activate also L
             service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
             
-            rospy.wait_for_service(service_url)
-            try:
-                enable_detector = rospy.ServiceProxy(service_url, SetBool)
-                response = enable_detector(True)
-                if not response.success:
-                    rospy.logerr("Service call failed!")
-            except rospy.ServiceException, e:
-                rospy.logerr("Service call failed: {}".format(e))
+            #rospy.wait_for_service(service_url)
+            # try:
+            #     enable_detector = rospy.ServiceProxy(service_url, SetBool)
+            #     response = enable_detector(True)
+            #     if not response.success:
+            #         rospy.logerr("Service call failed!")
+            # except rospy.ServiceException, e:
+            #     rospy.logerr("Service call failed: {}".format(e))
     
         robot_paths = {}
         #point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
@@ -282,18 +301,19 @@ class CentralUnit(object):
         for robot_id in self.available_robots:
             rospy.logwarn('preempting {}'.format(robot_id))
             self.task_manager.preempt_task(robot_id)
+            self.task_manager.wait_for([robot_id])
 
             # Deactivate L detector
-            service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
+            # service_url = 'mbzirc2020_' + robot_id + '/ugv_wall_detector/enable'
             
-            rospy.wait_for_service(service_url)
-            try:
-                enable_detector = rospy.ServiceProxy(service_url, SetBool)
-                response = enable_detector(False)
-                if not response.success:
-                    rospy.logerr("Service call failed!")
-            except rospy.ServiceException, e:
-                rospy.logerr("Service call failed: {}".format(e))
+            # rospy.wait_for_service(service_url)
+            # try:
+            #     enable_detector = rospy.ServiceProxy(service_url, SetBool)
+            #     response = enable_detector(False)
+            #     if not response.success:
+            #         rospy.logerr("Service call failed!")
+            # except rospy.ServiceException, e:
+            #     rospy.logerr("Service call failed: {}".format(e))
         
 
     def compute_waiting_poses(self, wall_position, pile_position):
@@ -670,7 +690,7 @@ class CentralUnit(object):
                             self.assigned_brick_task[robot_id].state = 'DONE'
 
                             # Save in file actual state of tasks
-                            save_brick_task_list(self.brick_task_list)
+                            #save_brick_task_list(self.brick_task_list)
                             self.robot_states[robot_id] = STATE_UNASSIGNED
                             rospy.loginfo('robot {} finished task!'.format(robot_id))
 
@@ -721,8 +741,9 @@ def main():
                 central_unit.look_for_objects()
 
             central_unit.lock_objects()
-            central_unit.save_objects_file()
+            #central_unit.save_objects_file()
         
+        rospy.loginfo('Building wall!')
         finished = central_unit.build_wall()
 
     rospy.spin()
