@@ -160,8 +160,9 @@ def load_brick_task_list():
         
         return recovered_task_list
 
-    except FileNotFoundError:
+    except IOError:
         
+        rospy.logwarn('No file with tasks found')
         return []
     
 def getSegmentToTheLeftPose(task):

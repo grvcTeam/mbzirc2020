@@ -45,7 +45,7 @@ from tasks.move import TakeOff, FollowPath
 from tasks.build import Pick, Place
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
-from utils.path import generate_uav_paths, set_z
+from utils.path import generate_uav_paths, set_z, predefined_uav_paths
 from utils.wall import *
 
 brick_scales = {}
@@ -215,8 +215,9 @@ class CentralUnit(object):
         
             return True
 
-        except FileNotFoundError:
+        except IOError:
         
+            rospy.logwarn('No file with objects found')
             return False
 
     def look_for_objects(self):
@@ -255,7 +256,7 @@ class CentralUnit(object):
             robot_path = []
             #flight_level = self.flight_levels[robot_id]
             #point_path = set_z(point_paths[i], flight_level)
-            for point in point_path:
+            for point in point_paths[i]:
                 waypoint = PoseStamped()
                 waypoint.header.frame_id = 'arena'
                 waypoint.pose.position = point
