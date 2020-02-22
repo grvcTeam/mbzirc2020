@@ -141,6 +141,7 @@ void UalActionServer::takeOffCallback(const mbzirc_comm_objs::TakeOffGoalConstPt
       break;
     case uav_abstraction_layer::State::LANDED_ARMED: {
       double current_z = ual_->pose().pose.position.z;
+      ual_->setHome(true);
       ual_->takeOff(_goal->height - current_z, true);  // TODO: timeout? preempt?
       take_off_server_.setSucceeded(result);
       break;
