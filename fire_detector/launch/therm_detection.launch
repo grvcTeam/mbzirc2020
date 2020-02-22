@@ -12,8 +12,9 @@
     <arg name="covariance_y"            default="1.5"/>
     <arg name="covariance_z"            default="0.5"/>
     <arg name="thermal_threshold"       default="37 "/>
+    <arg name="num_frame_filter"       default="15"/>
     
-    <node name="thermal" pkg="fire_detector" type="fire_detector" respawn="false" output="screen">
+    <node name="thermal" pkg="fire_detector" type="fire_detector" respawn="true" output="screen">
         <param name="angle_amplitude"   value="$(arg angle_amplitude)"/>
         <param name="camera_config"     value="$(arg camera_config)"/>
         <param name="covariance_x"      value="$(arg covariance_x)"/>
@@ -22,6 +23,7 @@
         <param name="debug_view"             value="$(arg debug_view)"/>
         <param name="debug_publisher"             value="$(arg debug_publisher)"/>
         <param name="thermal_threshold" value="$(arg thermal_threshold)"/>
+        <param name="num_frame_filter" type="int" value="$(arg num_frame_filter)"/>
         <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
     </node>
 </launch>
