@@ -41,7 +41,7 @@
 #define SCALE_FACTOR 20 // To improve debug view
 #define R_CIRCLE 70.0 // Radius of the circle showed in debug view
 #define MAX_FILTER_NEGATIVES 30 // Num of needed continue iterations to consider a negative measure as false (15Hz*2s=30frames)
-#define MIN_FILTER_POSITIVES 15 // Num of needed continue iterations to consider a positive measure as true (15Hz*1s=15frames)
+//#define MIN_FILTER_POSITIVES 15 // Num of needed continue iterations to consider a positive measure as true (15Hz*1s=15frames)
 
 class Thermal {
 public:
@@ -70,7 +70,8 @@ protected:
     float temp_matrix_[M_TEMP][M_TEMP];
     float max_temp_;
     int thermal_threshold_;
-    float sigma_[3];  // xyz  
+    float sigma_[3];  // xyz
+    int num_frame_filter_;
     bool debug_publisher_;
     bool debug_view_;
     int angle_amplitude_;

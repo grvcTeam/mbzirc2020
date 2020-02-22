@@ -52,6 +52,8 @@ Thermal::Thermal() {
     n.getParam("debug_publisher", debug_publisher_);
     n.getParam("debug_view", debug_view_);
     n.getParam("angle_amplitude", angle_amplitude_);
+    n.param("num_frame_filter", num_frame_filter_, 15);
+    
     angle_amplitude_ = angle_amplitude_*CONV2PNT;
     initial_index_ = LASER_RANGE/2-angle_amplitude_;  // Point to laser front
     false_negative_ = 0;
@@ -64,7 +66,6 @@ Thermal::Thermal() {
     sub_ual_pose_ = nh.subscribe("ual/pose", 1, &Thermal::ualPoseCallback, this);
     sub_scan_ = nh.subscribe("scan", 1, &Thermal::laserCallback, this);
 
-    pub_detect_img_ = nh.advertise<sensor_msgs::Image>("thermal_detection/detection_image",1);
     pub_sensed_ = nh.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1);
     if(debug_publisher_) {
         pub_debug_ = nh.advertise<sensor_msgs::Temperature>("thermal_detection/debug", 1);
@@ -153,7 +154,7 @@ void Thermal::thermalImageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
 // (false_negative_ <= MAX_FILTER_NEGATIVES && temp_matrix_[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))] >= (max_temp_ - 5))
 
-        if ((false_positive_ > MIN_FILTER_POSITIVES) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 5.0 || mode_=="DOWNWARD")) {
+        if ((false_positive_ > num_frame_filter_) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 5.0 || mode_=="DOWNWARD")) {
             detected_ = true;
 
             if (max_temp_ <= thermal_threshold_) {
@@ -282,7 +283,6 @@ void Thermal::thermalImageCallback(const sensor_msgs::ImageConstPtr& msg) {
         // Converting image to msg 
         std_msgs::Header header = msg->header; 
         cv_bridge::CvImage img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, image_color);
-        pub_detect_img_.publish(img_bridge.toImageMsg());
 
         if (debug_publisher_) {
             sensor_msgs::Temperature measure_debug;
