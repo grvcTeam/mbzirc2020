@@ -112,7 +112,7 @@ class BrickTask(object):
             self.__class__.__name__, self.color, self.segment, self.layer, self.position, self.state)
 
 
-def get_brick_task_list(wall_pattern, brick_scales):
+def get_brick_task_list(wall_pattern, brick_scales, segment=0, brick=0):
     initial_y = -1.25   # TODO: Tune! (nominal: -2.0)
     small_gap =  1.0  # TODO: Tune! (nominal:  0.065)
     big_gap =    0.4    # TODO: Tune! (nominal:  0.4)
@@ -141,6 +141,13 @@ def get_brick_task_list(wall_pattern, brick_scales):
             brick.state = 'TODO'
             brick_task_list.append(copy.deepcopy(brick))
             current_y = brick.position + 0.5 * brick_scales[brick.color].y + big_gap
+
+
+    # TODO: list of tasks computed manually
+    #brick_task_list = []
+
+
+
 
     return brick_task_list
 

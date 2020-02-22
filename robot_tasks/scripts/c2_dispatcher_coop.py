@@ -290,6 +290,7 @@ class CentralUnit(object):
             userdata.path = robot_paths[robot_id]
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
+
         while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.wall_segment_ids,self.ugv_wall)):
             self.cluster_piles()
             self.cluster_wall_segments()
@@ -297,6 +298,7 @@ class CentralUnit(object):
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
             rospy.logwarn('len(self.wall_segment_ids) = {}'.format(len(self.wall_segment_ids)))
             rospy.sleep(1.0)
+
 
         for robot_id in self.available_robots:
             rospy.logwarn('preempting {}'.format(robot_id))
@@ -572,6 +574,7 @@ class CentralUnit(object):
             if len(cluster) == self.n_segments:
                 self.wall_segment_ids = cluster[:]
                 found = True
+                rospy.loginfo('Cluster of walls with ids {}'.format(self.wall_segment_ids))
                 break
 
         return found
