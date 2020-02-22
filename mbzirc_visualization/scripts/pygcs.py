@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from diagnostic_msgs.msg import DiagnosticArray
-from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import NavSatFix, Range
 from geometry_msgs.msg import PoseStamped
 from uav_abstraction_layer.msg import State
 import rospkg
@@ -45,10 +45,12 @@ class AgentStatus:
         self.battery_remaining = 0.0
         self.battery_current = 0.0
         self.ual_state = ""
+        self.sf11 = 0.0
 
         rospy.Subscriber(ns_prefix + str(id) + "/ual/pose", PoseStamped, self.ualPoseCallback)
         rospy.Subscriber(ns_prefix + str(id) + "/ual/state", State, self.ualStateCallback)
         rospy.Subscriber(ns_prefix + str(id) + "/mavros/global_position/global", NavSatFix, self.globalPositionCallback)
+        rospy.Subscriber(ns_prefix + str(id) + "/sf11", Range, self.sf11Callback)
 
     def ualPoseCallback(self,data):
         self.pose_x = data.pose.position.x
@@ -64,6 +66,9 @@ class AgentStatus:
 
     def globalPositionCallback(self,data):
         self.gps_cov = data.position_covariance[0]
+
+    def sf11Callback(self,data):
+        self.sf11 = data.range
 
 class SystemStatus:
     def __init__(self,ns_prefix):
@@ -137,11 +142,11 @@ def print_info(system_status):
         print bcolors.BOLD + "\nAgent " + str(agent.id) + bcolors.ENDC
         print "  AP: " + agent.autopilot_type + " - " + agent.vehicle_type
         print "  Battery: " + ( (bcolors.BOLD + bcolors.FAIL) if agent.battery_per_cell<3.6 else (bcolors.OKGREEN if agent.battery_per_cell>=3.9 else bcolors.WARNING) ) + "{:.2f}V - {:.2f}V - {:.1f}%".format(agent.battery_voltage, agent.battery_per_cell, agent.battery_remaining) + bcolors.ENDC
-        print "  Current: {:.2f}A".format(agent.battery_current)
         print "  AP mode: " + agent.autopilot_mode
         print "  UAL state: " + (bcolors.FAIL if agent.ual_state=="FLYING_MANUAL" else (bcolors.OKGREEN if agent.ual_state=="FLYING_AUTO" else "")) + agent.ual_state + bcolors.ENDC
         print "  GPS Fix/nSat/Cov: " + bcolors.BOLD + (bcolors.FAIL if agent.gps_fix<=4 else (bcolors.OKGREEN if agent.gps_fix==6 else bcolors.WARNING) ) + str(agent.gps_fix) + bcolors.ENDC + " / " + str(agent.n_satellites) + " / {:.4f}".format(agent.gps_cov)
         print "  Pose: {:6.2f} {:6.2f} {:5.2f} {:3d}º".format(agent.pose_x,agent.pose_y,agent.pose_z,agent.orientation)
+        print "  SF11 altitude: {:.2f}".format(agent.sf11)
 
     print bcolors.OKBLUE + "===================================" + bcolors.ENDC
 
