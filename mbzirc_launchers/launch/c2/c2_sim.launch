@@ -20,7 +20,7 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=2" />
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" value="4"/>
         <arg name="color" value="Orange" />
         <arg name="x"     value="$(arg x1)" />
         <arg name="y"     value="$(arg y1)" />
@@ -31,7 +31,7 @@
     <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
         
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" value="4"/>
         <arg name="flight_level" default="10.0" />
         <arg name="x" default="$(arg x1)" />
         <arg name="y" default="$(arg y1)" />
@@ -43,7 +43,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" value="4"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -52,7 +52,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="2"/>
+        <arg name="agent_id" value="4"/>
         
     </include>
 
