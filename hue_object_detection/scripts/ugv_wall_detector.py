@@ -163,7 +163,7 @@ class frame_detector:
         # Scale = size of L (m)
         object_detected.scale.x = 4
         object_detected.scale.y = 4
-        object_detected.scale.z = 0
+        object_detected.scale.z = 0.1
 
         object_detected.type = object_detected.TYPE_LWALL
         object_detected.color = object_detected.COLOR_UNKNOWN
