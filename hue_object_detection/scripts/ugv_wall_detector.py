@@ -93,8 +93,13 @@ class frame_detector:
   
   def closest_point(self, box, ctr):
     M = cv2.moments(ctr)
-    cx = int(M["m10"] / M["m00"])
-    cy = int(M["m01"] / M["m00"])
+    if M["m00"] != 0.0:
+      cx = int(M["m10"] / M["m00"])
+      cy = int(M["m01"] / M["m00"])
+
+    else:
+      return box[0], 0
+
     closest = np.inf
     index = 0
     for i in range(4):
