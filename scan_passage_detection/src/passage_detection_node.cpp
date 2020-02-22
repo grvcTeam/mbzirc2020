@@ -261,46 +261,29 @@ public:
                 object.header.stamp = ros::Time::now();
                 object.type = mbzirc_comm_objs::ObjectDetection::TYPE_UCHANNEL;
 
-                double c_wall_x = (wall_list.walls[i].start[0] + wall_list.walls[i].end[0])/2;
-                double c_wall_y = (wall_list.walls[i].start[1] + wall_list.walls[i].end[1])/2;
+                double c_wall_x = (wall_list.walls[i].start[0] + wall_list.walls[i].end[0])/2.0;
+                double c_wall_y = (wall_list.walls[i].start[1] + wall_list.walls[i].end[1])/2.0;
                 object.pose.pose.position.x = c_wall_x;
                 object.pose.pose.position.y = c_wall_y;
                 object.pose.pose.position.z = 1.7;
                 
-                double p_wall_x;
-                double p_wall_y;
+
+                double delta_y;   
+                double delta_x;
+
                 if(wall_list.walls[i].start[1] > wall_list.walls[i].end[1]){
-                    p_wall_x = wall_list.walls[i].start[1];
-                    p_wall_y = wall_list.walls[i].end[1];
-                }
-                else{
-                    p_wall_x = wall_list.walls[i].start[0];
-                    p_wall_y = wall_list.walls[i].end[0];
+                    delta_y = wall_list.walls[i].end[1] - wall_list.walls[i].start[1];   
+                    delta_x = wall_list.walls[i].end[0] - wall_list.walls[i].start[0];
+                } else {
+                    delta_y = wall_list.walls[i].start[1] - wall_list.walls[i].end[1];   
+                    delta_x = wall_list.walls[i].start[0] - wall_list.walls[i].end[0];
                 }
 
                 tf2::Quaternion wall_orientation;
                 
-                // assume segments orientation always to top
-                double delta_y = p_wall_y - c_wall_y;   
-                double delta_x = p_wall_x - c_wall_x;
-
-                if(delta_y < 0.0 && delta_x < 0.0)
-                {
-                    delta_y = -delta_y;
-                    delta_x = -delta_x;
-                }
-                if(delta_y > 0.0 && delta_x < 0.0)
-                {
-                    delta_y = -delta_y;
-                    delta_x = -delta_x;
-                }  
-
-                double angle = atan2( delta_y, delta_x);
-
-                angle = angle+M_PI;
-                //if(angle > M_PI/2.0)
-                //    angle -= M_PI;
-
+                // assume segments orientation always to top  
+                double angle = atan2(delta_x, delta_y);
+                
                 wall_orientation.setRPY( 0, 0, angle); // angle in rad from center point of wall to the farest point
 
                 object.pose.pose.orientation = tf2::toMsg(wall_orientation);
