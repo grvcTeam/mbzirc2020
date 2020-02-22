@@ -4,6 +4,8 @@
   <arg name="agent_id" default="1" />
   <arg name="mode" default="real" />
 
+  <arg name="num_frame_filter" default="0"/>
+
   <group ns="$(arg robot_model)_$(arg agent_id)">
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.34 0 -0.11 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
     <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.32 0 -0.13 0 1.57079632679 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
@@ -36,8 +38,8 @@
       <param name="portname" value="/dev/evot33"/>
     </node>
 
-    <node if="$(eval mode == 'real')" pkg="fire_detector" name="fire_detector" type="fire_detector" respawn="false" output="screen">
-      <param name="thermal_threshold" value="60"/>
+    <node if="$(eval mode == 'real')" pkg="fire_detector" name="fire_detector" type="fire_detector" respawn="true" output="screen">
+      <param name="thermal_threshold" value="45"/>
       <param name="angle_amplitude"   value="5"/>
       <param name="camera_config"     value="DOWNWARD"/>
       <param name="covariance_x"      value="1.5"/>
@@ -46,6 +48,7 @@
       <param name="debug_view"        value="false"/>
       <param name="debug_publisher"   value="true"/>
       <param name="uav_id"            type="string"   value="$(arg agent_id)"/>
+      <param name="num_frame_filter" type="int" value="$(arg num_frame_filter)"/>
     </node>
 
   </group>
