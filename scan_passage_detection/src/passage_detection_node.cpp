@@ -282,9 +282,9 @@ public:
                 tf2::Quaternion wall_orientation;
                 
                 // assume segments orientation always to top  
-                double angle = atan2(delta_x, delta_y);
+                double angle = atan2(delta_y, delta_x);
                 
-                wall_orientation.setRPY( 0, 0, angle); // angle in rad from center point of wall to the farest point
+                wall_orientation.setRPY( 0, 0, angle-M_PI/2); // angle in rad from center point of wall to the farest point
 
                 object.pose.pose.orientation = tf2::toMsg(wall_orientation);
                 
