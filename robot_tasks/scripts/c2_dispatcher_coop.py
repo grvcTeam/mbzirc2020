@@ -276,6 +276,7 @@ class CentralUnit(object):
             self.cluster_wall_segments()
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
             rospy.logwarn('len(self.ugv_piles) = {}'.format(len(self.ugv_piles)))
+            rospy.logwarn('len(self.wall_segment_ids) = {}'.format(len(self.wall_segment_ids)))
             rospy.sleep(1.0)
 
         for robot_id in self.available_robots:
@@ -318,7 +319,7 @@ class CentralUnit(object):
         dist_th = 7.0 
 
         if len(self.piles) == 0:
-            rospy.logerr('No piles in cached')
+            rospy.logerr('No piles in cache')
 
         else:
             piles_idx = range(len(self.piles))
@@ -425,6 +426,7 @@ class CentralUnit(object):
 
                 for color in pile_layout:
                     if color not in self.uav_piles:
+                        rospy.logwarn('UAV pile {} inserted automatically'.format(color))
                         self.uav_piles[color] = PoseStamped()
                         self.uav_piles[color].header = any_header 
                         self.uav_piles[color].pose.position.x = uav_cluster['centroid'][0]
@@ -433,6 +435,7 @@ class CentralUnit(object):
                         self.uav_piles[color].pose.orientation = copy.deepcopy(any_orientation)
             else: 
                 self.uav_piles = {}
+                rospy.logwarn('UAV piles not found')
 
             # ugv_cluster = {}
             # for cluster in clusters:
@@ -456,6 +459,7 @@ class CentralUnit(object):
 
                 for color in pile_layout:
                     if color not in self.ugv_piles:
+                        rospy.logwarn('UGV pile {} inserted automatically'.format(color))
                         self.ugv_piles[color] = PoseStamped()
                         self.ugv_piles[color].header = any_header 
                         self.ugv_piles[color].pose.position.x = ugv_cluster['centroid'][0]
@@ -465,6 +469,8 @@ class CentralUnit(object):
 
             else: 
                 self.ugv_piles = {}
+                rospy.logwarn('UGV piles not found')
+
 
     def clusters_connected(self, top_segment, bottom_segment):
 
