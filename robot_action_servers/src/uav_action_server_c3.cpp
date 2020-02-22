@@ -711,6 +711,7 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
       waypoint_id++;
       if(waypoint_id < path.size()) {
         ual_->goToWaypoint(path[waypoint_id], false);
+        ros::Duration(0.5).sleep();
       }
       else {
         result.message = "Path finalized without finding fires!";

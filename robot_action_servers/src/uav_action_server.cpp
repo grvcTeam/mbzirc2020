@@ -216,6 +216,7 @@ void UalActionServer::goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_go
       break;
     case uav_abstraction_layer::State::FLYING_AUTO:
       ual_->goToWaypoint(_goal->waypoint, false);  // TODO: timeout?
+      ros::Duration(0.5).sleep();
       while(!ual_->isIdle() && ros::ok()) {
         if (go_to_server_.isPreemptRequested()) {
           ual_->setPose(ual_->pose());
