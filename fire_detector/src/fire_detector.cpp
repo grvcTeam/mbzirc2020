@@ -154,7 +154,7 @@ void Thermal::thermalImageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
 // (false_negative_ <= MAX_FILTER_NEGATIVES && temp_matrix_[int(floor(i/SCALE_FACTOR))][int(floor(j/SCALE_FACTOR))] >= (max_temp_ - 5))
 
-        if ((false_positive_ > num_frame_filter_) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 5.0 || mode_=="DOWNWARD")) {
+        if ((false_positive_ > num_frame_filter_) && ((max_temp_ >= thermal_threshold_) || (false_negative_ <= MAX_FILTER_NEGATIVES)) && (laser_measurement_ < 7.5 || mode_=="DOWNWARD")) {
             detected_ = true;
 
             if (max_temp_ <= thermal_threshold_) {
