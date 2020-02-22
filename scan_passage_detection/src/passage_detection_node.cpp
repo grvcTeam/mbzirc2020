@@ -279,7 +279,29 @@ public:
                 }
 
                 tf2::Quaternion wall_orientation;
-                wall_orientation.setRPY( 0, 0, atan2( p_wall_x - c_wall_x, p_wall_y - c_wall_y)); // angle in rad from center point of wall to the farest point
+                
+                // assume segments orientation always to top
+                double delta_y = p_wall_y - c_wall_y;   
+                double delta_x = p_wall_x - c_wall_x;
+
+                if(delta_y < 0.0 && delta_x < 0.0)
+                {
+                    delta_y = -delta_y;
+                    delta_x = -delta_x;
+                }
+                if(delta_y > 0.0 && delta_x < 0.0)
+                {
+                    delta_y = -delta_y;
+                    delta_x = -delta_x;
+                }  
+
+                double angle = atan2( delta_y, delta_x);
+
+                angle = angle+M_PI;
+                //if(angle > M_PI/2.0)
+                //    angle -= M_PI;
+
+                wall_orientation.setRPY( 0, 0, angle); // angle in rad from center point of wall to the farest point
 
                 object.pose.pose.orientation = tf2::toMsg(wall_orientation);
                 

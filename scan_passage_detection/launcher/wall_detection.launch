@@ -1,0 +1,13 @@
+<launch>
+  <arg name="robot_model" default="mbzirc2020" />
+  <arg name="agent_id" default="1" />
+
+  <group ns="$(arg robot_model)_$(arg agent_id)">
+
+    <node pkg="scan_passage_detection" type="passage_detection_node" name="scan_detection" output="screen">
+      <param name="uav_id"              type="string" value="$(arg agent_id)"/>
+    </node>  
+    <node pkg="scan_passage_detection" type="wall_tracker_node" name="wall_detection" output="screen"/>  
+
+  </group>
+</launch>
