@@ -120,7 +120,7 @@ Visualizer::Visualizer()
         uav_subs_.push_back(nh.subscribe<geometry_msgs::PoseStamped>(uav_topic, 1, std::bind(&Visualizer::uavPoseReceived, this, std::placeholders::_1, uav_ids_[i]) ));
     }
 
-    object_sub_ = nh.subscribe(object_topic, 1, &Visualizer::objectsReceived, this);
+    object_sub_ = nh.subscribe(object_topic, 5, &Visualizer::objectsReceived, this);
 
     arena_pub_ = nh.advertise<visualization_msgs::Marker>("mbzirc_markers/arena", 0);
     uavs_pub_ = nh.advertise<visualization_msgs::MarkerArray>("mbzirc_markers/uavs", 0);
