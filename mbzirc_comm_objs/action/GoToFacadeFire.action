@@ -1,7 +1,6 @@
-#goal definition  # TODO: Deprecated
+#goal definition
 string fires_file
 string fire_id
-# uint16 duration?
 ---
 #result definition
 string message

@@ -79,6 +79,7 @@ add_action_files(
   Place.action
   Land.action
   MoveInCircles.action
+  GoToFacadeFire.action
   ExtinguishFacadeFire.action
   ExtinguishGroundFire.action
   LookForGroundFires.action

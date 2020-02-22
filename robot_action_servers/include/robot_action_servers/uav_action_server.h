@@ -31,6 +31,7 @@
 #include <mbzirc_comm_objs/PlaceAction.h>
 #include <mbzirc_comm_objs/LandAction.h>
 #include <mbzirc_comm_objs/MoveInCirclesAction.h>
+#include <mbzirc_comm_objs/GoToFacadeFireAction.h>
 #include <mbzirc_comm_objs/ExtinguishFacadeFireAction.h>
 #include <mbzirc_comm_objs/ExtinguishGroundFireAction.h>
 #include <mbzirc_comm_objs/LookForGroundFiresAction.h>
@@ -94,6 +95,7 @@ protected:
   actionlib::SimpleActionServer<mbzirc_comm_objs::PlaceAction> place_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::LandAction> land_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::MoveInCirclesAction> move_in_circles_server_;
+  actionlib::SimpleActionServer<mbzirc_comm_objs::GoToFacadeFireAction> go_to_facade_fire_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishFacadeFireAction> extinguish_facade_fire_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::ExtinguishGroundFireAction> extinguish_ground_fire_server_;
   actionlib::SimpleActionServer<mbzirc_comm_objs::LookForGroundFiresAction> look_for_ground_fires_server_;
@@ -135,6 +137,7 @@ public:
   // Challenge 3
   void wallListCallback(const mbzirc_comm_objs::WallListConstPtr& msg);
   void moveInCirclesCallback(const mbzirc_comm_objs::MoveInCirclesGoalConstPtr &_goal);
+  void goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeFireGoalConstPtr &_goal);
   void extinguishFacadeFireCallback(const mbzirc_comm_objs::ExtinguishFacadeFireGoalConstPtr &_goal);
   void extinguishGroundFireCallback(const mbzirc_comm_objs::ExtinguishGroundFireGoalConstPtr &_goal);
   geometry_msgs::PoseStamped errorPoseFromFireData(const FireData& _target_fire, bool _publish_markers = false);

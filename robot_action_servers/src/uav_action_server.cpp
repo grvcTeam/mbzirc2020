@@ -31,6 +31,7 @@ UalActionServer::UalActionServer():
   place_server_(nh_, "place_action", boost::bind(&UalActionServer::placeCallback, this, _1), false),
   land_server_(nh_, "land_action", boost::bind(&UalActionServer::landCallback, this, _1), false),
   move_in_circles_server_(nh_, "move_in_circles_action", boost::bind(&UalActionServer::moveInCirclesCallback, this, _1), false),
+  go_to_facade_fire_server_(nh_, "go_to_facade_fire_action", boost::bind(&UalActionServer::goToFacadeFireCallback, this, _1), false),
   extinguish_facade_fire_server_(nh_, "extinguish_facade_fire_action", boost::bind(&UalActionServer::extinguishFacadeFireCallback, this, _1), false),
   extinguish_ground_fire_server_(nh_, "extinguish_ground_fire_action", boost::bind(&UalActionServer::extinguishGroundFireCallback, this, _1), false),
   look_for_ground_fires_server_(nh_, "look_for_ground_fires_action", boost::bind(&UalActionServer::lookForGroundFiresCallback, this, _1), false) {
@@ -64,6 +65,7 @@ UalActionServer::UalActionServer():
   place_server_.start();
   land_server_.start();
   move_in_circles_server_.start();
+  go_to_facade_fire_server_.start();
   extinguish_facade_fire_server_.start();
   extinguish_ground_fire_server_.start();
   look_for_ground_fires_server_.start();
