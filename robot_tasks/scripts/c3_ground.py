@@ -32,7 +32,7 @@ from tasks.fire import ExtinguishFacadeFire, ExtinguishGroundFire
 # from utils.translate import color_from_int
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
-from utils.path import generate_uav_paths, set_z
+#from utils.path import generate_uav_paths, set_z
 # from utils.wall import get_build_wall_sequence
 
 
@@ -87,7 +87,7 @@ class CentralUnit(object):
     def extinguish_ground_fire(self):
         userdata = smach.UserData()
         userdata.path = self.path
-        userdata.color = 'fire_box'
+        userdata.color = 'fire'
         self.task_manager.start_task(self.robot_id, ExtinguishGroundFire(), userdata)
         self.task_manager.wait_for([self.robot_id])
 
