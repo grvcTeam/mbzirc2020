@@ -195,6 +195,7 @@ void UalActionServer::goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_go
     ROS_WARN("UAL is uninitialized!");
     sleep(1);
   }
+  ros::Rate loop_rate(5); // 5Hz
   // TODO: Fill result
   switch (ual_->state().state) {
     case uav_abstraction_layer::State::LANDED_DISARMED:
@@ -212,7 +213,15 @@ void UalActionServer::goToCallback(const mbzirc_comm_objs::GoToGoalConstPtr &_go
       go_to_server_.setAborted(result);
       break;
     case uav_abstraction_layer::State::FLYING_AUTO:
-      ual_->goToWaypoint(_goal->waypoint, true);  // TODO: timeout?
+      ual_->goToWaypoint(_goal->waypoint, false);  // TODO: timeout?
+      while(!ual_->isIdle() && ros::ok()) {
+        if (go_to_server_.isPreemptRequested()) {
+          ual_->setPose(ual_->pose());
+          go_to_server_.setPreempted();
+          return;
+        }
+        loop_rate.sleep();
+      }
       go_to_server_.setSucceeded(result);
       break;
     case uav_abstraction_layer::State::FLYING_MANUAL:
