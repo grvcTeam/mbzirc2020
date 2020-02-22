@@ -244,7 +244,7 @@ protected:
             publishObjects(obj_type);
             if(iteration_counter_ == 5)
             {
-                est_ptr->printTargetsInfo();
+                //est_ptr->printTargetsInfo();
             }
         }
         		
