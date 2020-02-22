@@ -229,7 +229,7 @@ def getSegmentToTheLeftPose(task):
     #     segment_to_the_left_pose.pose.orientation.w = 0.7071
 
     # Set position to have the drones in the FOV of the pilots
-    segment_to_the_left_pose.pose.position.x = 2.0
+    segment_to_the_left_pose.pose.position.x = 3.0
     segment_to_the_left_pose.pose.position.y = 0.0
     segment_to_the_left_pose.pose.position.z = 0.0
     segment_to_the_left_pose.pose.orientation.x = 0.0

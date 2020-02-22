@@ -595,6 +595,12 @@ class CentralUnit(object):
         self.broadcaster.sendTransform(wall_transforms)
 
     def reallignWalls(self):
+        # Force left to right order
+        dx = self.uav_walls[self.wall_segment_ids[1]].pose.position.x - self.uav_walls[self.wall_segment_ids[0]].pose.position.x
+        if dx < 0:
+            self.wall_segment_ids.reverse() # Reorder
+
+        # Allign walls
         for i in range(3):
             orig_id = i
             dest_id = i+1
@@ -653,7 +659,7 @@ class CentralUnit(object):
             userdata.waypoint.pose.orientation.x = 0
             userdata.waypoint.pose.orientation.y = 0
             userdata.waypoint.pose.orientation.z = 0
-            userdata.waypoint.pose.orientation.w = 0
+            userdata.waypoint.pose.orientation.w = 1
             self.task_manager.start_task(robot_id, GoTo(), userdata)
             self.task_manager.wait_for([robot_id])
 
@@ -676,8 +682,16 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.position.x = waiting_poses[0][0] #self.waiting_pose[robot_id][0][0]
                             userdata.waiting_pose.pose.position.y = waiting_poses[0][1] #self.waiting_pose[robot_id][0][1]
                             userdata.waiting_pose.pose.position.z = waiting_poses[0][2] # TODO: magic!
+                            userdata.waiting_pose.pose.orientation.x = 0
+                            userdata.waiting_pose.pose.orientation.y = 0
+                            userdata.waiting_pose.pose.orientation.z = 0
+                            userdata.waiting_pose.pose.orientation.w = 1
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
                             userdata.above_pile_pose.pose.position.z = 4.0  # TODO: magic!
+                            userdata.above_pile_pose.pose.orientation.x = 0
+                            userdata.above_pile_pose.pose.orientation.y = 0
+                            userdata.above_pile_pose.pose.orientation.z = 0
+                            userdata.above_pile_pose.pose.orientation.w = 1
                             self.task_manager.start_task(robot_id, Pick(), userdata)
                             self.robot_states[robot_id] = STATE_PICKING
                             rospy.loginfo('robot {} going to pick {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
@@ -693,8 +707,12 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.position.x = waiting_poses[1][0] #self.waiting_pose[robot_id][1][0]
                             userdata.waiting_pose.pose.position.y = waiting_poses[1][1] #self.waiting_pose[robot_id][1][1]
                             userdata.waiting_pose.pose.position.z = waiting_poses[1][2] # TODO: magic!
+                            userdata.waiting_pose.pose.orientation.x = 0
+                            userdata.waiting_pose.pose.orientation.y = 0
+                            userdata.waiting_pose.pose.orientation.z = 0
+                            userdata.waiting_pose.pose.orientation.w = 1
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
-                            userdata.segment_to_the_left_pose.pose.position.z = 4.0  # TODO: magic!
+                            userdata.segment_to_the_left_pose.pose.position.z = 2.5  # TODO: magic!
                             userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
