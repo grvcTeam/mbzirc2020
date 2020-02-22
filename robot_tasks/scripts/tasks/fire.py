@@ -44,7 +44,7 @@ class ExtinguishGroundFire(smach.StateMachine):
             smach.StateMachine.add('LOOK_FOR_GROUND_FIRES', smach_ros.SimpleActionState(robot.url + 'look_for_ground_fires_action', mbzirc_comm_objs.msg.LookForGroundFiresAction,
                                     input_keys = ['path'],
                                     goal_cb = look_for_ground_fires_callback),
-                                    transitions = {'succeeded': 'succeeded'})
+                                    transitions = {'succeeded': 'EXTINGUISH'})
 
             def extinguish_ground_fire_callback(userdata, default_goal):
                 goal = mbzirc_comm_objs.msg.ExtinguishGroundFireGoal(color = userdata.color)
