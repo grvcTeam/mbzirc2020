@@ -18,7 +18,7 @@
       <remap if="$(eval mode == 'sim')" from="camera/color/image_raw" to="camera/color/image_rect_color"/>
     </node>
 
-    <node pkg="hue_object_detection" name="ugv_wall_detector" type="ugv_wall_detector.py" respawn="false" output="screen">
+    <!-- <node pkg="hue_object_detection" name="ugv_wall_detector" type="ugv_wall_detector.py" respawn="false" output="screen">
         <param name="enable_node"     value="false"/>
         <param name="debug_view"      value="false"/>
         <param name="debug_publisher" value="false"/>
@@ -30,7 +30,7 @@
         <param name="sigma_pitch"     value="0.0523"/>
         <param name="sigma_roll"      value="0.0523"/>
         <param name="sigma_yaw"       value="0.0523"/>
-    </node>
+    </node> -->
 
     <include if="$(eval mode == 'real')" file="$(find realsense2_camera)/launch/rs_rgbd.launch">
       <arg name="tf_prefix"           value="$(arg robot_model)_$(arg agent_id)/camera"/>
