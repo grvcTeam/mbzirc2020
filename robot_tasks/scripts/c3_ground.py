@@ -23,18 +23,12 @@ import smach
 import yaml
 import mbzirc_comm_objs.msg as msg
 
-# from geometry_msgs.msg import PoseStamped, Vector3
 from geometry_msgs.msg import PoseStamped
-from tasks.move import TakeOff, FollowPath
+from tasks.move import TakeOff, GoTo, Land
 from tasks.fire import ExtinguishFacadeFire, ExtinguishGroundFire
-# from tasks.build import PickAndPlace
-# from tasks.search import all_piles_are_found
-# from utils.translate import color_from_int
+from std_srvs.srv import Trigger, TriggerResponse
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
-#from utils.path import generate_uav_paths, set_z
-# from utils.wall import get_build_wall_sequence
-
 
 # TODO: All these parameters from config!
 field_width = 60
@@ -72,10 +66,14 @@ class CentralUnit(object):
         self.robots[self.robot_id] = RobotProxy(self.robot_id)
         self.task_manager = TaskManager(self.robots)
 
-    # TODO: Move this function to RobotProxy?
-    def get_param(self, robot_id, param_name):
-        # TODO: Default value in case param_name is not found?
-        return rospy.get_param(self.robots[robot_id].url + param_name)
+        # Start challenge service
+        self.start_challenge_service = rospy.Service('start_c3_ground',Trigger,self.start_challenge)
+        self.started = False
+
+    def start_challenge(self, req):
+        rospy.loginfo('Starting challenge 3 ground.')
+        self.started = True
+        return TriggerResponse(True)
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):
@@ -83,7 +81,7 @@ class CentralUnit(object):
         userdata.height = self.height
         self.task_manager.start_task(self.robot_id, TakeOff(), userdata)
         self.task_manager.wait_for([self.robot_id])
-    
+
     def extinguish_ground_fire(self):
         userdata = smach.UserData()
         userdata.path = self.path
@@ -91,6 +89,19 @@ class CentralUnit(object):
         self.task_manager.start_task(self.robot_id, ExtinguishGroundFire(), userdata)
         self.task_manager.wait_for([self.robot_id])
 
+    def go_home(self):
+        # Go to start pose at 6 meters
+        userdata_goto = smach.UserData()
+        userdata_goto.waypoint = PoseStamped()
+        userdata_goto.waypoint = self.path[0]
+        userdata_goto.waypoint.pose.position.z = 6.0
+        self.task_manager.start_task(self.robot_id, GoTo(), userdata_goto)
+        self.task_manager.wait_for([self.robot_id])
+
+        # Land
+        userdata_land = smach.UserData()
+        self.task_manager.start_task(self.robot_id, Land(), userdata_land)
+        self.task_manager.wait_for([self.robot_id])
 
 def main():
     rospy.init_node('central_unit_c3_ground')
@@ -100,12 +111,16 @@ def main():
         rospy.sleep(1)
 
     central_unit = CentralUnit()
-    rospy.sleep(5)
+    rospy.loginfo('Batamanta ready to go.')
+
+    while not rospy.is_shutdown() and not central_unit.started:
+        rospy.sleep(1)
 
     central_unit.take_off()
     central_unit.extinguish_ground_fire()
+    central_unit.go_home()
 
-    rospy.spin()
+    rospy.loginfo('Finished!')
 
 if __name__ == '__main__':
     main()
