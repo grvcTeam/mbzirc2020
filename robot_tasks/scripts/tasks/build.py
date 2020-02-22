@@ -105,7 +105,7 @@ class Place(smach.StateMachine):
                                     transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
-                goal = mbzirc_comm_objs.msg.PlaceGoal(in_wall_brick_pose = userdata.segment_offset)
+                goal = mbzirc_comm_objs.msg.PlaceGoal(wall_y_offset = userdata.segment_offset)
                 return goal
 
             smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', mbzirc_comm_objs.msg.PlaceAction,
