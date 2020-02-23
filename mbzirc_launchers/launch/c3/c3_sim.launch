@@ -5,18 +5,18 @@
     <arg name="robot_model" default="mbzirc2020"/>
     <arg name="arena_yaw" default="-0.2968107"/> 
     <!--TODO update UAVs x,y,z,yaw-->
-    <arg name="x1" default="2.0"/>
-    <arg name="y1" default="12.5"/>
-    <arg name="yaw1" default="0"/>
-    <arg name="x2" default="2.0"/>
-    <arg name="y2" default="25.0"/>
-    <arg name="yaw2" default="0"/>
-    <arg name="x3" default="2.0"/>
-    <arg name="y3" default="37.5"/>
+    <arg name="x1" default="-2.0"/>
+    <arg name="y1" default="1.65"/>
+    <arg name="yaw1" default="1.57"/>
+    <arg name="x2" default="0.0"/>
+    <arg name="y2" default="0.0"/>
+    <arg name="yaw2" default="1.57"/>
+    <arg name="x3" default="0.0"/>
+    <arg name="y3" default="3.3"/>
     <arg name="yaw3" default="0"/>
 
     <!-- UAV DON PIN-PON 1 -->
-    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+    <!--include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=30" />
@@ -44,20 +44,20 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
-        <arg name="laser" value="no"/>
+        <arg name="laser" value="yes"/>
 
     </include>
   
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_ground_camera_detection.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
         
-    </include>
+    </include-->
 
     <!-- UAV DON PIN-PON 2 -->
-    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+    <!--include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=30" />
@@ -95,7 +95,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="4"/>
         
-    </include>
+    </include-->
   
     <!-- UAV BATA-MANTA -->
     <include file="$(find mbzirc_launchers)/launch/mavros.launch">
@@ -126,11 +126,11 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="6"/>
-        <arg name="laser" value="yes"/>
+        <arg name="laser" value="no"/>
 
     </include>
   
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_ground_camera_detection.launch">
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
@@ -138,13 +138,30 @@
         
     </include>
 
+    <group if="$(eval mode == 'sim')">
+        <!-- Launch Gazebo simulation -->
+        <rosparam param="/use_sim_time">true</rosparam>
+        <include file="$(find challenge_worlds)/launch/challenge3.launch">
+            <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        </include>
+    </group>
+
+	<!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
 
     <!--Central unit -->
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
         <arg name="mode" value="$(arg mode)"/>
-        <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        <arg name="agent_id" value="2"/>
+        <arg name="path" value="left"/>
+        <arg name="fire_id" value="default_2"/>
     </include>
+
+    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="uav_id" value="6"/>
+        <arg name="height" value="3.0"/>
+    </include> -->
 
     
 </launch>
