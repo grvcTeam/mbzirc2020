@@ -724,8 +724,7 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
   }
 }
 
-void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeFireGoalConstPtr &_goal) {}
-/*
+void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeFireGoalConstPtr &_goal) {
   mbzirc_comm_objs::GoToFacadeFireFeedback feedback;
   mbzirc_comm_objs::GoToFacadeFireResult result;
 
@@ -757,25 +756,11 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
     return;
   }
   FireData target_fire = fire_map[_goal->fire_id];
-/*
-  geometry_msgs::TransformStamped optical_to_camera;  // Constant!
-  try {
-    optical_to_camera = tf_buffer_.lookupTransform(tf_prefix_ + "/camera_link", tf_prefix_ + "/camera_color_optical_frame", ros::Time(0));
-  } catch (tf2::TransformException &ex) {
-    result.message = ex.what();
-    go_to_facade_fire_server_.setAborted(result);
-  }
-*/
-/*
+
   ros::NodeHandle nh;
   ros::Subscriber range_sub = nh.subscribe<sensor_msgs::Range>("sf11", 1, &UalActionServer::sf11RangeCallback, this);
   ros::Subscriber walls_sub = nh.subscribe<mbzirc_comm_objs::WallList>("walls", 1, &UalActionServer::wallListCallback, this);
-  // ros::Subscriber sensed_sub = nh.subscribe<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
-  // ros::ServiceClient start_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/start_pump");
-  // ros::ServiceClient stop_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/stop_pump");
-  // ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
-  // ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
-  ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
+  // ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
 
   if (!waitForFreshSf11RangeMsg(10)) {
     result.message = "could not get fresh [sf11_range]";
@@ -829,17 +814,39 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
   grvc::ual::PosePID pose_pid(pid_x, pid_y, pid_z, pid_yaw);
   // pose_pid.enableRosInterface("go_to_facade_control");
 
+  auto ual_safe_pose = ual_->pose();
+  ual_->goToWaypoint(target_fire.ual_pose, false);  // TODO: timeout?
+  ros::Duration(0.5).sleep();
+  ros::Rate loop_rate(FACADE_EXTINGUISH_LOOP_RATE);
+  while(!ual_->isIdle() && ros::ok()) {
+    if (go_to_facade_fire_server_.isPreemptRequested()) {
+      ual_->setPose(ual_->pose());
+      go_to_facade_fire_server_.setPreempted();
+      return;
+    }
+
+    double distance_to_closest_wall = 0;
+    mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
+    if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
+      distance_to_closest_wall = squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
+    }
+    if (distance_to_closest_wall == 0) {
+      loop_rate.sleep();
+      continue;
+    }
+    if (distance_to_closest_wall < 9.0) {  // TODO: Tune (9.0 = 3.0*3.0)
+      ROS_WARN("Too close to closest_wall!");
+      ual_->setPose(ual_safe_pose);
+      break;
+    } else {
+      ual_safe_pose = ual_->pose();
+    }
+    loop_rate.sleep();
+  }
+
   grvc::utils::CircularBuffer history_sq_xyz_errors;
   history_sq_xyz_errors.set_size(FACADE_EXTINGUISH_LOOP_RATE);  // TODO: 1s
   history_sq_xyz_errors.fill_with(1e3);  // TODO: 1km?
-
-/*
-  FireData target_fire;
-  bool fire_is_locked = false;
-  auto ual_safe_pose = ual_->pose();
-  mbzirc_comm_objs::ObjectDetection hole;
-  ros::Duration timeout(CANDIDATE_TIMEOUT);  // TODO: different timeout?
-  ros::Rate loop_rate(FACADE_EXTINGUISH_LOOP_RATE);
   while (ros::ok()) {
     if (go_to_facade_fire_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
@@ -847,158 +854,6 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
       return;
     }
 
-    float min_sq_distance = 1e6;
-    for (size_t i = 0; i < sensed_objects_.objects.size(); i++) {
-      auto object = sensed_objects_.objects[i];
-      if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
-        auto current_sq_distance = squaredPositionNorm(object.pose.pose);
-        if (current_sq_distance < min_sq_distance) {
-          min_sq_distance = current_sq_distance;
-          hole = object;  // TODO: Closest is best fit?
-        }
-      }
-    }
-    if (min_sq_distance > 36) {  // TODO: Tune?
-      if (min_sq_distance < 1e5) {
-        ROS_WARN("Closest hole is too far!");
-      }
-      continue;
-    }
-    ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
-
-    if (since_last_candidate < timeout) {
-      mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
-      if ((closest_wall.start[0] == 0)) {
-        ROS_WARN("No closest wall!");
-       continue;
-      }
-*/
-/*
-    auto ual_safe_pose = ual_->pose();
-    ual_->goToWaypoint(_goal->waypoint, false);  // TODO: timeout?
-      while(!ual_->isIdle() && ros::ok()) {
-        if (go_to_server_.isPreemptRequested()) {
-          ual_->setPose(ual_->pose());
-          go_to_server_.setPreempted();
-          return;
-        }
-        loop_rate.sleep();
-      }
-      go_to_server_.setSucceeded(result);
-
-    while (ros::ok()) {
-      double distance_to_closest_wall = 0;
-      mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
-      if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
-        distance_to_closest_wall = squaredDistanceToSegment(0, 0, closest_wall.start[0], closest_wall.start[1], closest_wall.end[0], closest_wall.end[1]);
-      }
-      if (distance_to_closest_wall == 0) {
-        continue;
-      }
-
-      if (distance_to_closest_wall < 2.25) {  // TODO: Tune (2.25 = 1.5*1.5)
-        ROS_WARN("Too close to closest_wall!");
-        ual_->setPose(ual_safe_pose);
-      } else {
-        ual_safe_pose = ual_->pose();
-
-        // geometry_msgs::PoseStamped hole_pose;
-        // hole_pose.header = hole.header;
-        // hole_pose.pose = hole.pose.pose;
-        // // std::cout << hole_pose << '\n';
-        // geometry_msgs::PoseStamped error_pose;
-        // tf2::doTransform(hole_pose, error_pose, optical_to_camera);
-        // error_pose.header.stamp = ros::Time::now();
-        // // std::cout << error_pose << '\n';
-        // error_pose.pose.position.x -= 1.80;  // TODO!
-        // error_pose.pose.position.y += 0.00;  // TODO!
-        // error_pose.pose.position.z += 0.17;  // TODO!
-
-        // Control yaw with closest wall
-        float dx, dy;
-        if (closest_wall.start[1] < closest_wall.end[1]) {
-          dx = closest_wall.end[0] - closest_wall.start[0];
-          dy = closest_wall.end[1] - closest_wall.start[1];
-        } else {
-          dx = closest_wall.start[0] - closest_wall.end[0];
-          dy = closest_wall.start[1] - closest_wall.end[1];
-        }
-        if ((dx == 0) && (dy == 0)) {
-          ROS_WARN("dx = dy = 0");
-          continue;
-        }
-        // ROS_INFO("dx = %f, dy = %f", dx, dy);
-        float wall_angle = atan2(dx, dy);  // Defined in this way on purpose! (usually dy/dx)
-        // ROS_INFO("wall_angle = %f", wall_angle);
-        error_pose.pose.orientation.x = 0;
-        error_pose.pose.orientation.y = 0;
-        error_pose.pose.orientation.z = -sin(0.5 * wall_angle);
-        error_pose.pose.orientation.w =  cos(0.5 * wall_angle);
-        // std::cout << error_pose << '\n';
-        geometry_msgs::TwistStamped velocity;
-        velocity = pose_pid.updateError(error_pose);
-        // velocity.twist.angular.x = 0;  // TODO!
-        // velocity.twist.angular.y = 0;  // TODO!
-        // velocity.twist.angular.z = 0;  // TODO!
-        // std::cout << velocity << '\n';
-        // debug_pub.publish(velocity);
-        ual_->setVelocity(velocity);
-
-        history_sq_xyz_errors.push(squaredPositionNorm(error_pose.pose));
-        double min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error;
-        history_sq_xyz_errors.get_stats(min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error);
-
-        if ((avg_sq_xyz_error < 0.01) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {  // TODO: tune!
-          auto current_pose = ual_->pose();
-          target_fire.wall_list = wall_list_;
-          target_fire.sf11_range = sf11_range_;
-          target_fire.id = "TODO";  // TODO!
-          target_fire.ual_pose = current_pose;
-          ual_->goToWaypoint(current_pose, false);  // TODO: is this enough?
-          fire_is_locked = true;
-          ROS_INFO("Fire locked!");
-          break;
-        }
-      }
-
-    } else {
-      ROS_WARN("Candidates timeout!");
-      ual_->setPose(ual_safe_pose);
-    }
-
-    loop_rate.sleep();
-  }
-
-  if (!fire_is_locked) {
-    ual_->setPose(ual_->pose());
-    result.message = "Could not lock fire";
-    go_to_facade_fire_server_.setAborted(result);
-    return;
-  }
-
-  ros::Duration(3).sleep();
-  mbzirc_comm_objs::CheckFire check_fire_srv;
-  check_fire_client.call(check_fire_srv);
-  bool fire_detected = check_fire_srv.response.fire_detected;
-  // bool fire_detected = true;
-  if (!fire_detected) {
-    ual_->setPose(ual_->pose());
-    result.message = "Fire is not detected";
-    go_to_facade_fire_server_.setAborted(result);
-    return;
-  }
-
-  // TODO: Start pumping!
-  // std_srvs::Trigger trigger;
-  // start_pump_client.call(trigger);
-//  ros::Duration(20).sleep();
-//  stop_pump_client.call(trigger);
-//  result.message = "Fire extinguished!";
-//  go_to_facade_fire_server_.setSucceeded(result);
-
-  // int pumping_count_loop = 0;
-  auto ual_safe_pose = ual_->pose();
-  while (ros::ok()) {
     mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
     double distance_to_closest_wall = 0.0;
     if ((closest_wall.start[0] != closest_wall.end[0]) || (closest_wall.start[1] != closest_wall.end[1])) {
@@ -1011,26 +866,26 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
     } else {
       ual_safe_pose = ual_->pose();
       auto error_pose = errorPoseFromFireData(target_fire, true);
-      if (squaredPositionNorm(error_pose.pose) > 1.0) {
+      if (squaredPositionNorm(error_pose.pose) > 64.0) {
         error_pose.pose.position.x = 0;
         error_pose.pose.position.y = 0;
         // Do not reset z nor orientation on purpose
       }
+
+      history_sq_xyz_errors.push(squaredPositionNorm(error_pose.pose));
+      double min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error;
+      history_sq_xyz_errors.get_stats(min_sq_xyz_error, avg_sq_xyz_error, max_sq_xyz_error);
+
+      if ((avg_sq_xyz_error < 0.3) && (fabs(yawFromPose(error_pose.pose)) < 0.1)) {  // TODO: tune!
+        ual_->setPose(ual_->pose());
+        break;
+      }
       geometry_msgs::TwistStamped velocity = pose_pid.updateError(error_pose);
       ual_->setVelocity(velocity);
     }
-
-    if ((pumping_count_loop / FACADE_EXTINGUISH_LOOP_RATE) > 20) {  // TODO: Tune, in seconds
-      stop_pump_client.call(trigger);
-      ual_->setPose(ual_->pose());
-      result.message = "Fire extinguished!";
-      go_to_facade_fire_server_.setSucceeded(result);
-      break;
-    }
-    pumping_count_loop++;
     loop_rate.sleep();
   }
 
-  // TODO: Save target_fire to file?
+  go_to_facade_fire_server_.setSucceeded(result);
+
 }
-*/
