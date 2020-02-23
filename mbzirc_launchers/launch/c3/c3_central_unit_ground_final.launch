@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="height" default="3.0"/>
+	<arg name="uav_id" default="6"/>
+	<arg name="fire_i" default="1"/>
+	<arg name="fire_j" default="1"/>
+
+	<node name="c3_dispatcher_ground" pkg="robot_tasks" type="c3_ground_final.py" respawn="false" output="screen">
+		<param name="uav_id" type="string" value="$(arg uav_id)"/>
+		<param name="height" value="$(arg height)"/>
+		<param name="fire_i" value="$(arg fire_i)"/>
+		<param name="fire_j" value="$(arg fire_j)"/>
+	</node>
+
+</launch>

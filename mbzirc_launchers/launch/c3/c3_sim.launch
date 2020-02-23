@@ -157,11 +157,17 @@
         <arg name="fire_id" value="default_2"/>
     </include> -->
 
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
-        <arg name="mode" value="$(arg mode)"/>
+    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
         <arg name="uav_id" value="6"/>
         <arg name="height" value="3.0"/>
-    </include>
+        <arg name="path" value="1"/>
+    </include> -->
 
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground_final.launch">
+        <arg name="uav_id" value="6"/>
+        <arg name="height" value="3.0"/>
+        <arg name="fire_i" value="5"/>
+	    <arg name="fire_j" value="1"/>
+    </include>
     
 </launch>

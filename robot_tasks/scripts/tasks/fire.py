@@ -69,6 +69,29 @@ class ExtinguishGroundFire(smach.StateMachine):
                 return goal
 
             smach.StateMachine.add('EXTINGUISH', smach_ros.SimpleActionState(robot.url + 'extinguish_ground_fire_action', mbzirc_comm_objs.msg.ExtinguishGroundFireAction,
+                                    input_keys = ['color'],
+                                    goal_cb = extinguish_ground_fire_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+        return self
+
+class ExtinguishGroundFireSimple(smach.StateMachine):
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['waypoint', 'color'])
+
+    def define_for(self, robot):
+        with self:
+
+            smach.StateMachine.add('GO_TO_FIRE', GoTo().define_for(robot),
+                                    remapping = {'waypoint': 'waypoint'},
+                                    transitions = {'succeeded': 'EXTINGUISH'})
+
+            def extinguish_ground_fire_callback(userdata, default_goal):
+                goal = mbzirc_comm_objs.msg.ExtinguishGroundFireGoal(color = userdata.color)
+                return goal
+
+            smach.StateMachine.add('EXTINGUISH', smach_ros.SimpleActionState(robot.url + 'extinguish_ground_fire_action', mbzirc_comm_objs.msg.ExtinguishGroundFireAction,
+                                    input_keys = ['color'],
                                     goal_cb = extinguish_ground_fire_callback),
                                     transitions = {'succeeded': 'succeeded'})
 
