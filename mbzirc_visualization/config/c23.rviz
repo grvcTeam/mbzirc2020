@@ -74,12 +74,8 @@ Visualization Manager:
       Name: Objects
       Namespaces:
         bject_id: true
-        cov_ellipse_: true
         ectangle_: true
-        object_id: true
-        orientation_: true
         ov_ellipse_: true
-        rectangle_: true
         rientation_: true
       Queue Size: 100
       Value: true
@@ -101,80 +97,19 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        arena:
-          Value: false
-        map:
-          Value: false
-        mbzirc2020_2/base_link:
-          Value: false
-        mbzirc2020_2/camera_color_optical_frame:
-          Value: false
-        mbzirc2020_2/camera_control_link:
-          Value: false
-        mbzirc2020_2/camera_link:
-          Value: false
-        mbzirc2020_2/gripper_link:
-          Value: false
-        mbzirc2020_2/laser_link:
-          Value: false
-        mbzirc2020_2/odom:
-          Value: false
-        mbzirc2020_2/sf11_link:
-          Value: false
-        mbzirc2020_6/base_link:
-          Value: false
-        mbzirc2020_6/camera_color_optical_frame:
-          Value: false
-        mbzirc2020_6/camera_control_link:
-          Value: false
-        mbzirc2020_6/camera_link:
-          Value: false
-        mbzirc2020_6/gripper_link:
-          Value: false
-        mbzirc2020_6/laser_link:
-          Value: false
-        mbzirc2020_6/odom:
-          Value: false
-        mbzirc2020_6/sf11_link:
-          Value: false
       Marker Scale: 10
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          arena:
-            mbzirc2020_2/odom:
-              mbzirc2020_2/base_link:
-                mbzirc2020_2/camera_control_link:
-                  mbzirc2020_2/camera_link:
-                    mbzirc2020_2/camera_color_optical_frame:
-                      {}
-                mbzirc2020_2/gripper_link:
-                  {}
-                mbzirc2020_2/laser_link:
-                  {}
-                mbzirc2020_2/sf11_link:
-                  {}
-            mbzirc2020_6/odom:
-              mbzirc2020_6/base_link:
-                mbzirc2020_6/camera_control_link:
-                  mbzirc2020_6/camera_link:
-                    mbzirc2020_6/camera_color_optical_frame:
-                      {}
-                mbzirc2020_6/gripper_link:
-                  {}
-                mbzirc2020_6/laser_link:
-                  {}
-                mbzirc2020_6/sf11_link:
-                  {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
