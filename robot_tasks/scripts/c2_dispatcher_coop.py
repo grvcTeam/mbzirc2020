@@ -422,11 +422,11 @@ class CentralUnit(object):
                 return
 
             if first_bigger['centroid'][0] > second_bigger['centroid'][0]:
-                uav_cluster = first_bigger
-                ugv_cluster = second_bigger
-            else:
-                uav_cluster = second_bigger
                 ugv_cluster = first_bigger
+                uav_cluster = second_bigger
+            else:
+                ugv_cluster = second_bigger
+                uav_cluster = first_bigger
 
             # uav_cluster = {}
             # for cluster in clusters:
@@ -526,7 +526,8 @@ class CentralUnit(object):
         bottom_top = [bottom_segment.pose.position.x - top_segment.pose.position.x, bottom_segment.pose.position.y - top_segment.pose.position.y]
         bottom_top = [bottom_top[0]*cos(yaw_t) + bottom_top[1]*sin(yaw_t), -bottom_top[0]*sin(yaw_t) + bottom_top[1]*cos(yaw_t)]
 
-        if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
+        #if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
+        if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error:
             result = True
 
         return result
