@@ -752,6 +752,7 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
 
   if (!fire_map.count(_goal->fire_id)) {
     result.message = "fire_id [" + _goal->fire_id + "] not found";
+    ROS_ERROR("%s", result.message.c_str());
     go_to_facade_fire_server_.setAborted(result);
     return;
   }
@@ -764,12 +765,14 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
 
   if (!waitForFreshSf11RangeMsg(10)) {
     result.message = "could not get fresh [sf11_range]";
+    ROS_ERROR("%s", result.message.c_str());
     go_to_facade_fire_server_.setAborted(result);
     return;
   }
 
   if (!waitForFreshWallListMsg(10)) {
     result.message = "could not get fresh [wall_list]";
+    ROS_ERROR("%s", result.message.c_str());
     go_to_facade_fire_server_.setAborted(result);
     return;
   }
