@@ -33,7 +33,7 @@
 <xacro:property name="f5d" value="${[(f5dp[0]-b[0])*cos(b[3])-(f5dp[1]-b[1])*sin(b[3])+b[0],(f5dp[0]-b[0])*sin(b[3])+(f5dp[1]-b[1])*cos(b[3])+b[1],f5dp[2],f5dp[3]+b[3]]}"/>
 <xacro:property name="f4dp" value="${[b[0]+1.75, b[1]+12.8, b[2]+6.0, -3.1416]}"/>
 <xacro:property name="f4d" value="${[(f4dp[0]-b[0])*cos(b[3])-(f4dp[1]-b[1])*sin(b[3])+b[0],(f4dp[0]-b[0])*sin(b[3])+(f4dp[1]-b[1])*cos(b[3])+b[1],f4dp[2],f4dp[3]+b[3]]}"/>
-<xacro:property name="f62dp" value="${[b[0]+0.5,b[1]+12.8,b[2]+12.5, 3.1416]}"/>
+<xacro:property name="f62dp" value="${[b[0]+0.7,b[1]+12.8,b[2]+12.5, 3.1416]}"/>
 <xacro:property name="f62d" value="${[(f62dp[0]-b[0])*cos(b[3])-(f62dp[1]-b[1])*sin(b[3])+b[0],(f62dp[0]-b[0])*sin(b[3])+(f62dp[1]-b[1])*cos(b[3])+b[1],f62dp[2],f62dp[3]+b[3]]}"/>
 <!-- <xacro:property name="f52dcp" value="${[b[0]+0,b[1]+10,b[2]+0, 3.1416]}"/>
 <xacro:property name="f52dc" value="${[(f52dcp[0]-b[0])*cos(b[3])-(f52dcp[1]-b[1])*sin(b[3])+b[0],(f52dcp[0]-b[0])*sin(b[3])+(f52dcp[1]-b[1])*cos(b[3])+b[1],f52dcp[2],f52dcp[3]+b[3]]}"/> -->
@@ -72,7 +72,7 @@
 <xacro:property name="f7" value="${[-9,20,0,0]}"/>
 <xacro:property name="f8" value="${[1,14,0,-1.570795]}"/>
  
-<xacro:property name="b" value="${[12,18.8,0,-1.57]}"/> 
+<xacro:property name="b" value="${[11.4,19.5,0,-1.57]}"/> 
 <xacro:property name="g" value="${[16,21,0,0]}"/> 
 
    <!-- The following is the geometric expresion for an axis rotation -->

@@ -21,7 +21,7 @@
       <geometry>
         <mesh>
           <uri>model://vertical_fire_holder/meshes/vertical_fire_holder.dae</uri>
-          <scale>1 1 1</scale>
+          <scale>0.1 0.1 0.1</scale>
         </mesh>
       </geometry>
     </visual>
@@ -29,7 +29,7 @@
       <geometry>
         <mesh>
           <uri>model://vertical_fire_holder/meshes/vertical_fire_holder.dae</uri>
-          <scale>1 1 1</scale>
+          <scale>0.1 0.1 0.1</scale>
         </mesh>
       </geometry>
     </collision>
@@ -38,7 +38,7 @@
 <xacro:if value="${on}">
 
 <link name='link_vertical_fire_plate_${id}'>
-      <pose frame=''>0 0.10 -0 1.570795 -0 0</pose>
+      <pose frame=''>0 0.10 0.05 1.570795 -0 0</pose>
       <inertial>
         <mass>1</mass>
         <inertia>
