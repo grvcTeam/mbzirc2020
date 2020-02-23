@@ -217,7 +217,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   ros::Subscriber sensed_sub = nh.subscribe<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 1, &UalActionServer::sensedObjectsCallback, this);
   ros::ServiceClient start_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/start_pump");
   ros::ServiceClient stop_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/stop_pump");
-  ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
+  // ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
   ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
   ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
 
@@ -301,7 +301,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
         }
       }
     }
-    if (min_sq_distance > 36) {  // TODO: Tune?
+    if (min_sq_distance > 64.0) {  // TODO: Tune?
       if (min_sq_distance < 1e5) {
         ROS_WARN("Closest hole is too far!");
       }
@@ -404,17 +404,17 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
     return;
   }
 
-  ros::Duration(3).sleep();
-  mbzirc_comm_objs::CheckFire check_fire_srv;
-  check_fire_client.call(check_fire_srv);
-  bool fire_detected = check_fire_srv.response.fire_detected;
-  // bool fire_detected = true;
-  if (!fire_detected) {
-    ual_->setPose(ual_->pose());
-    result.message = "Fire is not detected";
-    extinguish_facade_fire_server_.setAborted(result);
-    return;
-  }
+  // ros::Duration(3).sleep();
+  // mbzirc_comm_objs::CheckFire check_fire_srv;
+  // check_fire_client.call(check_fire_srv);
+  // bool fire_detected = check_fire_srv.response.fire_detected;
+  // // bool fire_detected = true;
+  // if (!fire_detected) {
+  //   ual_->setPose(ual_->pose());
+  //   result.message = "Fire is not detected";
+  //   extinguish_facade_fire_server_.setAborted(result);
+  //   return;
+  // }
 
   // TODO: Start pumping!
   std_srvs::Trigger trigger;
