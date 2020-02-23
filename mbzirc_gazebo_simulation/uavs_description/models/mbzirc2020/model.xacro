@@ -417,10 +417,10 @@
   <!-- BLANKET C3 UAV -->
   <xacro:if value="${$(arg challenge) == 31}">
     <!-- Install fake camera for fire detection -->
-    <xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
+    <!--xacro:include filename="$(find mbzirc_gazebo_plugins)/urdf/fake_camera.xacro" />
     <xacro:fake_camera parent="base_link" robot_name="mbzirc2020_$(arg robot_id)">
       <origin xyz="0.25 0 -0.11" rpy="0 1.57 0" />
-    </xacro:fake_camera>
+    </xacro:fake_camera-->
 
     <!-- KINECT -->
     <link name="kinect_link">
