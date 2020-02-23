@@ -67,7 +67,7 @@
 #define MAX_AVG_XY_ERROR 0.15  // [m]
 #define MAX_AVG_Z_ERROR 0.2  // [m]
 #define RELEASE_Z_ERROR_THRESHOLD 0.1 // [m]
-#define RELEASE_XY_ERROR_THRESHOLD 0.1 // [m]
+#define RELEASE_XY_ERROR_THRESHOLD 0.15 // [m]
 
 // TODO: From utils?
 inline double normalizeAngle(double angle) {

@@ -696,9 +696,10 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
       }
 
     if(fire_found) {
-      mbzirc_comm_objs::CheckFire check_fire_srv;
-      check_fire_client.call(check_fire_srv);
-      fire_detected = check_fire_srv.response.fire_detected;
+      // mbzirc_comm_objs::CheckFire check_fire_srv;
+      // check_fire_client.call(check_fire_srv);
+      // fire_detected = check_fire_srv.response.fire_detected;
+      fire_detected = true;
       if(fire_detected) {
         ual_->setPose(ual_->pose());
         result.message = "Fire detected!";
