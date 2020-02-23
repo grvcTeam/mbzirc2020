@@ -27,7 +27,7 @@ import mbzirc_comm_objs.msg as msg
 from mbzirc_comm_objs.srv import CheckFire
 from geometry_msgs.msg import PoseStamped
 from tasks.move import TakeOff, GoTo, FollowPath
-from tasks.fire import ExtinguishFacadeFire
+from tasks.fire import ExtinguishFacadeFire, GoToFacadeFire
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
 from std_srvs.srv import Trigger, TriggerResponse
@@ -36,6 +36,7 @@ from std_srvs.srv import Trigger, TriggerResponse
 started = False
 def start_challenge(req):
     rospy.loginfo('Starting challenge 3 facade.')
+    global started
     started = True
     return TriggerResponse(True,'')
 
@@ -48,6 +49,7 @@ def main():
         rospy.logwarn("Waiting for (sim) time to begin!")
         rospy.sleep(1)
 
+    global started
     file_name = 'fire_{}.yaml'.format(facade)
     fires_dir = rospkg.RosPack().get_path('fire_extinguisher') + '/fires/'
     file_url = fires_dir + file_name
@@ -119,7 +121,7 @@ def main():
         # ask_for_fire_url = 'thermal_detection/fire_detected'
         ask_for_fire_url = '/mbzirc2020_' + robot_id + '/thermal_detection/fire_detected'
         rospy.loginfo('robot {} waiting for {}...'.format(robot_id, ask_for_fire_url))
-        rospy.wait_for_service(ask_for_fire_url)  # TODO: Wait?
+        # rospy.wait_for_service(ask_for_fire_url)  # TODO: Wait?
         rospy.loginfo('robot {} finished waiting!'.format(robot_id))
         try:
             ask_for_fire = rospy.ServiceProxy(ask_for_fire_url, CheckFire)
