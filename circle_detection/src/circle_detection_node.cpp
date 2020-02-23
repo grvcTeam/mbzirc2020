@@ -296,6 +296,9 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
         }
     }
 
+    // Dilate and Erode gaussian_blur_image
+    //cv::morphologyEx(gaussian_blur_image_cv.image, gaussian_blur_image_cv.image, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)), cv::Point(-1,-1), 2);
+
     if (publish_debug_images_)
     {
         mask_image_pub_.publish(mask_image_cv.toImageMsg());
@@ -306,11 +309,10 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
         canny_edge_image_pub_.publish(canny_edge_image.toImageMsg());
     }
 
-    // Dilate and Erode gaussian_blur_image
-    cv::morphologyEx(gaussian_blur_image_cv.image, gaussian_blur_image_cv.image, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)), cv::Point(-1,-1), 2);
 
     cv::HoughCircles(gaussian_blur_image_cv.image, circles_detected, CV_HOUGH_GRADIENT, dp_, min_dist_between_circle_center_, 
                      canny_edge_upper_threshold_, accu_th_, min_radius_pixels_, max_radius_pixels_);
+    //int valid_circles = 0;
     for (size_t i = 0; i < circles_detected.size(); i++)
     {
         cv::Point center(cvRound(circles_detected[i][0]), cvRound(circles_detected[i][1]));
@@ -325,6 +327,7 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
             float circle_radius_meters = getRadiusInMetersFromPixels(circle_center_depth, radius);
             if ( (circle_radius_meters >= min_radius_meters_) && (circle_radius_meters <= max_radius_meters_ ) )
             {
+                //valid_circles++;
                 // circle center
                 cv::circle( color_image_cv->image, center, 3, cv::Scalar(0,255,0), -1, 8, 0);
                 // circle outline
@@ -352,6 +355,7 @@ void CircleDetector::findCirclesColor(const sensor_msgs::ImageConstPtr &color_im
             }
         }
     }
+    //std::cout << "Valid circles: " << valid_circles << std::endl;
     if (publish_debug_images_)
         detected_circles_image_pub_.publish(color_image_cv->toImageMsg());
     // Publish detected circles

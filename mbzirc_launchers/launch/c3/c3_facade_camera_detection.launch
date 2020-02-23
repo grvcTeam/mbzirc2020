@@ -19,11 +19,12 @@
       <param name="publish_debug_images" value="true" />
       <param name="dp" value="1.0" />
       <param name="min_dist_between_circle_center" value="60" />
-      <param name="canny_edge_upper_threshold" value="$(arg threshold)" />
-      <param name="accumulator_threshold" value="$(arg threshold)" />
+      <param name="canny_edge_upper_threshold" value="70" />
+      <param name="accumulator_threshold" value="40" />
       <param name="min_radius_meters" value="0.05" />
       <param name="max_radius_meters" value="0.30" />
-      <param name="gaussian_blur_sigma" value="4" />
+      <param name="gaussian_blur_sigma" value="3.5" />
+      <param name="gaussian_blur_kernel_size" value="5" />
       <param name="use_gaussian_blur" value="true" />
       <param name="max_depth_th" value="6.5" />
     </node>
