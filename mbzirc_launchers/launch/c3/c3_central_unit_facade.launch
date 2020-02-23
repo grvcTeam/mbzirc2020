@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="mode" default="real"/>
+	<arg name="agent_id" default="2"/>
+	<arg name="path" default="left"/>
+
+	<node name="c3_dispatcher_facade_$(arg agent_id)" pkg="robot_tasks" type="c3_facade.py" respawn="false" output="screen">
+
+		<param name="uav_id" type="string" value="$(arg agent_id)"/>
+		<param name="path" value="$(arg path)"/>
+			
+	</node>
+
+</launch>

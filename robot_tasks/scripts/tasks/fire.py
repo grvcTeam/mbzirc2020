@@ -7,7 +7,25 @@ import mbzirc_comm_objs.srv as srv
 # from timing import SleepAndRetry
 from move import GoTo
 
+class GoToFacadeFire(smach.StateMachine):
+    def __init__(self):
+        smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'], input_keys = ['fires_file', 'fire_id'])
 
+    def define_for(self, robot):
+        with self:
+
+            def go_to_facade_fire_callback(userdata, default_goal):
+                goal = mbzirc_comm_objs.msg.GoToFacadeFireGoal()
+                goal.fires_file = userdata.fires_file
+                goal.fire_id = userdata.fire_id
+                return goal
+
+            smach.StateMachine.add('GO_TO_FACADE_FIRE', smach_ros.SimpleActionState(robot.url + 'go_to_facade_fire_action', mbzirc_comm_objs.msg.GoToFacadeFireAction,
+                                    input_keys = ['fires_file', 'fire_id'],
+                                    goal_cb = go_to_facade_fire_callback),
+                                    transitions = {'succeeded': 'succeeded'})
+
+        return self
 class ExtinguishFacadeFire(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self, outcomes = ['succeeded', 'aborted', 'preempted'])

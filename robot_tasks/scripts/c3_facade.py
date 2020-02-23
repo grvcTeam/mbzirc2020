@@ -26,52 +26,92 @@ import mbzirc_comm_objs.msg as msg
 
 from mbzirc_comm_objs.srv import CheckFire
 from geometry_msgs.msg import PoseStamped
-from tasks.move import TakeOff, GoTo
+from tasks.move import TakeOff, GoTo, FollowPath
 from tasks.fire import ExtinguishFacadeFire
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
+from std_srvs.srv import Trigger, TriggerResponse
+
+# Start service
+started = False
+def start_challenge(req):
+    rospy.loginfo('Starting challenge 3 facade.')
+    started = True
+    return TriggerResponse(True,'')
 
 def main():
     rospy.init_node('c3_facade')
-    robot_id = '2'  # TODO: From param!
+    robot_id = rospy.get_param('~uav_id', '2')
+    facade = rospy.get_param('~facade', 'left')
 
     while rospy.get_rostime() == rospy.Time():
         rospy.logwarn("Waiting for (sim) time to begin!")
         rospy.sleep(1)
 
-    file_name = 'fire_default.yaml'
+    file_name = 'fire_{}.yaml'.format(facade)
     fires_dir = rospkg.RosPack().get_path('fire_extinguisher') + '/fires/'
     file_url = fires_dir + file_name
     yaml_file = open(file_url, 'r')
     rospy.loginfo('Fires loaded from: %s', file_url)
-    fires_yaml = yaml.load(yaml_file)['fires']
+    fires_yaml = yaml.load(yaml_file)
     # TODO: Check file consistency
 
     robot = {}
     robot[robot_id] = RobotProxy(robot_id)
     task_manager = TaskManager(robot)
+    start_challenge_service = rospy.Service('start_c3_facade_{}'.format(robot_id),Trigger,start_challenge)
+
+    # Get safe path from file
+    safe_path = []
+    if 'path' in fires_yaml:
+        for waypoint in fires_yaml['path']:
+            wp = PoseStamped()
+            wp.header.frame_id = 'arena'
+            wp.pose.position.x = waypoint['pose'][0]
+            wp.pose.position.y = waypoint['pose'][1]
+            wp.pose.position.z = waypoint['pose'][2]
+            wp.pose.orientation.x = waypoint['pose'][3]
+            wp.pose.orientation.y = waypoint['pose'][4]
+            wp.pose.orientation.z = waypoint['pose'][5]
+            wp.pose.orientation.w = waypoint['pose'][6]
+            safe_path.append(wp)
+    else:
+        rospy.logerr('No path in file, exiting facade fire')
+        return
+
+    rospy.loginfo('Don Pin-Pon {} ready to go.'.format(robot_id))
+
+    # Wait for start service
+    while not rospy.is_shutdown() and not started:
+        rospy.sleep(1)
 
     userdata = smach.UserData()
-    userdata.height = 3.0
+    userdata.height = safe_path[0].pose.position.z
     task_manager.start_task(robot_id, TakeOff(), userdata)
     task_manager.wait_for([robot_id])
 
     # TODO: Goto safe facade approaching position
+    userdata_safe_path = smach.UserData()
+    userdata_safe_path.path = safe_path
+    task_manager.start_task(robot_id, FollowPath(), userdata_safe_path)
+    task_manager.wait_for([robot_id])
 
     # TODO: Auto order by z?
-    for fire in fires_yaml:
+    for fire in fires_yaml['fires']:
         userdata = smach.UserData()
-        userdata.waypoint = PoseStamped() 
-        userdata.waypoint.header.frame_id = fire['pose_frame']
-        userdata.waypoint.pose.position.x = fire['pose'][0]
-        userdata.waypoint.pose.position.y = fire['pose'][1]
-        userdata.waypoint.pose.position.z = fire['pose'][2]
-        userdata.waypoint.pose.orientation.x = fire['pose'][3]
-        userdata.waypoint.pose.orientation.y = fire['pose'][4]
-        userdata.waypoint.pose.orientation.z = fire['pose'][5]
-        userdata.waypoint.pose.orientation.w = fire['pose'][6]
-        rospy.loginfo('robot {} going to:\n {}\n'.format(robot_id, userdata.waypoint))
-        task_manager.start_task(robot_id, GoTo(), userdata)
+        # userdata.waypoint = PoseStamped() 
+        # userdata.waypoint.header.frame_id = fire['pose_frame']
+        # userdata.waypoint.pose.position.x = fire['pose'][0]
+        # userdata.waypoint.pose.position.y = fire['pose'][1]
+        # userdata.waypoint.pose.position.z = fire['pose'][2]
+        # userdata.waypoint.pose.orientation.x = fire['pose'][3]
+        # userdata.waypoint.pose.orientation.y = fire['pose'][4]
+        # userdata.waypoint.pose.orientation.z = fire['pose'][5]
+        # userdata.waypoint.pose.orientation.w = fire['pose'][6]
+        # rospy.loginfo('robot {} going to:\n {}\n'.format(robot_id, userdata.waypoint))
+        userdata.fires_file = file_name
+        userdata.fire_id = fire['id']
+        task_manager.start_task(robot_id, GoToFacadeFire(), userdata)
         task_manager.wait_for([robot_id])
 
         time.sleep(3)
@@ -92,8 +132,8 @@ def main():
             task_manager.start_task(robot_id, ExtinguishFacadeFire(), smach.UserData())
             task_manager.wait_for([robot_id])
             # Back to approximate_pose
-            task_manager.start_task(robot_id, GoTo(), userdata)
-            task_manager.wait_for([robot_id])
+            # task_manager.start_task(robot_id, GoTo(), userdata)
+            # task_manager.wait_for([robot_id])
             break
 
     rospy.loginfo('robot {} finished!\n'.format(robot_id))

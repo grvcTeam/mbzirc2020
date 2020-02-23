@@ -25,7 +25,7 @@ import mbzirc_comm_objs.msg as msg
 
 from geometry_msgs.msg import PoseStamped
 from tasks.move import TakeOff, GoTo, Land
-from tasks.fire import ExtinguishFacadeFire, ExtinguishGroundFire
+from tasks.fire import ExtinguishGroundFire
 from std_srvs.srv import Trigger, TriggerResponse
 from utils.manager import TaskManager
 from utils.robot import RobotProxy
@@ -40,7 +40,7 @@ class CentralUnit(object):
 
         # Read parameters
         conf_file = rospy.get_param('~conf_file', 'config/conf_ch3_ground.yaml')
-        self.robot_id = rospy.get_param('~uav_id', '')
+        self.robot_id = rospy.get_param('~uav_id', '6')
         self.height = rospy.get_param('~height', 3.0)
 
         with open(conf_file,'r') as file:
@@ -73,7 +73,7 @@ class CentralUnit(object):
     def start_challenge(self, req):
         rospy.loginfo('Starting challenge 3 ground.')
         self.started = True
-        return TriggerResponse(True)
+        return TriggerResponse(True,'')
 
     # TODO: Could be a smach.State (for all or for every single uav)
     def take_off(self):
