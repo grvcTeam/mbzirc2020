@@ -769,11 +769,6 @@ def main():
     finished = False
     while not finished and not rospy.is_shutdown():
 
-        # If there was list of pending tasks, resume
-        recovered_brick_task = load_brick_task_list()
-        if len(recovered_brick_task) > 0:
-            self.brick_task_list = recovered_brick_task
-
         if(not central_unit.load_objects_file()):
 
             central_unit.unlock_objects()
