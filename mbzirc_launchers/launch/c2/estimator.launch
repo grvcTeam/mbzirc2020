@@ -10,7 +10,7 @@
 		<param name="robot_ns" value="$(arg robot_model)"/>
 
 		<rosparam param="object_types">["pile","wall"]</rosparam>	
-		<rosparam param="uav_ids">["4", "6"]</rosparam>
+		<rosparam param="uav_ids">["6", "4"]</rosparam>
 		<param name="a_priori_info" value="true" />
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
 		
