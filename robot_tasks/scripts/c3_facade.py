@@ -44,6 +44,7 @@ def main():
     rospy.init_node('c3_facade')
     robot_id = rospy.get_param('~uav_id', '2')
     facade = rospy.get_param('~facade', 'left')
+    pre_fire_id = rospy.get_param('~fire_id', '')
 
     while rospy.get_rostime() == rospy.Time():
         rospy.logwarn("Waiting for (sim) time to begin!")
@@ -98,6 +99,17 @@ def main():
     task_manager.start_task(robot_id, FollowPath(), userdata_safe_path)
     task_manager.wait_for([robot_id])
 
+    # Go directly to pre_fire_id
+    if not pre_fire_id:
+        userdata_pre_fire = smach.UserData()
+        userdata_pre_fire.file_name = file_name
+        userdata_pre_fire.fire_id = pre_fire_id
+        task_manager.start_task(robot_id, GoToFacadeFire(), userdata)
+        task_manager.wait_for([robot_id])
+        task_manager.start_task(robot_id, ExtinguishFacadeFire(), smach.UserData())
+        task_manager.wait_for([robot_id])
+        return
+
     # TODO: Auto order by z?
     for fire in fires_yaml['fires']:
         userdata = smach.UserData()
@@ -131,6 +143,7 @@ def main():
             rospy.logerr("Service call failed: {}".format(e))
 
         if fire_detected:
+            rospy.loginfo('Extinguishing fire: {}'.format(fire['id']))
             task_manager.start_task(robot_id, ExtinguishFacadeFire(), smach.UserData())
             task_manager.wait_for([robot_id])
             # Back to approximate_pose
