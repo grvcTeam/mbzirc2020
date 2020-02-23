@@ -150,18 +150,18 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
 
     <!--Central unit -->
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
+    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="agent_id" value="2"/>
         <arg name="path" value="left"/>
         <arg name="fire_id" value="default_2"/>
-    </include>
+    </include> -->
 
-    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="uav_id" value="6"/>
         <arg name="height" value="3.0"/>
-    </include> -->
+    </include>
 
     
 </launch>

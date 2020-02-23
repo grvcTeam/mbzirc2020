@@ -6,18 +6,11 @@
     <arg name="arena_yaw" default="-0.2968107"/>
 	<arg name="path" default="1"/>
 	<arg name="height" default="3.0"/>
-
-	<group if="$(eval mode == 'sim')">
-        <!-- Launch Gazebo simulation -->
-        <rosparam param="/use_sim_time">true</rosparam>
-        <include file="$(find challenge_worlds)/launch/challenge3.launch">
-            <arg name="arena_yaw" value="$(arg arena_yaw)"/>
-        </include>
-    </group>
+	<arg name="uav_id" default="6"/>
 
 	<node name="c3_dispatcher_ground" pkg="robot_tasks" type="c3_ground.py" respawn="false" output="screen">
 
-		<param name="uav_id" type="string" value="6"/>
+		<param name="uav_id" type="string" value="$(arg uav_id)"/>
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch3_ground_$(arg path).yaml" />
 		<param name="height" value="$(arg height)"/>
 			
