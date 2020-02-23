@@ -563,11 +563,13 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
 
   grvc::utils::CircularBuffer history_xy_errors, history_z_errors;
   history_xy_errors.set_size(AVG_XY_ERROR_WINDOW_SIZE);
-  history_xy_errors.fill_with(MAX_AVG_XY_ERROR);
+  history_xy_errors.fill_with(RELEASE_MAX_AVG_XY_ERROR);
   history_z_errors.set_size(AVG_Z_ERROR_WINDOW_SIZE);
   history_z_errors.fill_with(MAX_AVG_Z_ERROR);
   ros::Duration timeout(CANDIDATE_TIMEOUT);
   ros::Rate loop_rate(GROUND_EXTINGUISH_LOOP_RATE);
+  float start_time = ros::Time::now().toSec();
+  bool release_timeout = false;
   while (ros::ok()) {
     if (extinguish_ground_fire_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
@@ -605,12 +607,17 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
       double min_z_error, avg_z_error, max_z_error;
       history_z_errors.get_stats(min_z_error, avg_z_error, max_z_error);
 
-      if (avg_xy_error > MAX_AVG_XY_ERROR) {
-        avg_xy_error = MAX_AVG_XY_ERROR;
+      if (avg_xy_error > RELEASE_MAX_AVG_XY_ERROR) {
+        avg_xy_error = RELEASE_MAX_AVG_XY_ERROR;
       }
 
-      // Check if we are in position to release
-      if (fabs(avg_z_error) < RELEASE_Z_ERROR_THRESHOLD && fabs(avg_xy_error) < RELEASE_XY_ERROR_THRESHOLD) {
+      // Check timeout
+      if (ros::Time::now().toSec() - start_time > 180) {
+        release_timeout = true;
+      }
+
+      // Check if we are in position to release or if timeout fired
+      if ((fabs(avg_z_error) < RELEASE_Z_ERROR_THRESHOLD && fabs(avg_xy_error) < RELEASE_XY_ERROR_THRESHOLD) || release_timeout) {
         std_srvs::Trigger trigger;
         release_blanket_client.call(trigger);
         auto up_pose = ual_->pose();
@@ -619,13 +626,13 @@ void UalActionServer::extinguishGroundFireCallback(const mbzirc_comm_objs::Extin
         extinguish_ground_fire_server_.setSucceeded(result);
         break;
       }
-      error_pose.pose.position.z = z_error * (1.0 - (avg_xy_error / MAX_AVG_XY_ERROR));
+      error_pose.pose.position.z = z_error * (1.0 - (avg_xy_error / RELEASE_MAX_AVG_XY_ERROR));
       // ROS_INFO("xy_error = %lf, avg_xy_error = %lf, target_position.z = %lf", xy_error, avg_xy_error, target_position.z);
 
     } else {  // No fresh candidates (timeout)
       ROS_WARN("Candidates timeout!");
 
-      // TODO: Push MAX_AVG_XY_ERROR into history_xy_errors
+      // TODO: Push RELEASE_MAX_AVG_XY_ERROR into history_xy_errors
       error_pose.pose.position.x = 0.0;
       error_pose.pose.position.y = 0.0;
       error_pose.pose.position.z = MAX_DELTA_Z;
@@ -679,8 +686,15 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
     look_for_ground_fires_server_.setAborted(result);
     return;
   }
+
+  position_th_ = 0.33*0.33;
+  orientation_th_ = 0.5*(1 - cos(0.65));
+  int buffer_size = std::ceil(3 * 30);
+  position_error_.set_size(buffer_size);
+  orientation_error_.set_size(buffer_size);
   ros::Rate loop_rate(GROUND_EXTINGUISH_LOOP_RATE);
 
+  ual_->goToWaypoint(path[waypoint_id], false);
   while(!fire_detected && ros::ok()) {
     if (look_for_ground_fires_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
@@ -708,11 +722,13 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
       }
     }
 
-    if(ual_->isIdle() && !fire_detected) {
+    if(referencePoseReached() && !fire_detected) {
       waypoint_id++;
       if(waypoint_id < path.size()) {
+        ROS_INFO("Going to next waypoint: %.2f %.2f %.2f", path[waypoint_id].pose.position.x, path[waypoint_id].pose.position.y, path[waypoint_id].pose.position.z);
         ual_->goToWaypoint(path[waypoint_id], false);
-        ros::Duration(0.5).sleep();
+        position_error_.reset();
+        orientation_error_.reset();
       }
       else {
         result.message = "Path finalized without finding fires!";
@@ -720,6 +736,24 @@ void UalActionServer::lookForGroundFiresCallback(const mbzirc_comm_objs::LookFor
         break;
       }
     }
+
+    // Error history update
+    geometry_msgs::PoseStamped cur_pose = ual_->pose();
+    double dx = path[waypoint_id].pose.position.x - cur_pose.pose.position.x;
+    double dy = path[waypoint_id].pose.position.y - cur_pose.pose.position.y;
+    double dz = path[waypoint_id].pose.position.z - cur_pose.pose.position.z;
+    double positionD = dx*dx + dy*dy + dz*dz; // Equals distance^2
+
+    double quatInnerProduct = path[waypoint_id].pose.orientation.x*cur_pose.pose.orientation.x + \
+    path[waypoint_id].pose.orientation.y*cur_pose.pose.orientation.y + \
+    path[waypoint_id].pose.orientation.z*cur_pose.pose.orientation.z + \
+    path[waypoint_id].pose.orientation.w*cur_pose.pose.orientation.w;
+    double orientationD = 1.0 - quatInnerProduct*quatInnerProduct;  // Equals (1-cos(rotation))/2
+
+    position_error_.update(positionD);
+    orientation_error_.update(orientationD);
+    double position_min, position_mean, position_max;
+    position_error_.get_stats(position_min, position_mean, position_max);
 
     loop_rate.sleep();
   }
@@ -892,4 +926,25 @@ void UalActionServer::goToFacadeFireCallback(const mbzirc_comm_objs::GoToFacadeF
 
   go_to_facade_fire_server_.setSucceeded(result);
 
+}
+
+bool UalActionServer::referencePoseReached() {
+
+    double position_min, position_mean, position_max;
+    //double orientation_min, orientation_mean, orientation_max;
+    if (!position_error_.get_stats(position_min, position_mean, position_max)) { return false; }
+    //if (!orientation_error_.get_stats(orientation_min, orientation_mean, orientation_max)) { return false; }
+    
+    double position_diff = position_max - position_min;
+    //double orientation_diff = orientation_max - orientation_min;
+    bool position_holds = (position_diff < position_th_) && (fabs(position_mean) < 0.5*position_th_);
+    //bool orientation_holds = (orientation_diff < orientation_th_) && (fabs(orientation_mean) < 0.5*orientation_th_);
+
+    // if (position_holds && orientation_holds) {  // DEBUG
+    //     ROS_INFO("position: %f < %f) && (%f < %f)", position_diff, position_th_, fabs(position_mean), 0.5*position_th_);
+    //     ROS_INFO("orientation: %f < %f) && (%f < %f)", orientation_diff, orientation_th_, fabs(orientation_mean), 0.5*orientation_th_);
+    //     ROS_INFO("Arrived!");
+    // }
+
+    return position_holds;// && orientation_holds;
 }

@@ -52,6 +52,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <uav_abstraction_layer/ual.h>
 #include <uav_abstraction_layer/posePID.h>
+#include <ual_backend_mavros/ual_backend_mavros.h>
 #include <handy_tools/pid_controller.h>
 #include <handy_tools/circular_buffer.h>
 
@@ -68,6 +69,7 @@
 #define MAX_AVG_Z_ERROR 0.2  // [m]
 #define RELEASE_Z_ERROR_THRESHOLD 0.1 // [m]
 #define RELEASE_XY_ERROR_THRESHOLD 0.15 // [m]
+#define RELEASE_MAX_AVG_XY_ERROR 0.2  // [m]
 
 // TODO: From utils?
 inline double normalizeAngle(double angle) {
@@ -114,6 +116,11 @@ protected:
   mbzirc_comm_objs::WallList wall_list_;
   mbzirc_comm_objs::ObjectDetectionList sensed_objects_;
 
+  float position_th_;
+  float orientation_th_;
+  grvc::ual::HistoryBuffer position_error_;
+  grvc::ual::HistoryBuffer orientation_error_;
+
 public:
 
   UalActionServer();
@@ -129,6 +136,7 @@ public:
   void sensedObjectsCallback(const mbzirc_comm_objs::ObjectDetectionListConstPtr& msg);
   void attachedCallback(const mbzirc_comm_objs::GripperAttachedConstPtr& msg);
   void sf11RangeCallback(const sensor_msgs::RangeConstPtr& msg);
+  bool referencePoseReached();
   
   // Challenge 2
   void pickCallback(const mbzirc_comm_objs::PickGoalConstPtr &_goal);
