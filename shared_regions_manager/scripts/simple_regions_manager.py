@@ -22,6 +22,8 @@ class SimpleRegionsManager():
         self.status_duration = rospy.Duration(1.0)
         self.pick_region_status_pub = rospy.Publisher('pick_region_status', Bool, queue_size = 1)
         self.place_region_status_pub = rospy.Publisher('place_region_status', Bool, queue_size = 1)
+        self.wait_region_status_pub = rospy.Publisher('wait_region_status', Bool, queue_size = 1)
+        self.after_place_region_status_pub = rospy.Publisher('after_place_region_status', Bool, queue_size = 1)
         rospy.Timer(self.status_duration, self.publish_status_callback)
 
     def lock_pick_region_callback(self, req):
