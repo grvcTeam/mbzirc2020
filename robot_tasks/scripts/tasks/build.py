@@ -16,71 +16,71 @@ class Pick(smach.StateMachine):
     def define_for(self, robot):
         with self:
 
-            def ask_for_region_to_wait_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = True
-                return request
+            # def ask_for_region_to_wait_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = True
+            #     return request
 
-            def ask_for_region_to_wait_response_callback(userdata, response):
-                return 'succeeded' if response.success else 'aborted'
+            # def ask_for_region_to_wait_response_callback(userdata, response):
+            #     return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_WAIT', smach_ros.ServiceState('lock_wait_region', SetBool,
-                                    request_cb = ask_for_region_to_wait_request_callback,
-                                    response_cb = ask_for_region_to_wait_response_callback),
-                                    transitions = {'succeeded': 'GO_TO_WAITING_AREA', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_WAIT'})
+            # smach.StateMachine.add('ASK_FOR_REGION_TO_WAIT', smach_ros.ServiceState('lock_wait_region', SetBool,
+            #                         request_cb = ask_for_region_to_wait_request_callback,
+            #                         response_cb = ask_for_region_to_wait_response_callback),
+            #                         transitions = {'succeeded': 'GO_TO_WAITING_AREA', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_WAIT'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_WAIT', SleepAndRetry(3.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_WAIT'})
+            # smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_WAIT', SleepAndRetry(3.0),
+            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_WAIT'})
             
-            smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
-                                    remapping = {'waypoint': 'waiting_pose'},
-                                    transitions = {'succeeded': 'FREE_REGION_AFTER_PLACE'})
+            # smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
+            #                         remapping = {'waypoint': 'waiting_pose'},
+            #                         transitions = {'succeeded': 'FREE_REGION_AFTER_PLACE'})
 
-            def free_after_place_region_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = False
-                return request
+            # def free_after_place_region_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = False
+            #     return request
 
-            def free_after_place_region_response_callback(userdata, response):
-                return 'succeeded'
+            # def free_after_place_region_response_callback(userdata, response):
+            #     return 'succeeded'
 
-            smach.StateMachine.add('FREE_REGION_AFTER_PLACE', smach_ros.ServiceState('lock_after_place_region', SetBool,
-                                    request_cb = free_after_place_region_request_callback,
-                                    response_cb = free_after_place_region_response_callback),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+            # smach.StateMachine.add('FREE_REGION_AFTER_PLACE', smach_ros.ServiceState('lock_after_place_region', SetBool,
+            #                         request_cb = free_after_place_region_request_callback,
+            #                         response_cb = free_after_place_region_response_callback),
+            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
-            def ask_for_region_to_pick_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = True
-                return request
+            # def ask_for_region_to_pick_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = True
+            #     return request
 
-            def ask_for_region_to_pickresponse_callback(userdata, response):
-                return 'succeeded' if response.success else 'aborted'
+            # def ask_for_region_to_pickresponse_callback(userdata, response):
+            #     return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
-                                    request_cb = ask_for_region_to_pick_request_callback,
-                                    response_cb = ask_for_region_to_pickresponse_callback),
-                                    transitions = {'succeeded': 'GO_TO_PILE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
+            # smach.StateMachine.add('ASK_FOR_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
+            #                         request_cb = ask_for_region_to_pick_request_callback,
+            #                         response_cb = ask_for_region_to_pickresponse_callback),
+            #                         transitions = {'succeeded': 'GO_TO_PILE', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PICK'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', SleepAndRetry(3.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
+            # smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PICK', SleepAndRetry(3.0),
+            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             smach.StateMachine.add('GO_TO_PILE', GoTo().define_for(robot),
                                     remapping = {'waypoint': 'above_pile_pose'},
-                                    transitions = {'succeeded': 'FREE_REGION_TO_WAIT'})
-
-            def free_wait_region_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = False
-                return request
-
-            def free_wait_region_response_callback(userdata, response):
-                return 'succeeded'
-
-            smach.StateMachine.add('FREE_REGION_TO_WAIT', smach_ros.ServiceState('lock_wait_region', SetBool,
-                                    request_cb = free_wait_region_request_callback,
-                                    response_cb = free_wait_region_response_callback),
                                     transitions = {'succeeded': 'PICK'})
+
+            # def free_wait_region_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = False
+            #     return request
+
+            # def free_wait_region_response_callback(userdata, response):
+            #     return 'succeeded'
+
+            # smach.StateMachine.add('FREE_REGION_TO_WAIT', smach_ros.ServiceState('lock_wait_region', SetBool,
+            #                         request_cb = free_wait_region_request_callback,
+            #                         response_cb = free_wait_region_response_callback),
+            #                         transitions = {'succeeded': 'PICK'})
 
             def pick_goal_callback(userdata, default_goal):
                 goal = mbzirc_comm_objs.msg.PickGoal(color = userdata.color)
@@ -126,38 +126,38 @@ class Place(smach.StateMachine):
             #                         remapping = {'waypoint': 'waiting_pose'},
             #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
-            def ask_for_region_to_place_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = True
-                return request
+            # def ask_for_region_to_place_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = True
+            #     return request
 
-            def ask_for_region_response_callback(userdata, response):
-                return 'succeeded' if response.success else 'aborted'
+            # def ask_for_region_response_callback(userdata, response):
+            #     return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
-                                    request_cb = ask_for_region_to_place_request_callback,
-                                    response_cb = ask_for_region_response_callback),
-                                    transitions = {'succeeded': 'GO_SEGMENT_TO_THE_LEFT', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
+            # smach.StateMachine.add('ASK_FOR_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
+            #                         request_cb = ask_for_region_to_place_request_callback,
+            #                         response_cb = ask_for_region_response_callback),
+            #                         transitions = {'succeeded': 'GO_SEGMENT_TO_THE_LEFT', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_PLACE'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', SleepAndRetry(1.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
+            # smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_PLACE', SleepAndRetry(1.0),
+            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_PLACE'})
 
             smach.StateMachine.add('GO_SEGMENT_TO_THE_LEFT', GoTo().define_for(robot),
                                     remapping = {'waypoint': 'segment_to_the_left_pose'},
-                                    transitions = {'succeeded': 'FREE_REGION_TO_PICK'})
-
-            def free_pick_region_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = False
-                return request
-
-            def free_pick_region_response_callback(userdata, response):
-                return 'succeeded'
-
-            smach.StateMachine.add('FREE_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
-                                    request_cb = free_pick_region_request_callback,
-                                    response_cb = free_pick_region_response_callback),
                                     transitions = {'succeeded': 'PLACE'})
+
+            # def free_pick_region_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = False
+            #     return request
+
+            # def free_pick_region_response_callback(userdata, response):
+            #     return 'succeeded'
+
+            # smach.StateMachine.add('FREE_REGION_TO_PICK', smach_ros.ServiceState('lock_pick_region', SetBool,
+            #                         request_cb = free_pick_region_request_callback,
+            #                         response_cb = free_pick_region_response_callback),
+            #                         transitions = {'succeeded': 'PLACE'})
 
             def place_goal_callback(userdata, default_goal):
                 goal = mbzirc_comm_objs.msg.PlaceGoal(wall_y_offset = userdata.segment_offset)
@@ -166,43 +166,43 @@ class Place(smach.StateMachine):
             smach.StateMachine.add('PLACE', smach_ros.SimpleActionState(robot.url + 'place_action', mbzirc_comm_objs.msg.PlaceAction,
                                     input_keys = ['segment_offset'],
                                     goal_cb = place_goal_callback),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_WAIT'})
+                                    transitions = {'succeeded': 'succeeded'})
 
             # smach.StateMachine.add('GO_UP', GoTo().define_for(robot),
             #                         remapping = {'waypoint': 'segment_to_the_left_pose'},
             #                         transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
 
-            def ask_for_region_to_wait_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = True
-                return request
+            # def ask_for_region_to_wait_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = True
+            #     return request
 
-            def ask_for_region_to_wait_response_callback(userdata, response):
-                return 'succeeded' if response.success else 'aborted'
+            # def ask_for_region_to_wait_response_callback(userdata, response):
+            #     return 'succeeded' if response.success else 'aborted'
 
-            smach.StateMachine.add('ASK_FOR_REGION_TO_WAIT', smach_ros.ServiceState('lock_after_place_region', SetBool,
-                                    request_cb = ask_for_region_to_wait_request_callback,
-                                    response_cb = ask_for_region_to_wait_response_callback),
-                                    transitions = {'succeeded': 'BACK_TO_WAITING_AREA', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_WAIT'})
+            # smach.StateMachine.add('ASK_FOR_REGION_TO_WAIT', smach_ros.ServiceState('lock_after_place_region', SetBool,
+            #                         request_cb = ask_for_region_to_wait_request_callback,
+            #                         response_cb = ask_for_region_to_wait_response_callback),
+            #                         transitions = {'succeeded': 'BACK_TO_WAITING_AREA', 'aborted': 'SLEEP_AND_RETRY_ASKING_TO_WAIT'})
 
-            smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_WAIT', SleepAndRetry(3.0),
-                                    transitions = {'succeeded': 'ASK_FOR_REGION_TO_WAIT'})
+            # smach.StateMachine.add('SLEEP_AND_RETRY_ASKING_TO_WAIT', SleepAndRetry(3.0),
+            #                         transitions = {'succeeded': 'ASK_FOR_REGION_TO_WAIT'})
 
-            smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
-                                    remapping = {'waypoint': 'waiting_pose'},
-                                    transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
+            # smach.StateMachine.add('BACK_TO_WAITING_AREA', GoTo().define_for(robot),
+            #                         remapping = {'waypoint': 'waiting_pose'},
+            #                         transitions = {'succeeded': 'FREE_REGION_TO_PLACE'})
 
-            def free_place_region_request_callback(userdata, request):
-                request = SetBoolRequest()
-                request.data = False
-                return request
+            # def free_place_region_request_callback(userdata, request):
+            #     request = SetBoolRequest()
+            #     request.data = False
+            #     return request
 
-            def free_place_region_response_callback(userdata, response):
-                return 'succeeded'
+            # def free_place_region_response_callback(userdata, response):
+            #     return 'succeeded'
 
-            smach.StateMachine.add('FREE_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
-                                    request_cb = free_place_region_request_callback,
-                                    response_cb = free_place_region_response_callback),
-                        transitions = {'succeeded': 'succeeded'})
+            # smach.StateMachine.add('FREE_REGION_TO_PLACE', smach_ros.ServiceState('lock_place_region', SetBool,
+            #                         request_cb = free_place_region_request_callback,
+            #                         response_cb = free_place_region_response_callback),
+            #             transitions = {'succeeded': 'succeeded'})
 
         return self
