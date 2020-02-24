@@ -16,7 +16,7 @@
     <arg name="yaw3" default="0"/>
 
     <!-- UAV DON PIN-PON 1 -->
-    <!--include file="$(find mbzirc_launchers)/launch/mavros.launch">
+    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=30" />
@@ -54,7 +54,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="2"/>
         
-    </include-->
+    </include>
 
     <!-- UAV DON PIN-PON 2 -->
     <!--include file="$(find mbzirc_launchers)/launch/mavros.launch">
@@ -98,7 +98,7 @@
     </include-->
   
     <!-- UAV BATA-MANTA -->
-    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+    <!--include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=31" />
@@ -136,7 +136,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="6"/>
         
-    </include>
+    </include-->
 
     <group if="$(eval mode == 'sim')">
         <!-- Launch Gazebo simulation -->
@@ -150,12 +150,12 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
 
     <!--Central unit -->
-    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
+    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="agent_id" value="2"/>
-        <arg name="path" value="left"/>
-        <arg name="fire_id" value="default_2"/>
-    </include> -->
+        <arg name="facade" value="left"/>
+        <arg name="fire_id" value="default_0"/>
+    </include>
 
     <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
         <arg name="uav_id" value="6"/>
@@ -163,11 +163,11 @@
         <arg name="path" value="1"/>
     </include> -->
 
-    <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground_final.launch">
+    <!-- <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground_final.launch">
         <arg name="uav_id" value="6"/>
         <arg name="height" value="3.0"/>
         <arg name="fire_i" value="5"/>
 	    <arg name="fire_j" value="1"/>
-    </include>
+    </include> -->
     
 </launch>
