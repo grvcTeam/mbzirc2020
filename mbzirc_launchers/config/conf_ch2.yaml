@@ -29,97 +29,98 @@ ugv_wall_zone:
   y_min: 21
   y_max: 42
 
-# pile:
-#   - color: "red"
-#     sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -10.0
-#     position_y: 13
-#     position_z: 0.1
-#     scale_x: 0.9
-#     scale_y: 8
-#     scale_z: 0.20
-#     yaw: 1.57
+# pile origin = (-17,10)
+pile:
+  - color: "red"
+    sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -13.0
+    position_y: 10.5
+    position_z: 0.1
+    scale_x: 0.9
+    scale_y: 8
+    scale_z: 0.20
+    yaw: 1.57
 
-#   - color: "green"
-#     sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -10.0
-#     position_y: 14.0
-#     position_z: 0.1
-#     scale_x: 0.9
-#     scale_y: 8
-#     scale_z: 0.20
-#     yaw: 1.57
+  - color: "green"
+    sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -13.0
+    position_y: 11.7
+    position_z: 0.1
+    scale_x: 0.9
+    scale_y: 8
+    scale_z: 0.20
+    yaw: 1.57
 
-#   - color: "blue"
-#     sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -10
-#     position_y: 15
-#     position_z: 0.1
-#     scale_x: 0.2
-#     scale_y: 8
-#     scale_z: 0.20
-#     yaw: 1.57
+  - color: "blue"
+    sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -13.0
+    position_y: 12.7
+    position_z: 0.1
+    scale_x: 0.2
+    scale_y: 8
+    scale_z: 0.20
+    yaw: 1.57
 
-#   - color: "orange"
-#     sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -10.0
-#     position_y: 15.7
-#     position_z: 0.1
-#     scale_x: 0.2
-#     scale_y: 8
-#     scale_z: 0.20
-#     yaw: 1.57
+  - color: "orange"
+    sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -13.0
+    position_y: 13.3
+    position_z: 0.1
+    scale_x: 0.2
+    scale_y: 8
+    scale_z: 0.20
+    yaw: 1.57
 
-# wall:
-#   - sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -16.0
-#     position_y: 22.0
-#     position_z: 0.8
-#     scale_x: 0.4
-#     scale_y: 4.0
-#     scale_z: 1.7
-#     yaw: -2.35
+wall:
+  - sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -18.0
+    position_y: 21.0
+    position_z: 0.8
+    scale_x: 0.4
+    scale_y: 4.0
+    scale_z: 1.7
+    yaw: -2.35
 
-#   - sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -13.0
-#     position_y: 22.0
-#     position_z: 0.8
-#     scale_x: 0.4
-#     scale_y: 4.0
-#     scale_z: 1.7
-#     yaw: -0.78
+  - sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -15.17
+    position_y: 21.0
+    position_z: 0.8
+    scale_x: 0.4
+    scale_y: 4.0
+    scale_z: 1.7
+    yaw: -0.78
   
-#   - sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -10.2
-#     position_y: 22.0
-#     position_z: 0.8
-#     scale_x: 0.4
-#     scale_y: 4.0
-#     scale_z: 1.7
-#     yaw: -2.35
+  - sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -12.34
+    position_y: 21.0
+    position_z: 0.8
+    scale_x: 0.4
+    scale_y: 4.0
+    scale_z: 1.7
+    yaw: -2.35
   
-#   - sub_type: "uav"
-#     status: "active"
-#     frame_id: "arena"
-#     position_x: -7.1
-#     position_y: 22.0
-#     position_z: 0.8
-#     scale_x: 0.4
-#     scale_y: 4.0
-#     scale_z: 1.7
-#     yaw: -0.78
+  - sub_type: "uav"
+    status: "active"
+    frame_id: "arena"
+    position_x: -9.51
+    position_y: 21.0
+    position_z: 0.8
+    scale_x: 0.4
+    scale_y: 4.0
+    scale_z: 1.7
+    yaw: -0.78
 

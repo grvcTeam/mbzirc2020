@@ -64,6 +64,7 @@ find_package(catkin REQUIRED message_generation actionlib_msgs std_msgs geometry
    Magnetize.srv
    AskForRegion.srv
    FreeRegions.srv
+   PublishWallTfs.srv
    SetObjectStatus.srv
    SetPWM.srv
    SetDigital.srv

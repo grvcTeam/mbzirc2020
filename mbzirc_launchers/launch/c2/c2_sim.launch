@@ -61,7 +61,7 @@
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=2" />
-        <arg name="agent_id" value="6"/>
+        <arg name="agent_id" value="5"/>
         <arg name="color" value="Indigo" />
         <arg name="x"     value="$(arg x2)" />
         <arg name="y"     value="$(arg y2)" />
@@ -72,7 +72,7 @@
     <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
         
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="6"/>
+        <arg name="agent_id" value="5"/>
         <arg name="flight_level" default="7.5" />
         <arg name="x" default="$(arg x2)" />
         <arg name="y" default="$(arg y2)" />
@@ -84,7 +84,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="6"/>
+        <arg name="agent_id" value="5"/>
         <arg name="laser" value="yes"/>
 
     </include>
@@ -93,7 +93,7 @@
         
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
-        <arg name="agent_id" value="6"/>
+        <arg name="agent_id" value="5"/>
         
     </include>
   
@@ -138,12 +138,15 @@
         
     </include> -->
 
+    <!-- Wall TFs node -->
+    <node name="wall_tf_publisher" pkg="robot_tasks" type="c2_wall_tf_publisher.py"/>
 
     <!--Central unit -->
     <include file="$(find mbzirc_launchers)/launch/c2/c2_central_unit.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        <arg name="existing_wall_tfs" value="false"/>
     </include>
 
     
