@@ -34,6 +34,19 @@ class Pick(smach.StateMachine):
             
             smach.StateMachine.add('GO_TO_WAITING_AREA', GoTo().define_for(robot),
                                     remapping = {'waypoint': 'waiting_pose'},
+                                    transitions = {'succeeded': 'FREE_REGION_AFTER_PLACE'})
+
+            def free_after_place_region_request_callback(userdata, request):
+                request = SetBoolRequest()
+                request.data = False
+                return request
+
+            def free_after_place_region_response_callback(userdata, response):
+                return 'succeeded'
+
+            smach.StateMachine.add('FREE_REGION_AFTER_PLACE', smach_ros.ServiceState('lock_after_place_region', SetBool,
+                                    request_cb = free_after_place_region_request_callback,
+                                    response_cb = free_after_place_region_response_callback),
                                     transitions = {'succeeded': 'ASK_FOR_REGION_TO_PICK'})
 
             def ask_for_region_to_pick_request_callback(userdata, request):
