@@ -138,12 +138,15 @@
         
     </include> -->
 
+    <!-- Wall TFs node -->
+    <node name="wall_tf_publisher" pkg="robot_tasks" type="c2_wall_tf_publisher.py"/>
 
     <!--Central unit -->
     <include file="$(find mbzirc_launchers)/launch/c2/c2_central_unit.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        <arg name="existing_wall_tfs" value="false"/>
     </include>
 
     

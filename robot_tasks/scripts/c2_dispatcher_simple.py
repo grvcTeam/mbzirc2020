@@ -95,6 +95,7 @@ class CentralUnit(object):
 
         self.column_count = rospy.get_param('~column_count', 4)
         self.available_robots = rospy.get_param('~uav_ids', [])
+        self.existing_wall_tfs = rospy.get_param('~existing_wall_tfs', False)
 
         if len(self.available_robots) == 0:
             rospy.logerr('No available UAVs for Dispatcher')
@@ -122,6 +123,8 @@ class CentralUnit(object):
 
         self.piles_locked = False
         self.walls_locked = False
+        if self.existing_wall_tfs:
+            self.walls_locked = True
 
         self.load_conf_file(conf_file)
 
@@ -498,7 +501,12 @@ class CentralUnit(object):
             transform.transform.rotation = self.uav_walls[self.wall_segment_ids[i]].pose.orientation
             wall_transforms.append(transform)
 
-        self.broadcaster.sendTransform(wall_transforms)
+        # self.broadcaster.sendTransform(wall_transforms)
+        try:
+            publish_wall_transforms_service = rospy.ServiceProxy('publish_wall_tfs',srv.PublishWallTfs)
+            publish_wall_transforms_service(wall_transforms)
+        except rospy.ServiceException, e:
+            rospy.logerr("Service call failed: {}".format(e))
 
     def reallignWalls(self):
         # Force left to right order
@@ -538,13 +546,14 @@ class CentralUnit(object):
     def build_wall(self):
 
         # Reallign walls and publish static wall tfs
-        self.reallignWalls()
-        self.publishWallTfs()
+        if not self.existing_wall_tfs:
+            self.reallignWalls()
+            self.publishWallTfs()
 
         # Magic waiting poses
         waiting_poses = []
-        waiting_poses.append([0.0, 15.0, 4.0])
-        waiting_poses.append([0.0, 22.0, 6.0])
+        waiting_poses.append([-5.0, 15.0, 4.0])
+        waiting_poses.append([-5.0, 21.0, 6.0])
 
         # Send robots to waiting positions
         for i,robot_id in enumerate(self.available_robots):
@@ -703,9 +712,11 @@ class CentralUnit(object):
         robot_path = {}
         #TODO Increase to 1.1 altitude for waypoints in real drone !!!
         points_path = [
-                        Point(x=-20 ,y=17, z=7),
-                        Point(x=-20 ,y=17, z=1.0),
-                        Point(x=-0.5 ,y=17, z=1.0)
+                        Point(x=-22 ,y=17, z=7),
+                        Point(x=-21 ,y=17, z=1.2),
+                        Point(x=-0.5 ,y=17, z=1.2),
+                        Point(x=-21 ,y=17, z=1.2),
+                        Point(x=-0.5 ,y=17, z=1.2)
                     ]
              
         robot_path = []
@@ -746,14 +757,14 @@ def main():
         if uav_piles_are_found(central_unit.uav_piles):
             central_unit.lock_piles()
 
-    while not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown():
+    while not uav_walls_are_found(central_unit.wall_segment_ids) and not central_unit.existing_wall_tfs and not rospy.is_shutdown():
         central_unit.search_for_walls(central_unit.available_robots[0])
         
         if uav_walls_are_found(central_unit.wall_segment_ids):
             central_unit.lock_walls()
     
     rospy.loginfo('Building wall!')
-    central_unit.take_off(central_unit.available_robots[1])
+    #central_unit.take_off(central_unit.available_robots[1])
     central_unit.build_wall()
 
     rospy.spin()
