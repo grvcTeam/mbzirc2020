@@ -8,7 +8,7 @@
 	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_simple.py" respawn="false" output="screen">
 
 		<param name="column_count" value="4"/>
-		<rosparam param="uav_ids">["6", "4"]</rosparam>
+		<rosparam param="uav_ids">["6"]</rosparam>
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
 		<param name="wall_file" value="$(find mbzirc_launchers)/config/uav_wall.txt" />
 		<param name="init_task" value="2" />
