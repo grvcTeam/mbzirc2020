@@ -40,6 +40,7 @@ import tf2_ros
 import tf.transformations
 
 from geometry_msgs.msg import PoseStamped, Vector3, Quaternion, TransformStamped
+from std_msgs.msg import Header
 from std_srvs.srv import SetBool
 from tasks.move import TakeOff, FollowPath, GoTo
 from tasks.build import Pick, Place
@@ -107,7 +108,7 @@ class CentralUnit(object):
 
         self.flight_levels = {}
         for robot_id in self.available_robots:
-            self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 5.0)
+            self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 7.0)
 
         self.waiting_pose = []
         self.piles = []
@@ -165,7 +166,7 @@ class CentralUnit(object):
 
         if 'pile' in arena_conf:
 
-            self.lock_piles = True
+            self.piles_locked = True
 
             for pile in arena_conf['pile']:
                 if pile['sub_type'] == 'uav':
@@ -175,7 +176,8 @@ class CentralUnit(object):
                     p.pose.position.x = pile['position_x']
                     p.pose.position.y = pile['position_y']
                     p.pose.position.z = pile['position_z']
-                    p.pose.orientation = tf.transformations.quaternion_from_euler(0.0,0.0,pile['yaw'])
+                    new_quaternion = tf.transformations.quaternion_from_euler(0.0,0.0,pile['yaw'])
+                    p.pose.orientation = Quaternion(*new_quaternion)
 
                     if pile['color'] == 'red': 
                         color = msg.ObjectDetection.COLOR_RED
@@ -190,7 +192,7 @@ class CentralUnit(object):
                       
         if 'wall' in arena_conf:
 
-            self.lock_walls = True
+            self.walls_locked = True
 
             wall_id = 0
 
@@ -202,7 +204,8 @@ class CentralUnit(object):
                     p.pose.position.x = wall['position_x']
                     p.pose.position.y = wall['position_y']
                     p.pose.position.z = wall['position_z']
-                    p.pose.orientation = tf.transformations.quaternion_from_euler(0.0,0.0,wall['yaw'])
+                    new_quaternion = tf.transformations.quaternion_from_euler(0.0,0.0,wall['yaw'])
+                    p.pose.orientation = Quaternion(*new_quaternion)
                     self.uav_walls[wall_id] = p
                     self.wall_segment_ids.append(wall_id)
                     wall_id = wall_id + 1
@@ -232,13 +235,13 @@ class CentralUnit(object):
                         # If several UGV walls, we keep the most recent one
                         self.ugv_wall = pose
 
-    def take_off(self):
-        for robot_id in self.available_robots:
-            userdata = smach.UserData()
-            #userdata.height = self.flight_levels[robot_id]
-            userdata.height = 7.0 #TODO: take off altitude fixed    
-            self.task_manager.start_task(robot_id, TakeOff(), userdata)
-            self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
+    def take_off(self, robot_id):
+
+        userdata = smach.UserData()
+        #userdata.height = self.flight_levels[robot_id]
+        userdata.height = 7.0 #TODO: take off altitude fixed    
+        self.task_manager.start_task(robot_id, TakeOff(), userdata)
+        self.task_manager.wait_for([robot_id])  # Sequential takeoff for safety reasons
 
     def lock_piles(self):
         self.piles_locked = True
@@ -336,7 +339,7 @@ class CentralUnit(object):
             elif len(second_bigger) == 0:
                 uav_cluster = first_bigger
                 ugv_cluster = []
-            elif first_bigger['centroid'][0] > second_bigger['centroid'][0]:
+            elif first_bigger['centroid'][0] < second_bigger['centroid'][0]:
                 uav_cluster = first_bigger
                 ugv_cluster = second_bigger
             else:
@@ -428,7 +431,8 @@ class CentralUnit(object):
         bottom_top = [bottom_segment.pose.position.x - top_segment.pose.position.x, bottom_segment.pose.position.y - top_segment.pose.position.y]
         bottom_top = [bottom_top[0]*cos(yaw_t) + bottom_top[1]*sin(yaw_t), -bottom_top[0]*sin(yaw_t) + bottom_top[1]*cos(yaw_t)]
 
-        if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
+        #if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error and bottom_top[1] > 0:
+        if dist <= max_dist and pi/2-angle_error <= fabs(angle) and fabs(angle) <= pi/2+angle_error:
             result = True
 
         return result
@@ -539,8 +543,8 @@ class CentralUnit(object):
 
         # Magic waiting poses
         waiting_poses = []
-        waiting_poses.append([0.0, 6.0, 4.0])
-        waiting_poses.append([0.0, 15.0, 6.0])
+        waiting_poses.append([0.0, 15.0, 4.0])
+        waiting_poses.append([0.0, 22.0, 6.0])
 
         # Send robots to waiting positions
         for i,robot_id in enumerate(self.available_robots):
@@ -667,9 +671,9 @@ class CentralUnit(object):
                 
         robot_path = {}
         points_path = [
-                        Point(x=16 ,y=5, z=7),
-                        Point(x=16 ,y=15, z=7),
-                        Point(x=4 ,y=12, z=7),
+                        Point(x=0 ,y=13, z=7),
+                        Point(x=-20 ,y=13, z=7),
+                        Point(x=-20 ,y=17, z=7),
                     ]
              
         robot_path = []
@@ -697,9 +701,11 @@ class CentralUnit(object):
     def search_for_walls(self, robot_id):
          
         robot_path = {}
+        #TODO Increase to 1.1 altitude for waypoints in real drone !!!
         points_path = [
-                        Point(x=4 ,y=16, z=1.2),
-                        Point(x=12 ,y=16, z=1.2)
+                        Point(x=-20 ,y=17, z=7),
+                        Point(x=-20 ,y=17, z=1.0),
+                        Point(x=-0.5 ,y=17, z=1.0)
                     ]
              
         robot_path = []
@@ -732,21 +738,22 @@ def main():
         rospy.sleep(1)
 
     central_unit = CentralUnit()
-    central_unit.take_off()
+    central_unit.take_off(central_unit.available_robots[0])
 
-    while not uav_piles_are_found(self.uav_piles) and not rospy.is_shutdown():
-        central_unit.search_for_piles(self.available_robots[1])
+    while not uav_piles_are_found(central_unit.uav_piles) and not rospy.is_shutdown():
+        central_unit.search_for_piles(central_unit.available_robots[0])
 
-        if uav_piles_are_found(self.uav_piles):
+        if uav_piles_are_found(central_unit.uav_piles):
             central_unit.lock_piles()
 
-    while not uav_walls_are_found(self.wall_segment_ids) and not rospy.is_shutdown():
-        central_unit.search_for_walls(self.available_robots[1])
+    while not uav_walls_are_found(central_unit.wall_segment_ids) and not rospy.is_shutdown():
+        central_unit.search_for_walls(central_unit.available_robots[0])
         
-        if uav_walls_are_found(self.wall_segment_ids):
+        if uav_walls_are_found(central_unit.wall_segment_ids):
             central_unit.lock_walls()
     
     rospy.loginfo('Building wall!')
+    central_unit.take_off(central_unit.available_robots[1])
     central_unit.build_wall()
 
     rospy.spin()
