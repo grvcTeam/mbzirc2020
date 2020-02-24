@@ -82,7 +82,7 @@ wall:
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: -7.4
+    position_x: -10.25
     position_y: 22.0
     position_z: 0.8
     scale_x: 0.4
@@ -93,7 +93,7 @@ wall:
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: -8.8
+    position_x: -7.4
     position_y: 22.0
     position_z: 0.8
     scale_x: 0.4
@@ -115,7 +115,7 @@ wall:
   - sub_type: "uav"
     status: "active"
     frame_id: "arena"
-    position_x: -5.2
+    position_x: -1.7
     position_y: 22.0
     position_z: 0.8
     scale_x: 0.4
