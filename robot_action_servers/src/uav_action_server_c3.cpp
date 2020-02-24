@@ -22,6 +22,39 @@
 #include <scan_passage_detection/wall_utils.h>
 #include <mbzirc_comm_objs/CheckFire.h>
 
+inline mbzirc_comm_objs::ObjectDetection middleOfThreeObjects(std::vector<mbzirc_comm_objs::ObjectDetection> objects) {
+  auto a = objects[0].pose.pose.position.x;
+  auto b = objects[1].pose.pose.position.x;
+  auto c = objects[2].pose.pose.position.x;
+
+  if (a > b) {
+
+    if (b > c) {
+      // b in the middle
+      return objects[1];
+    } else if (a > c) {
+      // c in the middle
+      return objects[2];
+    } else {
+      // a in the middle
+      return objects[0];
+    }
+
+  } else { 
+    // Decided a is not greater than b
+    if (a > c) {
+      // a in the middle
+      return objects[0];
+    } else if (b > c) {
+      // c in the middle
+      return objects[2];
+    } else {
+      // b in the middle
+      return objects[1];
+    }
+  } 
+} 
+
 void UalActionServer::wallListCallback(const mbzirc_comm_objs::WallListConstPtr& msg) {
   wall_list_ = *msg;
 }
@@ -219,6 +252,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
   ros::ServiceClient stop_pump_client = nh.serviceClient<std_srvs::Trigger>("actuators_system/stop_pump");
   // ros::ServiceClient check_fire_client = nh.serviceClient<mbzirc_comm_objs::CheckFire>("thermal_detection/fire_detected");
   ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+  ros::Publisher hole_pub = nh.advertise<visualization_msgs::Marker>("hole", 0);
   ros::Publisher debug_pub = nh.advertise<geometry_msgs::TwistStamped>("/debug_velocity", 1);
 
   if (!waitForFreshSf11RangeMsg(10)) {
@@ -290,23 +324,64 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
       return;
     }
 
-    float min_sq_distance = 1e6;
+    std::vector<mbzirc_comm_objs::ObjectDetection> hole_candidates;
     for (size_t i = 0; i < sensed_objects_.objects.size(); i++) {
       auto object = sensed_objects_.objects[i];
       if (object.type == mbzirc_comm_objs::ObjectDetection::TYPE_HOLE) {
-        auto current_sq_distance = squaredPositionNorm(object.pose.pose);
-        if (current_sq_distance < min_sq_distance) {
-          min_sq_distance = current_sq_distance;
-          hole = object;  // TODO: Closest is best fit?
+        auto candidate_sq_distance = squaredPositionNorm(object.pose.pose);
+        if (candidate_sq_distance < 100.0) {  // TODO: 10 m
+          hole_candidates.push_back(object);
         }
       }
     }
-    if (min_sq_distance > 64.0) {  // TODO: Tune?
-      if (min_sq_distance < 1e5) {
-        ROS_WARN("Closest hole is too far!");
-      }
+
+    auto hole_count = hole_candidates.size();
+    if (hole_count <= 0) {
+      // ROS_WARN("No holes found");
       continue;
+    } else if (hole_count == 1) {
+      // Hope it is the right one
+      hole = hole_candidates[0];
+    } else if (hole_count == 2) {
+      // Hope they are the extremes
+      hole = hole_candidates[0];  // copy header, pose.pose.orientation and other stuff
+      hole.pose.pose.position.x = 0.5 * (hole_candidates[0].pose.pose.position.x + hole_candidates[1].pose.pose.position.x);
+      hole.pose.pose.position.y = 0.5 * (hole_candidates[0].pose.pose.position.y + hole_candidates[1].pose.pose.position.y);
+      hole.pose.pose.position.z = 0.5 * (hole_candidates[0].pose.pose.position.z + hole_candidates[1].pose.pose.position.z);
+    } else if (hole_count == 3) {
+      // It should be the one in the middle (camera x-coord)
+      hole = middleOfThreeObjects(hole_candidates);
+    } else {
+      // Do the old move and pray
+      float min_sq_distance = 1e6;
+      for (size_t i = 0; i < hole_candidates.size(); i++) {
+        auto current_sq_distance = squaredPositionNorm(hole_candidates[i].pose.pose);
+        if (current_sq_distance < min_sq_distance) {
+          min_sq_distance = current_sq_distance;
+          hole = hole_candidates[i];
+        }
+      }
     }
+
+    // visualization_msgs::Marker marker;
+    // marker.header.frame_id = "map";
+    // marker.header.stamp = ros::Time();
+    // marker.ns = "hole";
+    // marker.id = 0;
+    // marker.type = visualization_msgs::Marker::SPHERE;
+    // marker.action = visualization_msgs::Marker::ADD;
+    // marker.pose = hole.pose.pose;
+    // marker.scale.x = 0.1;
+    // marker.scale.y = 0.1;
+    // marker.scale.z = 0.1;
+    // marker.color.a = 1.0; // Don't forget to set the alpha!
+    // marker.color.r = 0.0;
+    // marker.color.g = 1.0;
+    // marker.color.b = 0.0;
+    // hole_pub.publish(marker);
+    // ROS_ERROR("hole: [%lf, %lf, %lf]", hole.pose.pose.position.x, hole.pose.pose.position.y, hole.pose.pose.position.z);
+    // continue;  /// TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO!
+
     ros::Duration since_last_candidate = ros::Time::now() - hole.header.stamp;
 
     if (since_last_candidate < timeout) {
@@ -383,6 +458,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
           target_fire.id = "TODO";  // TODO!
           target_fire.ual_pose = current_pose;
           ual_->goToWaypoint(current_pose, false);  // TODO: is this enough?
+          ual_safe_pose = current_pose;
           fire_is_locked = true;
           ROS_INFO("Fire locked!");
           break;
@@ -425,6 +501,7 @@ void UalActionServer::extinguishFacadeFireCallback(const mbzirc_comm_objs::Extin
 //  extinguish_facade_fire_server_.setSucceeded(result);
 
   int pumping_count_loop = 0;
+  ROS_WARN("Fire in the hole!");
   while (ros::ok()) {
     mbzirc_comm_objs::Wall closest_wall = closestWall(wall_list_);
     double distance_to_closest_wall = 0.0;
