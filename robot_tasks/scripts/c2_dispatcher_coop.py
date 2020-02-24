@@ -519,7 +519,7 @@ class CentralUnit(object):
 
         if angle >= pi:
             angle = angle - 2*pi
-        elif angle <= -2*pi:
+        elif angle <= pi:
             angle = angle + 2*pi
     
         # Compute local vector from top to bottom, to check if bottom is above top
