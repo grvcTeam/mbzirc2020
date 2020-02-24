@@ -13,7 +13,7 @@
         </include>
     </group>
 
-	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_coop.py" respawn="false" output="screen">
+	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_simple.py" respawn="false" output="screen">
 
 		<param name="column_count" value="4"/>
 		<rosparam param="uav_ids">["6", "4"]</rosparam>

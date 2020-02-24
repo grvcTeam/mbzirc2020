@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
+        - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 406
@@ -74,8 +75,12 @@ Visualization Manager:
       Name: Objects
       Namespaces:
         bject_id: true
+        cov_ellipse_: true
         ectangle_: true
+        object_id: true
+        orientation_: true
         ov_ellipse_: true
+        rectangle_: true
         rientation_: true
       Queue Size: 100
       Value: true
@@ -97,19 +102,96 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        arena:
+          Value: false
+        map:
+          Value: false
+        mbzirc2020_4/base_link:
+          Value: false
+        mbzirc2020_4/camera_color_optical_frame:
+          Value: false
+        mbzirc2020_4/camera_control_link:
+          Value: false
+        mbzirc2020_4/camera_link:
+          Value: false
+        mbzirc2020_4/gripper_link:
+          Value: false
+        mbzirc2020_4/laser_link:
+          Value: false
+        mbzirc2020_4/odom:
+          Value: false
+        mbzirc2020_4/sf11_link:
+          Value: false
+        mbzirc2020_6/base_link:
+          Value: false
+        mbzirc2020_6/camera_color_optical_frame:
+          Value: false
+        mbzirc2020_6/camera_control_link:
+          Value: false
+        mbzirc2020_6/camera_link:
+          Value: false
+        mbzirc2020_6/gripper_link:
+          Value: false
+        mbzirc2020_6/laser_link:
+          Value: false
+        mbzirc2020_6/odom:
+          Value: false
+        mbzirc2020_6/sf11_link:
+          Value: false
+        uav_wall_0:
+          Value: true
+        uav_wall_1:
+          Value: true
+        uav_wall_2:
+          Value: true
+        uav_wall_3:
+          Value: true
       Marker Scale: 10
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        map:
+          arena:
+            mbzirc2020_4/odom:
+              mbzirc2020_4/base_link:
+                mbzirc2020_4/camera_control_link:
+                  mbzirc2020_4/camera_link:
+                    mbzirc2020_4/camera_color_optical_frame:
+                      {}
+                mbzirc2020_4/gripper_link:
+                  {}
+                mbzirc2020_4/laser_link:
+                  {}
+                mbzirc2020_4/sf11_link:
+                  {}
+            mbzirc2020_6/odom:
+              mbzirc2020_6/base_link:
+                mbzirc2020_6/camera_control_link:
+                  mbzirc2020_6/camera_link:
+                    mbzirc2020_6/camera_color_optical_frame:
+                      {}
+                mbzirc2020_6/gripper_link:
+                  {}
+                mbzirc2020_6/laser_link:
+                  {}
+                mbzirc2020_6/sf11_link:
+                  {}
+            uav_wall_0:
+              {}
+            uav_wall_1:
+              {}
+            uav_wall_2:
+              {}
+            uav_wall_3:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -135,16 +217,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 62.9226456
+      Distance: 66.9264679
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 12.585784
-        Y: 5.88269234
-        Z: 21.0682144
+        X: -0.808661878
+        Y: 7.05052662
+        Z: 18.1841431
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -171,5 +253,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1301
-  X: 487
-  Y: 136
+  X: 500
+  Y: 342

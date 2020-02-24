@@ -5,11 +5,11 @@
     <arg name="robot_model" default="mbzirc2020"/>
     <arg name="arena_yaw" default="-0.2968107"/>
     <!--TODO update UAVs x,y,z,yaw-->
-    <arg name="x1" default="12.5"/>
-    <arg name="y1" default="2.0"/>
+    <arg name="x1" default="4.0"/>
+    <arg name="y1" default="0.0"/>
     <arg name="yaw1" default="1.57"/>
-    <arg name="x2" default="25.0"/>
-    <arg name="y2" default="2.0"/>
+    <arg name="x2" default="0.0"/>
+    <arg name="y2" default="0.0"/>
     <arg name="yaw2" default="1.57"/>
     <arg name="x3" default="37.5"/>
     <arg name="y3" default="2.0"/>
