@@ -1,21 +1,19 @@
 <?xml version="1.0"?>
 <launch>
 
-    <arg name="robot_model" default="mbzirc2020"/>
-    <arg name="arena_yaw" default="-0.2968107"/>
-
+	<arg name="uav_ids" default='["6","4"]'/>
+	<arg name="init_task" default="0" />"
 
 	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_simple.py" respawn="false" output="screen">
 
 		<param name="column_count" value="4"/>
-		<rosparam param="uav_ids">["6"]</rosparam>
+		<rosparam param="uav_ids" subst_value="true">$(arg uav_ids)</rosparam>
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
 		<param name="wall_file" value="$(find mbzirc_launchers)/config/uav_wall.txt" />
-		<param name="init_task" value="0" />
-			
+		<param name="init_task" value="$(arg init_task)" />
+
 	</node>
     
     <node name="simple_regions_manager" pkg="shared_regions_manager" type="simple_regions_manager.py"/>
-
 
 </launch>

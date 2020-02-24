@@ -17,13 +17,14 @@ def main():
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
+    rospy.sleep(30)
     try:        
         res = start_c3_facade_srv_2()
         if res:
             rospy.loginfo('C3 facade 2 running!')
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
-
+    rospy.sleep(30)
     try:
         res = start_c3_facade_srv_4()
         if res:

@@ -147,6 +147,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="arena_yaw" value="$(arg arena_yaw)"/>
         <arg name="existing_wall_tfs" value="false"/>
+        <arg name="uav_ids" default='["6"]'/>
     </include>
 
     

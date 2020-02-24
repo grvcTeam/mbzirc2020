@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-	
     <arg name="robot_model" default="mbzirc2020"/>
+	<arg name="uav_ids" default='["6"]'/>
 
     <node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
 
@@ -10,15 +10,15 @@
 		<param name="robot_ns" value="$(arg robot_model)"/>
 
 		<rosparam param="object_types">["pile","wall"]</rosparam>	
-		<rosparam param="uav_ids">["6"]</rosparam>
+		<rosparam param="uav_ids" subst_value="true">$(arg uav_ids)</rosparam>
 		<param name="a_priori_info" value="true" />
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
-		
+
 		<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
 		<rosparam param="association_th">[10.0,4.0]</rosparam>
 		<param name="min_update_count" value="5" />
 		<param name="delay_max" value="2.0" />          <!-- in seconds -->
-				
+
      </node>
 
 </launch>
