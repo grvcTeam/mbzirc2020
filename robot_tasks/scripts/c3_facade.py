@@ -100,11 +100,11 @@ def main():
     task_manager.wait_for([robot_id])
 
     # Go directly to pre_fire_id
-    if not pre_fire_id:
+    if pre_fire_id:
         userdata_pre_fire = smach.UserData()
-        userdata_pre_fire.file_name = file_name
+        userdata_pre_fire.fires_file = 'fire_' + facade + '.yaml'
         userdata_pre_fire.fire_id = pre_fire_id
-        task_manager.start_task(robot_id, GoToFacadeFire(), userdata)
+        task_manager.start_task(robot_id, GoToFacadeFire(), userdata_pre_fire)
         task_manager.wait_for([robot_id])
         task_manager.start_task(robot_id, ExtinguishFacadeFire(), smach.UserData())
         task_manager.wait_for([robot_id])
@@ -129,7 +129,7 @@ def main():
         task_manager.wait_for([robot_id])
 
         time.sleep(3)
-        # fire_detected = True  # TODO: Bypass?
+        fire_detected = True  # TODO: Bypass?
         # ask_for_fire_url = 'thermal_detection/fire_detected'
         ask_for_fire_url = '/mbzirc2020_' + robot_id + '/thermal_detection/fire_detected'
         rospy.loginfo('robot {} waiting for {}...'.format(robot_id, ask_for_fire_url))
