@@ -146,7 +146,8 @@ def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
     brick_task_list = []
     task_counter = 0
     segment_index = 0
-    color = ObjectDetection.COLOR_BLUE
+    color = ObjectDetection.COLOR_GREEN
+    bricks_position = [0.0, -0.5, 0.5, 1.0, 0.5, -0.5]
 
     while task_counter < 3:
             
@@ -154,7 +155,7 @@ def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
         brick.color = color
         brick.segment = segment_index
         brick.layer = 0
-        brick.position = 0.0
+        brick.position = bricks_position[task_counter]
         brick.state = 'TODO'
 
         if task_counter >= init_task:
@@ -164,7 +165,6 @@ def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
         task_counter = task_counter + 1
 
     segment_index = 0
-    color = ObjectDetection.COLOR_GREEN
 
     while task_counter < 6:
             
@@ -172,7 +172,7 @@ def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
         brick.color = color
         brick.segment = segment_index
         brick.layer = 0
-        brick.position = 0.0
+        brick.position = bricks_position[task_counter]
         brick.state = 'TODO'
 
         if task_counter >= init_task:
@@ -181,6 +181,18 @@ def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
         segment_index = segment_index + 1
         task_counter = task_counter + 1
     
+    # Orange brick
+    brick = BrickTask()
+    brick.color = ObjectDetection.COLOR_ORANGE
+    brick.segment = 3
+    brick.layer = 0
+    brick.position = 0.0
+    brick.state = 'TODO'
+
+    task_counter = task_counter + 1
+
+    brick_task_list.append(copy.deepcopy(brick))
+
     print('brick_list: {}'.format(brick_task_list))
     return brick_task_list
 

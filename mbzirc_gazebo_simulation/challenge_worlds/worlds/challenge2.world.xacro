@@ -20,8 +20,8 @@
 <xacro:property name="ground" value="${[8,17,0,0]}"/>
 <!-- UAV BRICKS Location -->
 <!-- Change "basebrick" to modify location and yaw for the entire pile-->
-<xacro:property name="basebrick" value="${[-6,12,0,-1.57]}"/>
-<xacro:property name="dropwall_center" value="${[-5,22.28,0,3.9278-0.25]}"/>
+<xacro:property name="basebrick" value="${[-10.17,14.37,0,-1.57]}"/>
+<xacro:property name="dropwall_center" value="${[-9.075,23.42,0,3.9278-0.25]}"/>
 
 <xacro:property name="red01p" value="${[basebrick[0]+1.95,basebrick[1]-3.3,basebrick[2]+0.03,0]}"/>
 <xacro:property name="red01" value="${[(red01p[0]-basebrick[0])*cos(basebrick[3])-(red01p[1]-basebrick[1])*sin(basebrick[3])+basebrick[0],(red01p[0]-basebrick[0])*sin(basebrick[3])+(red01p[1]-basebrick[1])*cos(basebrick[3])+basebrick[1],red01p[2],red01p[3]+basebrick[3]]}"/>

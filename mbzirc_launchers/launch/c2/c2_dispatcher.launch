@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-	<arg name="uav_ids" default='["6","4"]'/>
+	<arg name="uav_ids" default='["4"]'/>
 	<arg name="init_task" default="0" />"
 
 	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_simple.py" respawn="false" output="screen">

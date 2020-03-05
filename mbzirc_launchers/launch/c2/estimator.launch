@@ -2,7 +2,7 @@
 <launch>
 
     <arg name="robot_model" default="mbzirc2020"/>
-	<arg name="uav_ids" default='["6"]'/>
+	<arg name="uav_ids" default='["4"]'/>
 
     <node name="estimation_node" pkg="object_estimation" type="estimation_node" respawn="false" output="screen">
 

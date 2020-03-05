@@ -620,7 +620,7 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.orientation.w = 1
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
                             userdata.segment_to_the_left_pose.pose.position.z = 2.5  # TODO: magic!
-                            userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
+                            userdata.segment_offset = self.assigned_brick_task[robot_id].position
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
                             rospy.loginfo('robot {} going to place {}'.format(robot_id, self.assigned_brick_task[robot_id].color))
