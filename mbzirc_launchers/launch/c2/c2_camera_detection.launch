@@ -15,7 +15,7 @@
       <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
       <param name="camera_url" value="camera/color" />
       <param if="$(eval mode == 'sim')" name="config_filename" value="hsv_config_sim.yaml" />
-      <remap if="$(eval mode == 'sim')" from="camera/color/image_raw" to="camera/color/image_rect_color"/>
+      <!-- <remap if="$(eval mode == 'sim')" from="camera/color/image_raw" to="camera/color/image_rect_color"/> -->
     </node>
 
     <!-- <node pkg="hue_object_detection" name="ugv_wall_detector" type="ugv_wall_detector.py" respawn="false" output="screen">
