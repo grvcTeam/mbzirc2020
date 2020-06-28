@@ -107,21 +107,6 @@ fire:
     position_z: 12.5
     yaw: 0
 
-  - sub_type: "outdoorfire"
-    frame_id: "arena"
-    position_x: 30
-    position_y: 10
-    position_z: 0
-    yaw: 0
-
-  - sub_type: "outdoorfire"
-    frame_id: "arena"
-    position_x: 10
-    position_y: 40
-    position_z: 0
-    yaw: -1.570795
-
-
 passage:
 
   - sub_type: "second"

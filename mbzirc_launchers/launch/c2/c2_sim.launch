@@ -57,7 +57,7 @@
     </include>
 
     <!-- UAV TENACITAS 2 -->
-    <!-- <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+    <include file="$(find mbzirc_launchers)/launch/mavros.launch">
         <arg name="mode" value="$(arg mode)"/>
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="append_xacro_args"   value="challenge=2" />
@@ -95,7 +95,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="agent_id" value="4"/>
         
-    </include> -->
+    </include>
   
     <!-- UAV 3 -->
     <!-- <include file="$(find mbzirc_launchers)/launch/mavros.launch">
@@ -147,7 +147,7 @@
         <arg name="robot_model" value="$(arg robot_model)"/>
         <arg name="arena_yaw" value="$(arg arena_yaw)"/>
         <arg name="existing_wall_tfs" value="false"/>
-        <arg name="uav_ids" default='["6"]'/>
+        <arg name="uav_ids" default='["4","6"]'/>
     </include>
 
     

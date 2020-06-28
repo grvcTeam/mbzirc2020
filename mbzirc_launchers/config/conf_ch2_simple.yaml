@@ -5,8 +5,31 @@ arena:
   y_min: 0
   y_max: 50
 
-pile:
+uav_pile_zone:
+  x_min: 0
+  x_max: 40
+  y_min: 0
+  y_max: 21
 
+ugv_pile_zone:
+  x_min: -25
+  x_max: 0
+  y_min: 0
+  y_max: 21
+
+uav_wall_zone:
+  x_min: 0
+  x_max: 40
+  y_min: 21
+  y_max: 40
+
+ugv_wall_zone:
+  x_min: -25
+  x_max: 0
+  y_min: 21
+  y_max: 42
+
+pile:
   # - color: "red"
   #   sub_type: "uav"
   #   status: "active"
@@ -56,7 +79,6 @@ pile:
   #   yaw: 1.57
 
 wall:
-
   # - sub_type: "uav"
   #   status: "active"
   #   frame_id: "arena"

@@ -764,7 +764,7 @@ def main():
             central_unit.lock_walls()
     
     rospy.loginfo('Building wall!')
-    #central_unit.take_off(central_unit.available_robots[1])
+    central_unit.take_off(central_unit.available_robots[1])
     central_unit.build_wall()
 
     rospy.spin()

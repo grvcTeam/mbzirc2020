@@ -15,11 +15,11 @@
         </include>
     </group>
 
-	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_coop.py" respawn="false" output="screen">
+	<node name="c2_dispatcher" pkg="robot_tasks" type="c2_dispatcher_simple.py" respawn="false" output="screen">
 
 		<param name="column_count" value="4"/>
 		<rosparam param="uav_ids" subst_value="true">$(arg uav_ids)</rosparam>
-		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
+		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2_simple.yaml" />
 		<param name="wall_file" value="$(find mbzirc_launchers)/config/uav_wall.txt" />
 		<param name="existing_wall_tfs" value="$(arg existing_wall_tfs)"/>
 		<param name="init_task" value="1" />
@@ -36,7 +36,7 @@
 		<rosparam param="object_types">["pile","wall"]</rosparam>	
 		<rosparam param="uav_ids" subst_value="true">$(arg uav_ids)</rosparam>
 		<param name="a_priori_info" value="true" />
-		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
+		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2_simple.yaml" />
 		
 		<param name="lost_time_th" value="20.0" />      <!-- in seconds -->
 		<rosparam param="association_th">[10.0,4.0]</rosparam>
