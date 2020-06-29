@@ -4,7 +4,6 @@
 	<arg name="mode" default="real"/>
     <arg name="robot_model" default="mbzirc2020"/>
     <arg name="arena_yaw" default="-0.2968107"/>
-	<arg name="existing_wall_tfs" default="false"/>
 	<arg name="uav_ids" default='["4","6"]'/>
 
 	<group if="$(eval mode == 'sim')">
@@ -21,7 +20,6 @@
 		<rosparam param="uav_ids" subst_value="true">$(arg uav_ids)</rosparam>
 		<param name="conf_file" value="$(find mbzirc_launchers)/config/conf_ch2.yaml" />
 		<param name="wall_file" value="$(find mbzirc_launchers)/config/uav_wall.txt" />
-		<param name="existing_wall_tfs" value="$(arg existing_wall_tfs)"/>
 		<param name="init_task" value="1" />
 	</node>
 

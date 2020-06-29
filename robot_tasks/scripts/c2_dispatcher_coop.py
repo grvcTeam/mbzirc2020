@@ -101,30 +101,6 @@ class CentralUnit(object):
         else:
             rospy.logerr('No arena limits specified in conf file')
 
-        if 'uav_pile_zone' in arena_conf and 'x_min' in arena_conf['uav_pile_zone']:
-            self.uav_pile_zone = arena_conf['uav_pile_zone']
-        else:
-            rospy.logwarn('No UAV pile zone specified in conf file')
-            self.uav_pile_zone = None
-
-        if 'uav_wall_zone' in arena_conf and 'x_min' in arena_conf['uav_wall_zone']:
-            self.uav_wall_zone = arena_conf['uav_wall_zone']
-        else:
-            rospy.logwarn('No UAV wall zone specified in conf file')
-            self.uav_wall_zone = None
-
-        if 'ugv_pile_zone' in arena_conf and 'x_min' in arena_conf['ugv_pile_zone']:
-            self.ugv_pile_zone = arena_conf['ugv_pile_zone']
-        else:
-            rospy.logwarn('No UGV pile zone specified in conf file')
-            self.ugv_pile_zone = None
-
-        if 'ugv_wall_zone' in arena_conf and 'x_min' in arena_conf['ugv_wall_zone']:
-            self.ugv_wall_zone = arena_conf['ugv_wall_zone']
-        else:
-            rospy.logwarn('No UGV wall zone specified in conf file')
-            self.ugv_wall_zone = None
-
         self.column_count = rospy.get_param('~column_count', 4)
         self.available_robots = rospy.get_param('~uav_ids', [])
 
@@ -140,7 +116,7 @@ class CentralUnit(object):
 
         self.flight_levels = {}
         for robot_id in self.available_robots:
-            self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 5.0)
+            self.flight_levels[robot_id] = rospy.get_param(self.robots[robot_id].url + 'flight_level', 7.0)
 
         self.waiting_pose = []
         self.piles = []
@@ -269,13 +245,13 @@ class CentralUnit(object):
             #     rospy.logerr("Service call failed: {}".format(e))
     
         robot_paths = {}
-        #point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
-        point_paths = predefined_uav_paths()
+        point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
+        #point_paths = predefined_uav_paths()
 
         for i, robot_id in enumerate(self.available_robots):
             robot_path = []
-            #flight_level = self.flight_levels[robot_id]
-            #point_path = set_z(point_paths[i], flight_level)
+            flight_level = self.flight_levels[robot_id]
+            point_path = set_z(point_paths[i], flight_level)
             for point in point_paths[i]:
                 waypoint = PoseStamped()
                 waypoint.header.frame_id = 'arena'
@@ -283,7 +259,7 @@ class CentralUnit(object):
                 robot_path.append(waypoint)
             robot_paths[robot_id] = robot_path
 
-        #TODO: remove from second UAV's path the points at low altitude. Descend with an additional action
+        #TODO: in predefined paths remove from second UAV's path the points at low altitude. Descend with an additional action
 
         for robot_id in self.available_robots:
             print('sending goal to search_objects server {}'.format(robot_id))
@@ -292,7 +268,7 @@ class CentralUnit(object):
             self.task_manager.start_task(robot_id, FollowPath(), userdata)
 
 
-        while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (all_piles_are_found(self.uav_piles,self.ugv_piles) and all_walls_are_found(self.wall_segment_ids,self.ugv_wall)):
+        while not rospy.is_shutdown() and not self.task_manager.are_idle(self.available_robots) and not (uav_piles_are_found(self.uav_piles) and uav_walls_are_found(self.wall_segment_ids)):
             self.cluster_piles()
             self.cluster_wall_segments()
             rospy.logwarn('len(self.uav_piles) = {}'.format(len(self.uav_piles)))
@@ -415,24 +391,19 @@ class CentralUnit(object):
                 elif len(cluster) > len(second_bigger):
                     second_bigger = cluster
 
-            if len(first_bigger) == 0 or len(second_bigger) == 0:
-                rospy.logwarn("No enough clusters!")
-                self.uav_piles = {}
-                self.ugv_piles = {}
-                return
-
-            if first_bigger['centroid'][0] > second_bigger['centroid'][0]:
-                ugv_cluster = first_bigger
-                uav_cluster = second_bigger
-            else:
-                ugv_cluster = second_bigger
+            if len(first_bigger) == 0 and len(second_bigger) == 0:
+                uav_cluster = []
+                ugv_cluster = []
+                
+            elif len(second_bigger) == 0:
                 uav_cluster = first_bigger
-
-            # uav_cluster = {}
-            # for cluster in clusters:
-            #     if is_within_limits(self.uav_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
-            #         if len(cluster) > len(uav_cluster):
-            #             uav_cluster = cluster
+                ugv_cluster = []
+            elif first_bigger['centroid'][0] < second_bigger['centroid'][0]:
+                uav_cluster = first_bigger
+                ugv_cluster = second_bigger
+            else:
+                uav_cluster = second_bigger
+                ugv_cluster = first_bigger
             
             if(len(uav_cluster) > 0 ):
 
@@ -461,11 +432,6 @@ class CentralUnit(object):
                 self.uav_piles = {}
                 rospy.logwarn('UAV piles not found')
 
-            # ugv_cluster = {}
-            # for cluster in clusters:
-            #     if is_within_limits(self.ugv_pile_zone,cluster['centroid'][0],cluster['centroid'][1]):
-            #         if len(cluster) > len(ugv_cluster):
-            #             ugv_cluster = cluster
             
             if(len(ugv_cluster) > 0 ):
 
@@ -519,7 +485,7 @@ class CentralUnit(object):
 
         if angle >= pi:
             angle = angle - 2*pi
-        elif angle <= pi:
+        elif angle <= -pi:
             angle = angle + 2*pi
     
         # Compute local vector from top to bottom, to check if bottom is above top
@@ -646,8 +612,8 @@ class CentralUnit(object):
         #self.compute_waiting_poses(p_wall, pose_pile)
         # Magic waiting poses
         waiting_poses = []
-        waiting_poses.append([0.0, 6.0, 4.0])
-        waiting_poses.append([0.0, 15.0, 6.0])
+        waiting_poses.append([-5.0, 15.0, 4.0])
+        waiting_poses.append([-5.0, 21.0, 6.0])
 
         # Send robots to waiting positions
         for i,robot_id in enumerate(self.available_robots):
@@ -714,7 +680,7 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.orientation.w = 1
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
                             userdata.segment_to_the_left_pose.pose.position.z = 2.5  # TODO: magic!
-                            userdata.segment_offset = abs(self.assigned_brick_task[robot_id].position)
+                            userdata.segment_offset = self.assigned_brick_task[robot_id].position
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
                             rospy.loginfo('robot {} going to place {}'.format(robot_id, self.assigned_brick_task[robot_id].color))

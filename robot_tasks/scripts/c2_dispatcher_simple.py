@@ -143,30 +143,6 @@ class CentralUnit(object):
         else:
             rospy.logerr('No arena limits specified in conf file')
 
-        if 'uav_pile_zone' in arena_conf and 'x_min' in arena_conf['uav_pile_zone']:
-            self.uav_pile_zone = arena_conf['uav_pile_zone']
-        else:
-            rospy.logwarn('No UAV pile zone specified in conf file')
-            self.uav_pile_zone = None
-
-        if 'uav_wall_zone' in arena_conf and 'x_min' in arena_conf['uav_wall_zone']:
-            self.uav_wall_zone = arena_conf['uav_wall_zone']
-        else:
-            rospy.logwarn('No UAV wall zone specified in conf file')
-            self.uav_wall_zone = None
-
-        if 'ugv_pile_zone' in arena_conf and 'x_min' in arena_conf['ugv_pile_zone']:
-            self.ugv_pile_zone = arena_conf['ugv_pile_zone']
-        else:
-            rospy.logwarn('No UGV pile zone specified in conf file')
-            self.ugv_pile_zone = None
-
-        if 'ugv_wall_zone' in arena_conf and 'x_min' in arena_conf['ugv_wall_zone']:
-            self.ugv_wall_zone = arena_conf['ugv_wall_zone']
-        else:
-            rospy.logwarn('No UGV wall zone specified in conf file')
-            self.ugv_wall_zone = None
-
         if 'pile' in arena_conf:
 
             self.piles_locked = True
