@@ -20,7 +20,7 @@
     <arg name="yaw3" default="0"/>
 
     <!-- UAV FACADE 1 -->
-    <group if="$(eval facade_1_id != '0')">
+    <group if="$(eval facade_1_id != 0)">
         <include file="$(find mbzirc_launchers)/launch/mavros.launch">
             <arg name="mode" value="$(arg mode)"/>
             <arg name="robot_model" value="$(arg robot_model)"/>
@@ -65,7 +65,7 @@
     </group>
 
     <!-- UAV FACADE 2 -->
-    <group if="$(eval facade_2_id != '0')">
+    <group if="$(eval facade_2_id != 0)">
         <include file="$(find mbzirc_launchers)/launch/mavros.launch">
             <arg name="mode" value="$(arg mode)"/>
             <arg name="robot_model" value="$(arg robot_model)"/>
@@ -110,7 +110,7 @@
     </group>
   
     <!-- UAV GROUND -->
-    <group if="$(eval ground_id != '0')">
+    <group if="$(eval ground_id != 0)">
         <include file="$(find mbzirc_launchers)/launch/mavros.launch">
             <arg name="mode" value="$(arg mode)"/>
             <arg name="robot_model" value="$(arg robot_model)"/>

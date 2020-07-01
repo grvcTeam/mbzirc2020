@@ -3,6 +3,13 @@
 import rospy
 from std_srvs.srv import Trigger
 
+def sleepWithMessage(secs):
+    duration = int(secs)
+    while duration > 0 and not rospy.is_shutdown():
+        rospy.loginfo('Calling next service in {} seconds'.format(duration))
+        duration -= 1
+        rospy.sleep(1)
+
 def main():
     rospy.init_node('c3_starter')
 
@@ -24,7 +31,7 @@ def main():
                 rospy.loginfo('C3 ground running!')
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-        rospy.sleep(30)
+        sleepWithMessage(30)
 
     if int(facade_1_id) != 0:
         try:
@@ -34,7 +41,7 @@ def main():
                 rospy.loginfo('C3 facade {} running!'.format(facade_1_id))
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-        rospy.sleep(30)
+        sleepWithMessage(30)
 
     if int(facade_2_id) != 0:
         try:
@@ -44,6 +51,8 @@ def main():
                 rospy.loginfo('C3 facade {} running!'.format(facade_2_id))
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
+
+    rospy.loginfo('All C3 agents started')
 
 if __name__ == '__main__':
     main()

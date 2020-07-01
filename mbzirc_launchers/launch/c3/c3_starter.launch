@@ -1,8 +1,15 @@
 <?xml version="1.0"?>
 <launch>
 
+	<!-- Agent IDs (0 means deactivated)-->
+    <arg name="facade_1_id" default="0"/>
+    <arg name="facade_2_id" default="0"/>
+    <arg name="ground_id" default="0"/>
+
 	<node name="c3_starter" pkg="mbzirc_launchers" type="c3_starter.py" respawn="false" output="screen">
-		<rosparam param="uav_ids">["2", "4", "6"]</rosparam>			
+		<param name="facade_1_id" value="$(arg facade_1_id)"/>
+		<param name="facade_2_id" value="$(arg facade_2_id)"/>
+		<param name="ground_id" value="$(arg ground_id)"/>
 	</node>
 
 </launch>
