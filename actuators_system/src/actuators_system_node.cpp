@@ -35,8 +35,9 @@
 #define PWM_COUNT 5
 
 uint8_t rx_buffer[2*BOARD_OUTPUT_MIN_BUFFER_SIZE];
+uint8_t aux_rx_buffer[2*BOARD_OUTPUT_MIN_BUFFER_SIZE];
+
 uint8_t tx_buffer[BOARD_INPUT_MIN_BUFFER_SIZE];
-uint8_t aux_rx_buffer[BOARD_OUTPUT_MAX_MSG_SIZE];
 uint8_t aux_tx_buffer[BOARD_INPUT_MAX_MSG_SIZE];
 
 BoardInput board_input;
