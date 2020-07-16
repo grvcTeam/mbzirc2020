@@ -44,9 +44,9 @@ def generate_uav_paths(uav_count, field_width, field_height, column_count):
 def predefined_uav_paths():
     paths = []
 
-    left_uav = [Point(x=-14 ,y=5, z=7),Point(x=-18 ,y=18, z=7),Point(x=-18 ,y=18, z=0.6),Point(x=-2 ,y=18, z=0.6),Point(x=0 ,y=18, z=5)]
+    left_uav = [Point(x=0, y=14, z=7), Point(x=-20, y=14, z=7), Point(x=-20, y=19, z=7), Point(x=-20, y=19, z=0.6), Point(x=-2, y=19, z=0.6), Point(x=-2, y=19, z=5)]
 
-    right_uav = [Point(x=16 ,y=5, z=7),Point(x=16 ,y=15, z=7),Point(x=4 ,y=12, z=7),Point(x=4 ,y=12, z=1.2),Point(x=12 ,y=12, z=1.2)]
+    right_uav = [Point(x=8, y=0, z=7), Point(x=8, y=7, z=7), Point(x=24, y=7, z=7), Point(x=24, y=21, z=7), Point(x=2, y=21, z=7)]
 
     paths.append(left_uav)
     paths.append(right_uav)

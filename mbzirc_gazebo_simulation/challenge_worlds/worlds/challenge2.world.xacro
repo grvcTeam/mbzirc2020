@@ -17,7 +17,7 @@
     <!-- X'-x= (X-x)*cos(yaw)-(Y-y)*sin(yaw) -->
     <!-- Y'-y= (X-x)*sin(yaw)+(Y-y)*cos(yaw)  -->
 
-<xacro:property name="ground" value="${[8,17,0,0]}"/>
+<xacro:property name="ground" value="${[3,17,0,0]}"/>
 <!-- UAV BRICKS Location -->
 <!-- Change "basebrick" to modify location and yaw for the entire pile-->
 <xacro:property name="basebrick" value="${[-10.17,14.37,0,-1.57]}"/>

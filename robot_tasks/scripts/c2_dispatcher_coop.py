@@ -245,13 +245,13 @@ class CentralUnit(object):
             #     rospy.logerr("Service call failed: {}".format(e))
     
         robot_paths = {}
-        point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
-        #point_paths = predefined_uav_paths()
+        #point_paths = generate_uav_paths(len(self.available_robots), self.field_width, self.field_height, self.column_count)
+        point_paths = predefined_uav_paths()
 
         for i, robot_id in enumerate(self.available_robots):
             robot_path = []
-            flight_level = self.flight_levels[robot_id]
-            point_path = set_z(point_paths[i], flight_level)
+            #flight_level = self.flight_levels[robot_id]
+            #point_path = set_z(point_paths[i], flight_level)
             for point in point_paths[i]:
                 waypoint = PoseStamped()
                 waypoint.header.frame_id = 'arena'
