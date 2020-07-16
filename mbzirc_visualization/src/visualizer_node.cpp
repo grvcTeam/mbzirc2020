@@ -273,6 +273,9 @@ void Visualizer::publishArena()
     marker.scale.z = 1;
 
     marker.mesh_use_embedded_materials = true;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 1.0;
     marker.color.a = 0.5;
     marker.lifetime = ros::Duration();
 

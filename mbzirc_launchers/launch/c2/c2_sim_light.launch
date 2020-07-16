@@ -17,7 +17,7 @@
 
     <!-- UAV TENACITAS 1 -->
     <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_1" output="screen"
-    args="-ual_backend=light -model=$(arg robot_model) -id=6 -material=Orange -x $(arg x1) -y $(arg y1) -z 0 -Y $(arg yaw1) 
+    args="-ual_backend=light -model=$(arg robot_model) -id=6 -material=Indigo -x $(arg x1) -y $(arg y1) -z 0 -Y $(arg yaw1) 
           -description_package=uavs_description -frame_id=arena 
           -append_xacro_args challenge=2"/>
 
@@ -52,7 +52,7 @@
 
     <!-- UAV TENACITAS 2 -->
     <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_2" output="screen"
-    args="-ual_backend=light -model=$(arg robot_model) -id=4 -material=Indigo -x $(arg x2) -y $(arg y2) -z 0 -Y $(arg yaw2) 
+    args="-ual_backend=light -model=$(arg robot_model) -id=4 -material=Orange -x $(arg x2) -y $(arg y2) -z 0 -Y $(arg yaw2) 
           -description_package=uavs_description -frame_id=arena 
           -append_xacro_args challenge=2"/>
 

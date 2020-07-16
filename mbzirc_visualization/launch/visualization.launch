@@ -9,7 +9,7 @@
 
 	<param name="robot_ns" value="$(arg ns)"/>
 	<param name="object_topic" value="estimated_objects"/>
-	<rosparam param="uav_ids">["2", "4", "6"]</rosparam>
+	<rosparam param="uav_ids">["4", "6"]</rosparam>
 	<param name="arena_file" value="$(arg arena)"/>
 	<param name="arena_x" value="$(arg arena_x)"/>
 	<param name="arena_y" value="$(arg arena_y)"/>
