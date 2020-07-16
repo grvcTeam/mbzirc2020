@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="mode" default="sim"/>
+    <arg name="robot_model" default="mbzirc2020"/>
+    <arg name="arena_yaw" default="-0.2968107"/>
+    <!--TODO update UAVs x,y,z,yaw-->
+    <arg name="x1" default="0.0"/>
+    <arg name="y1" default="0.0"/>
+    <arg name="yaw1" default="1.57"/>
+    <arg name="x2" default="0.0"/>
+    <arg name="y2" default="3.3"/>
+    <arg name="yaw2" default="1.57"/>
+    <arg name="x3" default="37.5"/>
+    <arg name="y3" default="2.0"/>
+    <arg name="yaw3" default="1.57"/>
+
+    <!-- UAV TENACITAS 1 -->
+    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_1" output="screen"
+    args="-ual_backend=light -model=$(arg robot_model) -id=6 -material=Orange -x $(arg x1) -y $(arg y1) -z 0 -Y $(arg yaw1) 
+          -description_package=uavs_description -frame_id=arena 
+          -append_xacro_args challenge=2"/>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+        
+        <arg name="ual_backend" value="gazebo_light"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="6"/>
+        <arg name="flight_level" default="10.0" />
+        <arg name="x" default="$(arg x1)" />
+        <arg name="y" default="$(arg y1)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="6"/>
+        <arg name="laser" value="yes"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="6"/>
+        
+    </include>
+
+    <!-- UAV TENACITAS 2 -->
+    <node pkg="px4_bringup" type="spawn_gzmodel.py" name="spawn_gzmodel_2" output="screen"
+    args="-ual_backend=light -model=$(arg robot_model) -id=4 -material=Indigo -x $(arg x2) -y $(arg y2) -z 0 -Y $(arg yaw2) 
+          -description_package=uavs_description -frame_id=arena 
+          -append_xacro_args challenge=2"/>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+
+        <arg name="ual_backend" value="gazebo_light"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="4"/>
+        <arg name="flight_level" default="7.5" />
+        <arg name="x" default="$(arg x2)" />
+        <arg name="y" default="$(arg y2)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="4"/>
+        <arg name="laser" value="yes"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="4"/>
+        
+    </include>
+  
+    <!-- UAV 3 -->
+    <!-- <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="append_xacro_args"   value="challenge=2" />
+        <arg name="agent_id" value="3"/>
+        <arg name="color" value="Yellow" />
+        <arg name="x"     value="$(arg x3)" />
+        <arg name="y"     value="$(arg y3)" />
+        <arg name="z"     value="0" />
+        <arg name="yaw"   value="$(arg yaw3)" />
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+        
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        <arg name="flight_level" default="10.0" />
+        <arg name="x" default="$(arg x3)" />
+        <arg name="y" default="$(arg y3)" />
+        <arg name="z" default="0" />
+
+    </include>
+
+    <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        <arg name="laser" value="yes"/>
+
+    </include>
+  
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_camera_detection.launch">
+        
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="agent_id" value="3"/>
+        
+    </include> -->
+
+    <!-- Wall TFs node -->
+    <node name="wall_tf_publisher" pkg="robot_tasks" type="c2_wall_tf_publisher.py"/>
+
+    <!--Central unit -->
+    <include file="$(find mbzirc_launchers)/launch/c2/c2_central_unit.launch">
+        <arg name="mode" value="$(arg mode)"/>
+        <arg name="robot_model" value="$(arg robot_model)"/>
+        <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        <arg name="uav_ids" default='["4","6"]'/>
+    </include>
+
+    
+</launch>
