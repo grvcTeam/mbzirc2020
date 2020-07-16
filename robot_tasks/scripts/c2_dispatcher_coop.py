@@ -611,24 +611,23 @@ class CentralUnit(object):
 
         #self.compute_waiting_poses(p_wall, pose_pile)
         # Magic waiting poses
-        waiting_poses = []
-        waiting_poses.append([-5.0, 15.0, 4.0])
-        waiting_poses.append([-5.0, 21.0, 6.0])
+        waiting_pose_pick  = [-2.0, 14.0, 4.0]
+        waiting_pose_place = [-2.0, 23.0, 4.0]
 
         # Send robots to waiting positions
-        for i,robot_id in enumerate(self.available_robots):
-            userdata = smach.UserData()
-            userdata.waypoint = PoseStamped()
-            userdata.waypoint.header.frame_id = 'arena'
-            userdata.waypoint.pose.position.x = waiting_poses[i][0]
-            userdata.waypoint.pose.position.y = waiting_poses[i][1]
-            userdata.waypoint.pose.position.z = waiting_poses[i][2]
-            userdata.waypoint.pose.orientation.x = 0
-            userdata.waypoint.pose.orientation.y = 0
-            userdata.waypoint.pose.orientation.z = 0
-            userdata.waypoint.pose.orientation.w = 1
-            self.task_manager.start_task(robot_id, GoTo(), userdata)
-            self.task_manager.wait_for([robot_id])
+        # for i,robot_id in enumerate(self.available_robots):
+        #     userdata = smach.UserData()
+        #     userdata.waypoint = PoseStamped()
+        #     userdata.waypoint.header.frame_id = 'arena'
+        #     userdata.waypoint.pose.position.x = waiting_pose[robot_id][0]
+        #     userdata.waypoint.pose.position.y = waiting_pose[robot_id][1]
+        #     userdata.waypoint.pose.position.z = waiting_pose[robot_id][2]
+        #     userdata.waypoint.pose.orientation.x = 0
+        #     userdata.waypoint.pose.orientation.y = 0
+        #     userdata.waypoint.pose.orientation.z = 0
+        #     userdata.waypoint.pose.orientation.w = 1
+        #     self.task_manager.start_task(robot_id, GoTo(), userdata)
+        #     self.task_manager.wait_for([robot_id])
 
         while not rospy.is_shutdown():
 
@@ -646,9 +645,9 @@ class CentralUnit(object):
                             userdata.color = color_int_to_string(self.assigned_brick_task[robot_id].color)
                             userdata.waiting_pose = PoseStamped() 
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = waiting_poses[0][0] #self.waiting_pose[robot_id][0][0]
-                            userdata.waiting_pose.pose.position.y = waiting_poses[0][1] #self.waiting_pose[robot_id][0][1]
-                            userdata.waiting_pose.pose.position.z = waiting_poses[0][2] # TODO: magic!
+                            userdata.waiting_pose.pose.position.x = waiting_pose_pick[0] #self.waiting_pose[robot_id][0][0]
+                            userdata.waiting_pose.pose.position.y = waiting_pose_pick[1] #self.waiting_pose[robot_id][0][1]
+                            userdata.waiting_pose.pose.position.z = waiting_pose_pick[2] # TODO: magic!
                             userdata.waiting_pose.pose.orientation.x = 0
                             userdata.waiting_pose.pose.orientation.y = 0
                             userdata.waiting_pose.pose.orientation.z = 0
@@ -671,9 +670,9 @@ class CentralUnit(object):
                             userdata = smach.UserData()
                             userdata.waiting_pose = PoseStamped()
                             userdata.waiting_pose.header.frame_id = 'arena'
-                            userdata.waiting_pose.pose.position.x = waiting_poses[1][0] #self.waiting_pose[robot_id][1][0]
-                            userdata.waiting_pose.pose.position.y = waiting_poses[1][1] #self.waiting_pose[robot_id][1][1]
-                            userdata.waiting_pose.pose.position.z = waiting_poses[1][2] # TODO: magic!
+                            userdata.waiting_pose.pose.position.x = waiting_pose_place[0] #self.waiting_pose[robot_id][1][0]
+                            userdata.waiting_pose.pose.position.y = waiting_pose_place[1] #self.waiting_pose[robot_id][1][1]
+                            userdata.waiting_pose.pose.position.z = waiting_pose_place[2] # TODO: magic!
                             userdata.waiting_pose.pose.orientation.x = 0
                             userdata.waiting_pose.pose.orientation.y = 0
                             userdata.waiting_pose.pose.orientation.z = 0
