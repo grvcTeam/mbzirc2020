@@ -402,7 +402,7 @@ void UalActionServer::placeCallback(const mbzirc_comm_objs::PlaceGoalConstPtr &_
   float step = 0.01;
   auto target_pose = ual_->pose();
   ros::Rate loop_rate(PLACING_LOOP_RATE);
-  while (ros::ok() && (sf11_range_.range > 1.25)) {  // TODO: Threshold
+  while (ros::ok() && ((sf11_range_.range > 1.25) || (sf11_range_.range < 0.35))) {  // TODO: Threshold
     if (place_server_.isPreemptRequested()) {
       ual_->setPose(ual_->pose());
       place_server_.setPreempted();
