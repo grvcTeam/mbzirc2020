@@ -611,8 +611,8 @@ class CentralUnit(object):
 
         #self.compute_waiting_poses(p_wall, pose_pile)
         # Magic waiting poses
-        waiting_pose_pick  = [-2.0, 14.0, 4.0]
-        waiting_pose_place = [-2.0, 23.0, 4.0]
+        waiting_pose_pick  = [-2.0, 14.0, 3.0]
+        waiting_pose_place = [-2.0, 23.0, 3.0]
 
         # Send robots to waiting positions
         # for i,robot_id in enumerate(self.available_robots):
@@ -653,7 +653,7 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.orientation.z = 0
                             userdata.waiting_pose.pose.orientation.w = 1
                             userdata.above_pile_pose = copy.deepcopy(self.uav_piles[self.assigned_brick_task[robot_id].color])
-                            userdata.above_pile_pose.pose.position.z = 4.0  # TODO: magic!
+                            userdata.above_pile_pose.pose.position.z = 3.0  # TODO: magic!
                             userdata.above_pile_pose.pose.orientation.x = 0
                             userdata.above_pile_pose.pose.orientation.y = 0
                             userdata.above_pile_pose.pose.orientation.z = 0
@@ -678,7 +678,7 @@ class CentralUnit(object):
                             userdata.waiting_pose.pose.orientation.z = 0
                             userdata.waiting_pose.pose.orientation.w = 1
                             userdata.segment_to_the_left_pose = getSegmentToTheLeftPose(self.assigned_brick_task[robot_id])
-                            userdata.segment_to_the_left_pose.pose.position.z = 2.5  # TODO: magic!
+                            userdata.segment_to_the_left_pose.pose.position.z = 1.5  # TODO: magic! in wall frame!
                             userdata.segment_offset = self.assigned_brick_task[robot_id].position
                             self.task_manager.start_task(robot_id, Place(), userdata)
                             self.robot_states[robot_id] = STATE_PLACING
