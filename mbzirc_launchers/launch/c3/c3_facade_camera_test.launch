@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_model" default="mbzirc2020" />
+  <arg name="agent_id" default="2" />
+  <arg name="mode" default="real" />
+
+  <arg name="threshold" default="50" />
+
+  <group ns="$(arg robot_model)_$(arg agent_id)">
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_camera_tf" args="0.30 0 -0.09 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="uav_base_to_thermal_tf" args="0.30 0 -0.14 0 0 0 $(arg robot_model)_$(arg agent_id)/base_link $(arg robot_model)_$(arg agent_id)/thermal_link" />
+     
+    <node pkg="circle_detection" type="circle_detection_node" name="circle_detection" output="screen">
+      <param name="tf_prefix" value="$(arg robot_model)_$(arg agent_id)" />
+      <param name="publish_debug_marker" value="false" />
+      <param name="publish_debug_images" value="true" />
+      <param name="dp" value="1.0" />
+      <param name="min_dist_between_circle_center" value="60" />
+      <param name="canny_edge_upper_threshold" value="70" />
+      <param name="accumulator_threshold" value="40" />
+      <param name="min_radius_meters" value="0.05" />
+      <param name="max_radius_meters" value="0.30" />
+      <param name="gaussian_blur_sigma" value="3.5" />
+      <param name="gaussian_blur_kernel_size" value="5" />
+      <param name="use_gaussian_blur" value="true" />
+      <param name="max_depth_th" value="6.5" />
+    </node>
+
+  </group>
+</launch>
