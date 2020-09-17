@@ -113,8 +113,8 @@ class BrickTask(object):
 
 
 def get_brick_task_list(wall_pattern, brick_scales, init_task=0):
-    initial_y = -1.25   # TODO: Tune! (nominal: -2.0)
-    small_gap =  1.0  # TODO: Tune! (nominal:  0.065)
+    initial_y = -2.0   # TODO: Tune! (nominal: -2.0)
+    small_gap =  0.065  # TODO: Tune! (nominal:  0.065)
     big_gap =    0.4    # TODO: Tune! (nominal:  0.4)
     
     brick_task_list = []
