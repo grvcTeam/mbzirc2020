@@ -377,7 +377,7 @@ int main(int argc, char** argv) {
       }
 
       if (g_detect_request.visualize) {
-        draw_hud(cv_ptr);
+        // draw_hud(cv_ptr);
         image_converter.publish(cv_ptr);
       }
 

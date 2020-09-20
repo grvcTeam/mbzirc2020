@@ -354,8 +354,8 @@ HSVTrackingPair HSVDetection::trackBrick(const std::string _id, bool _draw) {
             rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
             // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
             // drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
-            drawRotatedRect(closest_white.rectangle, -1, colour_[_id]);
-            cv::circle(frame_, tracking_pair.white_edge_center, 6, colour_[_id], 1);
+            drawRotatedRect(closest_white.rectangle, -1, cv::Scalar(0, 0, 0));  // Black rectangle...
+            cv::circle(frame_, tracking_pair.white_edge_center, 4, cv::Scalar(255, 0, 255), -1);  // ...purple dot!
         }
 
         return tracking_pair;
@@ -423,8 +423,8 @@ HSVTrackingPair HSVDetection::trackBrick(const std::string _id, bool _draw) {
         rectangle(frame_, closest_colour.rectangle.boundingRect(), colour_[_id]);
         // drawRotatedRect(closest_colour.rectangle, 0, colour_[_id]);
         // drawRotatedRect(largest_white.rectangle, -1, colour_[_id]);
-        drawRotatedRect(closest_white.rectangle, -1, colour_[_id]);
-        cv::circle(frame_, tracking_pair.white_edge_center, 6, colour_[_id], 1);
+        drawRotatedRect(closest_white.rectangle, -1, cv::Scalar(0, 0, 0));  // Black rectangle...
+        cv::circle(frame_, tracking_pair.white_edge_center, 4,  cv::Scalar(255, 0, 255), -1);  // ...purple dot!
     }
 
     return tracking_pair;
