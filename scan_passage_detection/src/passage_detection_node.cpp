@@ -123,12 +123,51 @@ visualization_msgs::Marker getLineMarker(const RansacOutput& _result, const std:
     line_marker.scale.x = 0.1;
     line_marker.scale.y = 0.1;
     //line_marker.scale.z = 0.1;
-    line_marker.points.push_back(_result.p);
-    line_marker.points.push_back(_result.q);
+    // line_marker.points.push_back(_result.p);
+    // line_marker.points.push_back(_result.q);
+    line_marker.points.push_back(_result.inliers[0]);  // This works only because...
+    line_marker.points.push_back(_result.inliers[_result.inliers.size()-1]);  // ... inliers come from a scan
     line_marker.color = _color;
     line_marker.lifetime = ros::Duration(0.1);
 
     return line_marker;
+}
+
+visualization_msgs::Marker getDataMarker(const RansacOutput& _result, const std::string& _frame_id, std_msgs::ColorRGBA _color, unsigned int _id = 0) {
+
+    // TODO (performance): calculate all this here is a waste
+    auto n = _result.inliers.size();
+    auto p = _result.inliers[0];
+    auto q = _result.inliers[n-1];
+    auto dx = q.x - p.x;
+    auto dy = q.y - p.y;
+    auto dz = q.z - p.z;
+    float length = sqrt(dx*dx + dy*dy + dz*dz);
+    char string_buffer[32];
+    sprintf (string_buffer, "%.2fm (%ld)", length, n);
+
+    visualization_msgs::Marker data_marker;
+    data_marker.header.frame_id = _frame_id;
+    data_marker.header.stamp = ros::Time::now();
+    data_marker.ns = "ransac_data";
+    data_marker.id = _id;
+    data_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    data_marker.action = visualization_msgs::Marker::ADD;
+    data_marker.pose.position.x = 0.5 * (p.x + q.x);
+    data_marker.pose.position.y = 0.5 * (p.y + q.y);
+    data_marker.pose.position.z = 0.5 * (p.z + q.z) + 0.1;
+    // data_marker.pose.orientation.x = 0.0;
+    // data_marker.pose.orientation.y = 0.0;
+    // data_marker.pose.orientation.z = 0.0;
+    // data_marker.pose.orientation.w = 1.0;
+    data_marker.scale.x = 0.3;
+    data_marker.scale.y = 0.3;
+    data_marker.scale.z = 0.3;
+    data_marker.color = _color;
+    data_marker.lifetime = ros::Duration(0.1);
+    data_marker.text = string_buffer;
+
+    return data_marker;
 }
 
 // TODO: More colors than just r/g/b
@@ -154,7 +193,7 @@ class PassageDetectionNode {
 public:
     PassageDetectionNode() {
 
-        marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("/visualization_marker_array", 1);
+        marker_pub_ = n_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1);
         sensed_pub_ = n_.advertise<mbzirc_comm_objs::ObjectDetectionList>("sensed_objects", 3);
         walls_pub_ = n_.advertise<mbzirc_comm_objs::WallList>("walls", 3);
         scan_sub_ = n_.subscribe<sensor_msgs::LaserScan>("scan", 1, &PassageDetectionNode::scanCallback, this);
@@ -203,6 +242,7 @@ public:
             std_msgs::ColorRGBA color = colorFromIndex(i);
             marker_array.markers.push_back(getPointsMarker(line.inliers, _msg->header.frame_id, color, i));
             marker_array.markers.push_back(getLineMarker(line, _msg->header.frame_id, color, i));
+            marker_array.markers.push_back(getDataMarker(line, _msg->header.frame_id, color, i));
             auto start = line.inliers[0];
             for (int j = 0; j < line.inliers.size()-1; j++) {
                 float delta_x = line.inliers[j+1].x - line.inliers[j].x;
