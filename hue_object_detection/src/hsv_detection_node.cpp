@@ -193,7 +193,7 @@ mbzirc_comm_objs::ObjectDetectionList fromHSVItemList(const std::vector<HSVItem>
       continue;
     }
     if ((_type == mbzirc_comm_objs::ObjectDetection::TYPE_BRICK) && (item.detector_id == "fire")) {
-      continue;
+      _type = mbzirc_comm_objs::ObjectDetection::TYPE_FIRE;
     }
 
     RealWorldRect rect_real = fromCvRotatedRect(item.rectangle, _camera, _estimated_z);

@@ -27,7 +27,7 @@ colors:
 
   fire:
     H_range: [0, 23]
-    S_range: [85, 255]
+    S_range: [150, 255]
     V_range: [84, 194]
 
   fire_box:
