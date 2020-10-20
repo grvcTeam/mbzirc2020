@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="mode" default="sim"/>
+    <arg name="robot_model" default="mbzirc2020"/>
+    <arg name="arena_yaw" default="-0.2968107"/> 
+    <!-- Agent IDs (0 means deactivated)-->
+    <arg name="facade_1_id" default="0"/>
+    <arg name="facade_2_id" default="0"/>
+    <arg name="ground_id" default="1"/>
+    <!--TODO update UAVs x,y,z,yaw-->
+    <arg name="x1" default="-2.0"/>
+    <arg name="y1" default="1.65"/>
+    <arg name="yaw1" default="1.57"/>
+    <arg name="x2" default="0.0"/>
+    <arg name="y2" default="0.0"/>
+    <arg name="yaw2" default="1.57"/>
+    <arg name="x3" default="0.0"/>
+    <arg name="y3" default="3.3"/>
+    <arg name="yaw3" default="0"/>
+
+    <!-- UAV FACADE 1 -->
+    <group if="$(eval facade_1_id != 0)">
+        <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="append_xacro_args"   value="challenge=30" />
+            <arg name="agent_id" value="$(arg facade_1_id)"/>
+            <arg name="color" value="Orange" />
+            <arg name="x"     value="$(arg x1)" />
+            <arg name="y"     value="$(arg y1)" />
+            <arg name="z"     value="0" />
+            <arg name="yaw"   value="$(arg yaw1)" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_1_id)"/>
+            <arg name="flight_level" default="2.0" />
+            <arg name="x" default="$(arg x1)" />
+            <arg name="y" default="$(arg y1)" />
+            <arg name="z" default="0" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_1_id)"/>
+            <arg name="laser" value="yes"/>
+        </include>
+  
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_1_id)"/>
+        </include>
+
+        <!--Central unit -->
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="agent_id" value="$(arg facade_1_id)"/>
+            <arg name="facade" value="left"/>
+            <arg name="fire_id" value="default_0"/>
+        </include>
+    </group>
+
+    <!-- UAV FACADE 2 -->
+    <group if="$(eval facade_2_id != 0)">
+        <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="append_xacro_args"   value="challenge=30" />
+            <arg name="agent_id" value="$(arg facade_2_id)"/>
+            <arg name="color" value="Indigo" />
+            <arg name="x"     value="$(arg x2)" />
+            <arg name="y"     value="$(arg y2)" />
+            <arg name="z"     value="0" />
+            <arg name="yaw"   value="$(arg yaw2)" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_2_id)"/>
+            <arg name="flight_level" default="2.0" />
+            <arg name="x" default="$(arg x2)" />
+            <arg name="y" default="$(arg y2)" />
+            <arg name="z" default="0" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_2_id)"/>
+            <arg name="laser" value="yes"/>
+        </include>
+    
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_facade_camera_detection.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg facade_2_id)"/>
+        </include>
+
+        <!--Central unit -->
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_facade.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="agent_id" value="$(arg facade_2_id)"/>
+            <arg name="facade" value="right"/>
+            <arg name="fire_id" value="default_0"/>
+        </include>
+    </group>
+  
+    <!-- UAV GROUND -->
+    <group if="$(eval ground_id != 0)">
+        <include file="$(find mbzirc_launchers)/launch/mavros.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="append_xacro_args"   value="challenge=31" />
+            <arg name="agent_id" value="$(arg ground_id)"/>
+            <arg name="color" value="Yellow" />
+            <arg name="x"     value="$(arg x3)" />
+            <arg name="y"     value="$(arg y3)" />
+            <arg name="z"     value="0" />
+            <arg name="yaw"   value="$(arg yaw3)" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/uav_action_server.launch">
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg ground_id)"/>
+            <arg name="flight_level" default="2.0" />
+            <arg name="x" default="$(arg x3)" />
+            <arg name="y" default="$(arg y3)" />
+            <arg name="z" default="0" />
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/actuators_lidars.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg ground_id)"/>
+            <arg name="laser" value="no"/>
+        </include>
+    
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_ground_camera_detection.launch">
+            <arg name="mode" value="$(arg mode)"/>
+            <arg name="robot_model" value="$(arg robot_model)"/>
+            <arg name="agent_id" value="$(arg ground_id)"/>
+        </include>
+
+        <include file="$(find mbzirc_launchers)/launch/c3/c3_central_unit_ground.launch">
+            <arg name="uav_id" value="$(arg ground_id)"/>
+            <arg name="height" value="3.0"/>
+            <arg name="path" value="1"/>
+        </include>
+    </group>
+
+    <group if="$(eval mode == 'sim')">
+        <!-- Launch Gazebo simulation -->
+        <rosparam param="/use_sim_time">true</rosparam>
+        <include file="$(find challenge_worlds)/launch/challenge3.launch">
+            <arg name="arena_yaw" value="$(arg arena_yaw)"/>
+        </include>
+    </group>
+
+	<!-- Use tf *2* to define map to arena, rotating only yaw: args = x y z yaw pitch roll frame_id child_frame_id -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_arena_tf" args="0 0 0 $(arg arena_yaw) 0 0 map arena" />
+    
+</launch>
