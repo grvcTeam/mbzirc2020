@@ -42,7 +42,7 @@ def start_challenge(req):
 
 def main():
     rospy.init_node('c3_facade')
-    robot_id = rospy.get_param('~uav_id', '2')
+    robot_id = str(rospy.get_param('~uav_id', '2'))
     facade = rospy.get_param('~facade', 'left')
     pre_fire_id = rospy.get_param('~fire_id', '')
 
@@ -129,18 +129,18 @@ def main():
         task_manager.wait_for([robot_id])
 
         time.sleep(3)
-        fire_detected = True  # TODO: Bypass?
+        fire_detected = False  # TODO: Bypass?
         # ask_for_fire_url = 'thermal_detection/fire_detected'
         ask_for_fire_url = '/mbzirc2020_' + robot_id + '/thermal_detection/fire_detected'
         rospy.loginfo('robot {} waiting for {}...'.format(robot_id, ask_for_fire_url))
         # rospy.wait_for_service(ask_for_fire_url)  # TODO: Wait?
         rospy.loginfo('robot {} finished waiting!'.format(robot_id))
-        try:
-            ask_for_fire = rospy.ServiceProxy(ask_for_fire_url, CheckFire)
-            response = ask_for_fire()
-            fire_detected = response.fire_detected
-        except rospy.ServiceException, e:
-            rospy.logerr("Service call failed: {}".format(e))
+        # try:
+        #     ask_for_fire = rospy.ServiceProxy(ask_for_fire_url, CheckFire)
+        #     response = ask_for_fire()
+        #     fire_detected = response.fire_detected
+        # except rospy.ServiceException, e:
+        #     rospy.logerr("Service call failed: {}".format(e))
 
         if fire_detected:
             rospy.loginfo('Extinguishing fire: {}'.format(fire['id']))
