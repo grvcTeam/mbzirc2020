@@ -2,7 +2,7 @@
 import rospy
 import tf2_ros
 import tf2_geometry_msgs
-from std_srvs.srv import SetBool, SetBoolResponse
+from std_srvs.srv import Trigger, TriggerResponse
 from mbzirc_gazebo_plugins.msg import SimDroplet
 from geometry_msgs.msg import PoseStamped, Vector3Stamped
 
@@ -12,7 +12,9 @@ class FireExtiguisher(object):
         self.enabled = False
         self.droplets_left = 12  # TODO: 3.6L * 1s/0.3L = 12s
         self.droplets_velocity = 10.0  # TODO: from params?
-        rospy.Service('enable_fire_extiguisher', SetBool, self.enable_callback)
+        rospy.Service('actuators_system/start_pump', Trigger, self.start_callback)
+        rospy.Service('actuators_system/stop_pump', Trigger, self.stop_callback)
+
         self.droplet_pub = rospy.Publisher('/spawn_droplet', SimDroplet, queue_size=1)
         self.update_duration = rospy.Duration(1.0)
         rospy.Timer(self.update_duration, self.update_callback)
@@ -20,9 +22,13 @@ class FireExtiguisher(object):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.ns = rospy.get_namespace()
 
-    def enable_callback(self, req):
-        self.enabled = req.data
-        return SetBoolResponse(success = True)
+    def start_callback(self, req):
+        self.enabled = True
+        return TriggerResponse(success = True)
+
+    def stop_callback(self, req):
+        self.enabled = False
+        return TriggerResponse(success = True)
 
     def update_callback(self, event):
         if not self.enabled or self.droplets_left <= 0:
