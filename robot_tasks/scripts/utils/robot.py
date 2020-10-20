@@ -10,7 +10,7 @@ from geometry_msgs.msg import PoseStamped
 
 class RobotProxy(object):
     def __init__(self, robot_id):
-        self.id = robot_id
+        self.id = str(robot_id)
         self.url = 'mbzirc2020_' + self.id + '/'  # TODO: Impose ns: mbzirc2020!?
         # TODO: Unifying robot_model and namespace might be an issue for non homogeneous teams, 
         # but it is somehow forced by the way sensor topics are named in gazebo simulation (mbzirc2020)
