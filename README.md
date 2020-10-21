@@ -14,79 +14,37 @@ Additionally:
 sudo pip install crcmod
 ```
 
-Be sure of having an updated **master**-branch clone of:
-* [grvc-ual](https://github.com/grvcTeam/grvc-ual)
-* [grvc-utils](https://github.com/grvcTeam/grvc-utils)
-* [atrv_ur5e](https://github.com/joaocabogon/atrv_ur5e)
-
-
-### PCL library
-Since Kinetic default PCL (v1.7) library has a bug for converting XYZRGB to XYZHSV pointclouds, **bricks_detection** package requires **PCL 1.9.1** as well as **'pcl_conversions'** and **'pcl_ros'** compiled against that library. 
-
-**WARNING: If you have 'pcl_ros' and 'pcl_conversions' installed by default with ros-kinetic-desktop-full, please remove them from the ROS instalation path ('/opt/ros/kinetic/..') but keep 'pcl_msgs'**
-
-Instructions for removing 'pcl_conversions' and 'pcl_ros':
-```
-sudo rm -r /opt/ros/kinetic/include/pcl_ros
-sudo rm -r /opt/ros/kinetic/include/pcl_conversions
-
-sudo rm -r /opt/ros/kinetic/share/pcl_ros
-sudo rm -r /opt/ros/kinetic/share/pcl_conversions
-
-sudo rm /opt/ros/kinetic/lib/libpcl_*
-sudo rm -r /opt/ros/kinetic/lib/pcl_ros
-```
-
-PCL compilation and installation:
-```
-git clone https://github.com/PointCloudLibrary/pcl.git
-cd pcl
-git checkout pcl-1.9.1
-mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/opt/pcl
-make
-sudo make install
-echo "export PCL=/opt/pcl/share/pcl-1.9/" >> ~/.bashrc
-source ~/.bashrc
-```
-
-Then remove 'build' and 'devel' folders and compile the workspace. 'pcl_conversions' and 'pcl_ros' included manually in the repo will compile against the new PCL library.
-
-## Compilation
-
-For improving code performance and running speed, remember compiling in RELEASE mode:
-
-```
-catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
-```
-
-And save them to be used for the next build:
-
-```
-catkin build --save-config --cmake-args -DCMAKE_BUILD_TYPE=Release
-```
+Finally, be sure to clone [grvc-ual](https://github.com/grvcTeam/grvc-ual) and checkout the **mbzirc2020** tag. Also get an updated **master**-branch clone of [grvc-utils](https://github.com/grvcTeam/grvc-utils).
 
 
 ## Run instructions
 
-### Challenge 1 [UNCOMPLETED]:
-```
-roslaunch mbzirc_launchers c1.launch
-```
-
-For visualization:
-```
-roslaunch mbzirc_visualization c1.launch
-```
-
----
 ### Challenge 2
+To run the simulation:
 ```
-roslaunch mbzirc_launchers c2.launch
-rosrun robot_tasks c2_dispatcher_coop.py
+roslaunch mbzirc_launchers c2_sim.launch
+```  
+
+If Gazebo's Real Time Factor falls far below 1.0 and proper flight control is not possible, consider using the light simulation version (no SITL):
+```
+roslaunch mbzirc_launchers c2_sim_light.launch
 ```  
 
 For visualization:
 ```
-roslaunch mbzirc_visualization c2.launch
+roslaunch mbzirc_visualization visualization.launch
 ```
+
+---
+### Challenge 3
+To run the simulation of facade fires extinction:
+```
+roslaunch mbzirc_launchers c3_sim_facade.launch
+roslaunch mbzirc_launchers c3_starter.launch facade_1_id:=1 (and press ENTER to start)
+```  
+
+To run the simulation of fires fires extinction:
+```
+roslaunch mbzirc_launchers c3_sim_ground.launch
+roslaunch mbzirc_launchers c3_starter.launch ground_id:=1 (and press ENTER to start)
+```  
