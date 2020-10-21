@@ -14,7 +14,7 @@ Additionally:
 sudo pip install crcmod
 ```
 
-Finally, be sure to clone [grvc-ual](https://github.com/grvcTeam/grvc-ual) and checkout the **mbzirc2020** tag. Also get an updated **master**-branch clone of [grvc-utils](https://github.com/grvcTeam/grvc-utils).
+Be sure to clone [grvc-ual](https://github.com/grvcTeam/grvc-ual) and checkout the **mbzirc2020** tag. Also get an updated **master**-branch clone of [grvc-utils](https://github.com/grvcTeam/grvc-utils).
 
 
 ## Run instructions
@@ -43,7 +43,7 @@ roslaunch mbzirc_launchers c3_sim_facade.launch
 roslaunch mbzirc_launchers c3_starter.launch facade_1_id:=1 (and press ENTER to start)
 ```  
 
-To run the simulation of fires fires extinction:
+To run the simulation of ground fires extinction:
 ```
 roslaunch mbzirc_launchers c3_sim_ground.launch
 roslaunch mbzirc_launchers c3_starter.launch ground_id:=1 (and press ENTER to start)
